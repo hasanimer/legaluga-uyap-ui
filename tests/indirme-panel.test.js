@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const source = fs.readFileSync(path.join(__dirname, '../indirme-panel.js'), 'utf8');
+const source = fs.readFileSync(path.join(__dirname, '../src/extension/indirme-panel.js'), 'utf8');
 // Kurulum ekranının mevcut DOM harness'i; o dosyanın harness/test kayıtları çalıştırılmaz.
 const domSource = fs.readFileSync(path.join(__dirname, 'onboarding-ui.test.js'), 'utf8').split('function harness(')[0];
 const job = (extra = {}) => ({ id: 'plan-a', fileKey: 'file-a', rec: { dosyaNo: '2031/100', birimAdi: 'Sentetik İcra Dairesi' },

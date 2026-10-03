@@ -6,8 +6,10 @@ const os=require('node:os');
 const {createHash}=require('node:crypto');
 const fixture=(name='safe.js',code='const demo=1;')=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'legaluga-public-'));
+  fs.mkdirSync(path.dirname(path.join(dir,name)),{recursive:true});
+  fs.mkdirSync(path.join(dir,'publication'),{recursive:true});
   fs.writeFileSync(path.join(dir,name),code);
-  fs.writeFileSync(path.join(dir,'PUBLIC-FILES.json'),JSON.stringify({schema:1,files:[{path:name,sha256:createHash('sha256').update(code).digest('hex')},{path:'PUBLIC-FILES.json',sha256:null}]}));
+  fs.writeFileSync(path.join(dir,'publication/PUBLIC-FILES.json'),JSON.stringify({schema:1,files:[{path:name,sha256:createHash('sha256').update(code).digest('hex')},{path:'publication/PUBLIC-FILES.json',sha256:null}]}));
   return dir;
 };
 test('açık kaynak envanteri bilinmeyen dosya ve değiştirilmiş kaynağı reddeder',async()=>{
@@ -20,7 +22,7 @@ test('açık kaynak envanteri bilinmeyen dosya ve değiştirilmiş kaynağı red
 });
 test('özel motor dosyası ve gerçek ağ kayıtlarının yolları açık kapsama alınamaz',async()=>{
   const {validate}=await import('../scripts/validate-public.mjs');
-  for(const name of ['content.js','evrak-indirme-motoru.js','session.har','secret.key']){
+  for(const name of ['content.js','evrak-indirme-motoru.js','session.har','secret.key','src/extension/content.js','src/fragments/background.js','docs/nested/banka-api.js']){
     const dir=fixture(name);try{assert.throws(()=>validate(dir),/Özel veri|Tam motor/);}finally{fs.rmSync(dir,{recursive:true,force:true});}
   }
 });

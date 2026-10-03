@@ -1,6 +1,6 @@
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
-const vault = require('../vault-crypto.js');
+const vault = require('../src/extension/vault-crypto.js');
 const key = () => crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
 test('yerel anahtar dışa aktarılamaz ve kayıt açılabilir',async () => {
   const k=await key();assert.equal(k.extractable,false);

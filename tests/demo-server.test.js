@@ -7,11 +7,11 @@ test('README demo komutu panel CSS ve betikleri sunar, kaynak deposunu açmaz',a
   try{
     const home=await fetch(url+'/demo/');assert.equal(home.status,200);assert.match(await home.text(),/href="panel.css"/);
     const css=await fetch(url+'/demo/panel.css');assert.equal(css.status,200);assert.match(css.headers.get('content-type'),/text\/css/);
-    assert.equal(await css.text(),require('../indirme-panel.js').CSS);
-    for (const asset of ['/demo/demo.js','/indirme-panel.js']){
+    assert.equal(await css.text(),require('../src/extension/indirme-panel.js').CSS);
+    for (const asset of ['/demo/demo.js','/src/extension/indirme-panel.js']){
       const result=await fetch(url+asset);assert.equal(result.status,200);assert.match(result.headers.get('content-type'),/javascript/);assert.equal(result.headers.get('x-content-type-options'),'nosniff');
     }
-    for (const asset of ['/.git/config','/README.md','/vault-crypto.js','/../LICENSE'])assert.equal((await fetch(url+asset)).status,404);
+    for (const asset of ['/.git/config','/README.md','/src/extension/vault-crypto.js','/../LICENSE'])assert.equal((await fetch(url+asset)).status,404);
     assert.equal((await fetch(url+'/demo/',{method:'POST'})).status,404);
   }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
 });

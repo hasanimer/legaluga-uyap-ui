@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const read = name => fs.readFileSync(path.join(__dirname, '..', name), 'utf8');
+const read = name => fs.readFileSync(path.join(__dirname, '..', name.startsWith('demo/') ? name : 'src/extension/' + name), 'utf8');
 const plain = value => JSON.parse(JSON.stringify(value));
 
 class Node {

@@ -9,6 +9,8 @@ Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lis
 
 > Bu rehber, yerelde doğrulanmış **1.19.30** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
 
+Görseller gerçek arayüz bileşenlerinden **örnek verilerle** hazırlanmıştır; gerçek kişi, dava veya UYAP oturumu içermez.
+
 ## İlk kurulum
 
 1. Mağaza bağlantısından **Chrome'a ekle**'ye basın; Legaluga simgesini araç çubuğuna sabitleyin.
@@ -24,6 +26,14 @@ Yeni kurulumda mahkeme yargı türleri ile açık ve kapalı dosyalar seçilidir
 
 Seçimleri daha sonra **Ayarlar** içinden değiştirebilir veya **Kurulum seçimlerini yeniden aç** ile bağlantı, kapsam ve ayar adımlarına dönebilirsiniz. Yeni kapsam sonraki taramada uygulanır; kapsam dışında kalan eski yerel kayıtlar korunur.
 
+**1. Bağlantıyı kontrol edin; gerekirse UYAP’ın kendi ekranında giriş yapın.**
+
+![İlk kurulum: panelde UYAP bağlantısı ve giriş yönlendirmeleri — örnek veriler](docs/images/01-uyap-baglantisi.png)
+
+**2. Taranacak yargı türleri ile açık/kapalı dosya kapsamını seçin.**
+
+![İlk kurulum: yargı türü ve tarama kapsamı seçimleri — örnek veriler](docs/images/02-tarama-kapsami.png)
+
 ## Günlük kullanım
 
 UYAP sekmesinde Legaluga simgesi veya **Alt+Shift+D** paneli açar. Paneli sabitleyebilir, genişliğini değiştirebilir ve açık/koyu temayı seçebilirsiniz. Başka bir sitedeyken simge hızlı arama penceresini açar; dosya açma işlemi UYAP sekmesinde yürür.
@@ -37,6 +47,8 @@ UYAP sekmesinde Legaluga simgesi veya **Alt+Shift+D** paneli açar. Paneli sabit
 Arama kutusunda **↑ ↓** ile sonuç seçin, **Enter** ile açın, **Esc** ile geri dönün. Arama ve filtreler kayıtlı yerel veriler üzerinde çalışır. Güncelleme ve yeni belge okuma için UYAP bağlantısı gerekir.
 
 Müvekkil etiketi, ayarlardaki vekil adıyla dosyanın taraf/vekil kaydının eşleşmesine dayanır. Etiket görünmüyorsa önce bu adı kontrol edin. Aynı adlı farklı kişiler otomatik olarak ayırt edilemeyebilir; savcılık dosyalarında UYAP taraf bilgisini vermediğinde müvekkil eşlemesi yapılamaz.
+
+![Dosya arama: sonuç kartları, müvekkil bilgisi, notlar ve evrak açma düğmeleri — örnek veriler](docs/images/03-dosya-arama.png)
 
 ## Dosya ekranı
 
@@ -97,6 +109,8 @@ Sekme veya tarayıcı kapanırsa çalışmaya başlamış işin tamamlanan parç
 
 Devam edilen iş başlangıçta kaydedilen planı kullanır; sonradan değiştirdiğiniz kapsam ve tür seçimleri o planı değiştirmez. **Yeni indirme planı** ilerlemeyi onayınızla sıfırlar; bilgisayarınızdaki ZIP'leri silmez. **Son parçayı klasörde göster** tamamlanmış parçayı kaydedildiği klasörde gösterir.
 
+![İndirmeler: diske kaydedilen ilerleme, mevcut ZIP parçası, duraklatma ve devam etme — örnek veriler](docs/images/04-indirme-ilerlemesi.png)
+
 ## Verileriniz ve şifreleme
 
 Dosya indeksi, notlar, tercihler, safahat ve banka takip özetleri bu Chrome profilinde yerel olarak saklanır. Oturum ve dosya belgeleri geliştiricinin sunucusuna aktarılmaz. Belge okuma UYAP'a, canlı tebligat sorgusu ilgili resmî hizmete bağlanır.
@@ -111,17 +125,16 @@ Teknik hata raporlama başlangıçta kapalıdır. Açarsanız izin verilen tekni
 
 | Kaynak | Kapsam |
 |---|---|
-| `ui.js`, `onboarding.js`, `options.*`, `popup.*` | Panel, ilk kurulum, ayarlar ve hızlı arama arayüzü. |
-| `tebligat-ui.js`, `indirme-panel.js` | Tebligat görünümü ve indirme ilerleme ekranı; motorlara callback/arayüz üzerinden bağlanır. |
-| `vault-crypto.js`, `storage.js`, `tabs.js`, `telemetry.js` | Yerel şifreleme, kayıt doğrulama, mesaj yetkilendirmesi, sekme ve teknik rapor sınırları. |
-| `evrak-zip.js`, `udf.js`, `tiff.js`, `durusma-paketi-*` | Genel ZIP ve yerel belge görüntüleme/dönüştürme araçları. |
-| `fragments/`, `FRAGMENTS.json` | Karma dosyalardan ayrılmış açık görünüm/helper/yetki bölümleri; parça sırası ve hash bilgileri. |
-| `contracts.json`, `manifest.json`, `PUBLIC-FILES.json` | Motor arayüzleri, tam paketin izin/betik sırası ve açık dosya envanteri. |
-| `demo/`, `tests/`, `scripts/`, `vendor/` | Sentetik demo, açık kapsam testleri, doğrulama araçları ve lisansları korunmuş üçüncü taraf bileşenler. |
+| [src/extension/](src/extension/) | Panel, ilk kurulum, ayarlar, hızlı arama, tebligat ve indirme arayüzleri; şifreleme, kayıt ve genel belge araçları. Paket içindeki göreli dosya düzeni burada korunur. |
+| [src/fragments/](src/fragments/) | Karma dosyalardan ayrılmış açık görünüm, yardımcı işlev ve yetki bölümleri. |
+| [publication/](publication/) | Motor arayüz sözleşmeleri, parça sırası ve hash bilgileri, açık dosya envanteri. |
+| [docs/](docs/) | Kullanım görselleri ve geliştirici rehberi. |
+| [demo/](demo/), [tests/](tests/), [scripts/](scripts/) | Sentetik demo, açık kapsam testleri ve doğrulama/bakım araçları. |
+| [src/extension/vendor/](src/extension/vendor/), [src/extension/icons/](src/extension/icons/) | Lisansları korunmuş üçüncü taraf bileşenler, fontlar ve eklenti simgeleri. |
 
-UYAP tarama ve belge adaptörleri, banka/tebligat ayrıştırıcıları ve kalıcı indirme motoru özel depodadır. Açık depo **tek başına kurulabilir tam UYAP eklentisi değildir**; `manifest.json` tam paketin izinlerini incelenebilir tutar, eksik özel motoru sağlamaz.
+UYAP tarama ve belge adaptörleri, banka/tebligat ayrıştırıcıları ve kalıcı indirme motoru özel depodadır. Açık depo **tek başına kurulabilir tam UYAP eklentisi değildir**; [src/extension/manifest.json](src/extension/manifest.json) tam paketin izinlerini incelenebilir tutar, eksik özel motoru sağlamaz.
 
-Tam paket özel depoda sabitlenmiş bir açık arayüz commit'iyle derlenir. Açık ve özel parçalar tanımlanan sırada byte olarak birleştirilir; parça aralarına karakter eklenmez. `contracts.json` dosya/borçlu/belge kapsamı, açık ücret onayı ve kaydedilen parça ilerlemesi gibi bağlantı kurallarını tarif eder. Çalışma anında uzaktan JavaScript indirilmez.
+Tam paket özel depoda sabitlenmiş bir açık arayüz commit'iyle derlenir. Açık ve özel parçalar tanımlanan sırada byte olarak birleştirilir; parça aralarına karakter eklenmez. [publication/contracts.json](publication/contracts.json) dosya/borçlu/belge kapsamı, açık ücret onayı ve kaydedilen parça ilerlemesi gibi bağlantı kurallarını tarif eder. Çalışma anında uzaktan JavaScript indirilmez.
 
 Kaynak deposunu özel tutmak, kullanıcıya dağıtılan Chrome paketindeki JavaScript'i görünmez yapmaz. Daha önce yayımlanmış kopyalar ve forklar da geri alınamaz. Bu yayın modeli açık kaynak arayüzün kapsamını belirler; kullanıcı anahtarlarını kod gizliliğine dayandırmaz.
 
@@ -135,7 +148,7 @@ npm run validate
 npm run demo
 ```
 
-`npm test` açık UI, kurulum, indirme paneli ve kripto sınırlarının sentetik testlerini çalıştırır. `npm run validate` açık dosya envanterini, hashleri ve yayın sınırlarını kontrol eder. Tam eklentinin UYAP entegrasyon testleri özel motor deposunda yürütülür.
+`npm test` açık UI, kurulum, indirme paneli ve kripto sınırlarının sentetik testlerini çalıştırır. `npm run validate` açık dosya envanterini, hashleri ve yayın sınırlarını kontrol eder. Tam eklentinin UYAP entegrasyon testleri özel motor deposunda yürütülür. Dosya yolları ve katkı akışı için [Geliştirici rehberi](docs/DEVELOPMENT.md)'ni kullanın.
 
 `npm run demo` sonrası **http://127.0.0.1:4173/demo/** adresini açın; sunucuyu **Ctrl+C** ile kapatın. Demo gerçek indirme panelini sentetik işler üzerinde gösterir. UYAP'a bağlanmaz, belge veya indirme çalıştırmaz, gerçek dosya verisi kullanmaz; tam uygulamanın bütün ekranlarını temsil etmez.
 
@@ -145,4 +158,4 @@ npm run demo
 
 Genel hata ve öneriler için [Issues](https://github.com/hasanimer/legaluga-uyap-ui/issues) açın; sürüm, yeniden üretme adımları ve beklediğiniz davranışı yazın. Güvenlik bildirimlerini [SECURITY.md](SECURITY.md) içindeki özel kanaldan iletin. HAR, giriş bilgisi veya gerçek dava belgesi paylaşmayın; örnekleri sentetik verilerle hazırlayın.
 
-Bu depodaki Hasan İmer Akın'a ait kaynaklar [MIT lisansı](LICENSE) kapsamındadır. `vendor/` bileşenleri ve fontlar kendi lisansları, bildirimleri ve atıflarıyla korunur; proje MIT lisansı onları değiştirmez. Özel motorun lisansı ayrıdır. Önceki açık sürümler, yayımlandıkları lisanslarla kullanılmaya devam eder.
+Bu depodaki Hasan İmer Akın'a ait kaynaklar [MIT lisansı](LICENSE) kapsamındadır. [vendor bileşenleri](src/extension/vendor/) ve fontlar kendi lisansları, bildirimleri ve atıflarıyla korunur; proje MIT lisansı onları değiştirmez. Özel motorun lisansı ayrıdır. Önceki açık sürümler, yayımlandıkları lisanslarla kullanılmaya devam eder.

@@ -5,10 +5,10 @@ import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 export const sha = value => createHash('sha256').update(value).digest('hex');
 export function validate(root) {
-  const inventory = JSON.parse(fs.readFileSync(path.join(root,'PUBLIC-FILES.json'),'utf8'));
+  const inventory = JSON.parse(fs.readFileSync(path.join(root,'publication/PUBLIC-FILES.json'),'utf8'));
   if (inventory.schema!==1 || !Array.isArray(inventory.files)) throw Error('Açık dosya envanteri geçersiz.');
   const expected = new Map(inventory.files.map(e=>[e.path,e.sha256]));
-  if (expected.size!==inventory.files.length || !expected.has('PUBLIC-FILES.json')) throw Error('Envanter tekrarlı veya eksik.');
+  if (expected.size!==inventory.files.length || !expected.has('publication/PUBLIC-FILES.json')) throw Error('Envanter tekrarlı veya eksik.');
   const seen = new Set();
   const excluded = new Set(['.git','node_modules','dist']);
   const walk = (dir, prefix='') => {
@@ -19,10 +19,10 @@ export function validate(root) {
       if (item.isDirectory()) {walk(path.join(dir,item.name),name+'/');continue;}
       if (!expected.has(name)) throw Error('Envanter dışı dosya: '+name);
       if (/\.(har|pdf|xlsx|pem|key|p12|pfx|zip|map)$/i.test(name) || /(^|\/)(\.env(?:\..*)?|core|private|\.private)(\/|$)/i.test(name)) throw Error('Özel veri/çıktı yolu: '+name);
-      if (/^(content|background|common|banka-api|banka-takip|tebligat-barkod|tebligat-ptt|ptt-content|evrak-indirme|evrak-indirme-motoru)\.js$/.test(name)) throw Error('Tam motor dosyası açık depoya eklenemez: '+name);
+      if (/^(content|background|common|banka-api|banka-takip|tebligat-barkod|tebligat-ptt|ptt-content|evrak-indirme|evrak-indirme-motoru)\.js$/.test(path.posix.basename(name)) && name!=='demo/common.js') throw Error('Tam motor dosyası açık depoya eklenemez: '+name);
       const bytes = fs.readFileSync(path.join(dir,item.name));
       if (expected.get(name) && sha(bytes)!==expected.get(name)) throw Error('Envanter hash uyuşmazlığı: '+name);
-      if (/\.(js|mjs|part)$/.test(name) && !name.startsWith('vendor/')) {
+      if (/\.(js|mjs|part)$/.test(name) && !name.startsWith('src/extension/vendor/')) {
         const text = bytes.toString('utf8');
         if (/\.ajx(?:[?"'`\s]|$)/i.test(text)) throw Error('UYAP endpoint adaptörü açık kaynakta: '+name);
         if (/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/.test(text)) throw Error('Özel anahtar: '+name);

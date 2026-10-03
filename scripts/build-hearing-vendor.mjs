@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { build } from 'esbuild';
 
 await build({
-  entryPoints: ['scripts/hearing-pdfjs-entry.mjs'], outfile: 'vendor/pdfjs-reader.js',
+  entryPoints: ['scripts/hearing-pdfjs-entry.mjs'], outfile: 'src/extension/vendor/pdfjs-reader.js',
   bundle: true, format: 'iife', platform: 'browser', target: 'chrome120',
   minify: true, sourcemap: false, legalComments: 'eof',
   define: { process: 'undefined' },
@@ -36,17 +36,17 @@ for (const [source, destination] of sources) {
   if (destination.endsWith('.js') && /\beval\s*\(|new\s+Function\s*\(/.test(data.toString())) {
     throw new Error(`MV3 dynamic-code check failed: ${source}`);
   }
-  await copyFile(source, destination);
+  await copyFile(source, 'src/extension/' + destination);
   inventory.push({ file: destination, bytes: data.length, sha256: createHash('sha256').update(data).digest('hex') });
 }
-const readerFile = 'vendor/pdfjs-reader.js', reader = await readFile(readerFile);
+const readerFile = 'vendor/pdfjs-reader.js', reader = await readFile('src/extension/' + readerFile);
 if (/\beval\s*\(|new\s+Function\s*\(/.test(reader.toString())) throw new Error('PDF.js dynamic-code check failed.');
 inventory.push({ file: readerFile, bytes: reader.length, sha256: createHash('sha256').update(reader).digest('hex') });
-for (const name of (await readdir('vendor/fonts')).sort()) {
-  const file = `vendor/fonts/${name}`, data = await readFile(file);
+for (const name of (await readdir('src/extension/vendor/fonts')).sort()) {
+  const file = `vendor/fonts/${name}`, data = await readFile('src/extension/' + file);
   inventory.push({ file, bytes: data.length, sha256: createHash('sha256').update(data).digest('hex') });
 }
-await writeFile('vendor/hearing-vendor.json', JSON.stringify({
+await writeFile('src/extension/vendor/hearing-vendor.json', JSON.stringify({
   packages: { 'pdf-lib': '1.17.1', '@pdf-lib/fontkit': '1.1.1', 'pdfjs-dist': '6.3.289' },
   modifications: ['PDF.js worker automatic global-port bootstrap disabled; the hearing worker uses the local in-process handler.'],
   files: inventory
