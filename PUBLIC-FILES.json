@@ -24,7 +24,7 @@
     },
     {
       "path": "demo/demo.css",
-      "sha256": "45b877e0753269ef1680f529d62bb2a640241c28517bc9b92eff03b2efc75042"
+      "sha256": "1c4f053bc7667ce32190bb2b80de7379bd83c33c6141870df9d441226dd84608"
     },
     {
       "path": "demo/demo.js",
@@ -568,7 +568,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "4d793b797b0db838f91b1f8c8f218506b843acd1c57719c6b57719f7d23162b3"
+      "sha256": "4d31eded194c9a7a31a2876b89d3d983629274ca98b7798873f58d03fd84236c"
     },
     {
       "path": "scripts/build-hearing-vendor.mjs",
@@ -588,7 +588,7 @@
     },
     {
       "path": "scripts/serve-demo.mjs",
-      "sha256": "dbffa598bb641343a72fa62a591bb28cd913ce18dc8b92ee47d3f7ab0d63c979"
+      "sha256": "d4196621ea905da6c85f72c5c4c3fc4d07727e90058e83ead5f25bc39297b821"
     },
     {
       "path": "scripts/validate-public.mjs",
@@ -625,6 +625,10 @@
     {
       "path": "tests/demo-consistency.test.js",
       "sha256": "19b0f10912aeb5b38bb5ab294f5676debaeae12108d044f0112f357ef46e3a38"
+    },
+    {
+      "path": "tests/demo-server.test.js",
+      "sha256": "0f9b7f1208033ad1afe7bfc1651f1997c4fd679d544698c5e2182eaf1e6fb056"
     },
     {
       "path": "tests/indirme-panel.test.js",
