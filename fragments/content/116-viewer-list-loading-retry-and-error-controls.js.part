@@ -1,0 +1,12 @@
+function listeAl() {
+      if (listeBekliyor) return listeBekliyor;
+      if (closed) return Promise.resolve();
+      const tekrarIstek = !!listeHata;
+      listeHata = '';
+      if (!zipState) zipTekrar.hidden = true;
+      if (tekrarIstek) zipMessage('Evrak listesi UYAP’tan alınıyor…');
+      listeDurum.hidden = false;
+      listeDurum.textContent = 'Evrak listesi UYAP’tan alınıyor…';
+      icerik(null);
+      listeBekliyor = (async () => {
+        try {

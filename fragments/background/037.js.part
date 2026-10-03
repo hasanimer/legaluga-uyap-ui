@@ -1,0 +1,1 @@
+    if (!job || job.id !== message.jobId || !pending) return { ok: true, job };

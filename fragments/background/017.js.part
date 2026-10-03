@@ -1,0 +1,11 @@
+// Paket iframe'inin kendi kökeninde ürettiği gizli anahtar yalnız extension runtime üzerinden ana çerçeveye iletilir.
+chrome.runtime.onMessage.addListener((msg, sender, reply) => {
+  if (msg?.type !== 'uhd-hearing-channel' || sender.id !== chrome.runtime.id) return;
+  const sessionId = typeof msg.sessionId === 'string' ? msg.sessionId : '';
+  const secret = typeof msg.secret === 'string' ? msg.secret : '';
+  const expected = chrome.runtime.getURL('durusma-paketi.html') + '#' + sessionId;
+  if (!/^[0-9a-f-]{36}$/.test(sessionId) || !/^[0-9a-f]{64}$/.test(secret) ||
+      sender.url !== expected || !sender.tab || !Number.isInteger(sender.frameId) || sender.frameId <= 0 ||
+      !uyapUrl(sender.tab.url) || (sender.documentLifecycle && sender.documentLifecycle !== 'active')) {
+    reply({ ok: false }); return;
+  }

@@ -1,0 +1,46 @@
+
+    function paketSonucGoster(bytes, atlanan, adet) {
+      paketSonucBirak();
+      const url = paketSonucUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+      const ad = `Durusma_Paketi_${String(rec.dosyaNo || 'dosya').replace(/[^\w-]+/g, '-')}${atlanan.length ? '_eksik' : ''}.pdf`;
+      const goster = () => {
+        if (closed) return;
+        birak();
+        sira = -1; secimiCiz(); konumYaz();
+        baslikYaz(null);
+        evrakAdi.textContent = `Duruşma paketi · ${fmtNum(adet)} evrak`;
+        evrakAdi.title = evrakAdi.textContent;
+        indir.href = url; indir.download = ad; indir.hidden = false;
+        yeniSekme.href = url; yeniSekme.hidden = false;
+        icerik(el('iframe', { src: url, title: 'Duruşma paketi' }));
+      };
+      goster();
+      const yeniden = el('button', { type: 'button', class: 'chip' }, 'Paketi göster');
+      yeniden.addEventListener('click', goster);
+      const kaydet = el('a', { class: 'chip', href: url, download: ad }, 'PDF’i indir');
+      const satirlar = atlanan.map(({ x, reason }) => {
+        const b = el('button', { type: 'button', class: 'chip' }, 'Özgün evrakı indir');
+        b.addEventListener('click', () => paketOzgunIndir(x));
+        return el('li', null, `${x.tur}: ${reason} `, b);
+      });
+      paketDurum.replaceChildren(
+        el('p', null, atlanan.length ? `Paket hazır; ${fmtNum(atlanan.length)} evrak eklenemedi ve PDF’in başında nedeniyle raporlandı.` : 'Paket hazır; önizlemede açıldı.'),
+        el('div', { class: 'ek-paket-eylem' }, yeniden, kaydet),
+        satirlar.length ? el('ul', null, satirlar) : null);
+    }
+    function paketDurumYaz(session, m) {
+      if (paketSession !== session || !m) return;
+      const faz = String(m.phase || '');
+      if (faz === 'running') { paketDurum.textContent = String(m.message || 'Paket hazırlanıyor…').slice(0, 300); return; }
+      if (faz === 'failed') {
+        const hatalar = (Array.isArray(m.failures) ? m.failures : []).slice(0, PAKET_MAX).map(f => {
+          const t = typeof f?.id === 'string' ? session.targets.get(f.id) : null;
+          return el('li', null, `${t ? t.x.tur + ': ' : ''}${String(f?.reason || 'Bilinmeyen hata').slice(0, 500)}`);
+        });
+        paketKapat();
+        paketDurum.replaceChildren(el('p', { class: 'dp-err' }, 'PDF hazırlanamadı.'), hatalar.length ? el('ul', null, hatalar) : null);
+        return;
+      }
+      if (faz === 'cancelled') { paketKapat(); paketDurum.textContent = 'Durduruldu; PDF oluşturulmadı.'; }
+    }
+    

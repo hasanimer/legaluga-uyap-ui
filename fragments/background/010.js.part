@@ -1,0 +1,29 @@
+
+let reportQueue = Promise.resolve();
+async function sendTechnicalReport(value) {
+  const report = globalThis.UHDReporter.normalize(value);
+  if (!report) return { ok: false, sent: false };
+  const { uhdPrefs } = await chrome.storage.local.get('uhdPrefs');
+  if (!uhdPrefs || uhdPrefs.hataRaporu !== true) return { ok: true, sent: false, reason: 'disabled' };
+  const { uhdErrorBudget: saved } = await chrome.storage.session.get('uhdErrorBudget');
+  const now = Date.now();
+  const budget = saved && now - saved.at < 3600000 ? saved : { at: now, count: 0, recent: {} };
+  const key = JSON.stringify(globalThis.UHDReporter.toSentryEvent(report).fingerprint);
+  if (budget.count >= 20 || now - (budget.recent[key] || 0) < 60000) return { ok: true, sent: false, reason: 'limited' };
+  budget.count++;
+  budget.recent[key] = now;
+  await chrome.storage.session.set({ uhdErrorBudget: budget });
+  return globalThis.UHDSentry.send(report);
+}
+function queueReport(value) {
+  const task = reportQueue.then(() => sendTechnicalReport(value));
+  reportQueue = task.catch(() => {});
+  return task;
+}
+globalThis.UHDReporter.setSender(queueReport);
+chrome.runtime.onMessage.addListener((msg, sender, reply) => {
+  if (msg?.type !== 'uhd-error-report' || sender.id !== chrome.runtime.id) return;
+  queueReport(msg.report).then(reply, () => reply({ ok: false, sent: false }));
+  return true; // yanıt/flush tamamlanana kadar service worker açık tutulur
+});
+

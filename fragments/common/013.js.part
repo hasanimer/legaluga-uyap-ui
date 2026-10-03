@@ -1,0 +1,186 @@
+  // Son başarılı safahat dosyaya göre saklanır. Ham UYAP yanıtı ve oturum kimliği kayda girmez.
+  const SAFAHAT_REFRESH_MS = 60 * 60 * 1000, SAFAHAT_LEASE_MS = 15 * 60 * 1000;
+  const safahatFileKey = key => typeof key === 'string' && key.length > 0 && key.length <= 512 && !['__proto__', 'constructor', 'prototype'].includes(key);
+  function checkSafahatSnapshot(value) {
+    if (!value || !Number.isSafeInteger(value.fetchedAt) || value.fetchedAt <= 0 || !Number.isFinite(new Date(value.fetchedAt).getTime()) || !Array.isArray(value.items) || value.items.length > 10000) throw new Error('Safahat kaydı geçersiz.');
+    const limits = { tarih: 128, tur: 512, aciklama: 8192, birim: 512, statu: 256 };
+    const items = value.items.map(row => {
+      if (!row || typeof row !== 'object' || !Number.isSafeInteger(row.ts) || row.ts < 0) throw new Error('Safahat satırı geçersiz.');
+      const item = { ts: row.ts };
+      for (const [key, max] of Object.entries(limits)) {
+        if (typeof row[key] !== 'string' || row[key].length > max) throw new Error('Safahat alanı geçersiz veya çok uzun.');
+        item[key] = row[key];
+      }
+      if (!item.tur && !item.aciklama) throw new Error('Safahat satırı boş.');
+      return item;
+    }).sort((a, b) => b.ts - a.ts);
+    return { fetchedAt: value.fetchedAt, items };
+  }
+  function checkSafahatStore(value, keepPending = false) {
+    if (value === undefined) return { version: 1, files: {}, ...(keepPending ? { pending: {} } : {}) };
+    if (!value || value.version !== 1 || !value.files || typeof value.files !== 'object' || Array.isArray(value.files) || Object.keys(value.files).length > 1000) throw new Error('Safahat deposu geçersiz.');
+    const result = { version: 1, files: {}, ...(keepPending ? { pending: {} } : {}) };
+    for (const [key, snapshot] of Object.entries(value.files)) {
+      if (!safahatFileKey(key)) throw new Error('Safahat dosya anahtarı geçersiz.');
+      result.files[key] = checkSafahatSnapshot(snapshot);
+    }
+    if (keepPending && value.pending && (typeof value.pending !== 'object' || Array.isArray(value.pending) || Object.keys(value.pending).length > 1000)) throw new Error('Safahat sorgu deposu geçersiz.');
+    if (keepPending) for (const [key, run] of Object.entries(value.pending || {})) {
+      if (!safahatFileKey(key) || !run || typeof run.token !== 'string' || run.token.length > 128 || !run.token || !Number.isSafeInteger(run.at) || run.at <= 0) throw new Error('Safahat sorgu kaydı geçersiz.');
+      result.pending[key] = { token: run.token, at: run.at };
+    }
+    if (new TextEncoder().encode(JSON.stringify(result)).length > 16 * 1024 * 1024) throw new Error('Safahat deposu 16 MiB sınırını aşıyor; eski kayıt korunuyor.');
+    return result;
+  }
+  function safahatState(value, fileKey, now = Date.now()) {
+    if (!safahatFileKey(fileKey) || !Number.isSafeInteger(now) || now <= 0) throw new Error('Safahat dosyası veya saat bilgisi geçersiz.');
+    const store = checkSafahatStore(value, true), snapshot = store.files[fileKey] || null;
+    // Saat geri alınırsa kalan süre uzar; 60 dakika koruması atlanamaz.
+    const waitMs = snapshot ? Math.max(0, SAFAHAT_REFRESH_MS - (now - snapshot.fetchedAt)) : 0;
+    const pending = store.pending[fileKey], busyMs = pending ? Math.max(0, SAFAHAT_LEASE_MS - (now - pending.at)) : 0;
+    return { snapshot, waitMs, busy: busyMs > 0, busyMs };
+  }
+
+  // Kartta gösterilecek son işlem (saklanan en küçük bilgi).
+  const sonIslemOf = items => (items && items[0] ? { tarih: items[0].tarih.slice(0, 10), tur: items[0].tur || items[0].aciklama } : null);
+
+  // Tutar: 12345.5 → "12.345,50 ₺"
+  const fmtTL = v => (typeof v === 'number' && isFinite(v) ? v.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺' : '—');
+
+  // "alacakKalemFaizTutar" → "Alacak kalem faiz tutar" (bilinmeyen alanları okunur göstermek için).
+  // UYAP alan adları ASCII yazılır; ekranda yaygın sözcükler Türkçe karakterle, kısaltmalar büyük harfle gösterilir.
+  const HUMAN_WORDS = {
+    aciklama: 'açıklama', aciklamasi: 'açıklaması', adi: 'adı', adresi: 'adresi', alacakli: 'alacaklı', bilgileri: 'bilgileri',
+    borclu: 'borçlu', borcu: 'borcu', calisani: 'çalışanı', calisma: 'çalışma', cikis: 'çıkış', dogum: 'doğum', durumu: 'durumu',
+    giris: 'giriş', isyeri: 'iş yeri', ise: 'işe', isten: 'işten', kisi: 'kişi', kaydi: 'kaydı', meslegi: 'mesleği', numarasi: 'numarası',
+    odeme: 'ödeme', arac: 'araç', sayisi: 'sayısı', sigortali: 'sigortalı', sirket: 'şirket', sube: 'şube', tarihi: 'tarihi', tescil: 'tescil',
+    tutari: 'tutarı', turu: 'türü', unvani: 'unvanı', ucret: 'ücret', ozet: 'özet', sgk: 'SGK', ssk: 'SSK', egm: 'EGM', tc: 'TC',
+    vkn: 'VKN', mersis: 'MERSİS', iban: 'IBAN', ilce: 'ilçe', islem: 'işlem', soyadi: 'soyadı'
+  };
+  const humanKey = k => {
+    // tr-TR küçültme ASCII "I"yı "ı" yapar (ilkIseGiris → "ıse"); alan adları ASCII olduğu için önce "i"ye çevrilir.
+    // Kısaltma dizisi sonraki sözcükten ayrılır: TCKimlikNo → "TC kimlik no".
+    const words = String(k).replace(/_/g, ' ').replace(/([a-zçğıöşü0-9])([A-ZÇĞİÖŞÜ])/g, '$1 $2')
+      .replace(/([A-ZÇĞİÖŞÜ]+)([A-ZÇĞİÖŞÜ][a-zçğıöşü])/g, '$1 $2').replace(/\s+/g, ' ').trim()
+      .replace(/I/g, 'i').toLocaleLowerCase('tr-TR').split(' ').map(w => HUMAN_WORDS[w] || w);
+    const s = words.join(' ');
+    return /^[a-zçğıöşü]/.test(s) ? s.replace(/^./, c => c.toLocaleUpperCase('tr-TR')) : s;
+  };
+
+  // ------------------------------------------------ görünüm
+  // UYAP adları büyük harfle verir; yalnız baş harfleri büyük gösterilir (arama etkilenmez).
+  // Nokta içeren kısaltmalar (A.Ş., T.C., LTD.) ve 2-3 harfli şirket ekleri olduğu gibi kalır.
+  const KEEP_UPPER = new Set(['AŞ', 'A.Ş.', 'LTD', 'LTD.', 'ŞTİ', 'ŞTİ.', 'T.C.', 'TC', 'KOOP.', 'SGK', 'TCDD', 'PTT', 'TMSF', 'TOKİ', 'TBMM']);
+  function trTitle(s) {
+    s = String(s == null ? '' : s);
+    if (!/[A-ZÇĞİÖŞÜ]/.test(s) || /[a-zçğıöşü]/.test(s)) return s;   // yalnız tamamen büyük harfli metin çevrilir
+    return s.split(/(\s+|-|\(|\))/).map(w => {
+      if (!w || /^\s+$|^[-()]$/.test(w)) return w;
+      if (KEEP_UPPER.has(w) || /\.\S/.test(w) || /^[A-ZÇĞİÖŞÜ]\.?$/.test(w)) return w;
+      if (w === 'VE') return 've';
+      const low = w.toLocaleLowerCase('tr-TR');
+      return low.charAt(0).toLocaleUpperCase('tr-TR') + low.slice(1);
+    }).join('');
+  }
+
+  // "Kapalı (2022-02-03 13:44:11.0)" → { label: "Kapalı", tarih: "03.02.2022" }
+  function cleanDurum(durum) {
+    const s = String(durum || '').trim();
+    const m = /^(.*?)\s*\((\d{4})-(\d{2})-(\d{2})[^)]*\)\s*$/.exec(s);
+    if (m) return { label: m[1], tarih: `${m[4]}.${m[3]}.${m[2]}` };
+    const t = /^(.*?)\s*\((\d{2})[/.](\d{2})[/.](\d{4})\)\s*$/.exec(s);
+    return t ? { label: t[1], tarih: `${t[2]}.${t[3]}.${t[4]}` } : { label: s, tarih: '' };
+  }
+
+  // "(Kapatılan)İstanbul Anadolu 2. Asliye Ticaret Mahkemesi" → "İstanbul Anadolu 2. Asliye Ticaret Mahkemesi (kapatılan)"
+  function cleanBirim(birim) {
+    const s = String(birim || '').trim();
+    const m = /^\((.+?)\)\s*(.+)$/.exec(s);
+    return m ? `${m[2]} (${m[1].toLocaleLowerCase('tr-TR')})` : s;
+  }
+
+  // Yeni evrak takibi: yeni kurulumda kapalı. Önceki sürümde açık kullanılıyorsa (taranmış kayıt varsa) açık kalır.
+  function evrakTakipAcik(prefs, records) {
+    prefs = prefs || {};
+    if (typeof prefs.evrakTakip === 'boolean') return prefs.evrakTakip;
+    if (prefs.evrakKapali) return false;
+    return (records || []).some(r => r && r.evrakSeen);
+  }
+
+  // ------------------------------------------------ yedek
+  // Yedek dosyası: { app, format, exportedAt, version, data: { anahtar: değer } }. Başka uygulamanın ya da
+  // desteklenmeyen biçimin dosyası reddedilir; yalnız bilinen anahtarlar geri yüklenir.
+  const BACKUP_APP = 'legaluga-uyap-asistani';
+  const BACKUP_FORMAT = 1;
+  // Kaldırılan süre özelliğinin eski kayıtları yalnızca yedeklerde kayıpsız korunur.
+  const BACKUP_KEYS = ['uhdIndex', 'uhdNotes', 'uhdSureler', 'uhdEvrakGoruldu', 'uhdDurusmalar', 'uhdPrefs', 'uhdRecent', 'uhdGizli', 'uhdTurFilter', 'uhdBankChecks', 'uhdSafahat'];
+  function checkBackup(obj) {
+    if (!obj || typeof obj !== 'object' || obj.app !== BACKUP_APP) throw new Error('Bu dosya Legaluga UYAP Asistanı yedeği değil.');
+    if (obj.format !== BACKUP_FORMAT) throw new Error(`Bu yedeğin biçimi (${obj.format}) bu sürümde desteklenmiyor.`);
+    if (!obj.data || typeof obj.data !== 'object') throw new Error('Yedek dosyası bozuk.');
+    const data = {};
+    for (const k of BACKUP_KEYS) if (k in obj.data) data[k] = obj.data[k];
+    if (data.uhdIndex && !Array.isArray(data.uhdIndex.records)) throw new Error('Yedekteki dosya listesi bozuk.');
+    if (data.uhdPrefs && (typeof data.uhdPrefs !== 'object' || Array.isArray(data.uhdPrefs))) throw new Error('Yedekteki ayarlar bozuk.');
+    if (Object.hasOwn(data, 'uhdBankChecks')) {
+      if (!globalThis.UHDBankChecks) throw new Error('Banka takip yedeği bu ekranda doğrulanamadı.');
+      data.uhdBankChecks = globalThis.UHDBankChecks.sanitizeStore(data.uhdBankChecks);
+    }
+    if (Object.hasOwn(data, 'uhdSafahat')) data.uhdSafahat = checkSafahatStore(data.uhdSafahat);
+    // Başka cihazın veya eski yedeğin raporlama tercihi bu cihazda onay sayılmaz.
+    data.uhdPrefs = { ...(data.uhdPrefs || {}), hataRaporu: false };
+    delete data.uhdPrefs.telemetryConsentAt;
+    delete data.uhdPrefs.telemetryConsentVersion;
+    return data;
+  }
+
+  // UYAP'tan gelen değerler (taraf, vekil adı…) =, +, -, @ ya da sekme/satır başıyla başlıyorsa
+  // Excel onları formül olarak çalıştırabilir; başa kesme işareti eklenerek düz metne çevrilir.
+  const csvCell = v => {
+    let s = String(v == null ? '' : v);
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return '"' + s.replace(/"/g, '""') + '"';
+  };
+  // Dosya numarası Excel'de tarihe dönmesin diye ="…" biçiminde yazılır; yalnız "yıl/sıra" biçimine izin verilir.
+  const csvDosyaNo = no => /^\d{4}\/\d+$/.test(String(no || '')) ? `"=""${no}"""` : csvCell(no);
+
+  // Dilekçede kullanılan künye: "İstanbul Anadolu 12. Asliye Hukuk Mahkemesi 2025/1482 E."
+  const kunyeOf = r => {
+    const birim = cleanBirim(r.birimAdi).replace(/\s*\(kapatılan\)$/i, '');
+    return r.yargiTuru === CBS.kod ? `${birim} Soruşturma No: ${r.dosyaNo}` : `${birim} ${r.dosyaNo} E.`;
+  };
+
+  // ------------------------------------------------ sayfa bildirimleri
+  // Bildirim yığınının düzeni. Aynı kimlikli bildirim yerindekinin yerine geçer ve sırasını korur. Yığın en çok max
+  // bildirim tutar; taşarsa sabit olmayanlardan önceliği en düşük, eşitse en eski olan çıkar. Gelen bildirim ve sabit
+  // bildirim (oturum uyarısı) çıkarılmaz. Sıra: sabitler üstte, sonra geliş sırasıyla.
+  // Öğeler { id, priority, at, pinned }; dönüş { list, evicted: [id] }.
+  function toastPlan(list, incoming, max = 3) {
+    const old = list.find(t => t.id === incoming.id);
+    const next = { ...incoming, at: old ? old.at : incoming.at };
+    const all = [...list.filter(t => t.id !== incoming.id), next];
+    const evicted = [];
+    while (all.length > max) {
+      const out = all.filter(t => !t.pinned && t.id !== next.id)
+        .sort((a, b) => (a.priority || 0) - (b.priority || 0) || a.at - b.at)[0];
+      if (!out) break;
+      all.splice(all.indexOf(out), 1);
+      evicted.push(out.id);
+    }
+    all.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || a.at - b.at);
+    return { list: all, evicted };
+  }
+
+  // Dosya açma hatasında sunulacak eylemler (en çok iki): 'tekrar', 'guncelle', 'kunye', 'giris'. Dosya UYAP'ın
+  // listesinde ya da formunda yoksa "Tekrar dene" sunulmaz: her denemede aynı sonuç çıkar, liste güncellenmelidir.
+  // Geçici bir hata aynı dosyada ikinci kez gelirse liste eskimiş olabileceği için Güncelle de önerilir. Güncelleme
+  // zaten sürüyorsa Güncelle sunulmaz.
+  function openErrorPlan(kind, { repeat = false, updating = false } = {}) {
+    let actions;
+    if (kind === 'oturum') actions = ['giris'];
+    else if (kind === 'secenek' || kind === 'bulunamadi') actions = ['guncelle', 'kunye'];
+    else actions = repeat ? ['tekrar', 'guncelle'] : ['tekrar'];
+    if (updating) actions = actions.filter(a => a !== 'guncelle');
+    return actions.slice(0, 2);
+  }
+

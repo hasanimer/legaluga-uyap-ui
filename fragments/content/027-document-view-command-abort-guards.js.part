@@ -1,0 +1,11 @@
+  const GEZINME_MAX = 500;
+
+  // Son istek kazanır: başka bir evrak istenince süren getirme iptal edilir. Aynı evraka yeniden basılırsa getirme
+  // baştan başlamaz, yalnız sürdüğü söylenir. Getirme Durdur ile bırakılabilir.
+  let evrakRun = null;
+  function cancelEvrak() {
+    if (!evrakRun) return;
+    evrakRun.ctl.abort();
+    evrakRun = null;
+    closeToast('evrak');
+  }

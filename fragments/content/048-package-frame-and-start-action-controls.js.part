@@ -1,0 +1,5 @@
+function paketHazirlaBasla() {
+      const sirali = paketSirasi();
+      if (!sirali.length || paketSession || paketRun || zipRun || bankRun || bankaOkuma || tebligatRead || closed || !kaynak || kaynak.list.kilit) return;
+      const frame = el('iframe', { title: 'Duruşma paketi hazırlayıcı', class: 'paket-motor', tabindex: '-1', 'aria-hidden': 'true' });
+      viewer.append(frame);

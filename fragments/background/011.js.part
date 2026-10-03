@@ -1,0 +1,5 @@
+// Kaldırılan modülün eski tercih ve geçici kayıtlarını güncellemede temizle.
+chrome.runtime.onInstalled.addListener(async details => {
+  if (details.reason === 'install') {
+    await globalThis.UHDStorage.patchPrefs({ kurulumTamamlandi: false });
+    await chrome.storage.local.set({ uhdLauncherIntroPending: true });

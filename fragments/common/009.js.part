@@ -1,0 +1,60 @@
+  // Bugünden itibaren (bugün dahil) duruşmalar, tarih ve saate göre.
+  const upcomingDurusmalar = (list, today = todayIso()) => (list || [])
+    .filter(d => d && d.tarih >= today)
+    .sort((a, b) => (a.tarih + a.saat < b.tarih + b.saat ? -1 : a.tarih + a.saat > b.tarih + b.saat ? 1 : 0));
+
+  // Mahkemenin bulunduğu adliye (normalleştirilmiş): birim adında sıra numarasından ya da mahkeme türünden önceki kısım.
+  // "İstanbul Anadolu 5. Asliye Hukuk Mahkemesi" → "istanbul anadolu", "Silivri Asliye Hukuk Mahkemesi" → "silivri".
+  // Bölge adliye ve idari yargı (idare, vergi) çoğu yerde ayrı binada olduğu için ayrı yer sayılır. Bulunamazsa ''.
+  const MAHKEME_SOZU = /^(asliye|sulh|agir|is|aile|tuketici|icra|kadastro|fikri|cocuk|idare|idari|vergi|ticaret|ceza|hukuk|infaz|trafik|denizcilik|mahkemesi|dairesi|daire|bolge|cumhuriyet|hakimligi|genel)$/;
+  function adliyeAdi(birimAdi) {
+    const t = norm(cleanBirim(birimAdi)).replace(/\s*\([^)]*\)\s*$/, '').split(/\s+/).filter(Boolean);
+    const i = t.findIndex(w => /^\d+\.?$/.test(w) || MAHKEME_SOZU.test(w));
+    if (i <= 0) return '';
+    const yer = t.slice(0, i).join(' ');
+    const sonra = t.slice(/^\d/.test(t[i]) ? i + 1 : i);
+    if (sonra[0] === 'bolge') return yer + ' bolge';
+    if (/^(idare|idari|vergi)$/.test(sonra[0])) return yer + ' idari';
+    return yer;
+  }
+
+  // Duruşma çakışması: aynı gün, farklı mahkemelerdeki iki duruşma arasında aynı adliyede CAKISMA_DK.ayniAdliye,
+  // ayrı adliyede CAKISMA_DK.ayriAdliye dakikadan az varsa. Aynı dosyanın ya da aynı mahkemenin duruşmaları (mahkeme
+  // sırayla görür) ve saati belli olmayan (00:00) duruşmalar sayılmaz. Dönüş: duruşma kimliği → [{ d, dk, ayniAdliye }].
+  const CAKISMA_DK = { ayniAdliye: 30, ayriAdliye: 120 };
+  function durusmaCakismalari(list) {
+    const gunler = new Map();
+    for (const d of list || []) {
+      if (!d || !d.id || !d.tarih || !/^\d{2}:\d{2}$/.test(d.saat || '') || d.saat === '00:00') continue;
+      if (!gunler.has(d.tarih)) gunler.set(d.tarih, []);
+      gunler.get(d.tarih).push(d);
+    }
+    const dakika = s => Number(s.slice(0, 2)) * 60 + Number(s.slice(3, 5));
+    const out = new Map();
+    const ekle = (x, y, dk, ayniAdliye) => {
+      if (!out.has(x.id)) out.set(x.id, []);
+      out.get(x.id).push({ d: y, dk, ayniAdliye });
+    };
+    for (const gun of gunler.values()) {
+      gun.sort((a, b) => dakika(a.saat) - dakika(b.saat));
+      for (let i = 0; i < gun.length; i++) {
+        for (let j = i + 1; j < gun.length; j++) {
+          const a = gun[i], b = gun[j];
+          const dk = dakika(b.saat) - dakika(a.saat);
+          if (dk >= CAKISMA_DK.ayriAdliye) break;
+          if (a.key === b.key || norm(cleanBirim(a.birimAdi)) === norm(cleanBirim(b.birimAdi))) continue;
+          // Adliyesi anlaşılamayan mahkeme (ayniAdliye null) ayrı adliyede sayılır; yazıda yer belirtilmez.
+          const yerA = adliyeAdi(a.birimAdi), yerB = adliyeAdi(b.birimAdi);
+          const ayniAdliye = yerA && yerB ? yerA === yerB : null;
+          if (dk >= (ayniAdliye ? CAKISMA_DK.ayniAdliye : CAKISMA_DK.ayriAdliye)) continue;
+          ekle(a, b, dk, ayniAdliye);
+          ekle(b, a, dk, ayniAdliye);
+        }
+      }
+    }
+    return out;
+  }
+
+  // UYAP'ın beklediği "gg.aa.yyyy".
+  const uyapDate = d => `${pad2(d.getDate())}.${pad2(d.getMonth() + 1)}.${d.getFullYear()}`;
+

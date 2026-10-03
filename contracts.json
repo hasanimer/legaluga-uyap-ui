@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "model": "public-ui-private-core",
+  "runtime": "packaged MV3 scripts, no remote code",
+  "interfaces": {
+    "UHDBankAPI": "Selected file/debtor queries; existing session, identity and fee confirmation boundaries remain required.",
+    "UHDBankChecks": "Bank-response summaries and encrypted per-file records.",
+    "UHDTebligatBarcode": "Selected-document interpretation with exact file/document scope.",
+    "UHDTebligatAPI": "PTT/UETS query adapters; interactive security challenges remain user completed.",
+    "UHDBulkDownload": "Encrypted immutable plan and saved-part checkpoint model.",
+    "UHDBulkDownloadEngine": "Per-UYAP-tab queue, pause/resume and saved-progress snapshots.",
+    "UHDBulkPanel": {"mount": "mount(container,{manager,openFile,showPart})", "manager": ["list", "subscribe", "pause", "resume"], "progress": "saved is disk-completed prefix; inPart is provisional", "destroy": "unsubscribe view only; do not stop manager"}
+  },
+  "authorization": ["extension sender", "origin", "top frame", "session", "file/debtor/document identity", "explicit fee consent", "download job/part ownership"],
+  "demo": "Synthetic UI data only, no remote requests or download execution"
+}

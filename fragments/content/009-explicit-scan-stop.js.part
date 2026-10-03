@@ -1,0 +1,11 @@
+async function stopUpdate() {
+    if (job) job.stop = true;
+    if (globalThis.UHDStorage && await globalThis.UHDStorage.cancelSetupScan()) return;
+    const { uhdJob: j, uhdProgress: p } = await chrome.storage.local.get(['uhdJob', 'uhdProgress']);
+    if (!j) return;
+    if (job || alive(p)) await chrome.storage.local.set({ uhdJob: { ...j, stop: true } });
+    else {
+      await chrome.storage.local.remove('uhdJob');
+      await chrome.storage.local.set({ uhdProgress: { running: false, text: 'Yarıda kalan güncelleme iptal edildi.', endedAt: Date.now() } });
+    }
+  }

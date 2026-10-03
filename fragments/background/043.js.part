@@ -1,0 +1,3 @@
+    const item = items.find(value => value.id === message.downloadId);
+    if (!item || item.byExtensionId !== chrome.runtime.id || item.state !== 'complete' || item.exists === false ||
+      basename(item.filename) !== part.filename) return denied();

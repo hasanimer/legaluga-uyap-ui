@@ -1,0 +1,1168 @@
+  const { el, mountUI, BRAND } = globalThis.UHD;
+  const downloadManager = globalThis.UHDBulkDownloadEngine && globalThis.UHDStorage?.readBulkDownload
+    ? globalThis.UHDBulkDownloadEngine.createManager({
+      bulkTools: globalThis.UHDBulkDownload, zipTools: globalThis.UHD.evrakZip, storage: globalThis.UHDStorage,
+      sink: message => chrome.runtime.sendMessage(message),
+      reconcile: fileKey => chrome.runtime.sendMessage({ type: 'uhd-download-reconcile', fileKey }),
+      locks: globalThis.navigator?.locks, documentExtension,
+      beforeFetch: signal => { uyapBulk(signal); if (captchaOpen()) throw new Blocked(CAPTCHA_MSG); }
+    }) : null;
+  globalThis.UHDBulkDownloads = downloadManager;
+  async function openDownload(fileKey) {
+    const { uhdIndex } = await chrome.storage.local.get('uhdIndex');
+    const rec = uhdIndex?.records?.find(item => item.key === fileKey);
+    if (!rec) throw new Error('Dosya kayıtlarınızda bulunamadı. Dosya listenizi güncelleyin.');
+    return openDosyaPanel(rec, 'indir');
+  }
+  async function showDownloadPart({ fileKey, jobId, downloadId }) {
+    const result = await chrome.runtime.sendMessage({ type: 'uhd-download-show', fileKey, jobId, downloadId });
+    if (!result?.ok) throw new Error(result?.error || 'ZIP dosyası gösterilemedi.');
+    return result;
+  }
+  const PAGE_CSS = `
+:host{--shell-focus:${BRAND.focus};--shell-bg:#fff;--shell-soft:#f5f7fb;--shell-text:#1d2939;--shell-muted:#667085;--shell-line:#e3e8f2;--shell-accent:${BRAND.primary};--shell-warn-bg:#fff4e5;--shell-warn-text:#7a4b00;--shell-warn:#d97706;--shell-error:#b42318;--shell-error-bg:#fef3f2;--shell-success:#12805c;--shell-success-bg:#ecfdf3}
+:host([data-theme=dark]){--shell-focus:#7fd6cc;--shell-bg:#18222d;--shell-soft:#0f1720;--shell-text:#e6edf3;--shell-muted:#a8b5c3;--shell-line:#3a4756;--shell-accent:#7fd6cc;--shell-warn-bg:#33270f;--shell-warn-text:#f5c26b;--shell-warn:#f5c26b;--shell-error:#f97066;--shell-error-bg:#351a18;--shell-success:#6ce9a6;--shell-success-bg:#0f2a1f;color-scheme:dark}
+.launch{position:fixed;right:0;top:clamp(116px,calc(50% - 112px),calc(100dvh - 76px));transform:translateY(-50%);writing-mode:vertical-rl;writing-mode:sideways-lr;background:${BRAND.primary};color:#fff;border:0;
+  border-radius:12px 0 0 12px;padding:16px 10px;min-width:40px;min-height:104px;font:600 12px "Segoe UI",system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 16px rgba(16,75,73,.24);z-index:1;transition:background .15s,box-shadow .15s}
+.launch:hover{background:${BRAND.primaryDark};box-shadow:0 6px 20px rgba(16,75,73,.32)}
+.launch[aria-expanded=true]{visibility:hidden}
+.launch-tip{position:fixed;right:52px;top:clamp(116px,calc(50% - 112px),calc(100dvh - 76px));transform:translateY(-50%);z-index:3;width:min(270px,calc(100vw - 68px));box-sizing:border-box;padding:12px 14px;border:1px solid var(--shell-line);border-radius:12px;background:var(--shell-bg);color:var(--shell-text);box-shadow:0 8px 28px #0003;font:12px/1.45 "Segoe UI",system-ui,sans-serif}
+.launch-tip::after{content:"";position:absolute;right:-7px;top:calc(50% - 7px);width:12px;height:12px;background:var(--shell-bg);border-top:1px solid var(--shell-line);border-right:1px solid var(--shell-line);transform:rotate(45deg)}
+.launch-tip strong{display:block;font-size:13px;color:var(--shell-accent)}
+.launch-tip p{margin:5px 0 9px}.launch-tip button{border:0;border-radius:7px;background:${BRAND.primary};color:#fff;padding:6px 10px;font:inherit;font-weight:600;cursor:pointer}
+.launch-tip button:focus-visible{outline:3px solid var(--shell-focus);outline-offset:2px}
+.panel{position:fixed;top:0;right:0;height:100vh;height:100dvh;width:var(--dock-width,min(480px,100vw));box-shadow:-8px 0 36px rgba(0,0,0,.2);z-index:2;overscroll-behavior:contain}
+:host([data-dock=drawer]) .panel{top:var(--drawer-top,0px);height:calc(100dvh - var(--drawer-top,0px));border-top-left-radius:12px;overflow:hidden;box-shadow:-10px 0 40px rgba(0,0,0,.28)}
+.panel .grip{position:absolute;left:-5px;top:0;bottom:0;width:10px;cursor:ew-resize;z-index:1;touch-action:none}
+.panel .grip::after{content:"";position:absolute;left:4px;top:50%;width:3px;height:44px;margin-top:-22px;border-radius:2px;background:var(--shell-muted);opacity:0;transition:opacity .15s}
+.panel .grip:hover::after,.panel .grip:focus-visible::after,.panel .grip.drag::after{opacity:.7}
+.panel .grip:focus-visible{outline:2px solid var(--shell-focus);outline-offset:-2px}
+:host(:not([data-dock=side])) .panel .grip{display:none}
+.panel .panel-pin{display:inline-flex;align-items:center;justify-content:center;flex:none;width:32px;height:32px;padding:7px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--muted);cursor:pointer}
+.panel .panel-pin svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.panel .panel-pin:hover,.panel .panel-pin[aria-pressed=true]{background:var(--soft);border-color:var(--bord);color:var(--accent-text)}
+.panel .panel-pin:disabled{opacity:.55;cursor:wait}
+.launch:focus-visible,.toast button:focus-visible,.announcement button:focus-visible,.viewer :is(button,a):focus-visible{outline:3px solid var(--shell-focus);outline-offset:3px}
+.notifications{position:fixed;right:56px;bottom:16px;width:max-content;max-width:min(440px,calc(100vw - 72px));z-index:5;display:flex;flex-direction:column;align-items:flex-end;gap:8px;pointer-events:none}
+.notifications>*{pointer-events:auto;max-width:100%;box-sizing:border-box}
+.toast{--k:var(--shell-accent);background:var(--shell-bg);color:var(--shell-text);border:1px solid var(--shell-line);border-left:4px solid var(--k);padding:10px 8px 10px 12px;border-radius:10px;
+  width:max-content;max-width:100%;font:13px/1.45 "Segoe UI",system-ui,sans-serif;box-shadow:0 8px 28px rgba(16,24,40,.24);
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 6px;align-items:start}
+.toast .msg{grid-column:1;grid-row:1;white-space:pre-line;min-width:0;overflow-wrap:anywhere;padding-top:1px}
+.toast .title{display:block;font-weight:600}
+.toast .meta{color:var(--shell-muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.toast .sub{display:block;margin-top:2px;color:var(--shell-muted);font-size:12px}
+.toast .actions{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+.toast.busy .txt::before{content:"";display:inline-block;width:10px;height:10px;margin-right:7px;border:2px solid var(--shell-line);
+  border-top-color:var(--k);border-radius:50%;animation:uhdspin .8s linear infinite;vertical-align:-1px}
+@keyframes uhdspin{to{transform:rotate(360deg)}}
+.toast button{flex:none;min-height:32px;border:1px solid var(--shell-line);background:var(--shell-bg);color:var(--shell-text);border-radius:7px;padding:4px 10px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.toast .actions button:first-child{border-color:var(--k)}
+.toast button:hover{background:var(--shell-soft)}
+.toast button.close{grid-column:2;grid-row:1;margin:-4px -2px 0 0;border:0;background:none;color:var(--shell-muted);font-size:20px;font-weight:400;line-height:1;min-width:32px;padding:4px}
+.toast.success{--k:var(--shell-success)}.toast.warn{--k:var(--shell-warn)}.toast.danger{--k:var(--shell-error);background:var(--shell-error-bg)}
+.sr{position:fixed;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.panel:not([hidden]) ~ .notifications{right:calc(var(--dock-width,480px) + 44px);max-width:min(440px,calc(100vw - var(--dock-width,480px) - 60px))}
+@media(max-width:800px){:host(:not([data-dock=drawer])) .panel:not([hidden]) ~ .notifications{right:56px;bottom:80px;max-width:calc(100vw - 68px)}.notifications{right:56px;bottom:12px;max-width:calc(100vw - 68px)}}
+:host([data-dock=bottom]) .panel{top:auto;bottom:0;width:100vw;height:var(--dock-height);box-shadow:0 -8px 36px rgba(0,0,0,.2)}
+:host([data-dock=bottom]) .panel:not([hidden]) ~ .notifications{right:56px;bottom:calc(var(--dock-height) + 12px);max-width:calc(100vw - 68px)}
+.announcement{width:360px;max-height:60vh;max-height:60dvh;overflow:auto;overscroll-behavior:contain;pointer-events:auto;padding:10px 12px;border:1px solid var(--shell-line);border-left:3px solid var(--shell-accent);border-radius:12px;background:var(--shell-bg);color:var(--shell-text);box-shadow:0 6px 24px #0002;font:12px/1.45 "Segoe UI",system-ui,sans-serif}
+.announcement[hidden]{display:none}.announcement.scrollable{pointer-events:auto}
+.announcement .head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.announcement strong{flex:1;color:var(--shell-accent);font-size:12px}
+.announcement.outage{width:380px;border-left:4px solid #d97706;background:var(--shell-warn-bg);box-shadow:0 8px 30px rgba(130,68,0,.24)}
+.announcement.outage strong{color:var(--shell-warn-text);font-size:13px}
+.announcement .subtitle{color:var(--shell-muted);font-size:11px;margin-bottom:6px}
+.announcement .close{flex:none;width:26px;height:26px;pointer-events:auto;border:0;border-radius:7px;background:none;color:var(--shell-muted);font-size:19px;cursor:pointer}
+.announcement .close:hover{background:var(--shell-soft)}
+.announcement .announcement-body :is(p,ul,ol,blockquote,pre,table){margin:4px 0}
+.announcement .announcement-body a[href]{pointer-events:auto}
+.announcement-body{min-height:0;overflow:visible;white-space:normal;line-height:1.65;overflow-wrap:anywhere}
+.announcement-body img{max-width:100%;height:auto}.announcement-body a[href]{color:var(--shell-accent);text-decoration:underline}
+.announcement-body :is(h1,h2,h3){line-height:1.35}.announcement-body table{display:block;max-width:100%;overflow:auto;border-collapse:collapse}
+.announcement-body :is(td,th){border:1px solid var(--shell-line);padding:6px}
+@media(prefers-reduced-motion:reduce){.launch{transition:none}.toast.busy .txt::before{animation:none}}
+.viewer{position:fixed;inset:0;background:rgba(16,24,40,.55);z-index:4;display:flex;align-items:center;justify-content:center}
+:host([data-dock=side]) .panel:not([hidden]) ~ .viewer{right:var(--dock-width)}
+.viewer .box{background:var(--shell-bg);width:min(1000px,calc(100% - 24px));height:min(92dvh,calc(100% - 16px));border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.35);font:13px/1.4 "Segoe UI",system-ui,sans-serif;color:var(--shell-text)}
+.viewer .bar{display:flex;gap:10px;align-items:center;padding:10px 12px;background:${BRAND.primary};color:#fff;flex-wrap:wrap}
+.viewer .bar b{flex:1;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.viewer .bar a,.viewer .bar button{color:#fff;border:1px solid rgba(255,255,255,.6);background:none;border-radius:6px;padding:8px 10px;font:inherit;cursor:pointer;text-decoration:none}
+.viewer .bar :is(a,button):focus-visible{outline-color:#fff}
+.viewer iframe{flex:1;border:0;width:100%}
+.viewer iframe.htmldoc{background:#fff;color-scheme:light}
+.viewer .imgdoc{flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:12px;background:var(--shell-soft)}
+.viewer .imgdoc img{max-width:100%;height:auto}
+.viewer .msg{padding:28px;color:var(--shell-text)}
+.viewer .dp-body{flex:1;overflow:auto;overscroll-behavior:contain;padding:12px 14px;background:var(--shell-bg)}
+.viewer .dp-muted{color:var(--shell-muted);font-size:12px;margin:6px 0}
+.viewer .dp-err{color:var(--shell-error);margin:6px 0}
+.viewer .dp-tablewrap{max-height:320px;overflow:auto}
+.viewer .dp-table thead th{position:sticky;top:0;background:var(--shell-bg);z-index:1}
+.viewer .dp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.viewer .dp-card{border:1px solid var(--shell-line);border-radius:10px;padding:10px 12px}
+.viewer .dp-card h4{margin:0 0 6px;font-size:13px}
+.viewer .dp-card div{margin:2px 0}
+.viewer .tebligat-panel{display:grid;gap:18px;max-width:1080px;width:100%;margin:0 auto}
+.viewer .te-form{padding:18px;min-width:0}
+.viewer .te-form h4{font-size:16px;margin:0 0 8px}
+.viewer .te-form :is(.te-fields,.te-field,.te-document,.te-actions,.te-status){margin:0}
+.viewer .te-fields{display:grid;grid-template-columns:minmax(190px,.8fr) minmax(0,1.2fr);gap:14px;margin-top:18px!important}
+.viewer .te-field{display:grid;gap:7px;min-width:0}
+.viewer .te-field label{color:var(--shell-muted);font-size:13px}
+.viewer .te-field :is(input,select){width:100%;min-height:40px;box-sizing:border-box;border:1px solid var(--shell-line);border-radius:8px;background:var(--shell-bg);color:var(--shell-text);padding:9px 11px;font:inherit}
+.viewer .te-field input{font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.viewer .te-document-picker{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 12px;align-items:end;margin-top:16px!important}
+.viewer .te-document-picker>.dp-muted{grid-column:1/-1;margin:0;line-height:1.55}
+.viewer .te-document-picker>.chip{min-height:40px}
+.viewer .te-document-actions{display:flex;flex-wrap:wrap;gap:8px}
+.viewer .te-document-actions>.chip{min-height:40px}
+.viewer .tebligat-panel :is(button,input,select,a):focus-visible{outline:2px solid var(--shell-focus);outline-offset:3px}
+.viewer .te-document{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:12px!important}
+.viewer .te-document-label{color:var(--shell-muted);font-size:12px;overflow-wrap:anywhere;flex:1;min-width:150px}
+.viewer .te-actions{display:flex;align-items:center;gap:10px;margin-top:18px!important}
+.viewer .te-actions button{min-height:38px}
+.viewer .te-provider-hint{color:var(--shell-muted);font-size:12px;line-height:1.6;margin:12px 0 0}
+.viewer .te-status{font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+.viewer .te-status:not(:empty){padding:10px 12px;border-radius:8px;background:var(--shell-soft);margin-top:12px!important}
+.viewer .te-status.err{color:var(--shell-error)}
+.viewer .te-candidates{display:flex;flex-wrap:wrap;gap:8px;min-width:0;border:1px solid var(--shell-line);border-radius:8px;padding:12px;margin:14px 0 0}
+.viewer .te-candidates legend{font-size:12px;color:var(--shell-muted);padding:0 5px}
+.viewer .te-results{border:1px solid var(--shell-line);border-radius:12px;padding:18px;min-width:0}
+.viewer .te-document-records{background:var(--shell-soft)}
+.viewer .te-document-records .te-tablewrap{margin-top:14px}
+.viewer .te-result-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.viewer .te-result-head>div{min-width:0;overflow-wrap:anywhere}
+.viewer .te-result-head h3{font-size:18px;line-height:1.4;margin:5px 0 8px}
+.viewer .te-result-head>a{flex-shrink:0;text-decoration:none}
+.viewer .te-source{color:var(--shell-muted);font-size:12px}
+.viewer .te-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 22px;margin:18px 0}
+.viewer .te-details>div{padding:9px 0;border-bottom:1px solid var(--shell-line);min-width:0}
+.viewer .te-details dt{color:var(--shell-muted);font-size:12px;margin-bottom:4px}
+.viewer .te-details dd{margin:0;font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+.viewer .te-events-title{display:flex;align-items:center;gap:8px;font-size:14px;margin:20px 0 10px}
+.viewer .te-tablewrap{overflow:auto;border:1px solid var(--shell-line);border-radius:8px}
+.viewer .te-table{border-collapse:collapse;width:100%;font-size:13px;line-height:1.5;text-align:left}
+.viewer .te-table th{color:var(--shell-muted);background:var(--shell-soft);font-size:12px;font-weight:500}
+.viewer .te-table :is(th,td){padding:10px 12px;vertical-align:top;border-bottom:1px solid var(--shell-line);overflow-wrap:anywhere}
+.viewer .te-table tr:last-child td{border-bottom:0}
+.viewer .te-date{white-space:nowrap;font-variant-numeric:tabular-nums}
+.viewer :is(.te-candidates,.te-results)[hidden]{display:none}
+.viewer .dp-k{color:var(--shell-muted)}
+.viewer .dp-body:has(>.dp-overview){min-height:0;overflow:hidden}
+.viewer .dp-overview{height:100%;min-height:0;display:grid;grid-template-rows:clamp(152px,26%,172px) minmax(0,1fr);gap:12px}
+.viewer .dp-overview-main{min-height:0;display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);gap:12px}
+.viewer .dp-summary{min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:6px}
+.viewer .dp-summary-grid{min-height:0;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:12px}
+.viewer :is(.dp-summary,.dp-finance) .dp-card,.viewer .dp-summary-parties{min-width:0;min-height:0;display:flex;flex-direction:column;padding:12px;border-radius:12px}
+.viewer .dp-summary-parties{margin:0}
+.viewer :is(.dp-summary,.dp-finance) .dp-card h4,.viewer .dp-summary-parties h4{flex:none;margin:0 0 8px;font-size:14px}
+.viewer .dp-summary-scroll{min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;flex:1;margin:0!important}
+.viewer .dp-summary-scroll>:last-child{margin-bottom:0}
+.viewer .dp-summary-scroll:focus-visible{outline:2px solid var(--shell-focus);outline-offset:-2px;border-radius:4px}
+.viewer .dp-summary-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;align-content:start}
+.viewer .dp-card .dp-summary-row{display:grid;grid-template-columns:minmax(100px,.8fr) minmax(0,1.2fr);gap:8px 16px;margin:0;padding:7px 0;border-bottom:1px solid var(--shell-line);line-height:1.5}
+.viewer .dp-summary-grid .dp-summary-row{grid-template-columns:minmax(70px,.65fr) minmax(0,1.35fr);padding:2px 0;border:0;line-height:1.4;gap:6px 10px}
+.viewer .dp-summary-row:last-child{border-bottom:0}
+.viewer .dp-summary-row :is(.dp-k,.dp-v){min-width:0;overflow-wrap:anywhere}
+.viewer .dp-summary-row .dp-v .dp-muted{margin:0}
+.viewer .dp-status{display:inline-block;padding:2px 8px;border-radius:6px;background:var(--shell-soft);font-weight:600}
+.viewer .dp-status.open{color:var(--shell-success)}
+.viewer .dp-status.closed{color:var(--shell-muted)}
+.viewer .dp-summary-source{color:var(--shell-muted);font-size:12px;line-height:1.5;margin:0}
+.viewer .dp-summary-count{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--shell-soft);color:var(--shell-muted);font-size:12px;font-weight:500}
+.viewer .dp-summary-parties .dp-tablewrap{max-height:none;border:1px solid var(--shell-line);border-radius:8px}
+.viewer .dp-overview-finance{min-width:0;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px}
+.viewer .dp-overview-finance>.dp-baslik{margin:0;font-size:14px}
+.viewer .dp-finance{min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:8px;margin:0}
+.viewer .dp-finance-grid{min-height:0;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:12px}
+.viewer .dp-finance-side{min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr);gap:12px}
+.viewer .dp-finance .dp-finance-followup{display:block}
+.viewer .dp-finance-followup>summary{font-size:14px;font-weight:600;cursor:pointer;line-height:20px}
+.viewer .dp-finance-followup>.dp-summary-scroll{max-height:130px;margin-top:8px!important}
+.viewer .dp-card .dp-money-row{grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:3px 0}
+.viewer .dp-money-row .dp-v{text-align:right;font-weight:600;font-size:14px;font-variant-numeric:tabular-nums}
+.viewer .dp-money-row .dp-v.dp-muted{font-size:12px;font-weight:400}
+.viewer .dp-money-row.dp-strong{margin-top:6px;padding:8px;background:var(--shell-soft);border:0;border-radius:8px}
+.viewer .dp-summary-notice{padding:6px 8px;border-left:3px solid var(--shell-warn-text);border-radius:6px;background:var(--shell-warn-bg);color:var(--shell-warn-text);font-size:12px;line-height:1.4}
+.viewer .dp-finance-loading,.viewer .dp-finance-error{min-height:0;overflow:auto;padding:12px;border:1px solid var(--shell-line);border-radius:12px}
+.viewer .dp-finance-error button{margin-top:8px}
+.viewer .dp-strong{font-weight:700}
+.viewer .dp-actions{margin:10px 0}
+.viewer .dp-go{display:inline-flex;align-items:center;text-decoration:none;border:0;background:${BRAND.primary};color:#fff;border-radius:8px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer}
+.viewer .dp-go:disabled{opacity:.5;cursor:default}
+.viewer .dp-tablewrap{overflow:auto;max-width:100%}
+.viewer .dp-table{border-collapse:collapse;font-size:12px;width:100%}
+.viewer .dp-table th,.viewer .dp-table td{border:1px solid var(--shell-line);padding:4px 6px;text-align:left;vertical-align:top}
+.viewer .dp-table th{background:var(--shell-soft);font-weight:600}
+.viewer .dp-table td.nw{white-space:nowrap}
+.viewer .dp-parties-table :is(th,td){padding:7px 10px;border:0;border-bottom:1px solid var(--shell-line);line-height:1.5;overflow-wrap:anywhere}
+.viewer .dp-parties-table tbody tr:last-child td{border-bottom:0}
+.viewer .dp-parties-table th{background:var(--shell-soft)}
+.viewer .dp-parties-table td:first-child{width:20%;color:var(--shell-muted)}
+.viewer .dp-parties-table td.nw{white-space:normal}
+.viewer .sf{min-width:0}
+.viewer .sf-head{display:flex;gap:14px;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.viewer .sf-head h3{margin:0 0 7px;font-size:17px}
+.viewer .sf-meta{display:flex;gap:6px 14px;align-items:center;flex-wrap:wrap;font-size:12px;line-height:1.5}
+.viewer .sf-actions{display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0}
+.viewer .sf-actions button{min-height:38px}
+.viewer .sf-status{background:var(--shell-soft);border-radius:8px;padding:11px 13px;font-size:12px;line-height:1.6;margin:10px 0}
+.viewer .sf-wait{font-size:12px;line-height:1.6;margin:10px 0}
+.viewer .sf input[type=search]{box-sizing:border-box;width:100%;margin:8px 0 14px;padding:10px 12px;border:1px solid var(--shell-line);border-radius:8px;background:var(--shell-bg);color:var(--shell-text);font:inherit;font-size:12px}
+.viewer .sf-list{min-width:0}
+.viewer .sf-empty{padding:24px 16px;border:1px solid var(--shell-line);border-radius:10px;color:var(--shell-muted);font-size:13px;line-height:1.6;text-align:center}
+.viewer .sf-table{table-layout:fixed}
+.viewer .sf-table :is(th,td){border:0;border-bottom:1px solid var(--shell-line);padding:12px;line-height:1.6;overflow-wrap:anywhere;white-space:pre-wrap}
+.viewer .sf-table th:first-child{width:125px}
+.viewer .sf-table th:nth-child(2){width:24%}
+.viewer .sf-table small{display:block;color:var(--shell-muted);font-size:11px;margin-top:6px}
+.viewer .sf-table tbody tr:last-child td{border-bottom:0}
+.viewer .sf :is(button,input):focus-visible{outline:2px solid var(--shell-focus);outline-offset:3px}
+@container ekran (max-width:600px){.viewer .sf-head{flex-direction:column}.viewer .sf-table thead{display:none}.viewer .sf-table :is(tbody,tr,td){display:block}.viewer .sf-table tr{padding:10px 12px;border:1px solid var(--shell-line);border-radius:9px;margin-bottom:10px}.viewer .sf-table td{padding:5px 0;border:0}.viewer .sf-table td::before{content:attr(data-label) ': ';color:var(--shell-muted);font-size:11px}.viewer .sf-table td.sf-date{color:var(--shell-muted)}}
+.viewer .dp-kv div{margin:2px 0}
+.viewer .dp-sub{margin:6px 0;padding-left:8px;border-left:2px solid var(--shell-line)}
+.viewer .dp-more{margin-top:10px;font-size:12px}
+.viewer .gezinme{display:inline-flex;align-items:center;gap:6px}
+.viewer .konum{min-width:56px;text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+.viewer .box.ekran{width:min(1280px,calc(100% - 24px));container:ekran/inline-size}
+.viewer .ek-banka table{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+.viewer .ek-banka-grup{border:1px solid var(--shell-line);border-radius:8px;margin-top:8px;overflow:hidden}
+.viewer .ek-banka-grup summary{padding:10px 12px;cursor:pointer;font-weight:600}
+.viewer .ek-banka-grup summary small{float:right;margin-left:12px}
+.viewer .ek-banka-grup summary:focus-visible{outline:2px solid var(--shell-focus);outline-offset:-2px}
+.viewer .ek-banka-grup[open] summary{border-bottom:1px solid var(--shell-line)}
+.viewer .ek-banka-grup table{margin:0}
+.viewer .ek-banka :is(th,td){text-align:left;padding:4px 6px;border-bottom:1px solid var(--shell-line);vertical-align:top}
+.viewer .ek-banka th{color:var(--shell-muted);font-weight:600}
+.viewer .ek-banka td:last-child{text-align:right;width:1%;white-space:nowrap}
+.viewer .ek-banka .bc-haciz{color:var(--shell-success);font-weight:600}
+.viewer .ek-banka .bc-bakiye{color:var(--shell-warn-text)}
+.viewer .ek-banka .bc-yok,.viewer .ek-banka .bc-bos{color:var(--shell-muted)}
+.viewer .ek-banka .bc-belirsiz{color:var(--shell-warn-text)}
+.viewer .ek-banka small{color:var(--shell-muted);font-weight:400}
+.viewer .ek-banka-eylem{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.viewer .ek-banka-eylem :disabled{opacity:.45;cursor:default}
+.viewer :is(.ek-banka,.ek-banka-takip){margin-top:18px;padding:16px;border-radius:12px;min-width:0}
+.viewer :is(.ek-banka,.ek-banka-takip)>h4{font-size:14px;margin-bottom:8px}
+.viewer .ek-banka-panel>:is(.ek-banka,.ek-banka-takip):first-child{margin-top:0}
+.viewer .ek-banka-borclu{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:12px;margin:16px 0!important}
+.viewer .ek-banka-borclu>button,.viewer .ek-banka-takip>.ek-banka-eylem>button{min-height:38px}
+.viewer .ek-banka-takip>.ek-banka-eylem{gap:8px;margin:12px 0}
+.viewer .ek-banka-field{display:flex;flex-direction:column;gap:5px;width:100%;font-size:12px;color:var(--shell-muted)}
+.viewer .ek-banka-field select{box-sizing:border-box;width:100%;min-height:36px;max-width:100%;padding:6px 8px;border:1px solid var(--shell-line);border-radius:7px;background:var(--shell-bg);color:var(--shell-text);font:inherit}
+.viewer .ek-banka-help{font-size:12px;color:var(--shell-muted);margin-top:12px}
+.viewer .ek-banka-help summary{cursor:pointer;width:fit-content;padding:4px 0}
+.viewer .ek-banka-help p{margin:8px 0 0;line-height:1.6;max-width:85ch}
+.viewer .ek-banka-status{padding:10px 12px;background:var(--shell-soft);border-radius:8px;line-height:1.5;overflow-wrap:anywhere}
+.viewer .ek-banka-saved:empty{display:none}
+.viewer .ek-banka-saved{display:grid;gap:0;margin-top:12px!important}
+.viewer .ek-banka-kayit{display:flex;gap:10px 14px;align-items:center;flex-wrap:wrap;margin:0!important;padding:10px 0;border-bottom:1px solid var(--shell-line)}
+.viewer .ek-banka-kayit:last-child{border-bottom:0}
+.viewer .ek-banka-kayit b{min-width:140px;overflow-wrap:anywhere}
+.viewer .ek-banka-kayit .dp-muted{flex:1;margin:0}
+.viewer .ek-banka-kayit button{min-height:32px}
+.viewer .ek-banka .ek-banka-eylem{gap:8px;margin:12px 0}
+.viewer .ek-banka-grup summary{display:flex;gap:12px;align-items:center;min-height:32px;flex-wrap:wrap}
+.viewer .ek-banka-grup summary small{float:none;margin-left:auto}
+.viewer .ek-banka-grup :is(th,td){padding:10px 12px;line-height:1.5}
+.viewer .ek-banka-grup summary .chip{min-width:54px}
+.viewer .ek-banka table td:nth-child(2){overflow-wrap:anywhere}
+.viewer :is(.dp-summary,.dp-finance,.ek-banka,.ek-banka-takip) :is(button,select,summary):focus-visible{outline:2px solid var(--shell-focus);outline-offset:3px}
+.viewer .paket-motor{position:absolute;left:-10000px;top:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none}
+.viewer .ek-paket-ac{align-self:flex-start;font-weight:600}
+.viewer a.chip{text-decoration:none;display:inline-flex;align-items:center}
+.viewer .ek-paket{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--shell-accent);border-radius:8px;background:var(--shell-bg);font-size:12px}
+.viewer .ek-paket-ust{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between}
+.viewer .ek-paket-eylem{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.viewer .ek-paket .dp-go{padding:4px 10px;font-size:12px}
+.viewer .ek-paket :is(button,select):disabled{opacity:.45;cursor:default}
+.viewer .ek-paket-sira{font:inherit;font-size:12px;border:1px solid var(--shell-line);border-radius:6px;background:var(--shell-bg);color:var(--shell-text);padding:2px 4px;max-width:100%}
+.viewer .ek-paket-durum{color:var(--shell-muted);overflow-wrap:anywhere}
+.viewer .ek-paket-durum p{margin:0 0 4px}
+.viewer .ek-paket-durum ul{margin:4px 0 0;padding-left:16px}
+.viewer .ek-paket-durum li{margin:3px 0}
+.viewer .ek-oge.paketli{display:flex;gap:6px;align-items:flex-start}
+.viewer .ek-oge.paketli .ek-oge-metin{flex:1;min-width:0}
+.viewer .ek-paket-kutu{flex:none;width:16px;height:16px;margin:1px 0 0;accent-color:var(--shell-accent);cursor:pointer}
+.viewer .ek-paket-no{flex:none;min-width:20px;padding:0 5px;border-radius:9px;background:var(--shell-accent);color:#fff;font-size:11px;font-weight:700;text-align:center;line-height:18px}
+.viewer .ek-paket-panel{padding:16px 18px;overflow:auto;max-width:860px}
+.viewer .ek-paket-panel h3{margin:0 0 4px;font-size:15px}
+.viewer .ek-paket-liste{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.viewer .ek-paket-satir{display:flex;gap:6px;align-items:center;padding:6px 8px;border:1px solid var(--shell-line);border-radius:7px;background:var(--shell-bg)}
+.viewer .ek-paket-satir.tasiniyor{border-color:var(--shell-accent);box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.viewer .ek-paket-ad{flex:1;min-width:0}
+.viewer .ek-paket-ad b{display:block;font-size:12px;overflow-wrap:anywhere}
+.viewer .ek-paket-ad small{display:block;color:var(--shell-muted);font-size:11px}
+.viewer .ek-paket-tutamak{cursor:grab;touch-action:none}
+.viewer .ek-paket-satir :disabled{opacity:.45;cursor:default}
+.viewer .ti{max-width:760px;display:flex;flex-direction:column;gap:12px}
+.viewer .ti h3{margin:0;font-size:15px}
+.viewer .ti p{margin:0}
+.viewer .ti-alan{border:1px solid var(--shell-line);border-radius:8px;padding:8px 12px 10px;margin:0;display:flex;flex-direction:column;gap:6px}
+.viewer .ti-alan legend{padding:0 4px;font-weight:600}
+.viewer .ti-kapsam{display:flex;flex-direction:column;gap:4px}
+.viewer .ti-tur-arac{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.viewer .ti-tur-arac input{flex:1;min-width:140px}
+.viewer .ti-tur-liste{max-height:220px;overflow:auto;display:flex;flex-direction:column;gap:6px;padding:4px 2px;overscroll-behavior:contain}
+.viewer .ti-tur-liste .ti-secenek>span{flex:1;min-width:0;overflow-wrap:anywhere}
+.viewer .ti-tur-liste small{font-variant-numeric:tabular-nums}
+.viewer .ti-tur :is(select,input[type=search]){box-sizing:border-box;max-width:100%;min-width:0;border:1px solid var(--shell-line);border-radius:7px;padding:9px;background:var(--shell-bg);color:var(--shell-text);font:inherit}
+.viewer .ti :is(button,input,select):focus-visible{outline:2px solid var(--shell-focus);outline-offset:2px}
+.viewer .ti-secenek{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.viewer .ti-secenek input{margin:2px 0 0;accent-color:var(--shell-accent)}
+.viewer .ti-secenek small{display:block;color:var(--shell-muted)}
+.viewer .ti-eylem{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.viewer .ti-eylem :is(button,a):disabled{opacity:.45;cursor:default}
+.viewer .ti progress{width:100%;height:8px;accent-color:var(--shell-accent)}
+.viewer [hidden]{display:none!important}
+.viewer .ek-sekmebar{display:flex;align-items:end;flex-wrap:wrap;gap:6px;padding:8px 12px 0;border-bottom:1px solid var(--shell-line);background:var(--shell-soft)}
+.viewer .ek-sekmeler{display:flex;flex-wrap:wrap;gap:4px}
+.viewer .ek-notlar{max-width:850px;display:flex;flex-direction:column;gap:10px}
+.viewer .ek-notlar textarea{box-sizing:border-box;width:100%;min-height:220px;resize:vertical;border:1px solid var(--shell-line);border-radius:8px;background:var(--shell-bg);color:var(--shell-text);padding:10px;font:inherit;line-height:1.5}
+.viewer .ek-notlar textarea:focus-visible{outline:2px solid var(--shell-focus);outline-offset:2px}
+.viewer .ek-not-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.viewer .ek-not-status{font-size:12px;color:var(--shell-muted)}
+.viewer .ek-not-status.err{color:var(--shell-warn-text)}
+.viewer .ek-sekmeler [role=tab]{flex:none;border:1px solid transparent;border-bottom:0;background:none;border-radius:8px 8px 0 0;padding:8px 12px;font:inherit;cursor:pointer;color:var(--shell-text)}
+.viewer .ek-sekmeler [role=tab].on{background:var(--shell-bg);border-color:var(--shell-line);color:var(--shell-accent);font-weight:600;margin-bottom:-1px}
+.viewer .ek-govde{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--shell-bg)}
+.viewer .ek-evrak{flex:1;min-height:0;display:grid;grid-template-columns:minmax(220px,300px) minmax(0,1fr)}
+.viewer .ek-liste{display:flex;flex-direction:column;gap:6px;min-height:0;padding:8px;border-right:1px solid var(--shell-line);background:var(--shell-soft)}
+.viewer .ek-gruplar{display:flex;flex-wrap:wrap;gap:4px}
+.viewer .ek-zip-status{color:var(--shell-muted);overflow-wrap:anywhere}
+.viewer .ek-zip-status.err{color:var(--shell-warn-text)}
+.viewer .chip{border:1px solid var(--shell-line);background:var(--shell-bg);color:var(--shell-text);border-radius:7px;min-height:28px;padding:3px 9px;font:inherit;font-size:12px;cursor:pointer}
+.viewer .chip.on{border-color:var(--shell-accent);color:var(--shell-accent);font-weight:600}
+.viewer .ek-ara{border:1px solid var(--shell-line);border-radius:7px;padding:6px 8px;font:inherit;background:var(--shell-bg);color:var(--shell-text);min-width:0}
+.viewer .ek-ogeler{flex:1;min-height:0;overflow:auto;overflow-anchor:none;overscroll-behavior:contain;display:flex;flex-direction:column;gap:2px;border-radius:7px}
+    .viewer .ek-ogeler:focus-visible{outline:2px solid var(--shell-focus);outline-offset:1px}
+    .viewer .ek-liste-arac{display:flex;gap:5px;flex-wrap:wrap;align-items:center;min-width:0}
+    .viewer .ek-liste-arac .ek-ara{flex:1 1 140px;min-width:0;width:0}
+    .viewer .ek-liste-arac .chip{flex:none;min-height:32px;padding:5px 8px}
+    .viewer .ek-kategori{flex:none;min-width:0;border-bottom:1px solid var(--shell-line)}
+    .viewer .ek-kategori-baslik{display:flex;align-items:flex-start;gap:7px;list-style:none;padding:9px 7px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:650;line-height:1.45;overflow-wrap:anywhere}
+    .viewer .ek-kategori-baslik::-webkit-details-marker{display:none}
+    .viewer .ek-kategori-ok{flex:none;width:8px;margin-top:1px;transition:transform .12s}
+    .viewer .ek-kategori[open]>.ek-kategori-baslik .ek-kategori-ok{transform:rotate(90deg)}
+    .viewer .ek-klasor{flex:none;width:15px;height:11px;margin-top:4px;border:1.5px solid currentColor;border-radius:2px;position:relative;opacity:.8}
+    .viewer .ek-klasor:before{content:'';position:absolute;width:6px;height:3px;left:0;top:-4px;border:1.5px solid currentColor;border-bottom:0;border-radius:2px 2px 0 0}
+    .viewer .ek-kategori-icerik{display:flex;flex-direction:column;gap:2px;padding:0 0 6px 12px}
+    .viewer .ek-kategori-baslik:hover,.viewer .ek-kategori-baslik.odak{background:var(--shell-bg)}
+    .viewer .ek-ogeler:focus-visible .odak{outline:2px solid var(--shell-focus);outline-offset:-2px}
+.viewer .ek-oge{padding:6px 8px;border-radius:7px;cursor:pointer;border:1px solid transparent}
+.viewer .ek-oge b{display:block;font-weight:600;font-size:12px;overflow-wrap:anywhere}
+.viewer .ek-oge small{display:block;color:var(--shell-muted);font-size:11px}
+.viewer .ek-oge:hover{background:var(--shell-bg)}
+.viewer .ek-oge.on{background:var(--shell-bg);border-color:var(--shell-accent)}
+.viewer .ek-oge.ek-alt{margin-left:14px;border-left:2px solid var(--shell-line);border-radius:0 7px 7px 0}
+.viewer .ek-oge.ek-alt.on{border-left-color:var(--shell-accent)}
+.viewer .ek-rozet{display:inline-block;margin-right:6px;padding:0 5px;border:1px solid var(--shell-line);border-radius:4px;font-size:10.5px;font-weight:600;line-height:16px;color:var(--shell-muted);vertical-align:1px}
+.viewer .ek-onizleme{display:flex;flex-direction:column;min-width:0;min-height:0}
+.viewer .ek-onizleme:focus{outline:none}
+.viewer .ek-onbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 10px;border-bottom:1px solid var(--shell-line);font-size:12px}
+.viewer .ek-onbar .ek-evrakad{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.viewer .ek-onbar :is(a,button){display:inline-flex;align-items:center;border:1px solid var(--shell-line);border-radius:6px;background:var(--shell-bg);color:var(--shell-text);padding:4px 9px;font:inherit;cursor:pointer;text-decoration:none;min-height:28px}
+.viewer .ek-onbar :is(a,button):hover{background:var(--shell-soft)}
+.viewer .ek-onbar button:disabled{opacity:.45;cursor:default}
+.viewer .dp-baslik{margin:14px 0 6px;font-size:13px}
+.viewer .bar .ek-sira button{padding:6px 10px}
+.viewer .bar .ek-sira button:disabled{opacity:.45;cursor:default}
+.viewer .ek-onbar .ek-goruldu{border-color:var(--shell-accent);color:var(--shell-accent);font-weight:600}
+.viewer .ek-onbar .ek-goruldu:disabled{opacity:.7;cursor:default}
+@container ekran (max-width:760px){.viewer .ek-evrak{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(120px,35%) minmax(0,1fr)}.viewer .ek-liste{border-right:0;border-bottom:1px solid var(--shell-line)}}
+@container ekran (max-width:760px){.viewer .dp-body:has(>.dp-overview){overflow:auto}.viewer .dp-overview{height:auto;display:block}.viewer .dp-summary,.viewer .dp-summary-grid,.viewer .dp-overview-main,.viewer .dp-overview-finance,.viewer .dp-finance,.viewer .dp-finance-grid,.viewer .dp-finance-side{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto;gap:12px}.viewer .dp-summary-fields{grid-template-columns:minmax(0,1fr)}.viewer .dp-overview-main,.viewer .dp-overview>.dp-summary-parties{margin-top:12px}.viewer .dp-summary-scroll{flex:none;max-height:320px}.viewer .dp-summary-parties .dp-tablewrap{max-height:320px}.viewer .dp-finance-account .dp-summary-scroll{max-height:420px}}
+@container ekran (max-width:460px){.viewer .ek-banka-borclu{grid-template-columns:minmax(0,1fr)}.viewer .ek-banka-borclu>button{justify-self:start}}
+@container ekran (max-width:600px){.viewer .te-fields,.viewer .te-document-picker{grid-template-columns:minmax(0,1fr)}.viewer .te-document-picker>.dp-muted{grid-column:auto}.viewer .te-result-head{flex-wrap:wrap}.viewer .te-details{grid-template-columns:minmax(0,1fr)}.viewer .te-form,.viewer .te-results{padding:14px}.viewer .te-table thead{display:none}.viewer .te-table :is(tbody,tr,td){display:block}.viewer .te-table tr{padding:9px 12px;border-bottom:1px solid var(--shell-line)}.viewer .te-table tr:last-child{border-bottom:0}.viewer .te-table td{border:0;padding:3px 0;white-space:normal}.viewer .te-table td::before{content:attr(data-label) ': ';color:var(--shell-muted);font-size:12px}.viewer .te-table td:first-child{padding-bottom:6px}}
+@container ekran (max-width:460px){.viewer .dp-body{padding:12px}.viewer :is(.dp-summary,.dp-finance) .dp-card,.viewer :is(.dp-summary-parties,.ek-banka,.ek-banka-takip){padding:12px}.viewer .dp-card .dp-summary-row{grid-template-columns:minmax(90px,.7fr) minmax(0,1fr);gap:6px 10px}.viewer .dp-card .dp-money-row{grid-template-columns:minmax(0,1fr) auto;gap:10px}.viewer .dp-summary-parties .dp-tablewrap{max-height:360px}.viewer .dp-parties-table thead{display:none}.viewer .dp-parties-table :is(tbody,tr,td){display:block}.viewer .dp-parties-table tr{padding:8px 10px;border-bottom:1px solid var(--shell-line)}.viewer .dp-parties-table tr:last-child{border-bottom:0}.viewer .dp-parties-table td{border:0;padding:3px 0}.viewer .dp-parties-table td:first-child{width:auto}.viewer .dp-parties-table td::before{content:attr(data-label) ': ';color:var(--shell-muted);font-size:12px}.viewer .ek-banka-kayit{align-items:flex-start}.viewer .ek-banka-kayit b{width:100%}.viewer .ek-banka-grup :is(th,td){padding:8px 6px}.viewer .ek-banka-grup summary{gap:8px}.viewer .ek-banka-grup summary small{margin-left:0}.viewer .ek-banka-grup summary .chip{margin-left:auto}}
+.viewer .docbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 12px;border-bottom:1px solid var(--shell-line);background:var(--shell-bg);font-size:12px}
+.viewer .docbar .docbilgi{flex:1;min-width:0;color:var(--shell-muted)}
+.viewer .docbar button{min-height:28px;border:1px solid var(--shell-line);border-radius:6px;background:var(--shell-bg);color:var(--shell-text);padding:3px 9px;font:inherit;cursor:pointer}
+.viewer .docbar button:hover{background:var(--shell-soft)}
+.viewer .docbar .zoom{display:inline-flex;align-items:center;gap:4px}
+.viewer .docbar .sayfa-git{display:inline-flex;align-items:center;gap:4px;color:var(--shell-muted);white-space:nowrap}
+.viewer .docbar .sayfa-no{min-width:4ch;min-height:26px;box-sizing:content-box;border:1px solid var(--shell-line);border-radius:6px;background:var(--shell-bg);color:var(--shell-text);font:inherit;text-align:center;padding:1px 4px}
+.viewer .docbar .sayfa-no:focus-visible{outline:2px solid var(--shell-focus);outline-offset:1px}
+.viewer .docbar .yuzde{min-width:52px;font-variant-numeric:tabular-nums}
+.viewer .docuyari{padding:6px 12px;border-bottom:1px solid var(--shell-line);background:var(--shell-warn-bg);color:var(--shell-warn-text);font-size:12px}
+.viewer .docview{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;background:var(--shell-soft)}
+.viewer .docview:focus-visible{outline:3px solid var(--shell-focus);outline-offset:-3px}
+.viewer .docyer{padding:28px;color:var(--shell-muted)}
+.viewer .box:focus{outline:none}
+${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff && globalThis.UHD.tiff.CSS) || ''}
+[hidden]{display:none!important}
+`;
+  let panel, ui, launch, introTip, pinButton, shadowRoot, focusBeforePanel, announcementEl, notificationArea, liveRegion, alertRegion, welcomeHost, welcomeShadow;
+  let pagePrefs = {};
+  let prefsLoaded = false, prefsRevision = 0, pinSaving = false, panelEpoch = 0, outsideCloseTimer = null;
+  let launcherIntroSeen = false, launcherIntroPending = false;
+  let accessMenuHeading = null, accessMenuOpen = false, accessMenuTimer = null;
+  // panelWanted: kullanıcı paneli açık istiyor. Evrak görüntüleyici, dosya paneli ya da erişilebilirlik menüsü
+  // paneli geçici gizler; bunlar kapanınca panel geri gelir. Yalnız kullanıcının kapatması (×, sekme, Esc,
+  // sabit değilken UYAP'a tıklama ya da dosya açma) bu isteği siler. Sabit panel sekme yenilenince de geri gelir.
+  const SS_PANEL = 'legalugaPanelAcik';
+  let panelWanted = false, prefsReady = Promise.resolve();
+  const panelPinned = () => prefsLoaded && !!pagePrefs.panelSabit;
+  const overlayOpen = () => !!dosyaEkrani;
+  const pageDarkMq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+  function syncPinAvailability() {
+    if (pinButton) pinButton.disabled = !prefsLoaded || pinSaving || contextGone;
+  }
+
+  function dismissLauncherIntro() {
+    launcherIntroSeen = true;
+    launcherIntroPending = false;
+    if (introTip) introTip.hidden = true;
+    chrome.storage.local.set({ uhdLauncherIntroPending: false }).catch(error => {
+      if (invalidated(error)) stopInvalidatedContext();
+    });
+  }
+
+  function applyLauncherIntro(pending) {
+    launcherIntroPending = !!pending;
+    if (!pending || !introTip) return;
+    if (launcherIntroSeen || (panel && !panel.hidden)) dismissLauncherIntro();
+    else introTip.hidden = accessMenuOpen;
+  }
+
+  function findAccessMenuHeading(root) {
+    if (root && root.nodeType === 3) root = root.parentElement;
+    if (!root || root.nodeType !== 1) return null;
+    const nodes = [root, ...root.querySelectorAll('h1,h2,h3,h4,b,strong,span,div,[role="heading"]')];
+    return nodes.find(node => norm([...node.childNodes].filter(child => child.nodeType === 3).map(child => child.textContent).join(' ').trim()) === 'erisilebilirlik menusu') || null;
+  }
+
+  function syncAccessMenu() {
+    accessMenuTimer = null;
+    const heading = accessMenuHeading;
+    let open = false;
+    const acPanel = heading && heading.isConnected ? heading.closest('.ac-panel') : null;
+    if (acPanel) open = acPanel.classList.contains('show');
+    else if (heading && heading.isConnected && visible(heading)) {
+      // Panel yandayken sayfa zoom ile küçülür ve menü panelin soluna yerleşir.
+      const docked = panel && !panel.hidden && shadowRoot.host.dataset.dock === 'side';
+      const z = docked ? (Number.parseFloat(getComputedStyle(document.body).zoom) || 1) : 1;
+      const edge = docked ? innerWidth - (Number.parseFloat(shadowRoot.host.style.getPropertyValue('--dock-width')) || 0) : innerWidth;
+      for (let node = heading; node && node !== document.body && node !== document.documentElement; node = node.parentElement) {
+        const rect = node.getBoundingClientRect();
+        if (rect.width >= 280 * z && rect.height >= 200 * z && rect.left < edge - 40 && rect.right >= edge - 12) {
+          open = true;
+          break;
+        }
+      }
+    }
+    if (open === accessMenuOpen) return;
+    accessMenuOpen = open;
+    if (open) {
+      if (!panel.hidden) hidePanel();
+      launch.hidden = true;
+      introTip.hidden = true;
+    } else {
+      launch.hidden = false;
+      if (panelWanted && panel.hidden && !overlayOpen()) resumePanel();
+      else if (launcherIntroPending && !launcherIntroSeen) introTip.hidden = false;
+    }
+  }
+
+  function observeAccessMenu() {
+    accessMenuHeading = findAccessMenuHeading(document.body);
+    const observer = new MutationObserver(records => {
+      if (!accessMenuHeading || !accessMenuHeading.isConnected) {
+        accessMenuHeading = null;
+        for (const record of records) {
+          for (const node of record.addedNodes) {
+            accessMenuHeading = findAccessMenuHeading(node);
+            if (accessMenuHeading) break;
+          }
+          if (accessMenuHeading) break;
+        }
+      }
+      if (accessMenuHeading || accessMenuOpen) {
+        clearTimeout(accessMenuTimer);
+        accessMenuTimer = setTimeout(syncAccessMenu, 120);
+      }
+    });
+    observer.observe(document.documentElement, {
+      childList: true, subtree: true, attributes: true,
+      attributeFilter: ['class', 'style', 'hidden', 'aria-hidden']
+    });
+    syncAccessMenu();
+  }
+
+  function cancelOutsideClose() {
+    if (outsideCloseTimer !== null) clearTimeout(outsideCloseTimer);
+    outsideCloseTimer = null;
+  }
+
+  // Geçici stil kaldırılınca UYAP'ın kuralları aynen geri gelir; uygulamanın DOM yapısına dokunmadan panel için ayrı
+  // alan açılır. Tek istisna: panel kalkınca açık DevExtreme penceresine, DevExtreme'in kendi yazacağı türden bir orta
+  // konum (satır içi transform) yazılır (bkz. releaseDockedModals).
+  let dockStyle, dockObserver, dockFrame = 0, dockTimer = 0, dockOverlay = null;
+  const dockFixed = new Map();
+  let dockFixedIds = 0;
+  const DOCK_FIXED_ATTR = 'data-legaluga-dock-fixed';
+
+  function restoreDockFixed(node, original) {
+    if (original === null) node.removeAttribute(DOCK_FIXED_ATTR);
+    else node.setAttribute(DOCK_FIXED_ATTR, original);
+  }
+
+  function pruneDockFixed() {
+    for (const [node, { original }] of dockFixed) {
+      if (node.isConnected) continue;
+      restoreDockFixed(node, original);
+      dockFixed.delete(node);
+    }
+  }
+
+  function viewportFixed(node) {
+    if (getComputedStyle(node).position !== 'fixed' || !node.getClientRects().length) return false;
+    for (let parent = node.parentElement; parent && parent !== document.documentElement; parent = parent.parentElement) {
+      const css = getComputedStyle(parent);
+      // Bunlar zaten kendi kapsayıcısıyla ölçeklenir; ikinci kez düzeltmeyiz.
+      if (css.transform !== 'none' || css.translate !== 'none' || css.rotate !== 'none' || css.scale !== 'none' ||
+          css.perspective !== 'none' || css.filter !== 'none' || /(?:layout|paint|strict|content)/.test(css.contain) ||
+          /(?:transform|translate|scale|rotate|filter|perspective)/.test(css.willChange)) return false;
+    }
+    return true;
+  }
+
+  // Ölçüm sırasında kilitli öğelerin geçişi (transition) durdurulur: aksi hâlde kilit kalkınca başlayan geçişin
+  // ilk değeri (ör. menünün dar genişliği) okunup yeniden kilitlenir.
+  let dockMeasureStyle;
+
+  function fitPageBesidePanel() {
+    dockFrame = 0;
+    if (!panel || panel.hidden || !document.body) return;
+    pruneDockFixed();
+    if (!dockMeasureStyle) {
+      dockMeasureStyle = document.createElement('style');
+      dockMeasureStyle.textContent = `[${DOCK_FIXED_ATTR}]{transition:none!important}`;
+    }
+    document.documentElement.append(dockMeasureStyle);
+    try {
+      // Ölçüleri özgün sayfadan al; aynı kare içinde yeni stil yerleşir.
+      if (dockStyle) dockStyle.remove();
+      const width = window.innerWidth, height = window.innerHeight;
+      const viewportWidth = document.documentElement.clientWidth || width;
+      const stacked = width < 800;
+      const panelWidth = stacked ? width : dockWidthFor(width, pagePrefs.panelGenislik);
+      if (grip) {
+        grip.setAttribute('aria-valuenow', String(panelWidth));
+        grip.setAttribute('aria-valuemax', String(dockMax(width)));
+      }
+      const panelHeight = stacked ? Math.min(Math.round(height * .60), Math.max(240, height - 160)) : height;
+      const availableWidth = stacked ? width : width - panelWidth;
+      const availableHeight = stacked ? height - panelHeight : height;
+      const ratio = availableWidth / width;
+      const bodyCss = getComputedStyle(document.body);
+      const zoom = (Number.parseFloat(bodyCss.zoom) || 1) * ratio;
+      const host = shadowRoot.host;
+      host.dataset.dock = stacked ? 'bottom' : 'side';
+      host.style.setProperty('--dock-width', panelWidth + 'px');
+      host.style.setProperty('--dock-height', panelHeight + 'px');
+      const rules = [
+        `html{overflow-x:hidden!important;${stacked ? 'overflow-y:hidden!important;' : ''}}`,
+        `body{zoom:${zoom}!important;width:${bodyCss.width}!important;max-width:none!important;min-width:0!important;` +
+          `min-height:${availableHeight / zoom}px!important;` +
+          (stacked ? `height:${availableHeight / zoom}px!important;max-height:${availableHeight / zoom}px!important;overflow:auto!important;` :
+            (bodyCss.overflowY !== 'visible' && document.body.getBoundingClientRect().height <= height + 1 ? `height:${availableHeight / zoom}px!important;` : '')) + '}'
+      ];
+      // DevExtreme katmanları konumu ve yüksekliği getBoundingClientRect ile (zoom'lu, görsel px) ölçüp translate/height olarak
+      // yerel px'e yazar; zoom'lu gövdede küçültme iki kez uygulanır (dosya penceresinin altında boş şerit, kayan açılır listeler,
+      // imleçten yavaş ayırıcı). Pencereye bağlı katmanlar ters zoom ile UYAP'ın kendi ölçeğine döner, modal pencere sol alana
+      // sığdırılır (fitDockedModals). Modal yokken sayfaya bağlı açılır listenin içeriği sayfa ölçeğine çekilir: sarmalayıcısı
+      // editörün üstünde durduğu için konumu kesin kalır. Kapsayıcıya bağlı modal sayfa ölçeğinde kalır; içerik yüksekliğini
+      // DevExtreme'in ölçümü yerine esnek kutu verir. `position: fixed` DevExtreme'in sarmalayıcıya yazdığı satır içi stildir.
+      // Kapanırken DevExtreme gölge sınıfını hemen kaldırır; etiketli pencerenin sarmalayıcısı kaybolana dek sol alanda kalır.
+      dockOverlay = stacked ? null : { base: zoom / ratio, availableWidth };
+      if (!stacked) {
+        const fixedModal = 'body>.dx-overlay-wrapper.dx-overlay-shader[style*="position: fixed"]';
+        const boundStatic = 'body>.dx-overlay-wrapper.dx-overlay-shader:not([style*="position: fixed"])>.dx-overlay-content:not(.dx-popup-inherit-height):not(.dx-popup-flex-height)';
+        const aw = availableWidth / (zoom / ratio);
+        rules.push(`body>.dx-overlay-wrapper:not(.dx-overlay-shader),${fixedModal}{zoom:${1 / ratio}!important}`,
+          `${fixedModal},body>.dx-overlay-wrapper:has(>.dx-overlay-content[data-legaluga-dock-modal]){width:${aw}px!important;max-width:${aw}px!important}`,
+          `html:not(:has(${fixedModal})) body>.dx-dropdowneditor-overlay>.dx-overlay-content{zoom:${ratio}!important}`,
+          `${boundStatic}{display:flex!important;flex-direction:column!important}`,
+          `${boundStatic}>.dx-toolbar{flex:none!important}`,
+          `${boundStatic}>.dx-popup-content{flex:1 1 auto!important;height:auto!important;min-height:0!important;max-height:none!important}`);
+      }
+      const lock = (node, horizontal, bottom) => {
+        if (!dockFixed.has(node)) dockFixed.set(node, { original: node.getAttribute(DOCK_FIXED_ATTR), id: String(++dockFixedIds) });
+        const { id } = dockFixed.get(node);
+        if (node.getAttribute(DOCK_FIXED_ATTR) !== id) node.setAttribute(DOCK_FIXED_ATTR, id);
+        rules.push(`[${DOCK_FIXED_ATTR}="${id}"]{${horizontal}${bottom}}`);
+      };
+      const hLock = css => `left:${css.left}!important;right:auto!important;width:${css.width}!important;max-width:${availableWidth / zoom}px!important;`;
+      // Zoom tek başına viewport'a bağlı right:0 başlığı sağda bırakır: sağa yaslı fixed öğelerin özgün yatay
+      // ölçüleri sabitlenir. Sol yarıdaki öğeler (UYAP'ın sol menüsü) serbest kalır; kilitlenirse menü açılıp
+      // kapanınca eski genişliğinde donar. Alt yerleşimde oran 1 olduğu için yatay kilide gerek yoktur.
+      const free = [];
+      for (const node of document.body.querySelectorAll('*')) {
+        if (node.classList.contains('dx-overlay-wrapper') || !viewportFixed(node)) continue;
+        const css = getComputedStyle(node);
+        const bottom = stacked && css.bottom !== 'auto' ? `bottom:calc(${css.bottom} + ${panelHeight / zoom}px)!important;` : '';
+        if (stacked) { if (bottom) lock(node, '', bottom); continue; }
+        const rect = node.getBoundingClientRect();
+        if (rect.right <= viewportWidth / 2) { free.push([node, rect, hLock(css)]); continue; }
+        lock(node, hLock(css), '');
+      }
+      if (!dockStyle) dockStyle = document.createElement('style');
+      dockStyle.textContent = rules.join('\n');
+      document.documentElement.append(dockStyle);
+      fitDockedModals();
+      // Bekçi: yüzde ya da viewport birimli ölçü zoom ile küçülmez ve içeriğin üstüne biner; öyleyse eskisi gibi kilitlenir.
+      const count = rules.length;
+      for (const [node, before, horizontal] of free) {
+        const after = node.getBoundingClientRect();
+        if (Math.abs(after.width - before.width * ratio) > 1 || Math.abs(after.left - before.left * ratio) > 1) lock(node, horizontal, '');
+      }
+      if (rules.length !== count) dockStyle.textContent = rules.join('\n');
+    } finally {
+      // Yeni kilit geçiş kapalıyken hesaplansın; ölçüm stili kalkınca geçiş yeniden başlamasın.
+      for (const node of dockFixed.keys()) if (node.isConnected) getComputedStyle(node).width;
+      dockMeasureStyle.remove();
+    }
+    if (overlayOpen() && !besideDock()) queueMicrotask(syncOverlays);
+  }
+
+  // Ters zoom'lu katmanda DevExtreme modal pencereyi tüm görünüm alanına göre ortalar; pencere panelin altına taşar.
+  // Satır içi vw genişliği sol alana çevrilir, pencerenin en büyük genişliği (DevExtreme maxWidth) korunarak sol alandan
+  // geniş pencere daraltılır ve pencere sol alanda ortalanır (UYAP'ın 148 pencere kullanımının 145'i ortalanmış). Konum,
+  // boyut kuralı uygulandıktan sonra ölçülür. Kaydırma !important transform iledir: DevExtreme konumu yeniden hesaplasa da
+  // bizimki geçerli kalır. Sol alana zaten sığan ya da kullanıcının taşıdığı sürüklenebilir pencereye dokunulmaz. Tam ekran
+  // pencere daraltılmış sarmalayıcıyı doldurur.
+  // DevExtreme sürüklerken (başlıktan fareyle ya da içerik odaktayken ok tuşuyla) kendi satır içi konumunu değişim kadar
+  // kaydırır; o sırada bizim konumumuz da aynı kadar kaydırılır, pencere imleçle birlikte gider. Sürükleme dışındaki satır
+  // içi değişiklik DevExtreme'in yeniden konumlamasıdır: pencere ortada (ya da kullanıcının bıraktığı yerde) kalır.
+  // Kapanış canlandırmasında (gölge sınıfı kalkmış, pencere görünür) son kural korunur; görünmez olan pencere unutulur ve
+  // yeniden açılınca DevExtreme'deki gibi ortadan başlar.
+  const DOCK_MODAL_ATTR = 'data-legaluga-dock-modal';
+  const DOCK_MODAL_CONTENT = 'body>.dx-overlay-wrapper.dx-overlay-shader[style*="position: fixed"]>.dx-overlay-content';
+  const DOCK_MOVE_EVENTS = ['pointerdown', 'pointerup', 'pointercancel', 'keydown', 'keyup'];
+  const dockModalPos = new WeakMap(), dockModalFree = new WeakSet(), dockModalSeen = new Set(), dockModalRule = new Map();
+  let dockModalSizeStyle, dockModalStyle, dockModalIds = 0, dockModalMoving = null;
+  const inlineTranslate = content => {
+    const m = /translate\(\s*(-?[\d.]+)px,\s*(-?[\d.]+)px/.exec(content.style.transform || '');
+    return m && [Number(m[1]), Number(m[2])];
+  };
+  // Satır içi uzunluk sol alanın yerel px'ine çevrilir: vw ve % sol alana (daraltılmış sarmalayıcıya) göredir.
+  const dockLength = (value, aw) => {
+    const m = /^(\d+(?:\.\d+)?)(px|vw|%)$/.exec(value || '');
+    return m ? (m[2] === 'px' ? Number(m[1]) : Number(m[1]) / 100 * aw) : null;
+  };
+  function trackDockedModalMove(e) {
+    if (e.type === 'pointerup' || e.type === 'pointercancel' || e.type === 'keyup') { dockModalMoving = null; return; }
+    if (e.type === 'keydown' && !/^Arrow/.test(e.key)) return;
+    const t = e.target;
+    const content = e.type === 'keydown' ? (t && t.classList && t.classList.contains('dx-overlay-content') ? t : null)
+      : t && t.closest && t.closest('.dx-popup-title') && t.closest('.dx-overlay-content');
+    dockModalMoving = content && content.classList.contains('dx-popup-draggable') ? content : null;
+  }
+  function forgetDockedModal(content) {
+    content.removeAttribute(DOCK_MODAL_ATTR);
+    dockModalPos.delete(content);
+    dockModalFree.delete(content);
+    dockModalRule.delete(content);
+    dockModalSeen.delete(content);
+  }
+  function writeDockModalStyle(style, rules) {
+    const text = rules.join('\n');
+    if (!text && !style) return style;
+    if (!style) style = document.createElement('style');
+    if (style.textContent !== text) style.textContent = text;
+    if (!style.isConnected) document.documentElement.append(style);
+    return style;
+  }
+  function fitDockedModals() {
+    const sizes = [], places = [], items = [];
+    if (dockOverlay && panel && !panel.hidden) {
+      const { base } = dockOverlay, aw = dockOverlay.availableWidth / base, vh = innerHeight / base, gap = 8 / base;
+      const open = new Set([...document.querySelectorAll(DOCK_MODAL_CONTENT)].filter(c => c.getClientRects().length));
+      for (const content of [...dockModalSeen]) {
+        if (open.has(content)) continue;
+        if (!content.isConnected || !content.getClientRects().length) forgetDockedModal(content);
+        else if (dockModalRule.has(content)) { const [size, place] = dockModalRule.get(content); sizes.push(size); places.push(place); }
+      }
+      for (const content of open) {
+        dockModalSeen.add(content);
+        const full = content.classList.contains('dx-popup-fullscreen'), margin = full ? 0 : gap;
+        const vw = /vw$/.test(content.style.width);
+        const inline = inlineTranslate(content);
+        if (!full && !content.hasAttribute(DOCK_MODAL_ATTR) && content.classList.contains('dx-popup-draggable')) {
+          if (content === dockModalMoving) dockModalFree.add(content);
+          if (dockModalFree.has(content) || (!vw && inline && inline[0] >= 0 && inline[0] + content.offsetWidth <= aw)) continue;
+        }
+        let id = content.getAttribute(DOCK_MODAL_ATTR);
+        if (!id) content.setAttribute(DOCK_MODAL_ATTR, id = String(++dockModalIds));
+        const own = dockLength(content.style.maxWidth, aw);
+        const maxWidth = Math.min(own === null ? Infinity : own, aw - 2 * margin);
+        const size = `[${DOCK_MODAL_ATTR}="${id}"]{${vw ? `width:${Math.min(dockLength(content.style.width, aw), maxWidth)}px!important;` : ''}` +
+          `max-width:${maxWidth}px!important}`;
+        sizes.push(size);
+        items.push({ content, id, full, margin, inline, size });
+      }
+      dockModalSizeStyle = writeDockModalStyle(dockModalSizeStyle, sizes);
+      for (const { content, id, full, margin, inline, size } of items) {
+        let pos = full ? null : dockModalPos.get(content);
+        if (pos && inline && pos.inline && content === dockModalMoving && (inline[0] !== pos.inline[0] || inline[1] !== pos.inline[1])) {
+          pos = { x: pos.x + inline[0] - pos.inline[0], y: pos.y + inline[1] - pos.inline[1], moved: true };
+        } else if (!pos || !pos.moved) {
+          pos = { x: full ? 0 : Math.max(margin, (aw - content.offsetWidth) / 2), y: full ? 0 : Math.max(0, (vh - content.offsetHeight) / 2), moved: false };
+        }
+        pos.inline = inline;
+        if (full) dockModalPos.delete(content);
+        else dockModalPos.set(content, pos);
+        const place = `[${DOCK_MODAL_ATTR}="${id}"]{transform:translate(${pos.x}px,${pos.y}px)!important}`;
+        places.push(place);
+        dockModalRule.set(content, [size, place]);
+      }
+    }
+    dockModalSizeStyle = writeDockModalStyle(dockModalSizeStyle, sizes);
+    dockModalStyle = writeDockModalStyle(dockModalStyle, places);
+  }
+  // Kaydırma sürerken DevExtreme konumu ona göre hesapladı (satır içi değer yanlış kalır ve boyut değişmediği için yeniden
+  // hesaplanmaz); panel kalkınca açık pencereye DevExtreme'in kendi ortalaması yazılır. Kullanıcının taşıdığı pencerede
+  // DevExtreme'in satır içi değeri bırakılır: sonraki sürükleme onun kendi kaydıyla tutarlı başlar.
+  function releaseDockedModals() {
+    for (const type of DOCK_MOVE_EVENTS) window.removeEventListener(type, trackDockedModalMove, true);
+    dockModalMoving = null;
+    if (dockModalSizeStyle) dockModalSizeStyle.remove();
+    if (dockModalStyle) dockModalStyle.remove();
+    const root = document.documentElement;
+    for (const content of new Set([...dockModalSeen, ...document.querySelectorAll(`[${DOCK_MODAL_ATTR}]`)])) {
+      const labeled = content.hasAttribute(DOCK_MODAL_ATTR), pos = dockModalPos.get(content);
+      forgetDockedModal(content);
+      if (!labeled || !content.getClientRects().length || content.classList.contains('dx-popup-fullscreen') || (pos && pos.moved)) continue;
+      const x = Math.max(0, Math.round((root.clientWidth - content.offsetWidth) / 2));
+      const y = Math.max(0, Math.round((root.clientHeight - content.offsetHeight) / 2));
+      content.style.transform = `translate(${x}px, ${y}px)`;
+    }
+  }
+  // DevExtreme pencereyi gösterirken aynı görevde konumlar; eşzamanlı sığdırma 120 ms'lik gecikmedeki sıçramayı önler.
+  // Yalnız katmanın kendisi (sarmalayıcı ya da içerik kutusu) izlenir: içteki satırların durum sınıfları (ör. dx-state-hover)
+  // sığdırmayı yeniden çalıştırmaz.
+  const overlayRecord = r => r.type === 'childList'
+    ? [...r.addedNodes].some(n => n.nodeType === 1 && n.classList.contains('dx-overlay-wrapper'))
+    : !!(r.target.classList && (r.target.classList.contains('dx-overlay-wrapper') || r.target.classList.contains('dx-overlay-content')));
+
+  // Sabit panelin genişliği: kullanıcının sürükleyerek seçtiği değer (uhdPrefs.panelGenislik), yoksa pencerenin %30'u.
+  // UYAP'a en az yarım pencere kalır; panel 320 px'ten dar olmaz.
+  const DOCK_MIN = 320;
+  const dockMax = width => Math.max(DOCK_MIN, Math.min(720, Math.round(width * .5)));
+  const dockWidthFor = (width, pref) => Math.min(dockMax(width), Math.max(DOCK_MIN, Math.round(Number(pref) || Math.min(480, width * .30))));
+
+  // Dosya açılırken UYAP ekranı sürekli değişir; yerleşim açma bitince bir kez yeniden ölçülür.
+  function schedulePanelFit() {
+    if (!panel || panel.hidden || dockFrame || opening || panelMode !== 'dock' || gripDrag !== null) return;
+    dockFrame = requestAnimationFrame(fitPageBesidePanel);
+  }
+
+  // DevExtreme fare ve odak durumunu sınıfla değiştirir; bunlar sayfanın yerleşimini değiştirmez.
+  // Diğer sınıflar, stiller ve yeni/kaldırılan öğeler eskisi gibi tam ölçümü tetikler.
+  function dockLayoutRecord(record) {
+    if (record.type !== 'attributes' || record.attributeName !== 'class') return true;
+    const layoutClasses = value => (value || '').split(/\s+/)
+      .filter(name => name && name !== 'dx-state-hover' && name !== 'dx-state-focused').sort().join(' ');
+    return layoutClasses(record.oldValue) !== layoutClasses(record.target.getAttribute('class'));
+  }
+
+  function startPanelDock() {
+    fitPageBesidePanel();
+    window.addEventListener('resize', schedulePanelFit);
+    for (const type of DOCK_MOVE_EVENTS) window.addEventListener(type, trackDockedModalMove, { capture: true, passive: true });
+    if (!dockObserver) dockObserver = new MutationObserver(records => {
+      records = records.filter(dockLayoutRecord);
+      if (!records.length) return;
+      if (dockOverlay && records.some(overlayRecord)) fitDockedModals();
+      clearTimeout(dockTimer);
+      // SweetAlert2 kabı görünüm alanı genişliğinde (panelin altında, ortada) açılır; 120 ms beklenmeden bir sonraki karede
+      // yatay kilide alınır. Gecikmeli ölçüm yine de yapılır.
+      if (records.some(r => [...r.addedNodes].some(n => n.nodeType === 1 && n.classList.contains('swal2-container')))) schedulePanelFit();
+      dockTimer = setTimeout(schedulePanelFit, 120);
+    });
+    dockObserver.observe(document.body, { childList: true, subtree: true, attributes: true, attributeOldValue: true, attributeFilter: ['class', 'style', 'hidden'] });
+    // Menü <html> üzerindeki bir sınıfla açılıp kapanabilir. childList izlenmez: eklediğimiz <style> tetiklemesin.
+    dockObserver.observe(document.documentElement, { attributes: true, attributeOldValue: true, attributeFilter: ['class', 'style'] });
+  }
+
+  function stopPanelDock() {
+    window.removeEventListener('resize', schedulePanelFit);
+    if (dockObserver) dockObserver.disconnect();
+    clearTimeout(dockTimer);
+    if (dockFrame) cancelAnimationFrame(dockFrame);
+    dockFrame = 0;
+    if (dockStyle) dockStyle.remove();
+    if (dockMeasureStyle) dockMeasureStyle.remove();
+    dockOverlay = null;
+    releaseDockedModals();
+    for (const [node, { original }] of dockFixed) {
+      restoreDockFixed(node, original);
+    }
+    dockFixed.clear();
+    if (shadowRoot) {
+      delete shadowRoot.host.dataset.dock;
+      shadowRoot.host.style.removeProperty('--dock-width');
+      shadowRoot.host.style.removeProperty('--dock-height');
+    }
+  }
+
+  // Panel kipi. Sabit panel UYAP'ın yanına yerleşir: sayfa küçülür (fitPageBesidePanel), panel yalnız kullanıcı kapatınca
+  // kapanır. Sabit olmayan panel UYAP'ı küçültmeyen bir çekmecedir: UYAP'ın üst çubuğunun altından başlar, dışarı
+  // tıklanınca ya da dosya açılınca kapanır. Kısa bir arama için UYAP iki kez yeniden dizilmez.
+  let panelMode = null;   // 'dock' | 'drawer' | null (panel kapalı)
+  const drawerWidth = () => Math.min(window.innerWidth, Math.max(DOCK_MIN, Math.min(480, Math.round(window.innerWidth * .30))));
+  // UYAP'ın üst çubuğu: sayfanın en üstünde duran, genişliğin çoğunu kaplayan sabit (ya da yapışkan) öğe.
+  function uyapTopBar() {
+    const w = window.innerWidth;
+    for (const node of document.elementsFromPoint(Math.round(w * .6), 1)) {
+      if (node === shadowRoot.host || node === document.documentElement || node === document.body) continue;
+      if (node.closest('.dx-overlay-wrapper,.swal2-container')) continue;   // açık pencerenin örtüsü
+      for (let n = node; n && n !== document.body && n !== document.documentElement; n = n.parentElement) {
+        const pos = getComputedStyle(n).position;
+        if (pos !== 'fixed' && pos !== 'sticky') continue;
+        const r = n.getBoundingClientRect();
+        if (r.top <= 1 && r.width >= w * .8 && r.height > 0 && r.height <= 160) return Math.round(r.bottom);
+        break;   // çubuk değil: yığındaki bir sonraki öğeye bak
+      }
+    }
+    return 0;
+  }
+  function fitDrawer() {
+    if (panelMode !== 'drawer' || !panel || panel.hidden) return;
+    const host = shadowRoot.host;
+    host.style.setProperty('--dock-width', drawerWidth() + 'px');
+    host.style.setProperty('--drawer-top', uyapTopBar() + 'px');
+  }
+  function stopDrawer() {
+    window.removeEventListener('resize', fitDrawer);
+    if (!shadowRoot) return;
+    delete shadowRoot.host.dataset.dock;
+    shadowRoot.host.style.removeProperty('--dock-width');
+    shadowRoot.host.style.removeProperty('--drawer-top');
+  }
+  function applyPanelMode() {
+    if (!panel || panel.hidden) return;
+    const want = panelPinned() ? 'dock' : 'drawer';
+    if (want === panelMode) return;
+    if (panelMode === 'dock') stopPanelDock();
+    else if (panelMode === 'drawer') stopDrawer();
+    panelMode = want;
+    if (want === 'dock') startPanelDock();
+    else {
+      shadowRoot.host.dataset.dock = 'drawer';
+      fitDrawer();
+      window.addEventListener('resize', fitDrawer);
+    }
+    syncOverlays();
+  }
+  function leavePanelMode() {
+    if (panelMode === 'dock') stopPanelDock();
+    else if (panelMode === 'drawer') stopDrawer();
+    panelMode = null;
+  }
+  // Görüntüleyici ya da dosya paneli açıkken panel sabitlemesi kalkar, panel kapanır ya da yuva alta geçerse görüntüleyici
+  // artık panelin yanında değildir: panel geçici gizlenir (kapanınca geri gelir), görüntüleyici tam ekran ve kipli olur.
+  function syncOverlays() {
+    if (!overlayOpen()) return;
+    if (panel && !panel.hidden && !besideDock()) return hidePanel();
+    const beside = besideDock();
+    for (const o of [dosyaEkrani]) {
+      if (!o) continue;
+      o.box.setAttribute('aria-modal', String(!beside));
+      if (!beside && !o.box.contains(shadowRoot.activeElement)) o.focus();
+    }
+  }
+
+  // Sabit panelin sol kenarı sürüklenerek (ya da odaktayken ← → ile) genişletilir. Sürüklerken yalnız panel genişler;
+  // UYAP bırakınca bir kez yeniden dizilir (tam ölçüm her harekette yapılamayacak kadar pahalı).
+  let grip = null, gripDrag = null, gripKeyTimer = null;
+  function mountGrip() {
+    grip = el('div', { class: 'grip', role: 'separator', tabindex: '0', 'aria-orientation': 'vertical', 'aria-controls': 'legaluga-search-panel',
+      'aria-label': 'Panel genişliği', 'aria-valuemin': String(DOCK_MIN), title: 'Sürükleyerek ya da ← → ile panel genişliğini değiştirin' });
+    panel.append(grip);
+    let start = 0;
+    const current = () => Number.parseFloat(shadowRoot.host.style.getPropertyValue('--dock-width')) || drawerWidth();
+    const setWidth = w => {
+      shadowRoot.host.style.setProperty('--dock-width', w + 'px');
+      grip.setAttribute('aria-valuenow', String(w));
+    };
+    grip.addEventListener('pointerdown', e => {
+      if (panelMode !== 'dock' || shadowRoot.host.dataset.dock !== 'side' || e.button !== 0) return;
+      e.preventDefault();
+      grip.setPointerCapture(e.pointerId);
+      grip.classList.add('drag');
+      gripDrag = start = current();
+    });
+    grip.addEventListener('pointermove', e => {
+      if (gripDrag === null) return;
+      gripDrag = dockWidthFor(window.innerWidth, panel.getBoundingClientRect().right - e.clientX);
+      setWidth(gripDrag);
+    });
+    const end = () => {
+      if (gripDrag === null) return;
+      const w = gripDrag;
+      gripDrag = null;
+      grip.classList.remove('drag');
+      if (w !== start) saveDockWidth(w);
+    };
+    grip.addEventListener('pointerup', end);
+    grip.addEventListener('pointercancel', end);
+    grip.addEventListener('keydown', e => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (panelMode !== 'dock' || shadowRoot.host.dataset.dock !== 'side') return;
+      const w = dockWidthFor(window.innerWidth, current() + (e.key === 'ArrowLeft' ? 24 : -24));
+      setWidth(w);
+      clearTimeout(gripKeyTimer);
+      gripKeyTimer = setTimeout(() => saveDockWidth(w), 250);
+    });
+  }
+  async function saveDockWidth(w) {
+    clearTimeout(gripKeyTimer);
+    pagePrefs = { ...pagePrefs, panelGenislik: w };
+    if (panelMode === 'dock') fitPageBesidePanel();
+    try {
+      if (globalThis.UHDStorage) { await UHDStorage.patchPrefs({ panelGenislik: w }); return; }
+      const { uhdPrefs } = await chrome.storage.local.get('uhdPrefs');
+      await chrome.storage.local.set({ uhdPrefs: { ...(uhdPrefs || {}), panelGenislik: w } });
+    } catch (error) {
+      if (invalidated(error)) stopInvalidatedContext();
+    }
+  }
+
+  function applyPagePrefs(prefs) {
+    const oncekiGenislik = pagePrefs.panelGenislik;
+    const oncekiCakismaAcik = pagePrefs.cakismaTarama === true;
+    pagePrefs = prefs || {};
+    if (typeof sessionRequestHooks !== 'undefined') sessionRequestHooks?.preferencesChanged();
+    if (pagePrefs.durusmaBildirim === false || (oncekiCakismaAcik && (pagePrefs.cakismaTarama !== true || pagePrefs.cakismaBildirim === false))) closeToast('durusma');
+    const theme = pagePrefs.tema || 'auto';
+    if (shadowRoot) {
+      shadowRoot.host.dataset.theme = theme === 'auto' ? (pageDarkMq && pageDarkMq.matches ? 'dark' : 'light') : theme;
+      if (welcomeHost) welcomeHost.dataset.theme = shadowRoot.host.dataset.theme;
+    }
+    if (pinButton) {
+      const pinned = !!pagePrefs.panelSabit;
+      const label = pinned ? 'Panel sabit: UYAP’ın yanında durur, yalnız siz kapatınca kapanır. Sabitlemeyi kaldır'
+        : 'Paneli sabitle: UYAP’ı daraltıp yanında açık kalsın';
+      pinButton.setAttribute('aria-pressed', String(pinned));
+      pinButton.setAttribute('aria-label', label);
+      pinButton.title = label;
+    }
+    applyPanelMode();
+    if (panelMode === 'dock' && pagePrefs.panelGenislik !== oncekiGenislik) schedulePanelFit();
+  }
+
+  function mountPage() {
+    const host = document.createElement('div');
+    host.id = 'uhd-host';
+    host.style.cssText = 'all:initial;position:fixed;top:0;left:0;width:0;height:0;z-index:2147483646';
+    document.documentElement.append(host);
+    const shadow = host.attachShadow({ mode: 'closed' }); // UYAP sayfasındaki betikler panel içeriğini okuyamaz
+    // UYAP'ın Dosya Sorgulama formu Enter'ı pencere düzeyinde (yakalama aşamasında) dinler: detaylı formda sorgu başlatır,
+    // basit formda uyarı çıkarır. Panelde basılan Enter (dosya açma, not kaydetme) UYAP'a ulaşmasın. Aynı hedef ve
+    // aşamadaki dinleyiciler kayıt sırasıyla çalıştığı için bu, UYAP'ın form her kurulduğunda eklediği dinleyiciden önce gelir.
+    window.addEventListener('keyup', e => {
+      if (e.key !== 'Enter') return;
+      const path = e.composedPath();
+      if (path.includes(host) || (welcomeHost && path.includes(welcomeHost))) e.stopImmediatePropagation();
+    }, true);
+    launch = el('button', { lang: 'tr', class: 'launch', type: 'button', title: BRAND.name + ' · Dosyalarınızda ara', 'aria-label': BRAND.name + ' panelini aç', 'aria-expanded': 'false', 'aria-controls': 'legaluga-search-panel' }, 'Legaluga Asistan');
+    const introDone = el('button', { type: 'button' }, 'Anladım');
+    const introText = el('p', null, 'UYAP dosyalarınızda aramak için sağ kenardaki sekmeye tıklayın.');
+    introTip = el('div', { lang: 'tr', class: 'launch-tip', role: 'status', hidden: true },
+      el('strong', null, 'Legaluga Asistan burada'), introText, introDone);
+    chrome.runtime.sendMessage({ type: 'uhd-shortcut' }).then(r => {
+      if (r && r.shortcut) introText.textContent = `UYAP dosyalarınızda aramak için sağ kenardaki sekmeye tıklayın ya da ${r.shortcut} tuşlarına basın.`;
+    }).catch(() => {});
+    introDone.addEventListener('click', dismissLauncherIntro);
+    panel = el('div', { lang: 'tr', class: 'panel', id: 'legaluga-search-panel', role: 'dialog', 'aria-label': BRAND.name, 'aria-modal': 'false', hidden: true });
+    announcementEl = el('div', { class: 'announcement', role: 'status', 'aria-live': 'polite', hidden: true });
+    notificationArea = el('div', { lang: 'tr', class: 'notifications' }, announcementEl);
+    liveRegion = el('div', { lang: 'tr', class: 'sr', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' });
+    alertRegion = el('div', { lang: 'tr', class: 'sr', role: 'alert', 'aria-live': 'assertive', 'aria-atomic': 'true' });
+    shadow.append(el('style', null, PAGE_CSS), launch, introTip, panel, notificationArea, liveRegion, alertRegion);
+    shadowRoot = shadow;
+    ui = mountUI(panel, {
+      mode: 'page',
+      downloads: downloadManager,
+      openDownload,
+      showDownloadPart,
+      isVisible: () => !!panel && !panel.hidden,
+      onOpen: r => openFile(r),
+      onOpenEvrak: (r, k, group, baglam) => openEvrak(r, k, group, baglam),
+      onDosyaPanel: (r, tab, baglam) => openDosyaPanel(r, tab, baglam),
+      onSiraylaOku: kuyruk => siraylaOku(kuyruk, 0),
+      onSetupConnection: options => setupConnection(options),
+      onSetupOpenUyap: () => chrome.runtime.sendMessage({ type: 'uhd-setup-open' }),
+      onSetupScan: () => chrome.runtime.sendMessage({ type: 'uhd-setup-scan' }),
+      onUpdate: async full => {
+        const res = await startUpdate(full);
+        if (!res.ok) ui.setNotice(res.error, 'err');
+      },
+      onCbsDirectory: ilKodu => startCbsDirectory(ilKodu),
+      onCbsScan: scope => startCbsScan(scope),
+      onStop: () => stopUpdate(),
+      onClose: () => closePanel(true),
+      onEscape: closeTop,
+      onInvalidated: stopInvalidatedContext
+    });
+    pinButton = el('button', { class: 'panel-pin', type: 'button', 'aria-pressed': 'false', disabled: true });
+    const pinIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    pinIcon.setAttribute('viewBox', '0 0 24 24');
+    pinIcon.setAttribute('aria-hidden', 'true');
+    const pinPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    pinPath.setAttribute('d', 'M16 3 21 8 17 9 13 13 12 17 7 12 11 11 15 7Z M7 17 3 21');
+    pinIcon.append(pinPath);
+    pinButton.append(pinIcon);
+    const header = ui.root.querySelector('header');
+    if (header) header.insertBefore(pinButton, header.querySelector('.x'));
+    mountGrip();
+    pinButton.addEventListener('click', async () => {
+      pinSaving = true;
+      syncPinAvailability();
+      try {
+        if (globalThis.UHDStorage) { applyPagePrefs(await UHDStorage.togglePref('panelSabit')); return; }
+        const { uhdPrefs } = await chrome.storage.local.get('uhdPrefs');
+        // Depodaki son değeri değiştir; başka bir pencerenin güncellediği tercihi tersine çevirme.
+        const next = { ...(uhdPrefs || {}), panelSabit: !(uhdPrefs && uhdPrefs.panelSabit) };
+        await chrome.storage.local.set({ uhdPrefs: next });
+        applyPagePrefs(next);
+      } catch (error) {
+        if (invalidated(error)) stopInvalidatedContext();
+        else toast('Panel tercihi kaydedilemedi. Tekrar deneyin.', 'err', 5000, null, { id: 'panel' });
+      } finally { pinSaving = false; syncPinAvailability(); }
+    });
+    applyPagePrefs(pagePrefs);
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'local' && changes.uhdPrefs) {
+        prefsRevision++;
+        prefsLoaded = true;
+        applyPagePrefs(changes.uhdPrefs.newValue);
+        syncPinAvailability();
+      }
+      if (area === 'local' && changes.uhdLauncherIntroPending) applyLauncherIntro(changes.uhdLauncherIntroPending.newValue);
+    });
+    const initialPrefsRevision = prefsRevision;
+    prefsReady = chrome.storage.local.get('uhdPrefs').then(v => {
+      // İlk okuma, bu arada gelen storage.onChanged olayını geri almamalı. panelPinned() prefsLoaded'a baktığı için
+      // bayrak önce kalkar; tercih gelmeden açılmış panel sabitse yuvaya geçer.
+      prefsLoaded = true;
+      if (prefsRevision === initialPrefsRevision) applyPagePrefs(v.uhdPrefs);
+      else applyPanelMode();
+      syncPinAvailability();
+      if (!pagePrefs.panelSabit) ssSet(SS_PANEL, null);
+      else if (ssGet(SS_PANEL) === '1' && panel.hidden && !openRun && document.querySelector('#root')) showPanel({ focus: false });
+    }).catch(error => {
+      if (invalidated(error)) stopInvalidatedContext();
+      else { prefsLoaded = true; syncPinAvailability(); }
+    });
+    chrome.storage.local.get('uhdLauncherIntroPending').then(v => applyLauncherIntro(v.uhdLauncherIntroPending)).catch(error => {
+      if (invalidated(error)) stopInvalidatedContext();
+    });
+    if (pageDarkMq && pageDarkMq.addEventListener) pageDarkMq.addEventListener('change', () => applyPagePrefs(pagePrefs));
+    observeAccessMenu();
+    launch.addEventListener('click', () => {
+      if (!contextAvailable()) return;
+      if (panel.hidden) showPanel();
+      else closePanel(true);
+    });
+    panel.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !e.defaultPrevented) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeTop();
+      }
+    });
+    // UYAP'ın tıklama işlemi bitsin; basılan öğe pointerdown ile click arasında kaymasın.
+    // Gölge DOM içindeki tıklamaların hedefi host olarak görünür.
+    document.addEventListener('click', e => {
+      if (!e.isTrusted) return;
+      if (e.target === host || (welcomeHost && e.target === welcomeHost && panelMode === 'dock')) { cancelOutsideClose(); return; }
+      if (panel.hidden || !prefsLoaded || pagePrefs.panelSabit) return;
+      cancelOutsideClose();
+      const epoch = panelEpoch;
+      outsideCloseTimer = setTimeout(() => {
+        outsideCloseTimer = null;
+        if (panelEpoch === epoch && prefsLoaded && !pagePrefs.panelSabit) closePanel();
+      }, 0);
+    }, true);
+    announcementEl.addEventListener('load', updateAnnouncementScroll, true);
+    // Esc, süren dosya açmayı durdurur: yalnız Durdur sunulurken (UYAP'a pencere tıklaması gitmeden) ve odak sayfanın
+    // gövdesinde ya da dosya açma bildirimindeyken. UYAP'ın kendi pencereleri de Esc dinler; odak onlardaysa ya da
+    // olayı eklentinin kendisi gönderdiyse (açık pencereyi kapatırken) dokunulmaz.
+    window.addEventListener('keydown', e => {
+      if (e.key !== 'Escape' || !e.isTrusted || e.defaultPrevented || !openRun || openRun.cancelled || !openRun.stoppable) return;
+      const a = document.activeElement;
+      const acma = toasts.get('acma');
+      const inToast = a === host && !!acma && acma.el.contains(shadowRoot.activeElement);
+      if (!inToast && a !== document.body && a !== document.documentElement && a !== null) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      openRun.userStop = true;
+      openRun.cancelled = true;
+      openRun.ctl.abort();
+    }, true);
+  }
+
+  function showPanel({ focus = true } = {}) {
+    if (!panel || accessMenuOpen || !contextAvailable()) return;
+    panelWanted = true;
+    ssSet(SS_PANEL, '1');
+    if (introTip && !introTip.hidden) dismissLauncherIntro();
+    else launcherIntroSeen = true;
+    cancelOutsideClose();
+    panelEpoch++;
+    const wasHidden = panel.hidden, before = document.activeElement;
+    panel.hidden = false;
+    applyPanelMode();
+    if (panel.hidden) return;   // syncOverlays paneli yeniden gizledi
+    ui.refreshStatus();
+    if (wasHidden) focusBeforePanel = before;
+    launch.setAttribute('aria-expanded', 'true');
+    launch.setAttribute('aria-label', BRAND.name + ' panelini kapat');
+    if (focus) ui.focus();
+  }
+
+  // Örtü ya da erişilebilirlik menüsü paneli yalnız geçici gizler; kapanınca kullanıcının istediği panel geri gelir.
+  function resumePanel(focus = false) {
+    if (panelWanted && panel.hidden && !overlayOpen()) showPanel({ focus });
+  }
+
+  // Paneldeki Esc: yanında açık görüntüleyici ya da dosya paneli varsa önce o kapanır, yoksa panel.
+  function closeTop() {
+    if (dosyaEkrani) dosyaEkrani.close();
+    else closePanel(true);
+  }
+
+  // Kullanıcının kapatması: panel geçici gizlenmez, açık kalma isteği de silinir.
+  function closePanel(restoreFocus = false) {
+    panelWanted = false;
+    ssSet(SS_PANEL, null);
+    hidePanel(restoreFocus);
+  }
+
+  function hidePanel(restoreFocus = false) {
+    if (!panel || panel.hidden) return;
+    cancelOutsideClose();
+    panelEpoch++;
+    panel.hidden = true;
+    leavePanelMode();
+    launch.setAttribute('aria-expanded', 'false');
+    launch.setAttribute('aria-label', BRAND.name + ' panelini aç');
+    syncOverlays();
+    if (restoreFocus && !overlayOpen()) {
+      const previous = focusBeforePanel;
+      const target = previous && previous !== shadowRoot.host && previous !== document.body && previous.isConnected ? previous : launch;
+      target.focus({ preventScroll: true });
+    }
+  }
+
+  // ---------------------------------------------------------------- Evrakı açma
+  // Evrak kimlikleri her yanıtta yeniden şifrelendiği için saklanmaz: açarken dosyanın evrak listesi yeniden
+  // alınır, evrak anahtarıyla (birim evrak no + onay tarihi + tür) bulunur ve UYAP'ın kendi görüntüleme
+  // adresinden getirilip sayfa içinde gösterilir. Evrak içeriği saklanmaz; pencere kapanınca bellekten atılır.
+

@@ -1,0 +1,4 @@
+function checkStop() {
+    if (job && job.lost) throw new Stopped('lost');
+    if (job && job.stop) throw new Stopped('Durduruldu');
+  }

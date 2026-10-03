@@ -1,0 +1,357 @@
+
+    zipIndir.addEventListener('click', async () => {
+      uyapBulk(listeAc.signal);
+      if (!kaynak && !listeBekliyor) listeAl();
+      if (listeBekliyor) await listeBekliyor;
+      if (kaynak && !closed) await zipDownload();
+    });
+    zipTekrar.addEventListener('click', () => !kaynak ? listeAl() : zipDownload(true));
+    zipTypeMode.addEventListener('change', () => { if (!zipRun) zipSync(); });
+    zipTypeSearch.addEventListener('input', () => { if (!zipRun) zipSync(); });
+    zipTypeAll.addEventListener('click', () => {
+      if (zipRun) return;
+      for (const group of zipTools?.typeGroups?.(zipCandidates()) || []) if (norm(group.title).includes(norm(zipTypeSearch.value))) zipSelectedTypes.add(group.key);
+      zipSync();
+    });
+    zipTypeClear.addEventListener('click', () => { if (!zipRun) { zipSelectedTypes.clear(); zipSync(); } });
+    zipEkler.addEventListener('change', zipSync);
+    zipParts.addEventListener('change', () => { bulkChoice = true; zipSync(); });
+    bulkResume.addEventListener('click', bulkDownload);
+    bulkNew.addEventListener('click', async () => {
+      if (closed || zipRun || (!bulkJob && !bulkState) || !globalThis.navigator?.locks) return;
+      if (!confirm('Kaydedilmiş indirme planı sıfırlansın mı? İndirilmiş ZIP dosyaları bilgisayarınızda kalır. Sonraki indirme yukarıdaki kapsamla yeni bir plan oluşturur.')) return;
+      try {
+        await globalThis.navigator.locks.request(`uhd-bulk-download:${rec.key}`, { ifAvailable: true }, async lock => {
+          if (!lock) throw new Error('Bu dosyanın indirmesi başka bir sekmede sürüyor; plan sıfırlanmadı.');
+          const job = await bulkLoad(true);
+          if (closed) return;
+          if (job && !await globalThis.UHDStorage.discardBulkDownload(rec.key, job.id)) throw new Error('Chrome indirmesi sürerken plan sıfırlanamaz.');
+          if (downloads) {
+            if (job) downloads.track({ rec, fileKey: rec.key, job });
+            if (!downloads.forget(rec.key)) throw new Error('Bu dosyanın indirmesi sürerken plan sıfırlanamaz.');
+          }
+          bulkState = null;
+          bulkJob = null; bulkIssue = ''; bulkLoaded = true;
+          zipMessage('Plan sıfırlandı. İndirilmiş ZIP dosyaları korundu; yeni indirmeyi başlatabilirsiniz.');
+        });
+      } catch (err) { if (!closed) zipMessage(err.message, true); }
+      if (!closed) zipSync();
+    });
+    zipDurdur.addEventListener('click', () => {
+      if (!zipRun) return;
+      if (zipRun.managed) { downloads.pause(rec.key); return; }
+      zipRun.ac.abort();
+      if (zipRun.packing) zipRun.packAc.abort();
+      if (zipRun.bulk && zipRun.saving && bulkJob) chrome.runtime.sendMessage({ type: 'uhd-download-cancel', fileKey: rec.key, jobId: bulkJob.id }).catch(() => {});
+      zipMessage(zipRun.packing ? 'ZIP hazırlama veya kaydetme durduruluyor.' : zipRun.bulk ? 'Durduruluyor; bu parçada alınmış evraklar kaydedilecek. Tamamlanan parçadan devam edebilirsiniz.' : 'Durduruluyor; alınmış evraklar eksik ZIP olarak hazırlanacak.');
+      zipSync();
+    });
+    zipPanel.addEventListener('click', () => { done(); showPanel(); ui.showDownloads?.(); });
+    paketHazirla.addEventListener('click', paketHazirlaBasla);
+    paketDurdur.addEventListener('click', () => { if (!paketSession) return; paketKapat(); paketDurum.textContent = 'Durduruldu; PDF oluşturulmadı.'; });
+    paketSiraGor.addEventListener('click', () => paketSiraGoster());
+    paketGorunen.addEventListener('click', () => {
+      const yer = PAKET_MAX - paketSecili.length;
+      const yeniler = gorunen.filter(x => paketAlinir(x) && !paketSecili.includes(paketAnahtar(x)));
+      paketSecili.push(...yeniler.slice(0, Math.max(0, yer)).map(paketAnahtar));
+      if (yeniler.length > yer) paketDurum.textContent = `Pakete en çok ${PAKET_MAX} evrak alınır; listelenenlerden ilk ${Math.max(0, yer)} evrak eklendi.`;
+      listeyiCiz();
+    });
+    paketTemizle.addEventListener('click', () => { paketSecili = []; if (paketSira === 'elle') paketSira = 'eski'; listeyiCiz(); });
+    paketSiraSec.addEventListener('change', () => { paketSira = paketSiraSec.value; listeyiCiz(); });
+
+    // Ana dosyanın grubu (evrak listesinde "2024/101(Hukuk Dava Dosyası)" gibi); başka gruptansa kartta olduğu gibi yazılır.
+    const kaynakGrubu = () => (tum.find(x => x.dosya && x.dosya.startsWith(rec.dosyaNo + '(')) || {}).dosya || '';
+    const evrakDosyaAdi = g => { const m = /^(.*?)\((.*)\)$/.exec(g); return m ? `${m[2]} ${m[1]}` : g; };
+    function konumYaz() {
+      const n = gorunen.length;
+      konum.textContent = n && sira >= 0 ? `${sira + 1} / ${n}` : n ? `– / ${n}` : '';
+      onceki.disabled = sira <= 0;
+      sonraki.disabled = sira < 0 || sira >= n - 1;
+    }
+    function grupSec(g) {
+      if (zipRun || g === grup) return;
+      grup = g;
+      suz();
+      sira = gorunen.findIndex(x => ayni(x, simdikiOge));
+      gruplariCiz(); listeyiCiz(); konumYaz();
+    }
+    ara.addEventListener('input', () => {
+      suz();
+      sira = gorunen.findIndex(x => ayni(x, simdikiOge));
+      listeyiCiz(); konumYaz();
+    });
+    ara.addEventListener('keydown', ev => {
+      if (ev.key === 'ArrowDown' && gorunen.length) { ev.preventDefault(); ogeler.focus({ preventScroll: true }); odakSync(true); }
+    });
+    kategoriGorunum.addEventListener('click', () => { kategorili = !kategorili; evrakOdak = null; listeyiCiz(); });
+    tarihSirasi.addEventListener('click', () => { tarihArtan = !tarihArtan; listeyiCiz(); });
+    ogeler.addEventListener('keydown', ev => {
+      if (!gorunen.length || ev.altKey || ev.ctrlKey || ev.metaKey || ev.target.tagName === 'INPUT') return;
+      const entries = kategorili ? [...kategoriDom.values()].flatMap(kat => [kat.head, ...(kat.box.open ? kat.rows : [])]) : [...ogeler.querySelectorAll('.ek-oge')];
+      const id = ogeler.getAttribute('aria-activedescendant');
+      const active = entries.find(node => node === ev.target) || entries.find(node => node.id === id) || entries[0];
+      const i = entries.indexOf(active);
+      const folder = active.classList.contains('ek-kategori-baslik');
+      const focus = node => {
+        if (!node) return;
+        if (node.classList.contains('ek-oge')) sec(Number(node.dataset.i), false, true);
+        else { evrakOdak = { kat: node.dataset.kategori }; odakSync(true); }
+      };
+      const adim = { ArrowDown: 1, ArrowUp: -1, PageDown: 10, PageUp: -10 }[ev.key];
+      if (adim) { ev.preventDefault(); focus(entries[Math.max(0, Math.min(entries.length - 1, i + adim))]); }
+      else if (ev.key === 'Home' || ev.key === 'End') { ev.preventDefault(); focus(ev.key === 'Home' ? entries[0] : entries[entries.length - 1]); }
+      else if (kategorili && ev.key === 'ArrowRight' && folder) {
+        ev.preventDefault();
+        const kat = kategoriDom.get(active.dataset.kategori);
+        if (kat.box.open) focus(kat.rows[0]); else { kategoriAc(active.dataset.kategori, true); odakSync(); }
+      } else if (kategorili && ev.key === 'ArrowLeft') {
+        ev.preventDefault();
+        const key = active.dataset.kategori;
+        if (folder) kategoriAc(key, false);
+        evrakOdak = { kat: key }; odakSync(true);
+      } else if ((ev.key === 'Enter' || ev.key === ' ') && folder) {
+        ev.preventDefault(); ev.stopPropagation();
+        const key = active.dataset.kategori;
+        kategoriAc(key, !kategoriDom.get(key).box.open); evrakOdak = { kat: key }; odakSync();
+      } else if (ev.key === 'Enter') { ev.preventDefault(); sec(Number(active.dataset.i), true); }
+      else if (ev.key === ' ' && paketMod) { ev.preventDefault(); paketIsaretle(gorunen[Number(active.dataset.i)]); }
+    });
+
+    // Önizlemedeki içerik: çubuk yerinde kalır (odaktaki düğme kaybolmasın); değişen içerikteki odak belgeye taşınır.
+    const icerik = (...parcalar) => {
+      const odak = shadowRoot.activeElement;
+      const tasi = !!odak && (odak === box || (onizleme.contains(odak) && !onbar.contains(odak)));
+      while (onbar.nextSibling) onbar.nextSibling.remove();
+      onizleme.append(...parcalar.filter(Boolean));
+      const simdi = shadowRoot.activeElement;
+      if (tasi && (!simdi || simdi === box || simdi === onizleme || !onizleme.contains(simdi))) (onizleme.querySelector('.docview') || onizleme).focus({ preventScroll: true });
+    };
+    const baslikYaz = x => {
+      evrakAdi.textContent = !x ? '' : x.ana ? `${/^Ek\s/.test(x.tur) ? '' : 'Ek: '}${x.tur} · ${x.ana.tur} eki · ${tarihYaz(x.onay)}` : `${x.yetimEk ? 'Ek: ' : ''}${x.tur} · ${tarihYaz(x.onay)}`;
+      evrakAdi.title = evrakAdi.textContent;
+    };
+    // Gösterilen evrakın kaynakları: okuma iptal edilir, çizim bırakılır. Bağlantı yeni sekmede açıldıysa ya da indirildiyse
+    // o sekmenin yüklemesi için bir süre bekletilir, yoksa hemen bırakılır.
+    const birak = () => {
+      if (!tebligatRead?.explicit) tebligatRead?.ac.abort();
+      if (!simdiki) return;
+      const s = simdiki;
+      simdiki = null;
+      tebligatUi?.sync();
+      s.ac.abort();
+      if (s.gozlem) s.gozlem.disconnect();
+      if (s.gorunum) s.gorunum.birak();
+      const birakUrl = () => { URL.revokeObjectURL(s.url); URL.revokeObjectURL(s.indirUrl); };
+      if (s.disarida) setTimeout(birakUrl, 60000);
+      else birakUrl();
+    };
+    for (const a of [yeniSekme, indir]) a.addEventListener('click', () => { if (simdiki) simdiki.disarida = true; });
+
+    function olcekUygula(s) {
+      if (!s.gorunum) return;
+      if (yakinlik.mod === 'sigdir') yakinlik.oran = Math.max(0.25, Math.min(1, (s.kap.clientWidth - 32) / s.gorunum.dogalEn));
+      s.gorunum.olcekle(yakinlik.oran);
+      if (s.yuzde) s.yuzde.textContent = `%${Math.round(yakinlik.oran * 100)}`;
+    }
+
+    // Sayfaya git (1.19.4): çok sayfalı TIFF'te sayfa, açık sayfa sonlu UDF'te bölüm numarası yazılıp Enter'a basılınca o
+    // sayfaya kaydırılır (TIFF sayfası görünür olunca çizilir; UDF bölümleri parça parça eklendiği için henüz eklenmemiş
+    // bölüm istenirse çizimin bitmesi beklenir). Kaydırdıkça kutu görünen sayfayı yazar; kutuya yazılırken değiştirilmez.
+    // Tek sayfalı evrakta kutu yoktur.
+    function sayfaGit(s, tur) {
+      const sinif = tur === 'udf' ? '.udf-sayfa' : '.tiff-sayfa';
+      const liste = () => s.gorunum.kok.querySelectorAll(sinif);
+      const oz = s.gorunum.ozet || {};
+      const n = tur === 'udf' ? Math.max(Number(oz.bolum) || 0, liste().length) : liste().length;
+      if (n < 2) return null;
+      const birim = tur === 'udf' ? 'Bölüm' : 'Sayfa';
+      const kutu = el('input', { type: 'text', inputmode: 'numeric', class: 'sayfa-no', value: '1', autocomplete: 'off', spellcheck: 'false',
+        'aria-label': `${birim} numarası, 1 ile ${n} arası; yazıp Enter'a basın`, title: `${birim} numarasını yazıp Enter'a basın` });
+      kutu.style.width = `${String(n).length + 2}ch`;
+      s.sayfaNo = 1;
+      const git = async () => {
+        const istenen = parseInt(kutu.value.replace(/\D/g, ''), 10);
+        const no = Math.min(n, Math.max(1, Number.isFinite(istenen) ? istenen : s.sayfaNo));
+        kutu.value = String(no);
+        s.sayfaNo = no;
+        let hedef = liste()[no - 1];
+        if (!hedef && s.gorunum.bitti) {
+          announce('Evrak hazırlanıyor…');
+          await s.gorunum.bitti;
+          if (simdiki !== s) return;
+          hedef = liste()[no - 1];
+        }
+        if (!hedef) return;
+        hedef.scrollIntoView({ block: 'start' });
+        // Kesilmiş TIFF: gösterilmeyen sayfa istenince nedeni söylenir.
+        announce(tur === 'tiff' && istenen > n && oz.toplam > n
+          ? `${istenen}. sayfa görüntüleyicide yok; ilk ${n} sayfa gösteriliyor. Tamamı için evrakı indirin.`
+          : `${birim} ${no} / ${n}`, tur === 'tiff' && istenen > n && oz.toplam > n);
+      };
+      kutu.addEventListener('focus', () => kutu.select());
+      kutu.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); git(); } });
+      kutu.addEventListener('blur', () => { kutu.value = String(s.sayfaNo); });
+      // Görünen sayfa: üst kenarın altındaki ilk sayfa (sayfalar dikey sırada; ikili arama). Kutu yalnız kullanıcı
+      // yazarken (değer gösterilen sayfadan farklıyken) güncellenmez; Enter'dan sonra odak kutuda kalsa da güncellenir.
+      let bekleyen = 0;
+      s.kap.addEventListener('scroll', () => {
+        if (bekleyen) return;
+        bekleyen = requestAnimationFrame(() => {
+          bekleyen = 0;
+          if (simdiki !== s) return;
+          const yaziyor = shadowRoot.activeElement === kutu && kutu.value !== String(s.sayfaNo);
+          const sayfalar = liste();
+          if (!sayfalar.length) return;
+          const ust = s.kap.getBoundingClientRect().top + 8;
+          let a = 0, b = sayfalar.length - 1;
+          while (a < b) { const m = (a + b) >> 1; if (sayfalar[m].getBoundingClientRect().bottom > ust) b = m; else a = m + 1; }
+          // En sona kaydırılınca son sayfa üst kenara çıkamaz; o zaman son sayfa gösteriliyor sayılır.
+          const sonda = s.kap.scrollTop + s.kap.clientHeight >= s.kap.scrollHeight - 2;
+          s.sayfaNo = sonda ? sayfalar.length : a + 1;
+          if (!yaziyor) kutu.value = String(s.sayfaNo);
+        });
+      }, { passive: true });
+      return el('span', { class: 'sayfa-git', role: 'group', 'aria-label': tur === 'udf' ? 'Bölüme git' : 'Sayfaya git' }, `${birim} `, kutu, ` / ${fmtNum(n)}`);
+    }
+
+    function docbarKur(s, tur) {
+      const oz = s.gorunum.ozet;
+      const bilgi = tur === 'udf'
+        ? ['UDF', oz.bolum > 1 ? `${oz.bolum} bölüm` : '', oz.resimReddi ? `${oz.resimReddi} resim gösterilemedi` : ''].filter(Boolean).join(' · ')
+        : ['TIFF', `${oz.toplam} sayfa`, oz.sorunlu ? `${oz.sorunlu} sayfa gösterilemedi` : ''].filter(Boolean).join(' · ');
+      const uyap = tur === 'udf' ? el('button', { type: 'button', title: 'Dosyayı UYAP’ta açıp Evrak sekmesine geçer' }, 'UYAP’ta aç') : null;
+      uyap?.addEventListener('click', () => { closeDosyaEkrani(false); openFile(rec, false, false, { sekme: 'evrak' }); });
+      const kucult = el('button', { type: 'button', title: 'Uzaklaştır', 'aria-label': 'Uzaklaştır' }, '−');
+      s.yuzde = el('button', { type: 'button', class: 'yuzde', title: 'Pencereye sığdır', 'aria-label': 'Pencereye sığdır' }, '%100');
+      const buyut = el('button', { type: 'button', title: 'Yakınlaştır', 'aria-label': 'Yakınlaştır' }, '+');
+      const adim = d => {
+        const hedef = d > 0 ? YAKINLIK.find(z => z > yakinlik.oran + 0.001) : [...YAKINLIK].reverse().find(z => z < yakinlik.oran - 0.001);
+        if (!hedef) return;
+        yakinlik.mod = 'elle';
+        yakinlik.oran = hedef;
+        olcekUygula(s);
+      };
+      kucult.addEventListener('click', () => adim(-1));
+      buyut.addEventListener('click', () => adim(1));
+      s.yuzde.addEventListener('click', () => { yakinlik.mod = 'sigdir'; olcekUygula(s); });
+      const notlar = [];
+      if (tur === 'udf' && oz.kesildi) notlar.push(oz.kesildi === 'sure' ? 'Belgenin hazırlanması uzun sürdü; ilk bölüm gösteriliyor. Tamamı için indirin ya da UYAP’ta açın.'
+        : 'Belge çok uzun ya da karmaşık; ilk bölüm gösteriliyor. Tamamı için indirin ya da UYAP’ta açın.');
+      if (tur === 'tiff' && oz.toplam > oz.sayfa) notlar.push(`Evrak ${oz.toplam} sayfa; ilk ${oz.sayfa} sayfa gösteriliyor. Tamamı için evrakı indirin.`);
+      else if (tur === 'tiff' && oz.kesik) notlar.push('Dosyanın sonu eksik ya da bozuk; okunabilen sayfalar gösteriliyor.');
+      if (oz.imza) notlar.push('Belgede e-imza var; imza burada doğrulanmaz.');
+      if (oz.sablon) notlar.push('Bu evrak UYAP şablonundan üretilmiş; alanlar görüntüleyicide yerleştirildi. Resmî görünüm için UYAP’ta açın.');
+      return [
+        el('div', { class: 'docbar' }, el('span', { class: 'docbilgi' }, bilgi), uyap, sayfaGit(s, tur),
+          el('span', { class: 'zoom', role: 'group', 'aria-label': 'Yakınlık' }, kucult, s.yuzde, buyut)),
+        notlar.length ? el('div', { class: 'docuyari' }, notlar.join(' ')) : null
+      ];
+    }
+
+    function goster(e, doc) {
+      birak();
+      const url = URL.createObjectURL(doc.blob);
+      // İndir her evrakta nötr türde ayrı bir adres kullanır: HTML ya da SVG gibi türler bağlam menüsünden yeni sekmede
+      // açılsa bile UYAP'ın kökeninde belge olarak çalışmaz, yalnız iner (1.19.3).
+      const indirUrl = URL.createObjectURL(new Blob([doc.blob], { type: 'application/octet-stream' }));
+      const s = simdiki = { url, indirUrl, doc, e, ac: new AbortController(), gorunum: null, gozlem: null, kap: null, yuzde: null, disarida: false };
+      const ext = documentExtension(doc);
+      const framed = ext === 'pdf' || ext === 'txt';   // tarayıcı çerçevede gösterir
+      const img = ['jpg', 'png', 'gif', 'bmp'].includes(ext);
+      // Gösterilen evrakın satırı: ek bilgisi (hangi evrakın eki) listedeki satırda durur.
+      const kendi = oge(evrakKey(e) || '', e.dosyaGrubu, e);
+      const x = simdikiOge && (simdikiOge.ekIndis != null || ayni(simdikiOge, kendi)) ? simdikiOge : kendi;
+      const ad = x.ana ? `${x.ana.tur} eki ${x.tur}` : (e.tur || 'evrak');
+      const name = zipTools.documentName(rec, x, ext);
+      const label = `${x.ana ? ad : e.tur || 'Evrak'} · ${fmtTrDate(e.onaylandigiTarih)}`;
+      s.title = label;
+      tebligatUi?.sync();
+      baslikYaz(x);
+      // Yeni grubunun son evrakı gösterildi: görüldü sayma düğmesi çıkar (bir kez çıkınca kalır).
+      if (yeni && yeni.length && ayni(yeni[yeni.length - 1], x)) gorulduGoster();
+      indir.href = indirUrl;
+      indir.download = name;
+      indir.hidden = false;
+      yeniSekme.href = url;
+      yeniSekme.hidden = !(framed || img);
+      if (framed) return icerik(el('iframe', { src: url, title: label }));
+      // HTML yeni sekmede açılmaz: orada UYAP'ın kökeninde, korumasız çalışırdı. İndir özgün dosyayı verir.
+      if (ext === 'html') {
+        icerik(el('div', { class: 'docyer', role: 'status' }, 'Evrak hazırlanıyor…'));
+        htmlBelgesi(doc.blob).then(html => {
+          if (simdiki !== s || closed) return;
+          icerik(el('iframe', { srcdoc: html, title: label, sandbox: '', class: 'htmldoc', referrerpolicy: 'no-referrer' }));
+          log('Evrak gösterildi (html).');
+        }).catch(err => {
+          if (simdiki !== s || closed) return;
+          log('HTML evrak gösterilemedi:', (err && (err.kod || err.name)) || 'hata');
+          if (!err || !err.kod) globalThis.UHDReporter?.report(err, 'html');
+          icerik(unsupportedDoc(rec, e, ext, indirUrl, name, doc.type, err && err.kod === 'buyuk' ? 'Evrak görüntüleyici için çok büyük (10 MB üstü); indirin ya da UYAP’ta açın.'
+            : err && err.kod === 'bos' ? 'Evrakta gösterilebilecek içerik yok; indirin ya da UYAP’ta açın.' : 'Evrak okunurken beklenmeyen bir hata oluştu.'));
+        });
+        return;
+      }
+      if (img) {
+        const pic = el('img', { src: url, alt: label });
+        // Sayfanın kuralları resmi engellerse indirme ekranına düşülür.
+        pic.addEventListener('error', () => { if (simdiki === s) icerik(unsupportedDoc(rec, e, ext, indirUrl, name, doc.type)); }, { once: true });
+        return icerik(el('div', { class: 'imgdoc' }, pic));
+      }
+      const tur = okuyucuTuru(doc, ext);
+      if (!(tur === 'udf' ? udf : tur === 'tiff' ? tiff : null)) return icerik(unsupportedDoc(rec, e, ext, indirUrl, name, doc.type));
+      const kap = s.kap = el('div', { class: 'docview', tabindex: '0', 'aria-label': 'Evrak içeriği' },
+        el('div', { class: 'docyer', role: 'status' }, 'Evrak hazırlanıyor…'));
+      icerik(kap);
+      const t0 = performance.now();
+      (async () => {
+        const signal = s.ac.signal;
+        const gorunum = tur === 'udf'
+          ? udf.ciz(await udf.oku(doc.blob, { signal }), { signal, kaydirma: kap })
+          : tiff.ciz(await tiff.ac(doc.blob, { signal }), { signal, kaydirma: kap });
+        if (simdiki !== s || closed) { gorunum.birak(); return; }
+        s.gorunum = gorunum;
+        kap.replaceChildren(gorunum.kok);
+        icerik(...docbarKur(s, tur), kap);
+        olcekUygula(s);
+        if (typeof ResizeObserver === 'function') {
+          s.gozlem = new ResizeObserver(() => { if (yakinlik.mod === 'sigdir' && simdiki === s) olcekUygula(s); });
+          s.gozlem.observe(kap);
+        }
+        log(`Evrak gösterildi (${tur}, ${Math.round(performance.now() - t0)} ms).`);
+      })().catch(err => {
+        if (simdiki !== s || closed || (err && err.name === 'AbortError')) return;
+        // Günlüğe yalnız hata kodu yazılır; belge metni yazılmaz.
+        log('Evrak görüntüleyicide gösterilemedi:', tur, (err && (err.kod || err.name)) || 'hata');
+        const bilinen = (udf && err instanceof udf.UdfHatasi) || (tiff && err instanceof tiff.TiffHatasi);
+        // Bilinen okuyucu hataları (bozuk/desteklenmeyen evrak, content.xml yok vb.) beklenen sonuçlardır; kullanıcıya
+        // gösterilir ama hata olarak raporlanmaz. Yalnız beklenmeyen hatalar raporlanır.
+        if (!bilinen) globalThis.UHDReporter?.report(err, tur);
+        icerik(unsupportedDoc(rec, e, ext, indirUrl, name, doc.type, bilinen ? err.message : 'Evrak okunurken beklenmeyen bir hata oluştu.'));
+      });
+    }
+
+    // Evrak seçimi: liste ve konum hemen güncellenir; art arda seçimlerde evrak son seçimden kısa süre sonra getirilir ve
+    // eski istekler iptal edilir, böylece yanlış evrak gösterilmez. hemen: tıklama ya da Enter (bekleme yok).
+    function sec(i, hemen = false, visible = false) {
+      if (closed || i < 0 || i >= gorunen.length) return;
+      const hedef = gorunen[i];
+      if (i === sira && ayni(hedef, simdikiOge) && (!hemen || simdiki || gezAc)) { secimiCiz(visible); return; }
+      sira = i;
+      secimiCiz(visible);
+      konumYaz();
+      const ep = ++gezEpoch;
+      if (gezAc) gezAc.abort();
+      birak();
+      simdikiOge = hedef;
+      baslikYaz(hedef);
+      yeniSekme.hidden = true;
+      indir.hidden = true;
+      indir.removeAttribute('href');
+      icerik(el('div', { class: 'msg', role: 'status' }, 'Evrak UYAP’tan getiriliyor…'));
+      clearTimeout(gecikme);
+      gecikme = setTimeout(() => yukle(ep, hedef), hemen ? 0 : 250);
+    }
+    const git = d => { if (sira >= 0) sec(sira + d, false, true); else if (gorunen.length) sec(0, false, true); };
+
+    

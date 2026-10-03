@@ -1,0 +1,6 @@
+function panelReady() {
+    if (!panel || !contextAvailable()) return;
+    chrome.runtime.sendMessage({ type: 'uhd-panel-ready' }).catch(error => {
+      if (invalidated(error)) stopInvalidatedContext();
+    });
+  }

@@ -1,0 +1,34 @@
+
+    paketAc.addEventListener('click', () => paketModu(!paketMod));
+
+    // ------------------------------------------------ İcra Banka sorgusu sekmesi: sorgu, talep kontrolü ve banka cevapları
+    // Banka (gönderen) ve tarih liste bilgisinden gelir. "Cevapları oku" cevap evraklarını ve eklerini UYAP'tan aralıklı
+    // alır; metin paket motorunda (görünmez uzantı çerçevesi, pdf.js) çıkarılır ve bankaCevabi ile özetlenir. Metin ve
+    // ham metin yalnız bellekte tutulur. Banka sorgusu kaydedildiyse asgari kanıt özeti şifreli kasaya aktarılır.
+    const BANKA_ARALIK = UYAP_REQUEST_INTERVAL;   // ortak kuyrukta sabit aralıkla UYAP istek yükünü azaltır
+    const BANKA_BELGE_MAX = 200, BANKA_BYTE_MAX = 64 * 1024 * 1024;   // metin motoruyla aynı cevap başına sınırlar
+    const BANKA_OKUMA_ACIKLAMASI = 'Banka cevapları ve ekleri UYAP’taki açık oturumunuzdan aralıklı alınır. Metin Chrome’da okunur; haciz, bakiye ve kayıt durumu sabit kurallarla özetlenir. Yapay zekâ kullanılmaz; evrak başka bir sunucuya gönderilmez. Eksik veya görüntüden oluşan evrakta kesin sonuç verilmez; özgün cevabı açın.';
+    const bankaSonuc = new Map();   // evrak anahtarı ve dosya grubu → { banka, sonuc, tutar, oncekiHaciz } | { hata }
+    const bankaBelgeler = new Map();   // özgün asıl belge Blob'ları; dosya ekranı kapanınca bırakılır
+    let bankaByte = 0, bankaTumAcik = false;
+    let bankaKart = null, bankaOkuma = null, bankaHata = '';
+    // Sorgu ve kanıt özeti şifreli kasada; kimlik, belge metni ve geçici UYAP kimlikleri yalnız bellekte.
+    const bankChecks = globalThis.UHDBankChecks, bankAPI = globalThis.UHDBankAPI;
+    let bankCard = null, bankRun = null, bankSubjects = {}, bankBorrowers = [], bankSelected = '', bankNotice = '';
+    const bankReplySubjects = new Map(), bankRequests = new Map();
+    const bankReplyTexts = new Map();   // Yalnız bu ekranın belleğinde; ham cevap metni kasaya/yedeğe yazılmaz.
+    const BANKA_METIN_MAX = 2 * 1024 * 1024;
+    let bankReplyCharacters = 0, bankReplyNotice = '';
+    let bankRequestsChecked = false;
+    const bankKey = x => JSON.stringify([x.k, x.dosya]);
+    const bankMainGroup = group => !group || group === rec.dosyaNo ||
+      [rec.dosyaTur, dosyaTurAdi(rec)].filter(Boolean).some(type => norm(group) === norm(`${rec.dosyaNo}(${type})`));
+    const bankOwn = x => !x.ana && !x.yetimEk && bankMainGroup(x.dosya);
+    const bankCandidates = () => tum.filter(x => bankOwn(x) && !ihbarCevabiMi(x.tur) && /talep|haciz|m[üu]zekkere|ihbar/i.test(x.tur));
+    const bankBusy = () => !!bankRun || !!bankaOkuma || !!zipRun || !!paketSession || !!paketRun || !!tebligatRead;
+    const bankFullList = () => !!kaynak && !kaynak.list.kilit && !kaynak.list.morePages && !kaynak.list.scopeUnknown &&
+      (kaynak.list.groups ? kaynak.list.groups.some(bankMainGroup) : kaynak.list.some(e => bankMainGroup(e.dosyaGrubu)));
+    const bankInvalid = () => Math.min(500, (kaynak?.list || []).filter(e => !evrakKey(e)).length +
+      tum.filter(x => bankMainGroup(x.dosya) && x.yetimEk).length);
+    const bankLive = () => bankBorrowers.find(b => b.key === bankSelected);
+    

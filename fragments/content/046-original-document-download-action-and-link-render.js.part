@@ -1,0 +1,7 @@
+        if (closed) return;
+        const url = URL.createObjectURL(new Blob([doc.blob], { type: 'application/octet-stream' }));
+        const a = el('a', { href: url, download: zipTools.documentName(rec, x, documentExtension(doc)) });
+        box.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+      } catch (err) { if (!closed && err?.name !== 'AbortError') paketDurum.append(el('p', { class: 'dp-err' }, `Özgün evrak indirilemedi: ${err.message}`)); }
+      finally { if (paketOzgunAc === ac) paketOzgunAc = null; }
+    }

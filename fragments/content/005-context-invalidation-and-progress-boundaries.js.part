@@ -1,0 +1,57 @@
+  let job = null;   // bu sekmede yürüyen iş: { id, stop, lost }
+
+  // Chrome eklenti yenilenince açık UYAP sekmesindeki eski content script'i
+  // hemen kaldırmaz. Eski betik artık storage API'sini kullanamaz; zamanlı
+  // devralma kontrolleri o bağlamda sessizce durmalıdır.
+  let contextGone = false;
+  let resumeInterval = null;
+  let autoInterval = null;
+  function invalidated(error) {
+    return /context invalidated|Extension context/i.test(String(error?.message || error));
+  }
+  function stopInvalidatedContext() {
+    if (contextGone) return;
+    contextGone = true;
+    hidePanel();
+    if (introTip) introTip.hidden = true;
+    if (launch) {
+      launch.textContent = 'Legaluga · Yenile';
+      launch.title = 'Eklenti güncellendi; UYAP sayfasını yenileyin';
+      launch.setAttribute('aria-label', 'Eklenti güncellendi; UYAP sayfasını yenile');
+      launch.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        location.reload();
+      }, true);
+    }
+    if (job) job.lost = true;
+    if (resumeInterval !== null) clearInterval(resumeInterval);
+    if (autoInterval !== null) clearInterval(autoInterval);
+    if (typeof sessionRequestHooks !== 'undefined') sessionRequestHooks?.invalidate();
+  }
+  window.addEventListener('unhandledrejection', event => {
+    if (!invalidated(event.reason)) return;
+    event.preventDefault();
+    stopInvalidatedContext();
+  });
+  function contextAvailable() {
+    if (contextGone) return false;
+    try {
+      if (chrome.runtime?.id) return true;
+    } catch (_) {}
+    stopInvalidatedContext();
+    return false;
+  }
+  function scheduled(task) {
+    if (!contextAvailable()) return;
+    Promise.resolve().then(task).catch(error => {
+      if (invalidated(error)) stopInvalidatedContext();
+      else { globalThis.UHDReporter?.report(error, 'scheduled'); console.error('Legaluga zamanlı işlem hatası:', error); }
+    });
+  }
+
+  // İstekler arası bekleme. Arka plandaki sekmede Chrome zamanlayıcıları en az 1 sn'ye yuvarladığı için
+  // orada yapay bekleme yapılmaz; istekler yine de sırayla, birer birer gider.
+  const pace = () => (document.hidden ? Promise.resolve() : sleep(DELAY));
+
+  async function setProgress(p) {

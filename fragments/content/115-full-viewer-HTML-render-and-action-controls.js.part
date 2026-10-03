@@ -1,0 +1,34 @@
+
+
+    // Liste hazır: grup, seçili evrak ve ilk önizleme. Evrak bir karttan açıldıysa (ilk) o gösterilir; "Evrak Görüntüle"de
+    // yeni evrak varsa ilk yeni, yoksa en yeni evrak.
+    function listeHazir() {
+      listeKur();
+      bankaCiz();
+      // Savcı onayı yok: UYAP'ın iletisi gösterilir, "Bu dosyada evrak yok" denmez.
+      if (kaynak && kaynak.list.kilit) {
+        grup = 'tumu';
+        suz(); gruplariCiz(); listeyiCiz(); konumYaz();
+        icerik(el('div', { class: 'msg', role: 'status' }, el('p', null, `UYAP: ${kaynak.list.kilit}`),
+          el('p', { class: 'dp-muted' }, 'Cumhuriyet savcısı inceleme talebinizi onaylayınca evrak burada görünür.')));
+        return;
+      }
+      const ilkOge = o.ilk ? oge(evrakKey(o.ilk.e) || '', o.ilk.e.dosyaGrubu, o.ilk.e) : null;
+      grup = yeni && (!ilkOge || yeni.some(x => ayni(x, ilkOge))) ? 'yeni' : 'tumu';
+      suz();
+      gruplariCiz();
+      if (ilkOge) {
+        sira = gorunen.findIndex(x => ayni(x, ilkOge));
+        simdikiOge = gorunen[sira] || ilkOge;
+        listeyiCiz(); secimiCiz(); konumYaz();
+        goster(o.ilk.e, o.ilk.doc);
+      } else if (gorunen.length) {
+        listeyiCiz();
+        if (aktif === 'evrak') sec(0, true);
+        else { ilkBekliyor = true; konumYaz(); }
+      } else {
+        listeyiCiz(); konumYaz();
+        icerik(el('div', { class: 'msg' }, el('p', null, 'Bu dosyada evrak yok.')));
+      }
+    }
+    

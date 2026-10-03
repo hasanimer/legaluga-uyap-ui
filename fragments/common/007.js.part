@@ -1,0 +1,72 @@
+  // İlk tarama başlangıç sayılır (yeni evrak yok). Sonrakilerde önceki taramalarda görülmemiş anahtarlar yenidir.
+  // seen birleşim olarak tutulur; böylece listeden bir kez düşüp geri gelen evrak yeniden "yeni" sayılmaz.
+  function diffEvrak(prevSeen, items) {
+    const uniq = new Map();
+    for (const i of items) if (!uniq.has(i.k)) uniq.set(i.k, i);
+    const prev = Array.isArray(prevSeen) ? new Set(prevSeen) : null;
+    const yeni = prev ? [...uniq.values()].filter(i => !prev.has(i.k)) : [];
+    yeni.sort((a, b) => trDateTs(b.onay) - trDateTs(a.onay));
+    const seen = prev ? [...prev] : [];
+    for (const k of uniq.keys()) if (!prev || !prev.has(k)) seen.push(k);
+    return { seen, yeni };
+  }
+
+  // Görüldü olarak işaretlenmemiş yeni evraklar (goruldu: {kayıtKey: zaman}).
+  // Dosyadaki en yeni evrak (onay tarihine göre; aynı günde UYAP'ın sırasındaki ilk evrak).
+  function sonEvrak(items) {
+    let best = null, bestTs = -1;
+    for (const i of items || []) {
+      const ts = trDateTs(i.onay);
+      if (ts > bestTs) { best = i; bestTs = ts; }
+    }
+    return best && { k: best.k, tur: best.tur, onay: best.onay, gonderim: best.gonderim, dosya: best.dosya };
+  }
+
+  // Kayıtta sonEvrak yoksa (1.1.0'da taranmış dosyalar) görülen evrak anahtarlarından çıkarılır:
+  // anahtar "birimEvrakNo|onay tarihi|tür" biçimindedir.
+  function lastEvrak(r) {
+    if (r.sonEvrak) return r.sonEvrak;
+    if (!Array.isArray(r.evrakSeen) || !r.evrakSeen.length) return null;
+    return sonEvrak(r.evrakSeen.map(k => {
+      const [, onay, ...tur] = String(k).split('|');
+      return { k, onay, tur: tur.join('|') };
+    }));
+  }
+
+  // Müvekkil (kişi) kartı: adı normalleştirilmiş hâliyle birebir eşleşen tarafın geçtiği tüm dosyalar ve
+  // o dosyalardaki rolleri. UYAP taraf listesinde kimlik numarası olmadığından aynı adlı farklı kişiler ayrılamaz.
+  // Sıra: müvekkil olarak geçtiği dosyalar önce; her grupta açıklar önce, sonra son evrakı yeni olan, sonra yeni açılan.
+  function personFiles(records, name, myName) {
+    const key = nameKey(name);
+    const keys = myKeys(myName);
+    const out = [];
+    if (!key) return out;
+    for (const r of records || []) {
+      const ps = (r.taraflar || []).filter(p => nameKey(p.adi) === key);
+      if (ps.length) out.push({ r, roller: ps.map(p => ({ rol: p.rol || 'Taraf', muvekkil: isClient(p, keys) })) });
+    }
+    const son = x => trDateTs((lastEvrak(x.r) || {}).onay);
+    const bizde = x => x.roller.some(y => y.muvekkil);
+    out.sort((a, b) =>
+      bizde(b) - bizde(a) ||
+      (a.r.sorguDurum === 1) - (b.r.sorguDurum === 1) ||
+      son(b) - son(a) ||
+      (b.r.acilisTs || 0) - (a.r.acilisTs || 0));
+    return out;
+  }
+
+  // ------------------------------------------------ tarih yardımcıları
+  // Duruşma tarihleri yerel gün olarak "yyyy-mm-dd" biçiminde tutulur.
+  const pad2 = n => String(n).padStart(2, '0');
+  function isoToUtc(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+    return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : null;
+  }
+  const todayIso = (now = new Date()) => `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+
+  // Bugünden belirtilen tarihe kalan gün (geçmişse eksi).
+  function daysLeft(iso, today = todayIso()) {
+    const a = isoToUtc(today), b = isoToUtc(iso);
+    return a && b ? Math.round((b - a) / 86400000) : null;
+  }
+

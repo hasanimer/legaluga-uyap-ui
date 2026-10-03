@@ -1,0 +1,8 @@
+    // Yalnız anlamı bilinen alanlar gösterilir. Eksik veya sayısal olmayan tutar sıfıra çevrilmez; toplam/bakiye hesaplanmaz.
+    const money = (source, k, label, attrs = null) => el('div',
+      { ...attrs, class: ['dp-summary-row', 'dp-money-row', attrs?.class].filter(Boolean).join(' ') },
+      el('span', { class: 'dp-k' }, label + ': '), el('span', { class: Number.isFinite(source?.[k]) ? 'dp-v' : 'dp-v dp-muted' },
+        Number.isFinite(source?.[k]) ? fmtTL(source[k]) : 'UYAP’tan alınamadı'));
+    const text = (k, label) => (typeof ayrinti[k] === 'string' && ayrinti[k].trim() ? el('div', { class: 'dp-summary-row' },
+      el('span', { class: 'dp-k' }, label + ': '), el('span', { class: 'dp-v' }, ayrinti[k])) : null);
+    const bolum = (label, ...kids) => el('div', { class: 'dp-summary-scroll', role: 'region', 'aria-label': label, tabindex: 0 }, ...kids);

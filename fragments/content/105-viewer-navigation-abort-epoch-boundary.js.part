@@ -1,0 +1,2 @@
+      const ac = gezAc = new AbortController();
+      const gecerli = () => ep === gezEpoch && !closed;

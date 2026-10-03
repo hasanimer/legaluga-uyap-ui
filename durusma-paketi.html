@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Duruşma Paketi</title>
+  <link rel="stylesheet" href="durusma-paketi.css">
+</head>
+<body>
+  <main id="paket" aria-labelledby="baslik">
+    <header><h1 id="baslik">Duruşma Paketi</h1><button id="kapat" type="button">Kapat</button></header>
+    <p id="baglanti" role="status">Evrak listesi bekleniyor…</p>
+    <p class="scope-note">Deneme sürümü. PDF, TIFF, JPEG/PNG resim ve UDF paragrafları pakete girer; HTML, XML ve düz metin evrak okunur metin sayfası olarak eklenir. Pakete eklenemeyen evrak atlanır ve PDF’in başında nedeniyle raporlanır.</p>
+    <section aria-labelledby="secim-baslik">
+      <h2 id="secim-baslik">1. Evrakları seç</h2>
+      <div class="filters"><label>Grup <select id="grup"><option value="">Tüm gruplar</option></select></label><label>Evrak ara <input id="ara" type="search" placeholder="Tür, tarih ya da ana evrak adı" autocomplete="off"></label></div>
+      <div class="actions"><button id="gorunenleri-sec" type="button">Görünenleri seç</button><button id="ekleri-sec" type="button">Seçilenlerin eklerini de seç</button><button id="tam-liste" type="button" hidden>Tüm listeyi yükle</button></div>
+      <p id="liste-durum" role="status"></p><div id="evrak-listesi" class="items" role="group" aria-label="Seçilebilir evraklar"></div>
+    </section>
+    <section aria-labelledby="sira-baslik"><h2 id="sira-baslik">2. Sırayı düzenle <span id="sayi"></span></h2><p>Taşıma tutamacını sürükleyin veya Yukarı/Aşağı düğmelerini kullanın.</p><ol id="sira-listesi" class="ordered"></ol></section>
+    <section aria-labelledby="paket-baslik"><h2 id="paket-baslik">3. PDF hazırla</h2><div class="actions"><button id="hazirla" type="button" class="primary">PDF Hazırla</button><button id="durdur" type="button" hidden>Durdur</button></div><p id="ilerleme" role="status" aria-live="polite"></p><div id="hatalar" hidden></div><div id="sonuc" hidden><p id="sonuc-durum"></p><div id="atlananlar" hidden></div><iframe id="onizleme" title="Hazırlanan gerçek PDF önizlemesi"></iframe><a id="indir" download>PDF’i İndir</a></div></section>
+    <p id="duyuru" class="sr-only" role="status" aria-live="polite"></p>
+  </main>
+  <script src="durusma-paketi-model.js"></script>
+  <script src="udf.js"></script>
+  <script src="durusma-paketi-ui.js"></script>
+  <script src="durusma-paketi-bootstrap.js"></script>
+</body>
+</html>

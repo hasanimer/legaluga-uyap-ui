@@ -1,0 +1,4 @@
+      } catch (error) {
+        bankNotice = error?.name === 'AbortError' ? 'Durduruldu; önceki kayıt korundu.'
+          : /^API_/.test(error?.code || '') ? error.message : 'Sorgu tamamlanamadı; önceki kayıt korundu. Otomatik tekrar yapılmadı; UYAP ekranını kontrol edin.';
+      } finally { if (bankRun === run) bankRun = null; bankDraw(); zipSync(); }

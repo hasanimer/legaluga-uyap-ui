@@ -1,0 +1,172 @@
+
+    onceki.addEventListener('click', () => git(-1));
+    sonraki.addEventListener('click', () => git(1));
+
+    // ------------------------------------------------ Sekmeler
+    const sekmeDugmeleri = SEKMELER.map(([k, ad]) => {
+      const b = el('button', { type: 'button', role: 'tab', id: `${kimlik}-t-${k}`, 'aria-controls': `${kimlik}-p-${k}`, 'data-sekme': k }, ad);
+      b.addEventListener('click', () => sekmeAc(k));
+      return b;
+    });
+    sekmeCubugu.append(...sekmeDugmeleri);
+    sekmeCubugu.addEventListener('keydown', ev => {
+      const i = SEKMELER.findIndex(t => t[0] === aktif);
+      const n = SEKMELER.length;
+      const j = { ArrowRight: (i + 1) % n, ArrowLeft: (i - 1 + n) % n, Home: 0, End: n - 1 }[ev.key];
+      if (j === undefined) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      sekmeAc(SEKMELER[j][0]);
+      sekmeDugmeleri[j].focus();
+    });
+    // Sekme panelleri baştan kurulur ve yerinde kalır, yalnız gizlenip gösterilir: açık PDF yeniden yüklenmez, kaydırma ve
+    // yakınlık korunur, aria-controls hep var olan panele işaret eder. İçerik sekme ilk açıldığında yüklenir.
+    for (const [k] of SEKMELER) {
+      const p = paneller[k] = k === 'evrak' ? evrakPanel : k === 'indir' ? indirPanel : el('div', { class: k === 'banka' ? 'dp-body ek-banka-panel' : 'dp-body', tabindex: '0' });
+      p.id = `${kimlik}-p-${k}`;
+      p.setAttribute('role', 'tabpanel');
+      p.setAttribute('aria-labelledby', `${kimlik}-t-${k}`);
+      p.hidden = true;
+      govde.append(p);
+    }
+    const yuklenen = new Set();
+    function sekmeAc(k) {
+      if (k === aktif || closed) return;
+      aktif = k;
+      for (const b of sekmeDugmeleri) {
+        const on = b.dataset.sekme === k;
+        b.setAttribute('aria-selected', String(on));
+        b.tabIndex = on ? 0 : -1;
+        b.classList.toggle('on', on);
+      }
+      for (const [key, p] of Object.entries(paneller)) p.hidden = key !== k;
+      if (!yuklenen.has(k)) {
+        yuklenen.add(k);
+        const p = paneller[k];
+        if (k === 'evrak') { if (kaynak) listeHazir(); else listeAl(); }
+        else if (k === 'indir') { if (!kaynak) listeAl(); bulkLoad(); zipSync(); }
+        else if (k === 'banka') { bankaKartiEkle(p); }
+        else {
+          // Her sekme kendi alanına yazar: sekme değişince geç gelen yanıt başka sekmenin üzerine yazmaz.
+          if (k !== 'notlar' && k !== 'tebligat') p.replaceChildren(el('div', { class: 'dp-muted' }, 'UYAP’tan alınıyor…'));
+          const run = { ozet: () => loadOzet(rec, p), safahat: () => loadSafahat(rec, p, safahatAc.signal), notlar: () => loadNotlar(rec, p, notlarAc.signal),
+            tebligat: async () => {
+              tebligatUi = globalThis.UHDTebligatUI.mount(p, {
+                query: (provider, barcode, options) => globalThis.UHDTebligatAPI.query(provider, barcode, { ...options, fileKey: rec.key }),
+                readDocument: (signal, key) => readTebligatDocument(signal, key),
+                readSubjectDocument: (signal, key) => readTebligatDocument(signal, key, { bulk: true }),
+                readUetsDocument,
+                getDocuments: getTebligatDocuments,
+                loadDocuments: loadTebligatDocuments,
+                getDocumentLabel: () => simdiki?.title || '',
+                getDocumentKey: () => simdiki,
+                signal: tebligatAc.signal
+              });
+            }
+          }[k];
+          run().catch(err => {
+            if (closed) return;
+            globalThis.UHDReporter?.report(err, k);
+            yuklenen.delete(k);   // sekmeye dönülünce yeniden denenir
+            p.replaceChildren(el('div', { class: 'dp-err' }, `Alınamadı: ${err.message}`));
+          });
+        }
+      } else if (k === 'evrak' && ilkBekliyor) { ilkBekliyor = false; sec(0, true); }
+      if (k === 'tebligat') tebligatUi?.sync();
+    }
+
+    const done = (restore = true) => {
+      if (closed) return;
+      closed = true;
+      clearTimeout(gecikme);
+      listeAc.abort();
+      notlarAc.abort();
+      safahatAc.abort();
+      tebligatAc.abort();
+      tebligatList?.ac.abort(); tebligatCache = null;
+      tebligatRead?.ac.abort();
+      bulkOff?.(); bulkOff = null;
+      if (zipRun && !zipRun.managed) {
+        zipRun.ac.abort(); zipRun.packAc.abort();
+        if (zipRun.bulk && zipRun.saving && bulkJob) chrome.runtime.sendMessage({ type: 'uhd-download-cancel', fileKey: rec.key, jobId: bulkJob.id }).catch(() => {});
+      }
+      paketKapat();
+      bankaOkuma?.ac.abort();
+      bankRun?.ac.abort(); bankBorrowers = []; bankReplySubjects.clear(); bankRequests.clear();
+      bankReplyTexts.clear(); bankReplyCharacters = 0;
+      bankaBelgeler.clear(); bankaByte = 0; bankaSonuc.clear();
+      paketOzgunAc?.abort();
+      paketSonucBirak();
+      zipState = null;
+      zipRelease();
+      if (gezAc) gezAc.abort();
+      birak();
+      viewer.remove();
+      document.removeEventListener('keydown', onKey, true);
+      if (dosyaEkrani && dosyaEkrani.viewer === viewer) dosyaEkrani = null;
+      if (restore) restoreAfterViewer(previous);
+    };
+    // ← → evrak sekmesinde evraklar arasında gezer. Sekme çubuğunda, listede, yazı alanında, değiştirici tuşla ya da
+    // yakınlaştırılmış belge yatay kaydırılabilirken (odak belgedeyken) oklar kendi işine bırakılır.
+    const onKey = ev => {
+      // Yerel yedek parola penceresi açıkken Escape ve Tab onun doğal davranışını izler.
+      if (shadowRoot.querySelector('.backup-password')?.open) return;
+      // Sayfa kutusunda Esc yazılanı geri alır (ekranı kapatmaz); kutu gösterilen sayfayı yazıyorsa Esc ekranı kapatır.
+      const sn = shadowRoot.activeElement;
+      if (ev.key === 'Escape' && sn && sn.classList && sn.classList.contains('sayfa-no') && simdiki && sn.value !== String(simdiki.sayfaNo)) {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        sn.value = String(simdiki.sayfaNo);
+        return;
+      }
+      // Arama kutusunda Esc önce aramayı temizler (belge düzeyindeki bu dinleyici kutununkinden önce çalışır).
+      if (ev.key === 'Escape' && shadowRoot.activeElement === ara && ara.value) {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        ara.value = '';
+        ara.dispatchEvent(new Event('input'));
+        return;
+      }
+      if (aktif === 'evrak' && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') && !ev.altKey && !ev.ctrlKey && !ev.metaKey && !ev.shiftKey && !panelKeys(box)) {
+        const odak = shadowRoot.activeElement;
+        const kap = box.querySelector('.docview');
+        const yazi = odak && (odak.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(odak.tagName));
+        const kaydir = kap && odak && kap.contains(odak) && kap.scrollWidth > kap.clientWidth + 1;
+        const yerinde = odak && (sekmeCubugu.contains(odak) || ogeler.contains(odak));
+        if (!yazi && !kaydir && !yerinde && gorunen.length > 1) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          git(ev.key === 'ArrowLeft' ? -1 : 1);
+          return;
+        }
+      }
+      viewerKeys(ev, box, done);
+    };
+    close.addEventListener('click', () => done());
+    viewer.addEventListener('click', ev => {
+      if (ev.target !== viewer || closed) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      const devam = zipRun?.managed ? '\nParçalı indirme arka planda sürer; UYAP sekmesini açık tutun.' : zipRun || paketRun || bankRun || bankaOkuma || tebligatRead ? '\nDevam eden indirme, sorgu veya okuma da durdurulur.' : '';
+      if (confirm(`Dosya ekranını kapatmak istiyor musunuz?\nAçık evrak, okuma konumu ve bu ekrandaki geçici sonuçlar kapanır.${devam}`)) done();
+    });
+    document.addEventListener('keydown', onKey, true);
+    if (!beside) hidePanel();
+    dosyaEkrani = { viewer, box, close: done, focus: () => close.focus() };
+    shadowRoot.append(viewer);
+    const ilkSekme = SEKMELER.some(t => t[0] === o.sekme) ? o.sekme : 'ozet';
+    if (kaynak && ilkSekme !== 'evrak') { listeKur(); suz(); }
+    if (downloads) bulkOff = downloads.subscribe(bulkWatch);
+    zipSync();
+    sekmeAc(ilkSekme);
+    if (siraBar && okuma.yon) {
+      const [geri, , ileri] = siraBar.children;
+      const once = okuma.yon > 0 ? [ileri, geri] : [geri, ileri];
+      (once.find(b => !b.disabled) || close).focus();
+    } else close.focus();
+  }
+
+  // ---------------------------------------------------------------- Sayfa bildirimleri
+  // Bildirimler bir yığında durur (en çok üç). Her işin kendi kimliği vardır: dosya açma ('acma'), evrak, güncelleme,
+  // duruşma, oturum… Aynı kimlikle gelen bildirim yerindekini günceller, başka işin bildirimini ezmez. Oturum uyarısı
+  // sabittir: yığın dolsa da çıkmaz ve en üstte durur. Ekran okuyucuya duyuru kalıcı canlı bölgelerden yapılır; her

@@ -1,0 +1,2 @@
+      items = items.filter(item => ownsItem(item, pending));
+      if (items.length === 1) {

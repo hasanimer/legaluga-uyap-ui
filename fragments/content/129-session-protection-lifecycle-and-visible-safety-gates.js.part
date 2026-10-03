@@ -1,0 +1,148 @@
+
+  let requestObserver = null;
+  try {
+    requestObserver = new PerformanceObserver(list => pageRequests(list.getEntries()));
+    requestObserver.observe({ type: 'resource', buffered: true });
+  } catch (_) {}
+  // Başka bir UYAP sekmesinde çıkış yapıldı ya da oturum orada düştü: bildirimi o sekme verir.
+  window.addEventListener('storage', e => {
+    if (e.key !== 'loginState') return;
+    // false→true iki tick arasında tamamlanabilir; eski isteğin yanıtı yeni oturumu etkileyemez.
+    sessionRevision++;
+    abortSessionPing();
+    if (e.newValue !== 'true') lostElsewhere = true;
+    else sessionSeen = false; // event kuyruğundayken false→true tamamlanmış olsa da yeni dönemi başlat
+    safeTick();
+  });
+
+  // Açık UYAP sekmeleri son istek zamanını paylaşır; biri çalışırken öteki "kapanacak" diye uyarmasın. Kanal chrome.*
+  // gerektirmez; yeni yüklenen sayfanın kapanış nedenini ölçebilmesi için değer ayrıca chrome.storage'a yazılır.
+  let channel = null;
+  try {
+    channel = new BroadcastChannel('legaluga-oturum');
+    channel.onmessage = e => {
+      if (e.data?.askTime) {
+        if (inSession() && !loggingOut && lastConfirmedUyapRequest > 0 && lastConfirmedUyapRequest <= Date.now()) channel.postMessage({ sonIstek: lastConfirmedUyapRequest });
+        return;
+      }
+      const v = Number(e.data && e.data.sonIstek);
+      if (Number.isFinite(v) && v > lastUyapRequest && v <= Date.now()) {
+        lastUyapRequest = v; sharedRequest = Math.max(sharedRequest, v);
+        lastConfirmedUyapRequest = Math.max(lastConfirmedUyapRequest, v);
+        safeTick();
+      }
+    };
+    channel.postMessage({ askTime: true });
+  } catch (_) {}
+  try {
+    chrome.storage.local.get('uhdOturumIstek').then(v => {
+      if (typeof v.uhdOturumIstek === 'number' && v.uhdOturumIstek < loadedAt) priorRequest = v.uhdOturumIstek;
+    }).catch(() => {});
+  } catch (_) {}
+  function shareLastRequest() {
+    // Sayfayı açmak veya giriş bayrağını görmek başarılı sunucu isteği değildir; yalnız doğrulanan zaman paylaşılır.
+    if (lastConfirmedUyapRequest <= 0 || lastConfirmedUyapRequest - sharedRequest < 30000) return;
+    sharedRequest = lastConfirmedUyapRequest;
+    try { if (channel) channel.postMessage({ sonIstek: lastConfirmedUyapRequest }); } catch (_) {}
+    if (contextGone) return;
+    try { chrome.storage.local.set({ uhdOturumIstek: lastConfirmedUyapRequest }).catch(() => {}); } catch (_) {}
+  }
+
+  // ---- bildirimler
+  // Oturum bildirimi yığında kendi yerini tutar ('oturum'): sabittir, başka bildirimler (dosya açma hatası, güncelleme)
+  // onu ezmez ve yığın dolsa da çıkmaz. Kullanıcı × ile kapattıysa aynı bildirim yeniden çizilmez; yenisi gelince çizilir.
+  const TITLE_RE = /^\(\d+ dk\) /;
+  function setTitleCountdown(min) {
+    const next = `(${min} dk) ${document.title.replace(TITLE_RE, '')}`;
+    if (document.title !== next) document.title = next;
+  }
+  function clearTitleCountdown() {
+    if (TITLE_RE.test(document.title)) document.title = document.title.replace(TITLE_RE, '');
+  }
+  let noticeDrawn = '', noticeClosed = '';   // ekrana çizilen ve kullanıcının × ile kapattığı bildirimin etiketi
+  function renderNotice() {
+    if (!sessionNotice || noticeClosed === sessionNotice.tag) return;
+    if (noticeDrawn === sessionNotice.tag && toastVisible('oturum')) return;
+    const tag = sessionNotice.tag;
+    const drawn = toast(sessionNotice.text, sessionNotice.kind, 0, sessionNotice.action, { id: 'oturum', pinned: true, onClose: () => { noticeClosed = tag; } });
+    if (drawn) noticeDrawn = tag;
+  }
+  function setNotice(tag, text, kind = '', action) {
+    // Kullanıcının × ile kapattığı bildirim aynı etiketle yinelenirse (ör. her başarısız yoklamada) geri gelmez.
+    sessionNotice = { tag, text, kind, action };
+    noticeDrawn = '';
+    renderNotice();
+  }
+  function dropNotice(tag) {
+    if (!sessionNotice || (tag && sessionNotice.tag !== tag)) return;
+    sessionNotice = null;
+    noticeDrawn = '';
+    noticeClosed = '';
+    closeToast('oturum');
+  }
+
+  const KAYIP_METNI = 'Ekrandaki bilgileri bir yere kopyalayın; UYAP’ta yapacağınız ilk işlem sizi giriş sayfasına götürür ve form boş açılır.';
+  const TEK_OTURUM = 'Aynı hesapla başka bir tarayıcıda, bilgisayarda, UYAP mobilde ya da bir masaüstü uygulamasında giriş yapıldıysa UYAP bu oturumu kapatır.';
+
+  // since: yoklama başladığında bilinen son istek. Aynı tıklamanın UYAP isteği yoklamadan önce işlenirse son istek
+  // zamanı ileri gider; boşluk o yüzden yoklamanın başındaki değere göre ölçülür.
+  function warnSessionGone(e, since = lastUyapRequest) {
+    if (!lossWarned) lossGap = Date.now() - since;
+    lossWarned = true;
+    lossReason = (e && e.code) || '';
+    clearTitleCountdown();
+    if (sessionNotice && sessionNotice.tag === 'bosta' && lossReason !== 'baska-oturum') return;
+    setNotice('kayip', e && e.code === 'baska-oturum'
+      ? `UYAP, aynı hesapla başka bir yerde giriş yapıldığı için bu oturumu kapattı. ${KAYIP_METNI}`
+      : `UYAP oturumunuz kapanmış görünüyor. ${KAYIP_METNI}`, 'err');
+  }
+
+  // ---- yoklama
+  function sessionGate(value) {
+    const now = Date.now();
+    const past = key => Number.isFinite(value?.[key]) && value[key] > 0 && value[key] <= now ? value[key] : 0;
+    return {
+      lastSuccess: past('lastSuccess'), lastAttempt: past('lastAttempt'),
+      nextAt: Number.isFinite(value?.nextAt) ? Math.max(0, Math.min(value.nextAt, now + 24 * 3600000)) : 0,
+      failures: Number.isInteger(value?.failures) ? Math.max(0, Math.min(6, value.failures)) : 0,
+      blocked: value?.blocked === true
+    };
+  }
+  let sessionResetAt = 0;
+  function showSessionPaused() {
+    if (!keepAliveOn() || !inSession() || contextGone || loggingOut || sessionDisposed || lossWarned) return;
+    setNotice('uzatilamadi', 'UYAP güvenlik veya yoğunluk nedeniyle isteği durdurdu. Otomatik yoklama duraklatıldı; UYAP ekranındaki uyarıyı kontrol edin.', 'err',
+      { label: 'Tekrar dene', keep: true, fn: () => sessionPing(true) });
+  }
+  async function sessionPing(manual = false) {
+    if (!canProtect() || keepAliveBusy || (!manual && !recentlyActive())) return;
+    keepAliveBusy = true;
+    const revision = sessionRevision;
+    const controller = new AbortController();
+    sessionPingController = controller;
+    let timedOut = false;
+    const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 15000);
+    const current = () => revision === sessionRevision && canProtect() && !controller.signal.aborted;
+    try {
+      if (!navigator.locks?.request) throw new Error('Sekmeler arası oturum koruması bu tarayıcıda kullanılamıyor.');
+      // ifAvailable bekleme kuyruğu kurmaz; AbortSignal bu seçenekle birlikte Web Locks tarafından kabul edilmez.
+      await navigator.locks.request(SESSION_LOCK, { ifAvailable: true }, async lock => {
+        if (!lock || !current()) return;
+        let gate = sessionGate((await chrome.storage.local.get(SESSION_GATE))[SESSION_GATE]);
+        if (!current()) return;
+        if (sessionResetAt > gate.lastAttempt) gate = sessionGate(null);
+        if (gate.lastSuccess > lastUyapRequest) noteUyapRequest(gate.lastSuccess);
+        const now = Date.now();
+        if (now < gate.nextAt || now - gate.lastAttempt < 3000) { if (manual) renderNotice(); return; }
+        if (!manual && gate.blocked) { showSessionPaused(); return; }
+        if (!manual && ((!lossWarned && now - lastUyapRequest < YOKLAMA_MS) ||
+          (lossWarned && recoveryRequestAt <= lastPingTry))) return;
+        lastPingTry = now;
+        gate.lastAttempt = now;
+        gate.nextAt = now + 3000;
+        await chrome.storage.local.set({ [SESSION_GATE]: gate });
+        if (!current()) return;
+        const since = lastUyapRequest;
+        let sent = false;
+        try {
+          // Bu küçük okuma isteği UYAP ana sayfasında da kullanılır; yanıtın içeriği saklanmaz.

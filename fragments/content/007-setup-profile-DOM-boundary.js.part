@@ -1,0 +1,24 @@
+function setupAccountName() {
+    const clean = value => String(value || '').normalize('NFC').replace(/^\s*Av(?:ukat|\.)?\s+/iu, '').trim().replace(/\s+/g, ' ');
+    const valid = value => value.length >= 5 && value.length <= 100 && value.split(' ').length >= 2 &&
+      /^[\p{L}\p{M} '’.-]+$/u.test(value) && !/\b(?:uyap|portal|bilgi|sistemi|giriş|çıkış|ayarlar|avukat)\b/iu.test(value);
+    const scope = '#root header, #root .navbar, #root .topbar, #root .header, #root [role="banner"], #root .user-info, #root .user-menu';
+    for (const region of document.querySelectorAll(scope)) {
+      for (const node of region.querySelectorAll('[data-testid="user-name"], .user-name, .userName, .username, .user-fullname, .userFullName')) {
+        const name = clean(node.textContent);
+        if (valid(name)) return name;
+      }
+      // UYAP üst çubuğunda adın altındaki "Avukat" etiketi kimliğin sınırını belirler; dosya tarafları taranmaz.
+      for (const role of region.querySelectorAll('span, small, div, p')) {
+        if (norm(role.textContent) !== 'avukat') continue;
+        const parent = role.parentElement;
+        if (!parent || parent.children.length > 6) continue;
+        for (const node of parent.children) {
+          if (node === role || node.contains(role)) continue;
+          const name = clean(node.textContent);
+          if (valid(name)) return name;
+        }
+      }
+    }
+    return '';
+  }

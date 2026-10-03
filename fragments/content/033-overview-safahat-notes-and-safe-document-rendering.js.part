@@ -1,0 +1,106 @@
+        globalThis.UHD.checkSafahatSnapshot({ fetchedAt: Date.now(), items });
+        task.ac.signal.throwIfAborted(); if (!alive()) return;
+        const saved = await storage.saveSafahat(rec.key, task.token, items);
+        task.ac.signal.throwIfAborted(); if (!alive()) return;
+        snapshot = saved; peerBusyUntil = 0; notice = 'Safahat alındı ve bu Chrome profilinde şifreli kaydedildi.';
+      } catch (error) {
+        if (alive()) notice = error?.name === 'AbortError' ? 'Safahat çekimi durduruldu. Son başarılı kayıt korunuyor.' : 'Safahat alınamadı veya kaydedilemedi. Son başarılı kayıt korunuyor; UYAP oturumunu kontrol edip yeniden deneyin.';
+      } finally {
+        if (task.token) await storage.cancelSafahat(rec.key, task.token).catch(() => {});
+        if (run === task) run = null;
+        if (alive()) { if (task.token) peerBusyUntil = 0; draw(); }
+      }
+    };
+    const changed = (changes, area) => {
+      if (area !== 'local' || !Object.hasOwn(changes, 'uhdSafahat') || !alive()) return;
+      generation++;
+      try { apply(globalThis.UHD.safahatState(changes.uhdSafahat.newValue, rec.key)); draw(); }
+      catch { ready = false; notice = 'Şifreli safahat kaydı okunamadı. Mevcut veri değiştirilmedi.'; draw(); }
+    };
+    const destroy = () => {
+      if (closed) return;
+      closed = true; clearTimeout(timer); timer = null;
+      run?.ac.abort();
+      if (run?.token) void storage.cancelSafahat(rec.key, run.token).catch(() => {});
+      chrome.storage.onChanged.removeListener(changed);
+    };
+    refresh.addEventListener('click', refreshNow);
+    stop.addEventListener('click', () => run?.ac.abort());
+    search.addEventListener('input', draw);
+    signal?.addEventListener('abort', destroy, { once: true });
+    if (!alive()) { destroy(); return; }
+    chrome.storage.onChanged.addListener(changed);
+    const initialGeneration = generation;
+    try {
+      const saved = await storage.getSafahat(rec.key);
+      if (!alive()) return;
+      if (generation === initialGeneration) apply(saved);
+      ready = true; draw();
+    } catch {
+      if (alive()) { notice = 'Şifreli safahat kaydı okunamadı. Mevcut veri değiştirilmedi; sayfayı yenileyip tekrar deneyin.'; draw(); }
+    }
+  }
+
+  // Özet: kayıttaki bilgiler (son güncellemeye göre; UYAP'a istek gitmez). İcra dosyasında altına alacak ve tahsilat
+  // UYAP'tan alınır.
+  async function loadOzet(rec, body) {
+    const satir = (k, v) => (v != null && v !== '' ? el('div', { class: 'dp-summary-row' },
+      el('span', { class: 'dp-k' }, k + ': '), el('span', { class: 'dp-v' }, v)) : null);
+    const bolum = (label, cls, ...kids) => el('div', { class: `dp-summary-scroll ${cls || ''}`.trim(), role: 'region', 'aria-label': label, tabindex: 0 }, ...kids);
+    const cbs = rec.yargiTuru === CBS.kod;
+    const evetHayir = v => (v === true ? 'Evet' : v === false ? 'Hayır' : '');
+    const d = cleanDurum(rec.durum);
+    const son = lastEvrak(rec);
+    const sonDurum = [
+      satir('Son işlem', rec.sonIslem && rec.sonIslem.tarih ? `${fmtTrDate(rec.sonIslem.tarih)}${rec.sonIslem.tur ? ' · ' + rec.sonIslem.tur : ''}` : ''),
+      satir('Son evrak', son && son.onay ? `${fmtTrDate(son.onay)}${son.tur ? ' · ' + son.tur : ''}` : '')
+    ].filter(Boolean);
+    const taraflar = Array.isArray(rec.taraflar) ? rec.taraflar : [];
+    const yerel = el('div', { class: 'dp-summary' },
+      el('div', { class: 'dp-summary-grid' },
+        el('div', { class: 'dp-card dp-summary-info' }, el('h4', null, 'Dosya bilgileri'),
+          bolum('Dosya bilgileri', 'dp-summary-fields',
+          satir('Birim', cleanBirim(rec.birimAdi)), satir('Yargı türü', rec.yargiTuruAdi), satir('Dosya türü', dosyaTurAdi(rec)),
+          cbs ? satir('İl', ilAdi(rec.ilAdi)) : null,
+          satir('Durum', el('span', { class: `dp-status ${rec.sorguDurum === 1 ? 'closed' : 'open'}` },
+            (d.label || (rec.sorguDurum === 1 ? 'Kapalı' : 'Açık')) + (d.tarih ? ` (${fmtTrDate(d.tarih)})` : ''))),
+          satir('Açılış', rec.acilis ? fmtTrDate(rec.acilis) : ''),
+          cbs ? satir('Dava açıldı mı', evetHayir(rec.davaAcildi)) : null,
+          cbs ? satir('İnceleme izni', rec.incelemeIzni === true ? 'Var' : rec.incelemeIzni === false ? 'Yok; evrak, Cumhuriyet savcısının onayından sonra görünür' : '') : null)),
+        el('div', { class: 'dp-card dp-summary-latest' }, el('h4', null, 'Son hareketler'),
+          bolum('Son hareketler', '', sonDurum.length ? sonDurum : el('div', { class: 'dp-muted' }, !cbs ? 'Kaydedilmiş son işlem veya evrak yok.'
+            : rec.evrakKilit ? `UYAP: ${rec.evrakKilit}`
+              : rec.incelemeIzni === false ? 'Evrak, Cumhuriyet savcısının onayından sonra görünür.'
+                : 'Kaydedilmiş son evrak yok.')))),
+      el('div', { class: 'dp-summary-source' }, 'Bu bölüm son güncelleme kaydını gösterir.'));
+    const tarafKarti = el('div', { class: 'dp-card dp-summary-parties' },
+        el('h4', null, 'Taraflar', !cbs ? el('span', { class: 'dp-summary-count' }, String(taraflar.length)) : null),
+        bolum('Taraflar', 'dp-tablewrap',
+        cbs ? el('div', { class: 'dp-muted' }, 'UYAP savcılık dosyalarında taraf ve safahat bilgisi vermez.')
+          : taraflar.length ? el('table', { class: 'dp-table dp-parties-table' },
+            el('thead', null, el('tr', null, ['Rol', 'Taraf', 'Vekil'].map(h => el('th', { scope: 'col' }, h)))),
+            el('tbody', null, taraflar.map(t => el('tr', null,
+              el('td', { class: 'nw', 'data-label': 'Rol' }, t.rol || '—'),
+              el('td', { 'data-label': 'Taraf' }, t.adi || '—'),
+              el('td', { 'data-label': 'Vekil' }, (Array.isArray(t.vekil) ? t.vekil : []).join(', ') || '—')))))
+            : el('div', { class: 'dp-muted' }, 'Kaydedilmiş taraf bilgisi yok. Ayarlar → Güncelleme’den taraf bilgilerini yenileyebilirsiniz.')));
+    if (rec.yargiTuru !== '2') { body.replaceChildren(el('div', { class: 'dp-overview' }, yerel, tarafKarti)); return; }
+    const uyap = el('div', { class: 'dp-finance' });
+    body.replaceChildren(el('div', { class: 'dp-overview dp-overview-icra' }, yerel,
+      el('div', { class: 'dp-overview-main' },
+        el('section', { class: 'dp-overview-finance', 'aria-label': 'Hesap ve tahsilat' }, el('h4', { class: 'dp-baslik' }, 'Hesap ve tahsilat'), uyap), tarafKarti)));
+    // Yeniden deneme yalnız bu alanı yeniler; dosya ve taraf bilgileri ekranda kalır.
+    const yukle = async () => {
+      uyap.replaceChildren(el('div', { class: 'dp-finance-loading', role: 'status', 'aria-live': 'polite' }, 'Hesap ve tahsilat UYAP’tan alınıyor…'));
+      try { await loadIcraOzet(rec, uyap); } catch (err) {
+        globalThis.UHDReporter?.report(err, 'ozet');
+        const tekrar = el('button', { type: 'button', class: 'chip dp-summary-retry' }, 'Tekrar dene');
+        tekrar.addEventListener('click', yukle);
+        uyap.replaceChildren(el('div', { class: 'dp-finance-error' },
+          el('div', { class: 'dp-err', role: 'status' }, `Hesap bilgileri alınamadı: ${err.message}`), tekrar));
+      }
+    };
+    await yukle();
+  }
+
+  async function loadIcraOzet(rec, body) {

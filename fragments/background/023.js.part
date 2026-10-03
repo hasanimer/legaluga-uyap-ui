@@ -1,0 +1,18 @@
+  } else if (msg.type === 'uhd-shortcut') {
+    // Kullanıcı kısayolu chrome://extensions/shortcuts'ta değiştirebilir ya da kaldırabilir; anlatılan tuş buradan okunur.
+    chrome.commands.getAll()
+      .then(list => reply({ shortcut: (list.find(c => c.name === '_execute_action') || {}).shortcut || '' }))
+      .catch(() => reply({ shortcut: '' }));
+    return true;
+  }
+});
+
+chrome.action.onClicked.addListener(async tab => {
+  try {
+    const res = await chrome.tabs.sendMessage(tab.id, { type: 'uhd-panel', action: 'toggle' }, { frameId: 0 });
+    if (res && res.ok) return;
+  } catch { /* içerik betiği yok ya da eklenti yenilendikten sonra eski kaldı */ }
+  // Panel yanıt vermedi: bu sekmede popup geri gelir ve hemen açılır (Chrome 127 öncesinde bir sonraki tıklamada).
+  await chrome.action.setPopup({ tabId: tab.id, popup: 'popup.html' }).catch(() => {});
+  try { await chrome.action.openPopup({ windowId: tab.windowId }); } catch { /* bu Chrome sürümünde yok */ }
+});

@@ -1,0 +1,110 @@
+  const pad = n => String(n).padStart(2, '0');
+  const visible = e => !!e && e.isConnected && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden';
+
+  // name, hata raporunda türün (Error yerine Fatal vb.) görünmesi için atanır.
+  class Fatal extends Error { constructor(...a) { super(...a); this.name = 'Fatal'; } }
+  class Stopped extends Error { constructor(...a) { super(...a); this.name = 'Stopped'; } }
+  class Superseded extends Error { constructor(...a) { super(...a); this.name = 'Superseded'; } }
+  class Blocked extends Error { constructor(...a) { super(...a); this.name = 'Blocked'; } }   // UYAP güvenlik doğrulaması istiyor: beklemeler (soft) bunu yutmaz
+  const CAPTCHA_MSG = 'UYAP güvenlik doğrulaması istiyor. UYAP’ta doğrulamayı tamamlayıp tekrar deneyin.';
+
+  // waitFor yalnız dosya açma akışında kullanılır: yeni bir açma isteği gelince süren akış bir sonraki
+  // yoklamada Superseded ile çıkar. Bekleme hataları yalnız soft() ile yutulur; kesilme hiçbir zaman yutulmaz.
+  let openRun = null;
+  const guardOpen = () => { if (openRun && openRun.cancelled) throw new Superseded('Dosya açma yeni bir istekle kesildi.'); };
+  const soft = p => p.catch(e => { if (e instanceof Superseded || e instanceof Blocked) throw e; return null; });
+
+  async function waitFor(fn, ms = 10000, msg) {
+    const end = Date.now() + ms;
+    for (;;) {
+      guardOpen();
+      const v = fn();
+      if (v) return v;
+      if (Date.now() > end) throw new Error(msg || 'UYAP ekranı zamanında yanıt vermedi.');
+      await sleep(120);
+    }
+  }
+
+  // ---------------------------------------------------------------- UYAP istekleri
+
+  // UYAP'a giden son isteğin zamanı (sayfanın kendi istekleri ve eklentininkiler). UYAP oturumu, sunucuya 30 dakika
+  // istek gitmezse kapanır; bkz. "Oturumu açık tutma". Son iki dakikadaki istek aralıkları, oturum kapanınca nedenini
+  // (30 dakikalık kural mı, erken kapanış mı) ayırmak için tutulur.
+  let lastUyapRequest = Date.now();
+  let lastConfirmedUyapRequest = 0;
+  let sessionRequestHooks = null;
+  const requestGaps = [];
+  function noteUyapRequest(at = Date.now()) {
+    lastConfirmedUyapRequest = Math.max(lastConfirmedUyapRequest, at);
+    requestGaps.push([at, at - lastUyapRequest]);
+    while (requestGaps.length && at - requestGaps[0][0] > 120000) requestGaps.shift();
+    lastUyapRequest = Math.max(lastUyapRequest, at);
+  }
+  // Eklentinin kendi dosya listesi sorgusunun zamanı (güncelleme, numarayla arama). "Doğrulama hatası" günlüğünde yazılır.
+  let eklentiSorguAt = 0;
+
+  // Aynı UYAP kökenindeki, aynı normal Chrome profilinin eklenti sekmeleri tek ağ kuyruğunu paylaşır. Kilit, yanıt gövdesi
+  // okunana kadar tutulur; toplu işten sonraki istek en az 1,2 saniye bekler. Diğer istekler mevcut
+  // 150 ms taban aralığını kullanır. Arka plan sekmesi
+  // beklemeyi kaldırmaz. Depolanan kayıt yalnız teknik zamanları taşır, dosya/evrak bilgisi içermez.
+  const UYAP_REQUEST_INTERVAL = 1200, UYAP_PAUSE_MS = 60000;
+  const UYAP_REQUEST_LOCK = 'legaluga-uyap-request-v1', UYAP_REQUEST_STATE = 'uhdUyapRequestGate';
+  const uyapBulkSignals = new WeakSet();
+  function uyapBulk(signal) { if (signal) uyapBulkSignals.add(signal); return signal; }
+  const uyapProtectionHtml = text => /^\s*(?:<!doctype\s+html|<(?:html|head|body|form|script|iframe|div)\b)/i.test(text) &&
+    /recaptcha|hcaptcha|challenge-platform|cf-chl-|captcha|verify\s+(?:that\s+)?you\s+are\s+(?:a\s+)?human|g[üu]venlik\s+do[ğg]rulama|security\s+(?:check|verification)|too\s+many\s+requests|access\s+denied/i.test(text);
+  function uyapWait(ms, signal) {
+    if (signal?.aborted) return Promise.reject(new DOMException('Durduruldu.', 'AbortError'));
+    return new Promise((resolve, reject) => {
+      const done = () => { clearTimeout(timer); signal?.removeEventListener('abort', stop); resolve(); };
+      const stop = () => { clearTimeout(timer); signal?.removeEventListener('abort', stop); reject(new DOMException('Durduruldu.', 'AbortError')); };
+      const timer = setTimeout(done, ms);
+      signal?.addEventListener('abort', stop, { once: true });
+    });
+  }
+  function uyapRetryAt(value, now = Date.now()) {
+    if (typeof value !== 'string' || !value.trim()) return null;
+    const text = value.trim();
+    const at = /^\d+$/.test(text) ? now + Number(text) * 1000
+      : /^(?:[A-Za-z]{3},|[A-Za-z]+,|[A-Za-z]{3}\s+[A-Za-z]{3}\s)/.test(text) ? Date.parse(text) : NaN;
+    return Number.isFinite(at) ? Math.max(now, at) : null;
+  }
+  function uyapResponseGate(res) {
+    const retryAt = uyapRetryAt(res.headers?.get('Retry-After'));
+    if (![403, 429, 503].includes(res.status) && (res.ok || retryAt === null)) return;
+    const message = res.status === 429 ? 'UYAP istek sıklığını sınırlandırdı.'
+      : res.status === 403 ? 'UYAP erişimi sınırlandırdı; oturumu ve güvenlik doğrulamasını kontrol edin.'
+        : 'UYAP hizmeti geçici olarak kullanılamıyor.';
+    const until = retryAt === null ? Date.now() + UYAP_PAUSE_MS : Math.max(Date.now() + UYAP_REQUEST_INTERVAL, retryAt);
+    throw Object.assign(new Blocked(`${message} İşlem durdu; en az ${Math.ceil((until - Date.now()) / 1000)} saniye bekleyip elle tekrar deneyin.`),
+      { status: res.status, retryAt: until, uyap: true });
+  }
+  async function uyapRequest(signal, request) {
+    const onSessionFailure = typeof sessionRequestHooks === 'undefined' ? null : sessionRequestHooks?.captureError();
+    if (signal?.aborted) throw new DOMException('Durduruldu.', 'AbortError');
+    // Kilitsiz çalışıp sekmeler arasında eşzamanlı istek üretmek yerine güvenli biçimde dur.
+    if (!navigator.locks?.request) throw new Blocked('UYAP istek kuyruğu kullanılamıyor. Chrome’u güncelleyip sayfayı yenileyin.');
+    return navigator.locks.request(UYAP_REQUEST_LOCK, signal ? { signal } : {}, async () => {
+      if (signal?.aborted) throw new DOMException('Durduruldu.', 'AbortError');
+      const saved = (await chrome.storage.local.get(UYAP_REQUEST_STATE))[UYAP_REQUEST_STATE];
+      const state = {
+        nextAt: Number.isFinite(saved?.nextAt) ? saved.nextAt : 0,
+        blockedUntil: Number.isFinite(saved?.blockedUntil) ? saved.blockedUntil : 0
+      };
+      if (state.blockedUntil > Date.now()) {
+        const seconds = Math.ceil((state.blockedUntil - Date.now()) / 1000);
+        throw Object.assign(new Blocked(`UYAP istekleri duraklatıldı. En az ${seconds} saniye bekleyin; UYAP ekranını kontrol edip elle tekrar deneyin.`), { retryAt: state.blockedUntil, uyap: true });
+      }
+      if (state.nextAt > Date.now()) await uyapWait(state.nextAt - Date.now(), signal);
+      if (signal?.aborted) throw new DOMException('Durduruldu.', 'AbortError');
+      try { return await request(); }
+      catch (err) {
+        onSessionFailure?.(err);
+        if (err instanceof Blocked) state.blockedUntil = Math.max(state.blockedUntil, Number.isFinite(err.retryAt) ? err.retryAt : Date.now() + UYAP_PAUSE_MS);
+        throw err;
+      } finally {
+        state.nextAt = Date.now() + (signal && uyapBulkSignals.has(signal) ? UYAP_REQUEST_INTERVAL : DELAY);
+        await chrome.storage.local.set({ [UYAP_REQUEST_STATE]: state });
+      }
+    });
+  }

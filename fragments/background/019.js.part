@@ -1,0 +1,9 @@
+chrome.runtime.onMessage.addListener((msg, sender, reply) => {
+  if (!msg || sender.id !== chrome.runtime.id) return;
+  if (msg.type === 'uhd-panel-ready') {
+    if (!sender.tab || sender.frameId !== 0 || !uyapUrl(sender.url)) return;
+    if (sender.documentLifecycle && sender.documentLifecycle !== 'active') return;
+    // Uyuyan service worker iletiyi geç işleyebilir; sekme bu arada başka siteye geçtiyse popup kaldırılmaz.
+    chrome.tabs.get(sender.tab.id)
+      .then(tab => (uyapUrl(tab.url) ? chrome.action.setPopup({ tabId: tab.id, popup: '' }) : null))
+      .catch(() => {});

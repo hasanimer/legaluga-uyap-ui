@@ -1,0 +1,6 @@
+      const borrower = bankLive();
+      if (bankBusy() || closed || !borrower) return;
+      const run = bankRun = { ac: new AbortController() };
+      bankNotice = 'Sorgu uygunluğu ve ücret kontrol ediliyor…'; bankDraw(); zipSync();
+      try {
+        const signal = run.ac.signal, body = { dosyaId: rec.dosyaId, kisiKurumId: borrower.id };

@@ -1,0 +1,115 @@
+
+    // ------------------------------------------------ Duruşma paketi: Evrak listesinde seçim
+    // Sıra: tarih (liste en yenisi önce, ekler ana evrakın ardında; eskiden yeniyede ana evrak grupları ters çevrilir ve ek
+    // ana evrakının ardında kalır), işaretleme sırası ya da elle düzenlenen sıra.
+    function paketSirasi() {
+      const secili = new Set(paketSecili);
+      if (paketSira === 'secim' || paketSira === 'elle') return paketSecili.map(k => tum.find(x => paketAnahtar(x) === k)).filter(Boolean);
+      const gruplar = [];
+      for (const x of tum) { if (x.ana && gruplar.length) gruplar[gruplar.length - 1].push(x); else gruplar.push([x]); }
+      if (paketSira === 'eski') gruplar.reverse();
+      return gruplar.flat().filter(x => secili.has(paketAnahtar(x)));
+    }
+    function paketYaz() {
+      const n = paketSirasi().length, calisiyor = !!paketSession;
+      paketSayi.textContent = n ? `Pakette ${fmtNum(n)} evrak` : 'Pakete alınacak evrakları işaretleyin';
+      paketHazirla.disabled = !n || calisiyor || !!bankRun || !!zipRun || !!bankaOkuma || !!tebligatRead;
+      paketSiraGor.disabled = !n || calisiyor;
+      paketGorunen.disabled = calisiyor || !gorunen.some(x => paketAlinir(x) && !paketSecili.includes(paketAnahtar(x)));
+      paketTemizle.disabled = !n || calisiyor;
+      paketSiraSec.disabled = calisiyor;
+      paketSiraSec.value = paketSira;
+      paketSiraSec.querySelector('[value="elle"]').hidden = paketSira !== 'elle';
+      paketDurdur.hidden = !calisiyor;
+    }
+    function paketIsaretle(x, on) {
+      const k = paketAnahtar(x), var_ = paketSecili.includes(k);
+      if (on === undefined) on = !var_;
+      if (on && !var_) {
+        if (!paketAlinir(x) || paketSession) return;
+        if (paketSecili.length >= PAKET_MAX) { paketDurum.textContent = `Pakete en çok ${PAKET_MAX} evrak alınır.`; listeyiCiz(); return; }
+        paketSecili.push(k);
+      } else if (!on && var_) paketSecili = paketSecili.filter(v => v !== k);
+      listeyiCiz();
+    }
+    function paketModu(on) {
+      if (on === paketMod || (on && (zipRun || !kaynak || kaynak.list.kilit))) return;
+      if (!on && paketSession) paketKapat();
+      paketMod = on;
+      if (on && !paketDurum.textContent) paketDurum.textContent = 'Evrakları açıp inceleyin; pakete almak istediklerinizi işaretleyin (listedeyken Boşluk tuşu da işaretler).';
+      listeyiCiz();
+      if (on) ogeler.focus({ preventScroll: true });
+    }
+    // Önizleme alanında paket sırası: Yukarı/Aşağı, sürükleme (tutamak) ve Alt+↑/↓; değişiklik "Elle sıraladığım" olur.
+    function paketSiraGoster(odakK, odakEylem) {
+      birak();
+      sira = -1; secimiCiz(); konumYaz();
+      baslikYaz(null);
+      evrakAdi.textContent = 'Duruşma paketi · sıra';
+      indir.hidden = true; yeniSekme.hidden = true;
+      const sirali = paketSirasi();
+      const yeniSira = keys => { paketSecili = keys; paketSira = 'elle'; listeyiCiz(); };
+      const tasi = (k, to, eylem) => {
+        const keys = paketSirasi().map(paketAnahtar), from = keys.indexOf(k);
+        if (from < 0 || to < 0 || to >= keys.length) return;
+        keys.splice(from, 1); keys.splice(to, 0, k);
+        yeniSira(keys); paketSiraGoster(k, eylem);
+      };
+      const ol = el('ol', { class: 'ek-paket-liste' });
+      sirali.forEach((x, i) => {
+        const k = paketAnahtar(x);
+        const tutamak = el('button', { type: 'button', class: 'chip ek-paket-tutamak', 'data-eylem': 'tutamak', 'aria-label': `${x.tur}: sırasını taşı`, title: 'Sürükleyin ya da Alt+↑/↓' }, '⠿');
+        const yukari = el('button', { type: 'button', class: 'chip', 'data-eylem': 'yukari', disabled: i === 0, 'aria-label': `${x.tur}: yukarı taşı` }, 'Yukarı');
+        const asagi = el('button', { type: 'button', class: 'chip', 'data-eylem': 'asagi', disabled: i === sirali.length - 1, 'aria-label': `${x.tur}: aşağı taşı` }, 'Aşağı');
+        const cikar = el('button', { type: 'button', class: 'chip', 'data-eylem': 'cikar', 'aria-label': `${x.tur}: paketten çıkar` }, 'Çıkar');
+        yukari.addEventListener('click', () => tasi(k, i - 1, 'yukari'));
+        asagi.addEventListener('click', () => tasi(k, i + 1, 'asagi'));
+        cikar.addEventListener('click', () => { paketIsaretle(x, false); if (paketSecili.length) paketSiraGoster(); else icerik(null); });
+        tutamak.addEventListener('keydown', ev => {
+          if (!ev.altKey || (ev.key !== 'ArrowUp' && ev.key !== 'ArrowDown')) return;
+          ev.preventDefault(); ev.stopPropagation();
+          tasi(k, i + (ev.key === 'ArrowUp' ? -1 : 1), 'tutamak');
+        });
+        ol.append(el('li', { class: 'ek-paket-satir', 'data-k': k }, tutamak, el('span', { class: 'ek-paket-no' }, String(i + 1)),
+          el('span', { class: 'ek-paket-ad' }, el('b', null, x.tur), el('small', null, [x.ana ? `${x.ana.tur} eki` : '', tarihYaz(x.onay)].filter(Boolean).join(' · '))),
+          yukari, asagi, cikar));
+      });
+      // Sürükleme: tutulan satır imlecin altındaki satırın önüne canlı taşınır; bırakınca sıra kaydedilir.
+      let surukle = null;
+      ol.addEventListener('pointerdown', ev => {
+        const t = ev.target.closest('.ek-paket-tutamak');
+        if (!t || ev.button !== 0) return;
+        surukle = { li: t.closest('li'), y: ev.clientY, oynadi: false };
+        t.setPointerCapture(ev.pointerId);
+      });
+      ol.addEventListener('pointermove', ev => {
+        if (!surukle || (!surukle.oynadi && Math.abs(ev.clientY - surukle.y) <= 5)) return;
+        surukle.oynadi = true;
+        surukle.li.classList.add('tasiniyor');
+        const once = [...ol.children].filter(li => li !== surukle.li).find(li => { const r = li.getBoundingClientRect(); return ev.clientY < r.top + r.height / 2; });
+        if (once) { if (surukle.li.nextElementSibling !== once) ol.insertBefore(surukle.li, once); }
+        else if (ol.lastElementChild !== surukle.li) ol.append(surukle.li);
+      });
+      const surukBitir = iptal => {
+        const s = surukle; surukle = null;
+        if (!s) return;
+        s.li.classList.remove('tasiniyor');
+        if (!s.oynadi) return;
+        const keys = [...ol.children].map(li => li.dataset.k);
+        if (!iptal && keys.join('\n\n') !== paketSirasi().map(paketAnahtar).join('\n\n')) yeniSira(keys);
+        paketSiraGoster(s.li.dataset.k, 'tutamak');
+      };
+      ol.addEventListener('pointerup', () => surukBitir(false));
+      ol.addEventListener('pointercancel', () => surukBitir(true));
+      icerik(el('div', { class: 'ek-paket-panel docview', tabindex: '-1' },
+        el('h3', null, `Paket sırası · ${fmtNum(sirali.length)} evrak`),
+        el('p', { class: 'dp-muted' }, 'Sırayı tutamakla sürükleyerek ya da Yukarı/Aşağı ile değiştirin. Bir evrakı görmek için soldaki listeden açın; içindekiler bu sırayla yazılır.'),
+        ol));
+      if (odakK) [...ol.children].find(li => li.dataset.k === odakK)?.querySelector(`[data-eylem="${odakEylem || 'tutamak'}"]:not(:disabled)`)?.focus({ preventScroll: true });
+    }
+    function paketSonucBirak() {
+      if (!paketSonucUrl) return;
+      const u = paketSonucUrl; paketSonucUrl = null;
+      setTimeout(() => URL.revokeObjectURL(u), 60000);
+    }
+    

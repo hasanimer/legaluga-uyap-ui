@@ -1,0 +1,32 @@
+
+    function paketListe() {
+      if (!paketSession) return;
+      const session = paketSession;
+      const targets = new Map();
+      const items = tum.map(x => {
+        const ek = x.ekIndis == null ? null : x.ana?.e?.ekEvrakListesi?.[x.ekIndis];
+        const ekId = ek?.evrakId == null ? '' : String(ek.evrakId);
+        // Ek kimliği liste yenilenip aynı adlı eklerin sırası değişince de sabit kalır.
+        const fingerprint = x.ekIndis == null ? `ana\n${x.k}\n${x.dosya}` : `ek\n${x.ana.k}\n${x.ana.dosya}\n${ekId || `${x.ekIndis}\n${x.tur}`}`;
+        if (!session.ids.has(fingerprint)) session.ids.set(fingerprint, crypto.randomUUID());
+        const id = session.ids.get(fingerprint);
+        session.idByKey?.set(x.k + '\n' + x.dosya, id);
+        targets.set(id, { x, ekId });
+        return { id, title: x.tur, date: x.onay || '', dateSource: x.ana ? 'parent' : 'document',
+          format: 'Bilinmiyor', group: x.dosya, isAttachment: !!x.ana, parentId: x.ana ? session.idForMain(x.ana) : '',
+          parentTitle: x.ana?.tur || '', selectable: !!x.k && (!x.ana || !!ekId) };
+      });
+      session.targets = targets;
+      session.bridge.send({ type: 'LIST', items, complete: !kaynak?.list.morePages, locked: !!kaynak?.list.kilit });
+    }
+    function paketKapat() {
+      const session = paketSession;
+      if (!session) return;
+      if (paketRun) { paketRun.ac.abort(); paketRun = null; }
+      session.listAc?.abort(); session.originalAc?.abort();
+      session.bridge.close();
+      session.layer.remove();
+      paketSession = null;
+      zipSync();
+    }
+    

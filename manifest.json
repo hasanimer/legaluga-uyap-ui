@@ -1,0 +1,100 @@
+{
+  "manifest_version": 3,
+  "name": "Legaluga UYAP Asistanı",
+  "short_name": "Legaluga UYAP",
+  "version": "1.19.30",
+  "description": "UYAP dosyalarınızı ad veya numarayla bulun, açın. Veriler cihazınızda; isteğe bağlı teknik hata raporları Sentry’ye gider.",
+  "homepage_url": "https://legaluga.com",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "downloads",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://avukat.uyap.gov.tr/*",
+    "https://www.ptt.gov.tr/*",
+    "https://ptt.etebligat.gov.tr/*",
+    "https://o4511620723703808.ingest.de.sentry.io/*"
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Legaluga UYAP Asistanı",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+D"
+      },
+      "description": "UYAP’ta paneli aç ya da kapat; başka sitelerde hızlı aramayı aç"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://avukat.uyap.gov.tr/*"
+      ],
+      "js": [
+        "vault-crypto.js",
+        "storage.js",
+        "telemetry.js",
+        "banka-takip.js",
+        "common.js",
+        "banka-api.js",
+        "tebligat-barkod.js",
+        "tebligat-ptt.js",
+        "tebligat-ui.js",
+        "vendor/UTIF.js",
+        "udf.js",
+        "tiff.js",
+        "evrak-zip.js",
+        "evrak-indirme.js",
+        "evrak-indirme-motoru.js",
+        "indirme-panel.js",
+        "durusma-paketi-bridge.js",
+        "ui.js",
+        "onboarding.js",
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.ptt.gov.tr/*",
+        "https://ptt.etebligat.gov.tr/*"
+      ],
+      "js": [
+        "tebligat-ptt.js",
+        "ptt-content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "durusma-paketi.html"
+      ],
+      "matches": [
+        "https://avukat.uyap.gov.tr/*"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+
+
+  // Dosya açma bildirimi. Durdur düğmesi yerinde kalır, adım değişince yalnız metin değişir (Tab ile gelen kullanıcının
+  // odağı kaybolmaz). Aynı adım 5 sn'den uzun sürerse geçen süre yazılır; 15 sn'den uzun sürerse UYAP'ın yavaş olduğu
+  // söylenir ve "Baştan başlat" sunulur. Aynı dosyaya yeniden basılınca da "Baştan başlat" hemen çıkar.
+  const YAVAS_MS = 5000, COK_YAVAS_MS = 15000;
+  function openProgress(title, run, restart) {
+    const stop = { label: 'Durdur', fn: () => { run.userStop = true; run.cancelled = true; run.ctl.abort(); } };
+    const again = { label: 'Baştan başlat', fn: () => { run.cancelled = true; run.ctl.abort(); restart(); } };
+    let text = '', since = Date.now(), nudged = false, waiting = false, timer = null;
+    function draw() {
+      if (run.cancelled || openRun !== run) return done();
+      const slow = run.stoppable && !waiting && Date.now() - since >= COK_YAVAS_MS;
+      const sub = nudged ? 'Bu dosya zaten açılıyor.' : slow ? 'UYAP yavaş yanıt veriyor. Bekleyebilir ya da baştan başlatabilirsiniz.' : '';
+      const actions = run.stoppable ? (slow || nudged ? [stop, again] : [stop]) : [];
+      const h = toast(text, 'busy', 0, null, { id: 'acma', title, sub, actions });
+      const ms = Date.now() - since;
+      if (h) h.meta(ms >= YAVAS_MS ? `${Math.floor(ms / 1000)} sn` : '');
+      // Sabit panelde tıklanan kartın düğmesi de durumu yazar: "Açılıyor · 2/4", "Yeniden deneme 1/2".
+      const adim = /^(\d\/4|Yeniden deneme \d\/\d)/.exec(text);
+      if (ui && ui.setBusy && run.key) ui.setBusy(run.key, !adim ? 'Açılıyor…' : /^\d/.test(adim[1]) ? `Açılıyor · ${adim[1]}` : adim[1]);
+    }
+    function done() {
+      clearInterval(timer);
+      timer = null;
+      if (ui && ui.setBusy && run.key) ui.setBusy(run.key, null);
+    }
+    return {
+      // canStop false: tıklama UYAP'a gitti, akış artık geri alınamaz (Durdur yok). wait: kullanıcının UYAP'ta bir iş
+      // yapması bekleniyor (güvenlik doğrulaması); "UYAP yavaş" denmez.
+      set(next, canStop = true, wait = false) {
+        if (next !== text) { text = next; since = Date.now(); nudged = false; }
+        run.stoppable = canStop;
+        waiting = wait;
+        draw();
+        if (!timer) timer = setInterval(draw, 1000);
+      },
+      nudge() { nudged = true; draw(); },
+      done
+    };
+  }
+
+  // Dosya açma hatasının türü: iletiyi ve sunulacak eylemleri belirler (bkz. openErrorPlan).
+  const kindErr = (msg, kind) => Object.assign(new Error(msg), { kind });
+  const openErrorKind = e => e.kind || (e instanceof Fatal ? 'oturum' : e instanceof Blocked ? 'dogrulama' : 'gecici');
+  let lastOpenError = null;   // { key, kind }: aynı dosyada aynı hata ikinci kez gelirse Güncelle de önerilir
+  function openErrorActions(plan, rec, opts) {
+    const act = {
+      tekrar: { label: 'Tekrar dene', fn: () => openFile(rec, false, false, opts) },
+      guncelle: { label: 'Güncelle', fn: async () => {
+        const res = await startUpdate(false);
+        if (res.ok) { toast('Güncelleme başladı; ilerlemesi panelin altında görünür.', '', 5000, null, { id: 'guncelleme' }); showPanel(); }
+        else toast(res.error, 'err', 6000, null, { id: 'guncelleme' });
+      } },
+      kunye: { label: 'Künyeyi kopyala', keep: true, fn: async b => {
+        let ok = true;
+        try { await navigator.clipboard.writeText(kunyeOf(rec)); } catch { ok = false; }
+        const say = ok ? 'Kopyalandı' : 'Kopyalanamadı';
+        announce(ok ? 'Künye kopyalandı.' : 'Künye kopyalanamadı.', !ok);
+        if (!b) return;
+        b.textContent = say;
+        setTimeout(() => { if (b.isConnected) b.textContent = b.dataset.label; }, 1800);
+      } },
+      // Giriş sayfasına gidilir; dosya, girişten sonraki ilk sayfada kendiliğinden açılır (bekleyen açma, 3 dk).
+      giris: { label: 'Girişe git', fn: async () => {
+        await chrome.storage.local.set({ uhdPending: { record: rec, at: Date.now(), opts } });
+        location.assign('/giris');
+      } }
+    };
+    return plan.map(a => act[a]).filter(Boolean);
+  }
+
+  // Son istek kazanır: bir dosya açılırken başka bir dosya istenirse süren akış kesilir; yeni dosya, mevcut forma ve
+  // sonuç listesine güvenilmeden Dosya Sorgulama bağlantısından baştan açılır (en az sorgu yolu kullanılmaz).
+  // Dönüş: true (açıldı), false (açılamadı), null (kesildi ya da sayfa yeniden yükleniyor).

@@ -1,0 +1,30 @@
+
+    function bankDraw() {
+      if (!bankCard || closed) return;
+      const { select, load, query, requests, stop, status, rows } = bankCard;
+      const busy = bankBusy();
+      select.disabled = busy; load.disabled = busy;
+      query.disabled = busy || !bankLive(); requests.disabled = busy || !bankSubjects[bankSelected];
+      stop.hidden = !bankRun; stop.disabled = !bankRun;
+      const snapshot = bankSubjects[bankSelected];
+      load.textContent = bankBorrowers.length ? 'Borçluları yenile' : 'Borçluları getir';
+      status.textContent = bankNotice || (snapshot ? `${snapshot.debtorLabel} · Sorgu: ${snapshot.queryDate || 'tarih bilinmiyor'} · ${snapshot.banks.length} banka. Kaydedilen sorgu sonucu.` : bankLive() ? `${bankLive().label} seçili. Güncel banka bilgileri için “Bankaları sorgula”ya basın.` : 'Başlamak için borçluları getirin ve bir borçlu seçin.');
+      rows.replaceChildren();
+      if (!snapshot) return;
+      if (!snapshot.banks.length) { rows.append(el('p', { class: 'dp-muted' }, 'Bu sorguda banka kaydı dönmedi.')); return; }
+      for (const row of bankChecks.compareSnapshot(bankFullList() ? bankSnapshot(snapshot) : snapshot, { fresh: bankFullList() })) {
+        const evidence = row.status === 'requestfound' ? row.request : row.reply || row.request || row.replies[0];
+        const line = el('div', { class: 'ek-banka-kayit' }, el('b', null, row.name), el('span', { class: 'dp-muted' }, row.label));
+        if (evidence) {
+          const target = tum.find(x => bankOwn(x) && bankKey(x) === evidence.evrakKey);
+          if (target) {
+            const open = el('button', { type: 'button', class: 'chip' }, ihbarCevabiMi(target.tur) ? 'Cevabı aç' : 'Talep evrakını aç');
+            open.disabled = busy;
+            open.addEventListener('click', () => ihbarCevabiMi(target.tur) ? bankaAc(target) : (sekmeAc('evrak'), ara.value = '', grup = 'tumu', suz(), listeyiCiz(), sec(gorunen.findIndex(x => ayni(x, target)), true)));
+            line.append(open);
+          }
+        }
+        rows.append(line);
+      }
+    }
+    

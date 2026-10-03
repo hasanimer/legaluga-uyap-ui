@@ -1,0 +1,325 @@
+  const TOAST_MAX = 3;
+  const TOAST_KIND = { '': 'info', ok: 'success', err: 'danger' };
+  const TOAST_PRIORITY = { danger: 2, warn: 2, busy: 1 };
+  const toasts = new Map();
+  let toastSeq = 0;
+
+  function announce(text, assertive) {
+    const region = assertive ? alertRegion : liveRegion;
+    if (!region) return;
+    region.textContent = '';
+    setTimeout(() => { region.textContent = text; }, 60);
+  }
+
+  function pauseToast(t) {
+    if (!t.timer) return;
+    clearTimeout(t.timer);
+    t.timer = null;
+    t.remaining = Math.max(1, t.remaining - (Date.now() - t.started));
+  }
+
+  function resumeToast(t) {
+    if (toasts.get(t.id) !== t || !t.remaining || t.timer || t.el.matches(':hover') || t.el.contains(shadowRoot.activeElement)) return;
+    t.started = Date.now();
+    t.timer = setTimeout(() => { if (toasts.get(t.id) === t) closeToast(t.id); }, t.remaining);
+  }
+
+  // byUser: × ile kapatıldı; bildirimin onClose'u yalnız o zaman çalışır (ör. oturum uyarısı yeniden çizilmesin).
+  function closeToast(id, byUser = false) {
+    const t = toasts.get(id);
+    if (!t) return;
+    toasts.delete(id);
+    clearTimeout(t.timer);
+    const hadFocus = !!shadowRoot && t.el.contains(shadowRoot.activeElement);
+    t.el.remove();
+    if (byUser && t.onClose) t.onClose();
+    if (hadFocus) {
+      if (panel.hidden) launch.focus({ preventScroll: true });
+      else ui.focus();
+    }
+  }
+  const toastVisible = id => toasts.has(id);
+
+  // toast(metin, tür, süre, eylem, { id, title, sub, actions, pinned, priority, onClose }). Tür: info, success, warn,
+  // danger ya da busy (eski adlar '', 'ok', 'err' de geçer). Süre 0 ise bildirim kalıcıdır. title kalın ilk satır, sub
+  // soluk ikinci satırdır. En çok iki eylem düğmesi olur; eylemin keep'i varsa basınca bildirim kapanmaz. Aynı kimlikle
+  // yeniden çağrılınca düğmeler aynıysa yerinde kalır (odak kaybolmaz). Dönüş: bildirimin geçen süre yazısını güncelleyen
+  // ya da onu kapatan tutamak; bildirim bu arada kapandıysa tutamak bir şey yapmaz.
+  function toast(text, kind = '', ms = 0, action = null, opts = {}) {
+    if (!notificationArea) return null;
+    const id = opts.id || 'genel';
+    kind = TOAST_KIND[kind] || kind;
+    const actions = (opts.actions || (action ? [action] : [])).filter(Boolean).slice(0, 2);
+    let t = toasts.get(id);
+    const fresh = !t;
+    if (fresh) {
+      t = { id, at: ++toastSeq, timer: null, remaining: 0, started: 0 };
+      t.titleEl = el('b', { class: 'title' });
+      t.textEl = el('span', { class: 'txt' });
+      t.metaEl = el('span', { class: 'meta', 'aria-hidden': 'true' });
+      t.subEl = el('span', { class: 'sub' });
+      t.buttons = el('div', { class: 'actions' });
+      t.closeEl = el('button', { class: 'close', type: 'button', title: 'Bildirimi kapat', 'aria-label': 'Bildirimi kapat' }, '×');
+      t.closeEl.addEventListener('click', () => closeToast(id, true));
+      t.el = el('div', { class: 'toast' }, el('div', { class: 'msg' }, t.titleEl, t.textEl, t.metaEl, t.subEl), t.buttons, t.closeEl);
+      t.el.addEventListener('mouseenter', () => pauseToast(t));
+      t.el.addEventListener('mouseleave', () => resumeToast(t));
+      t.el.addEventListener('focusin', () => pauseToast(t));
+      t.el.addEventListener('focusout', e => { if (!t.el.contains(e.relatedTarget)) resumeToast(t); });
+    }
+    const title = opts.title || '', sub = opts.sub || '';
+    const said = [title, text, sub].filter(Boolean).join('. ');
+    const changed = fresh || said !== t.said;
+    t.said = said;
+    t.kind = kind;
+    t.pinned = !!opts.pinned;
+    t.priority = opts.priority ?? (t.pinned ? 9 : TOAST_PRIORITY[kind] || 0);
+    t.onClose = opts.onClose || null;
+    t.titleEl.textContent = title;
+    t.titleEl.hidden = !title;
+    t.textEl.textContent = text;
+    t.subEl.textContent = sub;
+    t.subEl.hidden = !sub;
+    if (changed) t.metaEl.textContent = '';
+    t.actions = actions;
+    // Düğmeler adlarıyla eşlenir: kalan düğme yerinden oynatılmaz (ör. 15 sn'de Baştan başlat eklenince Durdur'daki odak
+    // kaybolmaz); yalnız eksik olan eklenir, fazla olan kaldırılır.
+    const want = actions.map(a => [...t.buttons.children].find(b => b.dataset.label === a.label) || (() => {
+      const b = el('button', { type: 'button', 'data-label': a.label }, a.label);
+      b.addEventListener('click', () => {
+        const cur = t.actions.find(x => x.label === a.label);
+        if (!cur) return;
+        if (!cur.keep) closeToast(id);
+        cur.fn(b);
+      });
+      return b;
+    })());
+    for (const b of [...t.buttons.children]) if (!want.includes(b)) b.remove();
+    want.forEach((b, i) => { if (t.buttons.children[i] !== b) t.buttons.insertBefore(b, t.buttons.children[i] || null); });
+    t.buttons.hidden = !actions.length;
+    t.closeEl.hidden = kind === 'busy';
+    t.el.className = 'toast ' + kind;
+    const others = [...toasts.values()].filter(x => x !== t).map(x => ({ id: x.id, priority: x.priority, at: x.at, pinned: x.pinned }));
+    const plan = toastPlan(others, { id, priority: t.priority, at: t.at, pinned: t.pinned }, TOAST_MAX);
+    for (const out of plan.evicted) closeToast(out);
+    // Yalnız yeni bildirim yerine konur; var olanlar yerinden oynatılmaz, içlerindeki odak kaybolmaz. Duyuru kartı
+    // ana sayfada karşılama yuvasına taşınmış olabilir: yalnız bildirim alanında duran öğe referans alınır.
+    if (fresh) {
+      const inArea = e => !!e && e.parentNode === notificationArea;
+      const i = plan.list.findIndex(x => x.id === id);
+      const after = plan.list.slice(i + 1).map(x => toasts.get(x.id)).find(x => x && inArea(x.el));
+      notificationArea.insertBefore(t.el, after ? after.el : inArea(announcementEl) ? announcementEl : null);
+    }
+    toasts.set(id, t);
+    clearTimeout(t.timer);
+    t.timer = null;
+    t.remaining = ms || 0;
+    resumeToast(t);
+    if (changed) announce(said, kind === 'danger');
+    const live = () => toasts.get(id) === t;
+    return {
+      meta: s => { if (live()) t.metaEl.textContent = s ? ` · ${s}` : ''; },
+      close: () => { if (live()) closeToast(id); }
+    };
+  }
+
+  // ---------------------------------------------------------------- Açılış duyurusu
+  // Yalnız UYAP'ın #duyuruicerik penceresi küçültülür; KVKK ve diğer onay pencereleri kapsam dışıdır.
+  // İçerik okunmadan showPopupDuyuru2 değiştirilmez; duyuru servisine yeni sorgu gönderilmez.
+  let compactDuyuru = false, duyuruQueued = false, lastAnnouncement = null;
+  let dismissedAnnouncement = '';
+  const closingAnnouncements = new WeakSet();
+  let announcementPath = '', announcementRoute = location.pathname;
+  const announcementAway = () => !!announcementPath && location.pathname !== announcementPath;
+
+  function dismissAnnouncement() {
+    if (!lastAnnouncement || !announcementEl || announcementEl.hidden) return;
+    dismissedAnnouncement = lastAnnouncement.signature;
+    announcementEl.hidden = true;
+    placeAnnouncement();
+  }
+
+  function announcementRouteChanged() {
+    if (location.pathname === announcementRoute) return;
+    announcementRoute = location.pathname;
+    renderAnnouncement();
+  }
+  window.addEventListener('popstate', announcementRouteChanged);   // spaPush'un olayı ve Geri/İleri
+
+  function announcementSnapshot(body, pop) {
+    const content = el('div', { class: 'announcement-body' });
+    let unsupported = false;
+    const allowed = new Set(['P', 'DIV', 'SPAN', 'BR', 'HR', 'B', 'STRONG', 'I', 'EM', 'U', 'S', 'UL', 'OL', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'PRE', 'CODE', 'TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'TD', 'TH', 'A', 'IMG']);
+    const safeUrl = (value, image) => {
+      if (!value) return '';
+      if (image && /^data:image\/(png|jpeg|gif|webp);base64,/i.test(value)) return value;
+      try {
+        const url = new URL(value, document.baseURI);
+        return /^https?:$/.test(url.protocol) ? url.href : '';
+      } catch { return ''; }
+    };
+    const plain = [];
+    const copy = (node, target) => {
+      if (node.nodeType === 3) { target.append(node.textContent); plain.push(node.textContent); return; }
+      if (node.nodeType !== 1) return;
+      const tag = node.tagName;
+      if (['SCRIPT', 'STYLE', 'TEMPLATE', 'NOSCRIPT'].includes(tag)) return;
+      if (['IFRAME', 'OBJECT', 'EMBED', 'FORM', 'INPUT', 'BUTTON', 'VIDEO', 'AUDIO', 'CANVAS', 'SVG'].includes(tag)) { unsupported = true; return; }
+      if (!allowed.has(tag)) { for (const child of node.childNodes) copy(child, target); return; }
+      const item = el(tag.toLowerCase());
+      if (tag === 'A') {
+        const href = safeUrl(node.getAttribute('href'), false);
+        if (href) { item.setAttribute('href', href); item.setAttribute('target', '_blank'); item.setAttribute('rel', 'noopener noreferrer'); }
+      }
+      if (tag === 'IMG') {
+        const src = safeUrl(node.getAttribute('src'), true);
+        if (!src) { unsupported = true; return; }
+        item.setAttribute('src', src);
+        item.setAttribute('alt', node.getAttribute('alt') || 'Duyuru görseli');
+        item.setAttribute('loading', 'lazy');
+      }
+      if (tag === 'TD' || tag === 'TH') for (const attr of ['colspan', 'rowspan']) {
+        const value = node.getAttribute(attr);
+        if (/^[1-9]\d?$/.test(value || '')) item.setAttribute(attr, value);
+      }
+      for (const child of node.childNodes) copy(child, item);
+      target.append(item);
+      if (['P', 'DIV', 'BR', 'HR', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'TR', 'BLOCKQUOTE', 'PRE'].includes(tag)) plain.push(' ');
+    };
+    for (const node of body.childNodes) copy(node, content);
+    const text = plain.join('').replace(/\s+/g, ' ').trim();
+    if (unsupported || (!text && !content.querySelector('img'))) return null;
+    const titleNode = pop.querySelector('.dx-popup-title .dx-toolbar-label, .dx-popup-title');
+    const title = (titleNode && titleNode.textContent.trim()) || 'UYAP duyurusu';
+    const summary = norm(title + ' ' + text);
+    const resolved = /\b(kesinti(?:nin)? sona erdi|kesinti(?:si)? giderildi|bakim (?:calismasi )?tamamlandi|erisime yeniden acildi|erisim normale dondu)\b/.test(summary);
+    const outage = !resolved && /\b(kesinti(?:si|nin|ler(?:i|in)?)?\b|planli bakim\b|bakim calism|erisime kapali\b|erisim.{0,40}saglanamay|hizmet.{0,30}verilemey|kullanilamay)/.test(summary);
+    return { content, title, outage, signature: title + '\n' + content.innerHTML };
+  }
+
+  function updateAnnouncementScroll() {
+    if (announcementEl && !announcementEl.hidden)
+      announcementEl.classList.toggle('scrollable', announcementEl.scrollHeight > announcementEl.clientHeight + 1);
+  }
+
+  function placeAnnouncement() {
+    if (!announcementEl || !notificationArea) return;
+    const onWelcome = !announcementEl.hidden && compactDuyuru && lastAnnouncement?.outage &&
+      dismissedAnnouncement !== lastAnnouncement.signature && location.pathname === '/' &&
+      document.querySelector('#root #searchId');
+    const anchor = onWelcome && document.querySelector('#root .tour-3');
+    if (anchor) {
+      if (!welcomeHost) {
+        welcomeHost = document.createElement('div');
+        welcomeHost.id = 'legaluga-uyap-kesinti';
+        welcomeHost.className = 'col-12';
+        welcomeHost.style.cssText = 'display:block;position:relative;z-index:1';
+        welcomeShadow = welcomeHost.attachShadow({ mode: 'closed' });
+        welcomeShadow.append(el('style', null, PAGE_CSS + '\n.announcement,.announcement.outage{width:100%;box-sizing:border-box;max-height:50vh;max-height:50dvh;pointer-events:auto}'));
+      }
+      welcomeHost.dataset.theme = shadowRoot.host.dataset.theme;
+      if (welcomeHost.parentNode !== anchor.parentNode || welcomeHost.nextSibling !== anchor) anchor.before(welcomeHost);
+      if (announcementEl.parentNode !== welcomeShadow) welcomeShadow.append(announcementEl);
+    } else {
+      if (announcementEl.parentNode !== notificationArea) notificationArea.append(announcementEl);
+      if (welcomeHost?.isConnected) welcomeHost.remove();
+    }
+    updateAnnouncementScroll();
+  }
+
+  function renderAnnouncement() {
+    if (!announcementEl) return;
+    announcementEl.hidden = !compactDuyuru || !lastAnnouncement || dismissedAnnouncement === lastAnnouncement.signature || announcementAway();
+    placeAnnouncement();
+    if (announcementEl.hidden) return;
+    announcementEl.classList.toggle('outage', lastAnnouncement.outage);
+    announcementEl.setAttribute('role', lastAnnouncement.outage ? 'alert' : 'status');
+    announcementEl.setAttribute('aria-live', lastAnnouncement.outage ? 'assertive' : 'polite');
+    const close = el('button', { class: 'close', type: 'button', title: 'Bildirimi kapat', 'aria-label': 'Duyuru bildirimini kapat' }, '×');
+    close.addEventListener('click', () => {
+      dismissAnnouncement();
+      if (panel.hidden) launch.focus({ preventScroll: true }); else ui.focus();
+    });
+    const heading = lastAnnouncement.outage ? '⚠ UYAP kesinti / bakım duyurusu' : lastAnnouncement.title;
+    announcementEl.replaceChildren(el('div', { class: 'head' }, el('strong', null, heading), close),
+      ...(lastAnnouncement.outage ? [el('div', { class: 'subtitle' }, lastAnnouncement.title)] : []),
+      lastAnnouncement.content.cloneNode(true));
+    updateAnnouncementScroll();
+  }
+  window.addEventListener('resize', updateAnnouncementScroll);
+  document.addEventListener('click', event => {
+    if (!event.isTrusted || !lastAnnouncement || !announcementEl || announcementEl.hidden) return;
+    const path = event.composedPath();
+    if (path.includes(shadowRoot.host) || (welcomeHost && path.includes(welcomeHost))) return;
+    const signature = lastAnnouncement.signature;
+    // Sayfadaki düğmenin tıklaması önce tamamlanır; duyuru ardından kapanır.
+    setTimeout(() => {
+      if (lastAnnouncement?.signature === signature) dismissAnnouncement();
+    }, 0);
+  }, true);
+
+  function compactAnnouncement() {
+    duyuruQueued = false;
+    if (!compactDuyuru || !announcementEl || contextGone) return;
+    const body = document.getElementById('duyuruicerik');
+    const pop = body && body.closest('.dx-overlay-content');
+    if (!pop || !visible(pop) || closingAnnouncements.has(pop)) return;
+    const buttons = [...pop.querySelectorAll('.dx-button, button')].filter(b => !body.contains(b) && !b.disabled && b.getAttribute('aria-disabled') !== 'true');
+    // Yalnız "Kapat": "Tekrar Gösterme" UYAP'ta duyuruyu oturum boyunca susturur, kullanıcı adına basılmaz.
+    const close = buttons.find(b => norm(b.textContent.trim()) === 'kapat');
+    if (!close) return;
+    let snapshot;
+    try { snapshot = announcementSnapshot(body, pop); } catch { return; }
+    // Aktarılamayan (ör. iframe içeren) duyuru UYAP'ın kendi penceresinde okunabilir kalır.
+    if (!snapshot) return;
+    const changed = !lastAnnouncement || snapshot.signature !== lastAnnouncement.signature;
+    const moved = announcementPath !== location.pathname;
+    lastAnnouncement = snapshot;
+    announcementPath = announcementRoute = location.pathname;
+    if (changed || moved) renderAnnouncement();
+    closingAnnouncements.add(pop);
+    close.click();
+    setTimeout(() => closingAnnouncements.delete(pop), 250);
+  }
+
+  function queueAnnouncement() {
+    if (compactDuyuru && !duyuruQueued && !contextGone) {
+      duyuruQueued = true;
+      setTimeout(() => { compactAnnouncement(); announcementRouteChanged(); placeAnnouncement(); }, 50);
+    }
+  }
+  new MutationObserver(queueAnnouncement).observe(document.documentElement, {
+    childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class', 'style', 'hidden']
+  });
+  function applyAnnouncementPref(prefs) {
+    const next = !prefs || prefs.duyuruBildirim !== false;
+    compactDuyuru = next;
+    renderAnnouncement();
+    queueAnnouncement();
+  }
+  chrome.storage.local.get('uhdPrefs').then(({ uhdPrefs }) => applyAnnouncementPref(uhdPrefs)).catch(error => {
+    if (invalidated(error)) stopInvalidatedContext();
+  });
+  chrome.storage.onChanged.addListener((ch, area) => {
+    if (area === 'local' && ch.uhdPrefs) applyAnnouncementPref(ch.uhdPrefs.newValue);
+  });
+
+  // ---------------------------------------------------------------- Mesajlar
+
+  chrome.runtime.onMessage.addListener((msg, sender, send) => {
+    if (!msg || typeof msg.type !== 'string') return;
+    if (msg.type === 'uhd-ping') send({ ok: true });
+    else if (msg.type === 'uhd-open') { openFile(msg.record); send({ ok: true }); }
+    else if (msg.type === 'uhd-open-evrak') { openEvrak(msg.record, msg.key, msg.group, msg.baglam); send({ ok: true }); }
+    else if (msg.type === 'uhd-dosya-panel') { openDosyaPanel(msg.record, msg.tab, msg.baglam); send({ ok: true }); }
+    else if (msg.type === 'uhd-stop') { stopUpdate().then(() => send({ ok: true })); return true; }
+    else if (msg.type === 'uhd-update') { startUpdate(msg.full).then(send); return true; }
+    else if (msg.type === 'uhd-setup-connection') { setupConnection({ manual: msg.manual === true }).then(send); return true; }
+    else if (msg.type === 'uhd-setup-resume') { scheduled(() => maybeResume(false)); send({ ok: true }); }
+    else if (msg.type === 'uhd-cbs-directory') { startCbsDirectory(msg.ilKodu).then(send); return true; }
+    else if (msg.type === 'uhd-cbs-scan') { startCbsScan(msg.scope).then(send); return true; }
+    else if (msg.type === 'uhd-panel') send({ ok: panelCommand(msg.action, msg.view) });
+  });
+
+  mountPage();
+

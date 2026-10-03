@@ -1,0 +1,3 @@
+  const DOGRULAMA_HATASI = /dogrulama hatasi/;
+  const DOGRULAMA_DENEME = 2;   // uyarıdan sonra en çok bu kadar kez yeniden sorgulanıp açılır
+  let islemTurleri = { start: -1, seenAt: 0 }, sayfaSorguAt = 0;

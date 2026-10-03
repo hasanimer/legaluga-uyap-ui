@@ -1,0 +1,1 @@
+      if (!name.includes(job.id.slice(0, 8))) return job;

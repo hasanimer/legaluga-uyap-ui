@@ -1,0 +1,1 @@
+    if (sender.tab || !String(sender.url || '').startsWith(chrome.runtime.getURL('')) || !Number.isInteger(msg.tabId)) return;

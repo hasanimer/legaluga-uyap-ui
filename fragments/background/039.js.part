@@ -1,0 +1,5 @@
+    const denied = () => ({ ok: false, error: 'Tamamlanmış ZIP parçası doğrulanamadı.' });
+    if (!setupSender(sender) || !sender.tab || sender.frameId !== 0 || !uyapUrl(sender.url) ||
+      !Number.isSafeInteger(message.downloadId) || message.downloadId < 0 || typeof message.jobId !== 'string' || !message.jobId) return denied();
+    const fileKey = bulk.fileKey(message.fileKey), currentTab = await chrome.tabs.get(sender.tab.id);
+    if (!uyapUrl(currentTab.url)) return denied();

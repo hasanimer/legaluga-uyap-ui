@@ -1,0 +1,13 @@
+// UYAP Avukat Portalı sekmesinde çalışır.
+// - Güncelleme: UYAP ekranının kendi kullandığı JSON uçlarıyla dosya listesi, taraf adları ve
+//   açık dosyaların evrak listesi alınır; evrak listesi önceki taramayla karşılaştırılıp yeni evraklar işaretlenir.
+//   Güncelleme kaldığı yerden sürdürülebilir bir iştir (uhdJob): sekme kapanırsa açık başka bir UYAP sekmesi,
+//   hiç yoksa UYAP bir sonraki açıldığında devralır; oturum düşerse yeniden girişte sürer.
+// - Dosya açma: varsa açık dosya penceresi kapanır; Dosya Sorgulama ekranı ve uygun
+//   sonuç listesi kullanılır. Gerekirse seçimler değiştirilip sorgu yapılır; ardından
+//   ilgili satırın "Pencere Görünümü" düğmesine tıklanır.
+(() => {
+  if (window.__uhdLoaded) return;
+  window.__uhdLoaded = true;
+
+  const { taramaKapsami, kurulumGerekli, CBS, cbsKapsam, ilSirasi, ilAdi, evrakKilidi, dosyaTurAdi, norm, openPath, parseEvraklar, diffEvrak, sonEvrak, evrakKey, trDateTs, parseDurusma, uyapDate, evrakTakipAcik, parseSafahat, sonIslemOf, fmtTL, cleanBirim, cleanDurum, lastEvrak, kunyeOf, toastPlan, openErrorPlan, htmlKodlamasi, ekleriYerlestir, evrakKategorileri, fmtTrDate, fmtNum, ihbarCevabiMi, bankaAdi, bankaBelgeleri } = globalThis.UHD;

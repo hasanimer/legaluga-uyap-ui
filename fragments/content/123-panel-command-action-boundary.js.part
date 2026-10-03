@@ -1,0 +1,18 @@
+function panelCommand(action, view) {
+    if (!panel || !contextAvailable()) return false;
+    if (action === 'toggle' && !panel.hidden) {
+      if (panel.contains(shadowRoot.activeElement)) closePanel(true);
+      else {
+        const a = document.activeElement;
+        if (a && a !== shadowRoot.host) focusBeforePanel = a;
+        ui.focus();
+      }
+      return true;
+    }
+    if (accessMenuOpen) {
+      panelWanted = true;
+      ssSet(SS_PANEL, '1');
+    } else showPanel();
+    if (action === 'view' && view) ui.showView(view);
+    return true;
+  }

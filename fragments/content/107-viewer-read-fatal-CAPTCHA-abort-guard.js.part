@@ -1,0 +1,1 @@
+          catch (err) { if (err instanceof Fatal || err instanceof Blocked || err?.name === 'AbortError' || ['zaman', 'belgeYok', 'baglanti'].includes(err?.kind)) throw err; }

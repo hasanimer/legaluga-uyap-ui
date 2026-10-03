@@ -1,0 +1,1 @@
+        signal.throwIfAborted(); if (closed) return;

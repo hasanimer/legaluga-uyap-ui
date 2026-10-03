@@ -1,0 +1,4 @@
+  const basename = path => String(path || '').split(/[\\/]/).pop();
+  const escaped = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const ownsItem = (item, pending) => item.byExtensionId === chrome.runtime.id &&
+    Number.isFinite(Date.parse(item.startTime)) && Date.parse(item.startTime) >= pending.at - 2000 && Date.parse(item.startTime) <= Date.now() + 5000;

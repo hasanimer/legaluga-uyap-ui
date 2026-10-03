@@ -1,0 +1,160 @@
+    body.replaceChildren(
+      el('div', { class: 'dp-finance-grid' },
+        el('div', { class: 'dp-card dp-finance-account' }, el('h4', null, hesapSatirlari.length ? 'Dosya hesabı' : 'Alacak bilgileri'),
+          bolum(hesapSatirlari.length ? 'Dosya hesabı' : 'Alacak bilgileri',
+          hesapSatirlari.length ? hesapSatirlari.map(x => money(x, 'degerAlan', x.textAlan.trim()))
+            : [money(ayrinti, 'alacakKalemToplamTutar', 'Alacak kalemleri toplamı'), money(ayrinti, 'alacakKalemFaizTutar', 'Alacak kalemleri faiz tutarı'),
+              money(ayrinti, 'vekaletUcreti', 'Vekâlet ücreti'), money(ayrinti, 'takipSonrasiMasraf', 'Takip sonrası masraf'), money(ayrinti, 'tahsilHarci', 'Tahsil harcı')],
+          !hesapSatirlari.length ? el('div', { class: 'dp-summary-notice' }, 'Dosya Hesabı alınamadı. Dosya hesabının tamamı bu görünümde yer almıyor; UYAP’taki Dosya Hesabı ekranını kontrol edin.')
+            : hesapEksik ? el('div', { class: 'dp-summary-notice' }, 'Dosya Hesabı yanıtı eksik. UYAP’taki Dosya Hesabı ekranını kontrol edin.') : null)),
+        el('div', { class: 'dp-finance-side' },
+          el('details', { class: 'dp-card dp-finance-followup' }, el('summary', null, 'Takip bilgileri'),
+            bolum('Takip bilgileri',
+            text('takibinTuruAciklama', 'Türü'), text('takibinSekliAciklama', 'Şekli'), text('takibinYoluAciklama', 'Yolu'),
+            el('div', { class: 'dp-summary-row' }, el('span', { class: 'dp-k' }, 'Takibi kesinleşen borçlu: '),
+              el('span', { class: kesinN != null ? 'dp-v' : 'dp-v dp-muted' }, kesinN != null ? String(kesinN) : 'UYAP’tan alınamadı')))),
+          el('div', { class: 'dp-card dp-finance-collection' }, el('h4', null, 'Tahsilat'),
+          bolum('Tahsilat',
+          t ? [money(t, 'toplamTahsilat', 'Toplam Tahsilat'), money(t, 'toplamreddiyat', 'Toplam Reddiyat'),
+            money(t, 'haricen', 'Haricen'),
+            money(t, 'toplamKalan', 'Tahsilat Kalanı (dosyada kalan para)', { class: 'dp-strong', title: 'Dosyaya yatırılıp henüz reddiyatı yapılmamış tutar' })]
+            : [money(ayrinti, 'yapilmisBorcTahsilati', 'Yapılmış Borç Tahsilatı'), el('div', { class: 'dp-muted' }, 'Tahsilat ve reddiyat bilgileri alınamadı.')],
+            el('div', { class: 'dp-summary-notice' }, 'Tahsilat Kalanı dosyaya yatırılıp henüz reddiyatı yapılmamış tutardır. Borç bakiyesini UYAP’taki Dosya Hesap Bilgileri’nden kontrol edin.'))))),
+      el('div', { class: 'dp-summary-source' }, 'UYAP’tan şimdi alındı; saklanmaz. Resmî hesap için UYAP’taki Dosya Hesabı ekranını esas alın.'));
+  }
+
+  // Dosya kartıyla ortak, yalnız bu bilgisayarda saklanan not. Ayrı bir not deposu veya UYAP isteği yoktur.
+  async function loadNotlar(rec, body, signal) {
+    let saved = ui.getNote(rec.key), saving = null, again = false, inFlight = null;
+    const textarea = el('textarea', { 'aria-label': 'Dosya notu', placeholder: 'Bu dosya için not ekleyin', spellcheck: 'true' });
+    textarea.value = saved;
+    const status = el('span', { class: 'ek-not-status', role: 'status', 'aria-live': 'polite' });
+    const save = el('button', { type: 'button', class: 'dp-go' }, 'Notu kaydet');
+    const reload = el('button', { type: 'button', class: 'chip', hidden: true }, 'Karttaki notu yükle');
+    const dirty = () => textarea.value.trim() !== saved;
+    const message = (text, error = false) => { status.textContent = text; status.classList.toggle('err', error); };
+    const sync = () => {
+      if (saving) return;
+      save.disabled = !dirty();
+      message(dirty() ? 'Kaydedilmemiş değişiklik var.' : saved ? 'Kartla aynı not gösteriliyor.' : 'Henüz not eklenmemiş.');
+    };
+    const kaydet = () => {
+      if (saving) { again = true; return saving; }
+      if (!dirty()) return Promise.resolve();
+      save.disabled = true;
+      saving = (async () => {
+        do {
+          again = false;
+          const text = inFlight = textarea.value.trim();
+          if (!signal.aborted) message('Not kaydediliyor…');
+          try {
+            await ui.saveNote(rec.key, text);
+            saved = text;
+            if (textarea.value.trim() === text) textarea.value = text;
+            reload.hidden = true;
+          } catch {
+            if (!signal.aborted) message('Not kaydedilemedi. Taslağınız burada duruyor; yeniden deneyin.', true);
+            return;
+          } finally { inFlight = null; }
+        } while (again && dirty());
+        if (!signal.aborted) message(dirty() ? 'Kaydedilmemiş değişiklik var.' : 'Not kaydedildi; kartla aynı not kullanılıyor.');
+      })().finally(() => { saving = null; save.disabled = !dirty(); });
+      return saving;
+    };
+    save.addEventListener('click', kaydet);
+    textarea.addEventListener('input', sync);
+    textarea.addEventListener('blur', kaydet);
+    textarea.addEventListener('keydown', ev => {
+      if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { ev.preventDefault(); kaydet(); }
+    });
+    const changed = (changes, area) => {
+      if (area !== 'local' || !changes.uhdNotes || signal.aborted) return;
+      const next = changes.uhdNotes.newValue?.[rec.key] || '';
+      if (next === inFlight || next === saved) return;
+      if (!dirty() && !saving) { saved = next; textarea.value = next; reload.hidden = true; sync(); }
+      else { reload.hidden = false; message('Karttaki not değişti. Taslağınız korundu; karttaki notu yükleyebilir veya kendi notunuzu kaydedebilirsiniz.'); }
+    };
+    reload.addEventListener('click', () => { saved = ui.getNote(rec.key); textarea.value = saved; reload.hidden = true; sync(); });
+    chrome.storage.onChanged.addListener(changed);
+    signal.addEventListener('abort', () => { chrome.storage.onChanged.removeListener(changed); kaydet(); }, { once: true });
+    body.replaceChildren(el('div', { class: 'ek-notlar' },
+      el('h3', null, 'Dosya notu'),
+      el('p', { class: 'dp-muted' }, 'Bu not karttaki notla aynıdır. Bu bilgisayarın Chrome profilinde saklanır; buluta veya UYAP’a gönderilmez. Ayarlar → Yedekleme ile dışa aktarabilirsiniz.'),
+      textarea, el('div', { class: 'ek-not-actions' }, save, reload, status),
+      el('div', { class: 'dp-muted' }, 'Kaydet düğmesini veya Ctrl/⌘ + Enter kullanın. Alanı terk ederken ve ekranı kapatırken de kaydedilir.')));
+    sync();
+  }
+
+  // Görüntüleyicide gösterilemeyen evrak: kısa açıklama, varsa nedeni ve belirgin indirme bağlantısı.
+  // HTML evrak (1.19.3): UYAP'ın text/html gönderdiği evrak (makbuz gibi). Önce eylemsiz bir belgede (DOMParser) temizlenir:
+  // betik, çerçeve, gömülü nesne, meta, dış stil ve taban adresi atılır; olay öznitelikleri ile bağlantı ve kaynak adresleri
+  // silinir (data: resimleri kalır), form yalnız içeriğiyle kalır. Sonuç, yalnız satır içi biçime ve data: resimlerine izin
+  // veren bir CSP ile betiksiz ve kökensiz (sandbox="") bir çerçevede gösterilir: evrak ağa çıkamaz, UYAP sayfasına erişemez.
+  const HTML_CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:";
+  const HTML_SINIR = 10 * 1024 * 1024;   // daha büyüğü görüntüleyicide açılmaz, indirilir
+  const HTML_ADRES = ['href', 'src', 'srcset', 'action', 'formaction', 'xlink:href', 'poster', 'background', 'ping', 'longdesc', 'cite', 'data', 'manifest'];
+  async function htmlBelgesi(blob) {
+    if (blob.size > HTML_SINIR) throw Object.assign(new Error('buyuk'), { kod: 'buyuk' });
+    const bayt = new Uint8Array(await blob.arrayBuffer());
+    const d = new DOMParser().parseFromString(new TextDecoder(htmlKodlamasi(bayt, blob.type)).decode(bayt), 'text/html');
+    // SVG ve MathML tümden atılır: SVG'nin animasyon öğeleri (set, animate) silinen bağlantı adresini sonradan geri koyabilir.
+    for (const x of d.querySelectorAll('script,noscript,template,iframe,frame,frameset,object,embed,applet,base,link,meta,portal,svg,math')) x.remove();
+    for (const f of d.querySelectorAll('form')) f.replaceWith(...f.childNodes);
+    for (const x of d.querySelectorAll('*')) {
+      for (const a of [...x.attributes]) {
+        const ad = a.name.toLowerCase();
+        const resim = ad === 'src' && /^\s*data:image\/(png|jpe?g|gif|webp|bmp);base64,[a-z0-9+/=\s]*$/i.test(a.value);
+        if (ad.startsWith('on') || (HTML_ADRES.includes(ad) && !resim)) x.removeAttribute(a.name);
+      }
+    }
+    const csp = d.createElement('meta');
+    csp.setAttribute('http-equiv', 'Content-Security-Policy');
+    csp.setAttribute('content', HTML_CSP);
+    const yonlendiren = d.createElement('meta');
+    yonlendiren.setAttribute('name', 'referrer');
+    yonlendiren.setAttribute('content', 'no-referrer');
+    d.head.prepend(csp, yonlendiren);
+    if (!d.body || (!d.body.textContent.trim() && !d.body.querySelector('img'))) throw Object.assign(new Error('bos'), { kod: 'bos' });
+    return (d.doctype ? '<!doctype html>' : '') + d.documentElement.outerHTML;
+  }
+
+  function unsupportedDoc(rec, e, ext, url, name, type, neden) {
+    const what = ext === 'udf' ? 'UDF (UYAP Doküman Editörü) biçiminde; tarayıcı gösteremiyor'
+      : ext === 'usf' ? 'USF biçiminde; tarayıcı gösteremiyor'
+      : ['tif', 'tiff'].includes(ext) ? 'TIFF (taranmış görüntü) biçiminde; tarayıcı gösteremiyor'
+      : `tarayıcının gösteremediği bir biçimde (${type || 'türü bilinmiyor'})`;
+    return el('div', { class: 'msg' },
+      neden ? [el('p', null, 'Bu evrak görüntüleyicide gösterilemedi.'), el('p', { class: 'dp-err' }, neden)] : el('p', null, `Bu evrak ${what}.`),
+      el('p', { class: 'dp-muted' }, [e.tur, fmtTrDate(e.onaylandigiTarih)].filter(Boolean).join(' · ')),
+      el('div', { class: 'dp-actions' }, el('a', { class: 'dp-go', href: url, download: name }, `Evrakı indir (.${ext})`)));
+  }
+
+  // Evrak türünden uzantı (UYAP'ın görüntüleyicisindeki türler); bilinmeyen tür .bin olarak indirilir.
+  const DOC_EXT = {
+    'text/html': 'html', 'application/xhtml+xml': 'html', 'application/pdf': 'pdf', 'image/tiff': 'tif', 'text/udf': 'udf', 'text/usf': 'usf', 'image/jpeg': 'jpg', 'image/png': 'png',
+    'image/gif': 'gif', 'image/bmp': 'bmp', 'text/plain': 'txt', 'application/msword': 'doc', 'application/rtf': 'rtf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx'
+  };
+
+  // Eklentinin kendi okuyucusuyla gösterilecek biçim. UDF, USF, TIFF ve türü bilinmeyen evrakta önce içeriğin ilk
+  // baytlarına (zip → UDF, II*/MM* → TIFF), sonra UYAP'ın bildirdiği türe bakılır. USF'nin yapısı bilinmediği için
+  // yalnız zip paketiyse UDF okuyucusuyla denenir; Word gibi öteki zip tabanlı türlere dokunulmaz.
+  function okuyucuTuru(doc, ext) {
+    if (!['udf', 'usf', 'tif', 'tiff', 'bin'].includes(ext)) return null;
+    const b = doc.bas || [];
+    if (b[0] === 0x50 && b[1] === 0x4b && b[2] === 3 && b[3] === 4) return 'udf';
+    if ((b[0] === 0x49 && b[1] === 0x49 && (b[2] === 0x2a || b[2] === 0x2b) && b[3] === 0)
+      || (b[0] === 0x4d && b[1] === 0x4d && b[2] === 0 && (b[3] === 0x2a || b[3] === 0x2b))) return 'tiff';
+    return ext === 'udf' ? 'udf' : ['tif', 'tiff'].includes(ext) ? 'tiff' : null;
+  }
+
+  function documentExtension(doc) {
+    const named = /\.([a-z0-9]{1,8})$/i.exec(doc.filename || '');
+    const original = named ? named[1].toLowerCase() : '';
+    const b = doc.bas || [];
+    if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46) return 'pdf';
+    if ((b[0] === 0x49 && b[1] === 0x49 && (b[2] === 0x2a || b[2] === 0x2b)) || (b[0] === 0x4d && b[1] === 0x4d && (b[3] === 0x2a || b[3] === 0x2b))) return original === 'tiff' ? 'tiff' : 'tif';
+    // UYAP MIME türünü yanlış bildirebilir; UDF ve DOCX gibi ZIP tabanlı türlerde özgün ad yol gösterir.
+    if (original) return original;
+    return DOC_EXT[doc.type] || (doc.type.includes('pdf') ? 'pdf' : doc.type.includes('tif') ? 'tif' : 'bin');
+  }

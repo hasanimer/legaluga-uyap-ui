@@ -1,0 +1,88 @@
+
+    function bankCardAdd(p) {
+      if (!bankChecks || !bankAPI || !globalThis.UHDStorage?.mergeBankCheck) return;
+      if (!bankCard) {
+        const attr = (key, extra = {}) => ({ 'data-bank-check': key, ...extra });
+        const select = el('select', attr('debtor', { 'aria-label': 'Banka sorgusu yapılacak borçlu' }), el('option', { value: '' }, 'Borçlu seçin'));
+        const load = el('button', attr('load', { type: 'button', class: 'chip' }), 'Borçluları getir');
+        const query = el('button', attr('query', { type: 'button', class: 'dp-go', disabled: true }), 'Bankaları sorgula');
+        const requests = el('button', attr('requests', { type: 'button', class: 'chip', disabled: true, title: 'Kaydedilen banka sorgusunu dosyanın talep evraklarıyla karşılaştırır; talep göndermez.' }), 'Talepleri kontrol et');
+        const stop = el('button', attr('stop', { type: 'button', class: 'chip', hidden: true }), 'Durdur');
+        const status = el('div', attr('status', { class: 'dp-muted ek-banka-status', role: 'status', 'aria-live': 'polite' }));
+        const rows = el('div', attr('rows', { class: 'ek-banka-saved' }));
+        bankCard = { select, load, query, requests, stop, status, rows,
+          el: el('div', { class: 'dp-card ek-banka-takip' }, el('h4', null, 'Borçlu ve banka sorgusu'),
+            el('p', { class: 'dp-muted' }, 'Borçluyu seçip bankalarını sorgulayın. UYAP ücret ve limitleri geçerlidir; ücret varsa sorgudan önce onayınız istenir.'),
+            el('div', { class: 'ek-banka-borclu' }, el('label', { class: 'ek-banka-field' }, 'Borçlu', select), load),
+            el('div', { class: 'ek-banka-eylem' }, query, requests, stop), status, rows,
+            el('details', { class: 'ek-banka-help' }, el('summary', null, 'Sorgu ve kayıt hakkında'),
+              el('p', null, 'Banka listesi ve evrak özetleri bu Chrome profilinde şifreli saklanır. Cevap bulunmaması talep gönderilmediğini kanıtlamaz. Talep kontrolü evrak kaydını inceler; talep göndermez.'))) };
+        load.addEventListener('click', bankLoadBorrowers); query.addEventListener('click', bankQuery); requests.addEventListener('click', bankScanRequests);
+        select.addEventListener('change', () => { bankSelected = select.value; bankNotice = ''; bankDraw(); });
+        stop.addEventListener('click', () => bankRun?.ac.abort());
+        chrome.storage.local.get('uhdBankChecks').then(({ uhdBankChecks }) => {
+          if (closed || !uhdBankChecks) return;
+          const saved = bankChecks.sanitizeStore(uhdBankChecks).files[rec.key]?.subjects || {};
+          for (const [key, snapshot] of Object.entries(saved)) if (!bankSubjects[key] || bankSubjects[key].at < snapshot.at) bankSubjects[key] = snapshot;
+          if (!bankBorrowers.length) {
+            select.replaceChildren(el('option', { value: '' }, 'Borçlu seçin'), ...Object.values(bankSubjects).map(s => el('option', { value: s.debtorKey }, s.debtorLabel)));
+            const keys = Object.keys(bankSubjects); bankSelected = keys.length === 1 ? keys[0] : ''; select.value = bankSelected;
+          }
+          bankDraw();
+        }).catch(() => { bankNotice = 'Şifreli banka kaydı açılamadı. Önce yerel kasa sorununu giderin.'; bankDraw(); });
+      }
+      p.append(bankCard.el); bankDraw();
+    }
+    const bankaSatirlari = () => tum.filter(x => !x.ana && !x.yetimEk && ihbarCevabiMi(x.tur))
+      .map(x => ({ x, ekler: tum.filter(e => e.ana && e.ana.k === x.k && e.ana.dosya === x.dosya && !/dosyaBilgileri/i.test(e.tur)) }));
+    const BANKA_SONUC = { haciz: ['Haciz işlendi', 'bc-haciz'], bakiyeYok: ['Hesap var, bakiye yok', 'bc-bakiye'],
+      yok: ['Hesap/alacak kaydı yok', 'bc-yok'], belirsiz: ['Anlaşılamadı; evrakı açın', 'bc-belirsiz'] };
+    function bankaEvrakSekmesi(x) {
+      // Evrak sekmesi ilk kez açılıyorsa ilk evrak kendiliğinden getirilmez; doğrudan bu cevap açılır.
+      if (!yuklenen.has('evrak') && kaynak) { yuklenen.add('evrak'); listeKur(); }
+      sekmeAc('evrak');
+      ara.value = '';
+      grup = 'tumu'; suz(); gruplariCiz();
+      const i = gorunen.findIndex(g => ayni(g, x));
+      listeyiCiz();
+      ilkBekliyor = false;
+      sira = i;
+      secimiCiz(); konumYaz();
+      ++gezEpoch; clearTimeout(gecikme); gezAc?.abort();
+      birak(); simdikiOge = null;
+    }
+    function bankaBelgeGoster(x, b) {
+      if (closed) return;
+      bankaEvrakSekmesi(x);
+      // Zarf yerine metnin çıkarıldığı özgün PDF/HTML ekinin kendi baytları gösterilir.
+      simdikiOge = { ...x, ana: x, ekIndis: -1, tur: b.ad };
+      goster({ ...(x.e || {}), tur: b.ad, onaylandigiTarih: x.onay, dosyaGrubu: x.dosya }, b.doc);
+      onizleme.focus();
+    }
+    async function bankaAc(x) {
+      if (closed) return;
+      const key = paketAnahtar(x);
+      const acmaEpoch = gezEpoch;
+      if (!bankaBelgeler.has(key) && !bankaOkuma) await bankaOku(x);
+      if (closed || acmaEpoch !== gezEpoch) return;
+      const r = bankaSonuc.get(key), belgeler = bankaBelgeler.get(key) || [];
+      const asillar = belgeler.filter(b => r?.adaylar?.includes(b.id));
+      const secili = asillar.find(b => b.id === r?.secili);
+      if (secili) { bankaBelgeGoster(x, secili); return; }
+      bankaEvrakSekmesi(x);
+      yeniSekme.hidden = true; indir.hidden = true;
+      if (!asillar.length) {
+        icerik(el('div', { class: 'msg', role: 'status' }, bankaOkuma
+          ? 'Cevap okuması sürüyor; tamamlanınca cevabı açabilirsiniz.'
+          : r?.hata ? `Asıl cevap belgesi belirlenemedi: ${r.hata}`
+            : 'Asıl banka cevap belgesi belirlenemedi. KEP üst yazısı cevap olarak açılmadı; UYAP’taki ekleri inceleyin.'));
+        return;
+      }
+      icerik(el('div', { class: 'msg' }, el('p', null, 'Birden fazla cevap belgesi var. İncelemek istediğiniz belgeyi seçin.'),
+        el('div', { class: 'dp-actions' }, asillar.map((b, i) => {
+          const ac = el('button', { type: 'button', class: 'chip' }, `${i + 1}. ${b.ad}`);
+          ac.addEventListener('click', () => bankaBelgeGoster(x, b));
+          return ac;
+        }))));
+    }
+    

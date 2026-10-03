@@ -1,0 +1,21 @@
+          if (closed) return;
+          kaynak = fresh;
+          listeHazir();
+          if (tekrarIstek && !zipState) zipMessage('Evrak listesi hazır. ZIP olarak indirebilirsiniz.');
+        } catch (err) {
+          if (closed || (err && err.name === 'AbortError')) return;
+          listeHata = err.message || 'Bilinmeyen hata';
+          zipMessage(`Evrak listesi alınamadı: ${listeHata}`, true);
+          zipTekrar.hidden = false;
+          zipTekrar.textContent = 'Listeyi tekrar al';
+          log('Evrak listesi alınamadı:', err.message);
+          globalThis.UHDReporter?.report(err, 'evrak-open');
+          const tekrar = el('button', { type: 'button', class: 'dp-go' }, 'Tekrar dene');
+          tekrar.addEventListener('click', listeAl);
+          listeDurum.textContent = '';
+          icerik(el('div', { class: 'msg' }, el('p', { class: 'dp-err' }, `Evrak listesi alınamadı: ${err.message}`), el('div', { class: 'dp-actions' }, tekrar)));
+        }
+      })().finally(() => { listeBekliyor = null; if (!closed) { zipSync(); bankaCiz(); } });
+      zipSync();
+      return listeBekliyor;
+    }

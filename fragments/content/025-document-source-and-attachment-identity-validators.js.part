@@ -1,0 +1,39 @@
+  function evrakBul(list, key, group) {
+    const candidates = list.filter(x => evrakKey(x) === key);
+    const grouped = group ? candidates.filter(x => x.dosyaGrubu === group) : [];
+    const matches = grouped.length ? grouped : candidates;
+    if (matches.length > 1) throw new Error('Aynı bilgileri taşıyan birden fazla evrak var; yanlış evrakı açmamak için dosyayı UYAP’ta açın.');
+    if (!matches[0]) throw new Error('Evrak dosyanın evrak listesinde bulunamadı; Güncelle’ye basıp tekrar deneyin.');
+    return matches[0];
+  }
+
+  // Yalnız ana evrakın ekEvrakListesi'nde olan ek (1.19.4): ana evrak anahtarıyla bulunur, ek sırasıyla alınır. UYAP'ın ek
+  // düğümü gibi görüntüleme adresine ekin kendi evrakId'si ve ana evrakın dosya kimliği verilir.
+  function ekBul(list, hedef) {
+    const ana = evrakBul(list, hedef.ana.k, hedef.ana.dosya);
+    const liste = Array.isArray(ana.ekEvrakListesi) ? ana.ekEvrakListesi : [];
+    // Önce ilk listedeki kimlik aranır; aynı adlı ekler sırayla eşleştirilmez. UYAP bütün kimlikleri
+    // yenilediyse yalnız ana evrakın kimlik değişimi ve iki listedeki tek açık ek adı birlikte yeterlidir.
+    const ad = k => String((k && k.ekTuru) || '').trim();
+    const ilkAna = hedef.ana.e;
+    const ilkListe = Array.isArray(ilkAna?.ekEvrakListesi) ? ilkAna.ekEvrakListesi : [];
+    const kimlik = hedef.ekId ?? hedef.ana.e?.ekEvrakListesi?.[hedef.ekIndis]?.evrakId;
+    let ek, kimlikEksik = true;
+    if (kimlik != null && kimlik !== '') {
+      const aynilar = liste.filter(k => k && String(k.evrakId) === String(kimlik));
+      kimlikEksik = aynilar.length === 0;
+      ek = aynilar.length === 1 ? aynilar[0] : null;
+    }
+    const anaKimligiYenilendi = ilkAna?.evrakId != null && ilkAna.evrakId !== '' && ana.evrakId != null && ana.evrakId !== '' &&
+      String(ilkAna.evrakId) !== String(ana.evrakId) && evrakKey(ilkAna) === evrakKey(ana) &&
+      String(ilkAna.dosyaGrubu || '') === String(ana.dosyaGrubu || '');
+    if (!ek && kimlikEksik && anaKimligiYenilendi) {
+      const beklenenAd = String(hedef.tur || '').trim();
+      const ilkAynilar = ilkListe.filter(k => ad(k) && ad(k) === beklenenAd);
+      const yeniAynilar = liste.filter(k => ad(k) && ad(k) === beklenenAd);
+      if (ilkAynilar.length === 1 && yeniAynilar.length === 1 &&
+          (kimlik == null || kimlik === '' || String(ilkAynilar[0].evrakId) === String(kimlik))) ek = yeniAynilar[0];
+    }
+    if (!ek || ek.evrakId == null || ek.evrakId === '') throw new Error('Ek, ana evrakın ek listesinde bulunamadı; Güncelle’ye basıp tekrar deneyin.');
+    return { evrakId: ek.evrakId, dosyaId: ana.dosyaId, dosyaGrubu: ana.dosyaGrubu, tur: hedef.tur, onaylandigiTarih: ana.onaylandigiTarih };
+  }

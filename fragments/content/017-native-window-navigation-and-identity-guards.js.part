@@ -1,0 +1,317 @@
+  const onceKac = t => !t ? 'bilinmiyor' : Date.now() - t < 120000 ? `${Math.round((Date.now() - t) / 1000)} sn önce` : `${Math.round((Date.now() - t) / 60000)} dk önce`;
+  // UYAP'ın genel yükleme katmanı. Bayrak tek bir açık/kapalı değeridir ve ilk biten istek kapatır: form değişikliğinin
+  // (birim, anahtar) başlattığı mahkeme listesi isteği sürerken Sorgula'ya basılırsa, o istek bitince düğme arama
+  // sürerken boşa çıkar. Bu yüzden katmanın tıklamadan önce kısa bir süre kesintisiz kapalı kalması beklenir.
+  const uyapLoading = () => [...document.querySelectorAll('body > .dx-loadpanel-wrapper .dx-overlay-content')].some(visible);
+  async function loadingSettled() {
+    let since = 0;
+    await soft(waitFor(() => {
+      if (uyapLoading()) { since = 0; return false; }
+      if (!since) since = Date.now();
+      return Date.now() - since >= 200;
+    }, 10000));
+  }
+
+  async function waitIdle(btn) {
+    await soft(waitFor(() => /Sorgulan/i.test(btn.textContent) || alertText(), 2500));
+    const check = () => {
+      if (captchaOpen()) throw new Blocked(CAPTCHA_MSG);
+      const a = alertText();
+      if (a) throw new Error(`UYAP: ${a}`);
+    };
+    await waitFor(() => { check(); return !/Sorgulan/i.test(btn.textContent) && !btn.classList.contains('dx-state-disabled'); },
+      60000, 'UYAP sorgusu zaman aşımına uğradı.');
+  }
+
+  async function runQuery(dirty) {
+    // Kesilen akışın sorgusu sürüyorsa düğme "Sorgulanıyor…" yazar: bitmesi beklenir.
+    const btn = findButton('Sorgula') || await soft(waitFor(() => findButton('Sorgula'), 30000));
+    if (!btn) throw new Error('“Sorgula” düğmesi bulunamadı.');
+    if (dirty) await dismissStaleAlert();   // kesilen sorgunun uyarısı geç gelmiş olabilir
+    await loadingSettled();
+    guardOpen();
+    dataRows().forEach(tr => { tr.dataset.uhdOld = '1'; });
+    btn.click();
+    await waitIdle(btn);
+    // Doğrulama penceresi düğme boşa çıktıktan hemen sonra da gelebilir.
+    await soft(waitFor(() => { if (captchaOpen()) throw new Blocked(CAPTCHA_MSG); return freshRows().length; }, 4000));
+    return btn;
+  }
+
+  // Hücre metni: satır sonları ve fazla boşluklar tek boşluğa indirilir.
+  const cellText = td => norm((td.textContent || '').replace(/\s+/g, ' ').trim());
+
+  function findRow(rec) {
+    const g = gridEl();
+    if (!g) return null;
+    const wantNo = norm(rec.dosyaNo);
+    const wantBirim = norm(rec.birimAdi);
+    const main = [...g.querySelectorAll('.dx-datagrid-rowsview .dx-datagrid-content:not(.dx-datagrid-content-fixed) tr.dx-data-row')];
+    const fixed = [...g.querySelectorAll('.dx-datagrid-rowsview .dx-datagrid-content-fixed tr.dx-data-row')];
+    const cand = main
+      .map((tr, i) => ({ tr, i, cells: [...tr.cells].map(cellText) }))
+      .filter(x => x.cells.some(c => c === wantNo || c.split(' ').includes(wantNo)));
+    const hit = cand.find(x => x.cells.some(c => c.includes(wantBirim))) || (cand.length === 1 ? cand[0] : null);
+    if (!hit) return null;
+    const ri = hit.tr.getAttribute('aria-rowindex');
+    const twin = (ri && fixed.find(f => f.getAttribute('aria-rowindex') === ri)) || fixed[hit.i] || null;
+    return { tr: hit.tr, twin };
+  }
+
+  // Satırdaki düğme; eski sürümlerde sağa sabitli sütunun ayrı tablo kopyasında da olabilir.
+  function locate(rec) {
+    const row = findRow(rec);
+    return row ? (findEye(row.tr) || findEye(row.twin)) : null;
+  }
+
+  // Dar ekranda UYAP tablosu sütun gizler: düğme, satırın "…" ile açılan ayrıntı satırına taşınır.
+  async function locateAdaptive(rec) {
+    const row = findRow(rec);
+    if (!row) return null;
+    const more = row.tr.querySelector('.dx-datagrid-adaptive-more') || (row.twin && row.twin.querySelector('.dx-datagrid-adaptive-more'));
+    if (!visible(more)) return null;
+    log('Sütunlar gizli; satır ayrıntısı açılıyor.');
+    guardOpen();
+    more.click();
+    const detail = await soft(waitFor(() => {
+      const next = row.tr.nextElementSibling;
+      return next && next.classList.contains('dx-adaptive-detail-row') ? next : null;
+    }, 3000));
+    return findEye(detail);
+  }
+
+  const firstRowSig = () => {
+    const tr = dataRows()[0];
+    return tr ? tr.innerText : '';
+  };
+
+  async function locateOnGrid(rec) {
+    let btn = locate(rec) || await locateAdaptive(rec);
+    if (btn) return btn;
+    const g = gridEl();
+    if (!g) return null;
+    const sp = g.querySelector('.dx-datagrid-search-panel input');
+    if (sp) {
+      log('Tablo araması yapılıyor.');
+      // Sabit panelde yazan kullanıcının odağı UYAP'ın tablo aramasına kaymasın; süzgeç değeri olayla hemen alır.
+      const keep = panel && !panel.hidden && shadowRoot ? shadowRoot.activeElement : null;
+      guardOpen();
+      setInputValue(sp, rec.dosyaNo, { focus: !keep });
+      if (keep && !keep.isConnected && document.activeElement === sp) sp.blur();
+      if (await soft(waitFor(() => findRow(rec), 5000))) {
+        btn = locate(rec) || await locateAdaptive(rec);
+        if (btn) return btn;
+      }
+    }
+    // DevExtreme sürümüne göre pasif "sonraki" düğmesi dx-button-disable ya da dx-state-disabled taşır.
+    const nextDisabled = b => b.classList.contains('dx-button-disable') || b.classList.contains('dx-state-disabled') ||
+      b.getAttribute('aria-disabled') === 'true';
+    for (let i = 0; i < 200; i++) {
+      guardOpen();
+      const next = g.querySelector('.dx-next-button');
+      if (!visible(next) || nextDisabled(next)) break;
+      const sig = firstRowSig();
+      next.click();
+      // Sayfa değişmediyse son sayfadayız: boşuna tekrar tıklama.
+      if (!(await soft(waitFor(() => firstRowSig() !== sig, 5000)))) break;
+      btn = locate(rec) || await locateAdaptive(rec);
+      if (btn) return btn;
+    }
+    return null;
+  }
+
+  // Açılamadığında nedenini anlamak için tablonun özeti (kişisel veri içermez: yalnızca sayılar ve sınıflar).
+  function gridDiagnosis(rec) {
+    const g = gridEl();
+    if (!g) return 'sonuç tablosu bulunamadı';
+    const rows = dataRows();
+    const row = findRow(rec);
+    const eyes = g.querySelectorAll(EYE).length;
+    return `tablo=${g.id || 'kimliksiz'}, satır=${rows.length}, eşleşen satır=${row ? 'var' : 'yok'}, görüntüle düğmesi=${eyes}`;
+  }
+
+  function moreLink() {
+    const all = [...document.querySelectorAll('#content-div2 *')].filter(e => /Devam[ıi]n[ıi] Getir/.test(e.textContent) && visible(e));
+    return all[all.length - 1] || null;
+  }
+
+  async function findResultButton(rec, queryButton) {
+    let btn = await locateOnGrid(rec);
+    for (let n = 0; !btn && n < 30; n++) {
+      guardOpen();
+      const more = moreLink();
+      if (!more) break;
+      const before = dataRows().length;
+      more.click();
+      if (queryButton) await waitIdle(queryButton);
+      else await soft(waitFor(() => dataRows().length > before || !visible(more), 10000));
+      btn = await locateOnGrid(rec);
+    }
+    return btn;
+  }
+
+  // UYAP dosya pencereleri: görünür ve en dıştaki katmanlar (pencere içindeki yükleme katmanı ya da açılır liste sayılmaz).
+  function fileWindows() {
+    const all = [...document.querySelectorAll('.dosya-sorgula-popup .dx-overlay-content')].filter(visible);
+    return all.filter(e => !all.some(o => o !== e && o.contains(e)));
+  }
+
+  // Dosya numarası rakam sınırıyla aranır: 2025/98, 2025/988 içinde eşleşmez.
+  function fileWindowFor(rec) {
+    const re = new RegExp(`(^|[^0-9])${String(rec.dosyaNo).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^0-9])`);
+    return [...document.querySelectorAll('.dosya-sorgula-popup .dx-overlay-content')].find(e => visible(e) && re.test(e.innerText)) || null;
+  }
+
+  // Kapat düğmesi pencere türüne göre farklı çizilir: DevExtreme'in kendi düğmesi, aria-label ya da title taşıyan düğme
+  // ya da başlıktaki yalnız simgeli (çoğunlukla kırmızı) X. Yazılı başlık düğmelerine ("Tam Ekran", "Kart Görünümü") dokunulmaz.
+  const CLOSE_ICONS = '.dx-icon-close,.dx-icon-remove,.dx-icon-clear,.icon-x,.fa-times,.fa-xmark,.fa-close,.bi-x,.bi-x-lg,.pi-times';
+  const buttonLabel = b => norm([b.getAttribute('aria-label'), b.getAttribute('title'), b.textContent].filter(Boolean).join(' ')).replace(/\s+/g, ' ').trim();
+  const iconOnly = b => !/[a-z0-9]/.test(buttonLabel(b));
+  const textFree = b => !/[a-z0-9]/.test(norm(b.textContent || ''));
+  const CLOSE_LABEL = /^((pencereyi )?kapat|close|×|✕|✖|x)$/;
+  const closeLabel = b => [b.getAttribute('aria-label'), b.getAttribute('title'), b.textContent]
+    .some(t => CLOSE_LABEL.test(norm(t || '').replace(/\s+/g, ' ').trim()));
+  const classText = b => String((b.className && b.className.baseVal !== undefined) ? b.className.baseVal : b.className || '');
+  function headerButtons(popup) {
+    const pr = popup.getBoundingClientRect();
+    const all = [...popup.querySelectorAll('.dx-closebutton, .dx-button, button, [role="button"], a')].filter(b => {
+      if (!visible(b) || b.closest('.dx-overlay-content') !== popup) return false;
+      const r = b.getBoundingClientRect();
+      return r.top - pr.top < 90 && r.width < 160;
+    });
+    return all.filter(b => !all.some(o => o !== b && o.contains(b)));
+  }
+  function closeButtonOf(popup) {
+    const btns = headerButtons(popup);
+    const rightmost = list => list.sort((a, b) => b.getBoundingClientRect().right - a.getBoundingClientRect().right)[0] || null;
+    const pr = popup.getBoundingClientRect();
+    const last = rightmost([...btns]);
+    return rightmost(btns.filter(b => b.matches('.dx-closebutton') || closeLabel(b) || (textFree(b) && b.querySelector(CLOSE_ICONS))))
+      || rightmost(btns.filter(b => iconOnly(b) && /danger|close|kapat/i.test(classText(b))))
+      // Son çare: başlığın en sağındaki düğme yalnız simgeliyse ve sağında başka öğe yoksa pencerenin X'idir.
+      || (last && iconOnly(last) && pr.right - last.getBoundingClientRect().right < 80 && !somethingRightOf(popup, last) ? last : null);
+  }
+  // Başlıkta düğmenin sağında görünür bir öğe var mı (düğme sayılmayan asıl X olabilir)?
+  function somethingRightOf(popup, b) {
+    const r = b.getBoundingClientRect(), pr = popup.getBoundingClientRect();
+    return [...popup.querySelectorAll('*')].some(o => {
+      if (o === b || b.contains(o) || o.contains(b) || !visible(o)) return false;
+      const q = o.getBoundingClientRect();
+      return q.width > 0 && q.top - pr.top < 90 && q.left >= r.right - 1 && q.top < r.bottom && q.bottom > r.top;
+    });
+  }
+  // Tanı için başlık düğmelerinin özeti (belge içeriği ve dosya bilgisi içermez; rakamlar maskelenir).
+  function popupHeaderDiagnosis(popup) {
+    const list = headerButtons(popup).map(b => {
+      const cls = classText(b).split(/\s+/).filter(c => /^(dx-|btn|fa|bi|pi|close|kapat)/i.test(c)).slice(0, 4).join('.');
+      const icon = [...b.querySelectorAll('i,span,svg')].map(classText).join(' ').split(/\s+/).find(c => /icon|fa-|bi-|pi-/.test(c)) || '';
+      return `${b.tagName.toLowerCase()}${cls ? '.' + cls : ''}${b.hasAttribute('aria-label') ? '[aria-label]' : ''}${icon ? ' ' + icon : ''}${iconOnly(b) ? ' (simge)' : ' (yazılı)'}`;
+    });
+    return (list.join(' | ') || 'başlıkta düğme yok').replace(/\d/g, '#');
+  }
+
+  // UYAP'ın dosya penceresi açıksa önce kendi Kapat düğmesiyle kapatılır. Başka modallara (duyuru, onay) dokunulmaz.
+  // Dönüş: false (açık pencere yok), 'kapandi', 'kapanmadi' (düğme tanınmadı ya da pencere kapanmadı; çağıran
+  // bağlantıdan baştan başlar). UYAP kapatmadan önce onay isterse kullanıcının işi silinmesin diye durulur.
+  async function closeOpenFilePopup(say) {
+    const popup = fileWindows()[0];
+    if (!popup) return false;
+    say('Açık dosya penceresi kapatılıyor…');
+    const btn = closeButtonOf(popup);
+    if (btn) {
+      btn.click();
+      if (await soft(waitFor(() => !visible(popup), 3000))) {
+        await sleep(250);   // denetimli pencere bir sonraki çizimde geri gelmesin
+        if (!visible(popup)) return 'kapandi';
+      }
+      const a = alertText();
+      if (a) throw new Error(`UYAP pencereyi kapatmadan önce onay istiyor (“${a}”). Pencereyi UYAP’ta kapatıp tekrar deneyin.`);
+    }
+    guardOpen();
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true }));
+    if (await soft(waitFor(() => !visible(popup), 1500))) return 'kapandi';
+    log('Dosya penceresi Kapat düğmesiyle kapatılamadı:', btn ? 'düğme tıklandı, pencere kapanmadı' : 'düğme tanınmadı', '·', popupHeaderDiagnosis(popup));
+    return 'kapanmadi';
+  }
+
+  // Kesilen ya da başarısız bir açmadan kalan tek düğmeli bilgi uyarısı yeni sorguyu düşürmesin. Kirli yolda (restart) ve
+  // dosya penceresindeki "Doğrulama hatası" uyarısında çağrılır; onay isteyen uyarıya ve kullanıcının kendi açtığı
+  // uyarılara dokunulmaz.
+  async function dismissStaleAlert() {
+    if (!alertText()) return;
+    const pop = document.querySelector(ALERT);
+    const ok = pop && pop.querySelector('.swal2-confirm');
+    const controls = pop ? [...pop.querySelectorAll('button, input, select, textarea, [role="button"]')]
+      .filter(e => visible(e) && !e.matches('.swal2-close')) : [];
+    const question = !!pop && visible(pop.querySelector('.swal2-icon.swal2-question'));
+    const plain = !!ok && ['tamam', 'ok', 'kapat'].includes(norm(ok.textContent.trim()));   // "Evet", "Gönder", "Sil" değil
+    if (ok && plain && controls.length === 1 && controls[0] === ok && !question) { guardOpen(); ok.click(); }
+    await soft(waitFor(() => !alertText(), 3000));
+    // Kapatılamayan uyarı eklenti hatası değil, kullanıcının okuması gereken UYAP durumudur ('uyari': raporlanmaz).
+    if (alertText()) throw Object.assign(new Error(`UYAP’ta açık bir uyarı var: ${alertText()}`), { kind: 'uyari' });
+  }
+
+  const dogrulamaAlert = () => DOGRULAMA_HATASI.test(norm(alertText()));
+
+  // Göz düğmesine basıldıktan sonra açılan pencerenin sonucu. 'dogrulama': UYAP "Doğrulama hatası" uyarısı verdi.
+  // 'uyari': başka bir uyarı verdi; kullanıcı okusun diye dokunulmaz. 'acildi': sekmeler geldi, sekme isteği uyarısız
+  // bitti, pencere kapandı ya da yanıt gelmedi. İstek sürerken UYAP'ın yükleme katmanı açıktır: 15 sn'den sonra yalnız
+  // katman kapalıysa, en geç 60 sn'de beklemeye son verilir. UYAP isteğe güvenlik doğrulaması isterse (say ile bildirilir)
+  // istek doğrulamadan sonra yinelenir: doğrulama 3 dakikaya dek beklenir, önceki yanıt sayılmaz. clickAt, tıklamanın
+  // performance.now() zamanıdır.
+  async function fileWindowOutcome(pop, clickAt, say) {
+    const t0 = Date.now();
+    let since = clickAt, softEnd = t0 + 15000, hardEnd = t0 + 60000, captchaAt = 0;
+    for (;;) {
+      guardOpen();
+      const a = alertText();
+      if (a) return DOGRULAMA_HATASI.test(norm(a)) ? 'dogrulama' : 'uyari';
+      if (!visible(pop) || [...pop.querySelectorAll('[role="tab"], .dx-tab')].some(visible)) return 'acildi';
+      if (captchaOpen()) {
+        if (!captchaAt) { captchaAt = Date.now(); say(); }
+        if (Date.now() - captchaAt > 180000) throw new Blocked(CAPTCHA_MSG);
+        since = performance.now();
+        softEnd = Date.now() + 15000; hardEnd = Date.now() + 60000;
+        await sleep(120);
+        continue;
+      }
+      // Uyarı yanıttan hemen sonra çizilir: yanıt geleli bir süre olduysa ve uyarı yoksa istek başarılıdır.
+      if (islemTurleri.start >= since && performance.now() - islemTurleri.seenAt > 800) return 'acildi';
+      const now = Date.now();
+      if (now > hardEnd || (now > softEnd && !uyapLoading())) {
+        log(`Dosya penceresinin sekme isteği ${Math.round((now - t0) / 1000)} sn içinde sonuçlanmadı; pencere açılmış sayıldı.`);
+        return 'acildi';
+      }
+      await sleep(120);
+    }
+  }
+
+  // Dosya penceresinde istenen sekmeye (Evrak / Taraf bilgileri) geç; sekme yoksa hiçbir şeye basma.
+  async function gotoTab(rec, seq, sekme) {
+    const { uhdPrefs } = sekme ? {} : await chrome.storage.local.get('uhdPrefs');
+    const want = sekme || (uhdPrefs && uhdPrefs.acilisSekme);
+    if (!want || want === 'yok') return;
+    if (want === 'taraf' && rec.yargiTuru === CBS.kod) return;
+    const words = want === 'evrak' ? ['evrak'] : ['taraf bilgi', 'taraflar'];
+    const find = () => {
+      if (seq !== openSeq) throw new Superseded();   // bu arada başka bir dosya istendi
+      const pop = fileWindowFor(rec) || fileWindows().pop();
+      if (!pop) return null;
+      // "Evrak" sekmesi olmayan dosyada adı "evrak" ile başlayan "Evrak Gönderme" formuna basılmasın.
+      const ok = t => want === 'evrak' ? t === 'evrak' : words.some(w => t.startsWith(w));
+      return [...pop.querySelectorAll('[role="tab"], .dx-tab, .nav-link, .nav-item a, button')]
+        .find(e => visible(e) && e.innerText.trim().length < 40 && ok(norm(e.innerText.trim()))) || null;
+    };
+    try {
+      const tab = await waitFor(find, 5000, 'yok');
+      log('Sekmeye geçiliyor:', tab.innerText.trim());
+      tab.click();
+    } catch (e) {
+      if (!(e instanceof Superseded)) log('İstenen sekme bu dosyada yok; hiçbir şeye basılmadı.');
+    }
+  }
+
+  // Dosyanın UYAP'taki güncel durumu: { sorguDurum } (0 açık, 1 kapalı), bulunamazsa null, sorgu yorumlanamazsa undefined.
+  // İstek UYAP'ın kendi Dosya Yıl/No alanlarının gönderdiği dosyaYil/dosyaSira ile daraltılır. Yalnız kaydın kendisi
+  // (birim, numara ve dosya türü) sayılır: başka mahkemedeki ya da aynı mahkemede başka türdeki aynı numaralı dosya açılmaz.
+  

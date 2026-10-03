@@ -1,0 +1,42 @@
+
+    function bankaKartiEkle(p) {
+      if (!bankaKart) {
+        const durum = el('div', { class: 'dp-muted ek-banka-status', role: 'status', 'aria-live': 'polite' });
+        const govde = el('div', { class: 'ek-banka-tablo' });
+        const oku = el('button', { type: 'button', class: 'dp-go' }, 'Cevapları oku');
+        const durdur = el('button', { type: 'button', class: 'chip', hidden: true }, 'Durdur');
+        oku.addEventListener('click', () => bankaOku());
+        durdur.addEventListener('click', () => { bankaOkuma?.ac.abort(); bankaCiz(); });
+        const tumAc = el('button', { type: 'button', class: 'chip' }, 'Tümünü aç');
+        const tumKapat = el('button', { type: 'button', class: 'chip' }, 'Tümünü kapat');
+        const topluAc = acik => {
+          bankaTumAcik = acik;
+          for (const grup of govde.querySelectorAll('.ek-banka-grup')) {
+            grup.open = acik;
+            const b = grup.querySelector('.ek-banka-grup-ac');
+            b.textContent = acik ? 'Kapat' : 'Aç'; b.setAttribute('aria-expanded', String(acik));
+            b.setAttribute('aria-label', b.getAttribute('aria-label').replace(/(?:aç|kapat)$/, acik ? 'aç' : 'kapat'));
+          }
+        };
+        tumAc.addEventListener('click', () => topluAc(true));
+        tumKapat.addEventListener('click', () => topluAc(false));
+        bankaKart = { el: el('div', { class: 'dp-card ek-banka' }, el('h4', null, 'Banka cevapları'),
+          el('p', { class: 'dp-muted' }, 'Dosyaya gelen cevapları bankaya göre inceleyin. Sonucu doğrulamak için asıl evrakı açın.'),
+          el('div', { class: 'ek-banka-eylem' }, oku, durdur, tumAc, tumKapat), durum, govde,
+          el('details', { class: 'ek-banka-help' }, el('summary', null, 'Cevaplar nasıl okunur?'),
+            el('p', null, BANKA_OKUMA_ACIKLAMASI))), durum, govde, oku, durdur };
+      }
+      bankCardAdd(p);
+      p.append(bankaKart.el);
+      if (!kaynak && !listeBekliyor) listeAl();
+      bankaCiz();
+    }
+    function zipRelease() {
+      if (!zipUrl) return;
+      const old = zipUrl;
+      zipUrl = null;
+      zipKaydet.hidden = true;
+      zipKaydet.removeAttribute('href');
+      setTimeout(() => URL.revokeObjectURL(old), 60000);
+    }
+    

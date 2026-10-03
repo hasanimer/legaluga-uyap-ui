@@ -1,0 +1,110 @@
+  let dosyaEkrani = null, ekranSayac = 0;
+  function closeDosyaEkrani(restore = false) {
+    if (dosyaEkrani) dosyaEkrani.close(restore);
+  }
+  // Sabit panel yanda açıkken görüntüleyici paneli gizlemez: yanında açılır, kutu kipsiz olur ve Tab panele de geçer.
+  // Alt yuvada (dar pencere) yer kalmadığı için görüntüleyici eskisi gibi paneli gizleyip tam ekran açılır.
+  const besideDock = () => panelMode === 'dock' && !!panel && !panel.hidden && shadowRoot.host.dataset.dock === 'side';
+  // Odak yandaki paneldeyse tuşlar panelindir (not düzenleme, arama, tutamak); görüntüleyici karışmaz.
+  const panelKeys = box => box.getAttribute('aria-modal') !== 'true' && !!panel && panel.contains(shadowRoot.activeElement);
+  const FOCUSABLE = 'button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),textarea:not(:disabled),iframe,[tabindex="0"]';
+  function viewerKeys(ev, box, done) {
+    if (ev.key === 'Escape') {
+      if (panelKeys(box)) return;
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      done();
+    } else if (ev.key === 'Tab') {
+      const scope = box.getAttribute('aria-modal') === 'true' ? [box] : [panel, box];
+      const targets = scope.flatMap(s => [...s.querySelectorAll(FOCUSABLE)]).filter(x => visible(x) && x.tabIndex >= 0);
+      if (!targets.length) return;
+      const active = shadowRoot.activeElement;
+      const next = ev.shiftKey ? targets[targets.length - 1] : targets[0];
+      if (!scope.some(s => s.contains(active)) || (ev.shiftKey ? active === targets[0] : active === targets[targets.length - 1])) {
+        ev.preventDefault();
+        next.focus();
+      }
+    }
+  }
+
+  function restoreAfterViewer(previous) {
+    resumePanel(true);
+    const target = previous && previous.isConnected && visible(previous) ? previous : panel.hidden ? launch : null;
+    if (target) target.focus({ preventScroll: true });
+    else if (!panel.hidden && ui) ui.focus();   // önceki öğe yeniden çizildiyse (ör. görüldü sayınca) panelde kalınır
+  }
+
+  // Kartın "Evrak Görüntüle"si, Safahat ya da İcra özeti (ve eski sürümün popup'ı): dosya ekranı o sekmeyle açılır.
+  // baglam: karttaki yeni evraklar (ekranın "Yeni" grubu).
+  function openDosyaPanel(rec, tab, baglam) {
+    cancelEvrak();
+    showEkran(rec, { sekme: tab, baglam });
+  }
+
+  // Sırayla oku (1.19.1): yeni evraklı dosyalar kuyruktaki sırayla dosya ekranında açılır; ekranın başlığında dosyalar
+  // arasında geçilir. kuyruk: [{ record, baglam }]. Odak, okuma bitince ilk ekrandan önceki yere döner.
+  function siraylaOku(kuyruk, i, previous, yon) {
+    if (!Array.isArray(kuyruk) || i < 0 || i >= kuyruk.length) return;
+    const onceki = previous || shadowRoot.activeElement || document.activeElement;
+    cancelEvrak();
+    showEkran(kuyruk[i].record, { sekme: 'evrak', baglam: kuyruk[i].baglam, sira: { kuyruk, i, previous: onceki, yon } });
+    announce(`Dosya ${i + 1} / ${kuyruk.length}: ${kuyruk[i].record.dosyaNo} ${cleanBirim(kuyruk[i].record.birimAdi)}.`);
+  }
+
+  async function loadSafahat(rec, body, signal) {
+    if (rec.yargiTuru === CBS.kod) { body.replaceChildren(el('div', { class: 'dp-muted' }, 'UYAP savcılık dosyalarında safahat vermez.')); return; }
+    const storage = globalThis.UHDStorage;
+    const attr = (key, extra = {}) => ({ 'data-safahat': key, ...extra });
+    const refresh = el('button', attr('refresh', { type: 'button', class: 'dp-go', disabled: true }), 'Safahatı getir');
+    const stop = el('button', attr('stop', { type: 'button', class: 'chip', hidden: true }), 'Durdur');
+    const count = el('b', attr('count')), date = el('span', attr('date', { class: 'dp-muted' }));
+    const status = el('div', attr('status', { class: 'sf-status', role: 'status', 'aria-live': 'polite' }), 'Son kayıt bu Chrome profilinden okunuyor…');
+    const wait = el('p', attr('wait', { class: 'dp-muted sf-wait' }));
+    const search = el('input', attr('search', { type: 'search', placeholder: 'İşlem, açıklama, tarih veya birimde ara', 'aria-label': 'Kaydedilen safahatta ara', autocomplete: 'off', spellcheck: 'false' }));
+    const list = el('div', attr('list', { class: 'sf-list' }));
+    body.replaceChildren(el('section', { class: 'sf', 'aria-label': 'Safahat kayıtları' },
+      el('div', { class: 'sf-head' }, el('div', null, el('h3', null, 'Safahat'), el('div', { class: 'sf-meta' }, count, date)),
+        el('div', { class: 'sf-actions' }, refresh, stop)),
+      status, wait, search, list));
+    let snapshot = null, peerBusyUntil = 0, ready = false, closed = false, run = null, timer = null, generation = 0, notice = '';
+    const alive = () => !closed && !signal?.aborted;
+    const apply = state => { snapshot = state.snapshot; peerBusyUntil = state.busy ? Date.now() + state.busyMs : 0; };
+    const remaining = ms => `${Math.ceil(ms / 60000)} dakika`;
+    const draw = (renderRows = true) => {
+      if (!alive()) return;
+      clearTimeout(timer); timer = null;
+      const waitMs = snapshot ? Math.max(0, globalThis.UHD.SAFAHAT_REFRESH_MS - (Date.now() - snapshot.fetchedAt)) : 0;
+      const busyMs = Math.max(0, peerBusyUntil - Date.now()), waiting = waitMs > 0;
+      refresh.textContent = snapshot ? 'Güncelle' : 'Safahatı getir';
+      refresh.disabled = !ready || !!run || waiting || busyMs > 0;
+      refresh.title = waiting ? `Son başarılı çekimden sonra 60 dakika beklenir. Kalan: ${remaining(waitMs)}.` : busyMs ? 'Bu dosyanın safahatı başka bir ekranda alınıyor.' : '';
+      stop.hidden = !run; stop.disabled = !!run?.ac.signal.aborted;
+      count.textContent = snapshot ? `${fmtNum(snapshot.items.length)} işlem` : 'Henüz kayıt yok';
+      date.textContent = snapshot ? `Son çekim: ${new Date(snapshot.fetchedAt).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}` : 'Getirdiğiniz safahat bu Chrome profilinde şifreli saklanır.';
+      status.textContent = notice || (snapshot ? 'Son başarılı çekimde kaydedilen safahat gösteriliyor. En yeni işlem önce.' : 'Safahatı görüntülemek için “Safahatı getir”e basın. Sekme açılışında UYAP sorgusu yapılmaz.');
+      wait.textContent = waiting ? `Yeniden çekim için ${remaining(waitMs)} kaldı. 60 dakika dolunca “Güncelle” kullanılabilir; kaydedilen kayıtları şimdi inceleyebilirsiniz.`
+        : busyMs ? 'Bu dosyanın safahatı başka bir ekranda alınıyor. Önceki kayıt korunuyor.' : 'Safahat yalnız düğmeye bastığınızda alınır. Aynı dosya için başarılı çekimler arasında en az 60 dakika beklenir.';
+      search.disabled = !snapshot?.items.length;
+      const terms = norm(search.value).trim().split(/\s+/).filter(Boolean);
+      const rows = renderRows ? (snapshot?.items || []).filter(item => terms.every(term => norm([item.tarih, item.tur, item.aciklama, item.birim, item.statu].join(' ')).includes(term))) : [];
+      if (renderRows && !snapshot) list.replaceChildren(el('div', { class: 'sf-empty' }, ready ? 'Bu dosya için kaydedilmiş safahat yok.' : 'Yerel kayıt yükleniyor…'));
+      else if (renderRows && !rows.length) list.replaceChildren(el('div', { class: 'sf-empty' }, snapshot.items.length ? 'Aramanızla eşleşen işlem yok.' : 'Son başarılı çekimde bu dosya için safahat işlemi dönmedi.'));
+      else if (renderRows) list.replaceChildren(el('div', { class: 'dp-tablewrap' }, el('table', { class: 'dp-table sf-table' },
+        el('thead', null, el('tr', null, ['Tarih', 'İşlem', 'Açıklama'].map(label => el('th', { scope: 'col' }, label)))),
+        el('tbody', null, rows.map(item => el('tr', null,
+          el('td', { 'data-label': 'Tarih', class: 'sf-date' }, item.tarih || 'Tarih belirtilmemiş'),
+          el('td', { 'data-label': 'İşlem' }, el('b', null, item.tur || 'İşlem'), item.statu ? el('small', null, item.statu) : null),
+          el('td', { 'data-label': 'Açıklama' }, item.aciklama || 'Açıklama yok', item.birim ? el('small', null, item.birim) : null)))))));
+      if ((waiting || busyMs) && ready) timer = setTimeout(() => draw(false), 1000);
+    };
+    const refreshNow = async () => {
+      if (!alive() || !ready || run) return;
+      const task = run = { ac: new AbortController(), token: null };
+      notice = 'Safahat UYAP’tan alınıyor… Önceki kayıt korunuyor.'; draw();
+      try {
+        const permit = await storage.beginSafahat(rec.key);
+        task.token = permit.token;
+        task.ac.signal.throwIfAborted(); if (!alive()) return;
+        apply(permit);
+        if (!permit.allowed) { notice = permit.waitMs ? 'Bu dosyanın son başarılı kaydı gösteriliyor; 60 dakika henüz dolmadı.' : 'Bu dosyanın safahatı başka bir ekranda alınıyor.'; return; }
+        // Bir açık eylem tek safahat isteğidir. Hata halinde otomatik kimlik tazeleme/yeniden sorgu yapılmaz.

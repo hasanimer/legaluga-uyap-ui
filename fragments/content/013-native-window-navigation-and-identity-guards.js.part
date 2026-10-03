@@ -1,0 +1,276 @@
+  let opening = false, openSeq = 0, openDirty = false;
+  let reloadingUntil = 0;   // sayfa dosyanın bağlantısıyla yeniden yükleniyor
+
+  // usr, React Router'ın konum durumudur; Dosya Sorgulama { detayliArama: true } görünce hesabın varsayılanı ne olursa
+  // olsun Detaylı Sorgulama'yı açar.
+  function spaPush(path, usr = null) {
+    const st = history.state || {};
+    const idx = typeof st.idx === 'number' ? st.idx + 1 : 0;
+    history.pushState({ usr, key: Math.random().toString(36).slice(2, 10), idx }, '', path);
+    window.dispatchEvent(new PopStateEvent('popstate', { state: history.state }));
+  }
+
+  // Geçiş kaydı geçmişte kalmasın: Geri düğmesi boş /uhd-gecis ekranına düşmez.
+  function spaReplace(path, usr = null) {
+    history.replaceState({ ...(history.state || {}), usr, key: Math.random().toString(36).slice(2, 10) }, '', path);
+    window.dispatchEvent(new PopStateEvent('popstate', { state: history.state }));
+  }
+
+  function setInputValue(input, value, { focus = true } = {}) {
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    if (focus) input.focus();
+    setter.call(input, value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'Unidentified' }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  // UYAP'ın düğmesiz kısa bildirimleri (e-duruşma vb.) de swal2 penceresidir; onlar uyarı sayılmaz.
+  const ALERT = '.swal2-popup:not(.swal2-toast)';
+  function alertText() {
+    const p = document.querySelector(ALERT);
+    if (!visible(p)) return '';
+    const parts = [...p.querySelectorAll('.swal2-title, .swal2-html-container')].filter(visible).map(e => e.innerText.trim()).filter(Boolean);
+    return (parts.length ? parts.join(' – ') : p.innerText).trim();
+  }
+
+  function findButton(text) {
+    const want = norm(text);
+    return [...document.querySelectorAll('.dx-button')].find(b =>
+      visible(b) && (norm(b.getAttribute('aria-label') || '') === want || norm(b.textContent.trim()) === want));
+  }
+
+  function detayliToggle() {
+    return [...document.querySelectorAll('button')].find(b => visible(b) && /Detayl[ıi] Sorgulama/i.test(b.textContent));
+  }
+
+  const onFormPage = () => location.pathname === '/dosya-sorgulama';
+
+  // Dosya Sorgulama formu adres parametrelerini (yargı türü, birimi, açık/kapalı) yalnız ekran yeniden kurulurken okur.
+  // restart: süren bir açma kesildi ya da açık dosya penceresi kapatılamadı; mevcut forma ve listeye güvenilmez,
+  // boş bir ekrana geçilip dosyanın bağlantısından baştan başlanır. prefill: form bağlantıyla kuruldu; değerlerin
+  // gelmesi beklenmeye değer. Bağlantıya gidilmediyse beklemek boşa süre harcatır.
+  const FORM_STATE = { detayliArama: true };
+  async function gotoForm(path, fresh, restart) {
+    let prefill = !!fresh;
+    if (!fresh && restart && (onFormPage() || fileWindows().length)) {
+      spaPush('/uhd-gecis');
+      let stuck;
+      try {
+        await soft(waitFor(() => !document.getElementById('yargiTur') && !document.getElementById('table-dosya-sorgulama') && !fileWindows().length, 3000));
+        stuck = fileWindows().length > 0;
+        if (!stuck) await sleep(60);
+      } finally {
+        spaReplace(path, FORM_STATE);   // kesilse de kullanıcı boş geçiş ekranında kalmaz
+      }
+      // UYAP dosya penceresini açarken sayfa kaydırmasını kilitler, yalnız kendi Kapat'ında açar; ekran değişince kilit kalır.
+      if (!stuck && !fileWindows().length && document.body.style.overflow === 'hidden') document.body.style.overflow = 'auto';
+      // Dosya penceresi ekran değişince kapanmadıysa üstüne yenisi açılmaz: çağıran sayfayı bağlantıyla yeniden yükler.
+      if (stuck) { log('Dosya penceresi ekran değişince kapanmadı; sayfa bağlantıyla yeniden yüklenecek.'); return null; }
+      prefill = true;
+    } else if (!fresh && !onFormPage()) {
+      spaPush(path, FORM_STATE);
+      prefill = true;
+    }
+    const ok = await soft(waitFor(() => onFormPage() && (document.getElementById('yargiTur') || detayliToggle()), 15000));
+    if (!ok) return null;
+    if (!document.getElementById('yargiTur')) {
+      guardOpen();
+      detayliToggle().click();
+      prefill = false;   // geçiş düğmesi formu temizler; adresten gelen değerler kalmaz
+      await waitFor(() => document.getElementById('yargiTur'), 6000, 'Detaylı sorgulama formu açılamadı.');
+    }
+    return { prefill };
+  }
+
+  function listItems(input) {
+    const id = input.getAttribute('aria-controls') || input.getAttribute('aria-owns');
+    const scope = id && document.getElementById(id);
+    const items = scope ? scope.querySelectorAll('.dx-list-item') : document.querySelectorAll('.dx-overlay-wrapper .dx-list-item');
+    return [...items].filter(visible);
+  }
+
+  // Seçim kutusundaki değeri ayarlar; değer zaten doğruysa dokunmaz (false döner). Alan ve liste her adımda
+  // yeniden bulunur: UYAP yargı türü değişince birim alanını yeniden kurabilir, liste de geç dolabilir.
+  async function setSelect(id, text, prefillWait = 0) {
+    const clean = s => norm(String(s == null ? '' : s).replace(/\s+/g, ' ').trim());
+    const want = clean(text);
+    const field = typeof id === 'function' ? id : () => document.getElementById(id);
+    if (typeof id === 'function') id = id.name;   // günlükte alanın adı
+    const read = () => clean((field() || {}).value);
+    const boxOf = () => { const f = field(); return f && (f.closest('.dx-dropdowneditor') || f.parentElement); };
+    const expanded = () => {
+      const f = field(), b = boxOf();
+      return !!f && (f.getAttribute('aria-expanded') === 'true' || !!(b && b.classList.contains('dx-dropdowneditor-active')));
+    };
+    const match = () => { const f = field(); return f ? listItems(f).find(li => clean(li.textContent) === want) || null : null; };
+    const guardAlert = () => { const a = alertText(); if (a) throw new Error(`UYAP: ${a}`); };
+    const need = () => {
+      const f = field();
+      if (f) return f;
+      if (onFormPage()) log('Form alanı kayboldu:', id);
+      throw new Error(onFormPage() ? 'UYAP’taki Dosya Sorgulama formu yeniden kuruldu; tekrar deneyin.' : 'Dosya Sorgulama ekranından çıkıldı.');
+    };
+    await waitFor(field, 8000, 'Dosya Sorgulama formu zamanında yüklenmedi; tekrar deneyin.');
+    if (read() === want) return false;
+    // Bağlantıyla kurulan formda değer, seçenek listesi yüklenince gelir.
+    if (prefillWait && await soft(waitFor(() => read() === want, prefillWait))) return false;
+    guardAlert();
+    // Liste yüklenirken alan pasif görünebilir.
+    await soft(waitFor(() => { const b = boxOf(); return !!b && !b.classList.contains('dx-state-disabled'); }, 6000));
+    if (read() === want) return false;
+    guardOpen();
+    need().click();
+    let item = await soft(waitFor(match, 4000));
+    if (!item && !expanded()) {   // liste açıksa düğmeye basmak onu kapatır
+      const btn = boxOf() && boxOf().querySelector('.dx-dropdowneditor-button');
+      guardOpen();
+      (btn || need()).click();
+      item = await soft(waitFor(match, 4000));
+    }
+    if (!item && field() && !field().readOnly) {
+      guardOpen();
+      setInputValue(field(), text);
+      item = await soft(waitFor(match, 4000));
+    }
+    guardAlert();
+    if (!item) {
+      const n = field() ? listItems(field()).length : 0;
+      if (field()) field().dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Escape' }));
+      log(`Seçenek listede yok (${id}; listede ${n} seçenek).`);
+      throw kindErr(`“${text}” UYAP formundaki listede yok; listeniz eski olabilir.`, 'secenek');
+    }
+    guardOpen();
+    item.click();
+    await waitFor(() => read() === want, 4000, `UYAP formunda “${text}” seçilemedi.`);
+    return true;
+  }
+
+  // UYAP'ta anahtar yalnız ilk değerini alır (denetimsiz). Yargı türü değişince ya da form adresle kurulunca UYAP iç
+  // durumu kendisi değiştirir ama anahtarın görüntüsü eski kalır; görüntü "Kapalı" iken sorgu açık dosyalar için gider.
+  // force: iç durum bilinmiyor; görüntü istenen konumda olsa da önce ters yöne, sonra istenen yöne çevrilir.
+  async function setSwitch(on, force) {
+    const sw = document.getElementById('dosya-durumu-detayli-arama');
+    if (!sw) return false;
+    const isOn = () => sw.classList.contains('dx-switch-on-value') || sw.getAttribute('aria-checked') === 'true';
+    const flip = async want => {
+      guardOpen();
+      sw.click();
+      await waitFor(() => isOn() === want, 3000, 'Dosya durumu (açık/kapalı) değiştirilemedi.');
+      await sleep(250);
+    };
+    if (isOn() === on) {
+      if (!force) return false;
+      await flip(!on);
+    }
+    await flip(on);
+    return true;
+  }
+
+  // Cbs formunun il kutusu: UYAP'ta dış kutu "il-detayli-arama", input kimliği yalnız "il". Sayfada başka bir "il"
+  // kimliği olabileceği için önce dış kutunun içine bakılır.
+  function ilAlani() {
+    const kapsamli = document.querySelector('#il-detayli-arama input#il, #il-detayli-arama input.dx-texteditor-input');
+    if (kapsamli) return kapsamli;
+    const i = document.getElementById('il');
+    return i && i.closest('.dx-dropdowneditor, .dx-selectbox') ? i : null;
+  }
+
+  // Savcılık (Cbs) formu: Yargı türü "Cbs" → İl → Yargı birimi (başsavcılık) → durum. UYAP Cbs'de Dosya Yıl/No ve Mahkeme
+  // kutusu göstermez; yargı birimi listesi il seçilince (cbs_birim_sorgula) dolar. Adres il ve birim taşımaz.
+  async function ensureCbsForm(rec, prefill, say) {
+    if (!rec.ilAdi) throw kindErr('Savcılık dosyasının ili kayıtta yok; Güncelle’ye basıp tekrar deneyin.', 'secenek');
+    say('Yargı türü kontrol ediliyor…');
+    const turChanged = await setSelect('yargiTur', CBS.ad, prefill ? 2000 : 0);
+    say('İl kontrol ediliyor…');
+    await waitFor(ilAlani, 6000, 'UYAP formunda il seçimi çıkmadı; tekrar deneyin.');
+    const ilChanged = await setSelect(ilAlani, rec.ilAdi, 0);
+    say(turChanged || ilChanged ? 'Başsavcılık listesi bekleniyor…' : 'Başsavcılık kontrol ediliyor…');
+    let changed = (await setSelect('yargiBirim', rec.birimTuruAdi, 0)) || turChanged || ilChanged;
+    say('Dosya durumu (açık/kapalı) kontrol ediliyor…');
+    changed = (await setSwitch(rec.sorguDurum !== 1, (turChanged || prefill) && rec.sorguDurum === 1)) || changed;
+    // Anahtar formu yeniden kurduysa alanlar kısa süre kaybolabilir: beklenir, gelmezse raporlanmayan hata verilir.
+    if (!(await soft(waitFor(() => ilAlani() && document.getElementById('yargiBirim'), 8000)))) throw formYenidenKuruldu();
+    // Anahtar seçimleri temizlediyse düzelt; değerler doğruysa hemen döner.
+    changed = (await setSelect(ilAlani, rec.ilAdi, 0)) || changed;
+    changed = (await setSelect('yargiBirim', rec.birimTuruAdi, 0)) || changed;
+    return changed;
+  }
+  // UYAP formu kendiliğinden yeniden kurduğunda (ör. açık/kapalı anahtarından sonra) alan kısa süre kaybolabilir.
+  // Bu bir eklenti hatası değildir: kullanıcıya "Tekrar dene" sunulur, Sentry'ye raporlanmaz.
+  const formYenidenKuruldu = () => Object.assign(
+    kindErr(onFormPage() ? 'UYAP’taki Dosya Sorgulama formu yeniden kuruldu; tekrar deneyin.' : 'Dosya Sorgulama ekranından çıkıldı.', 'gecici'),
+    { uyap: true });
+
+  async function ensureForm(rec, prefill, say, tekrar = false) {
+    if (rec.yargiTuru === CBS.kod) return ensureCbsForm(rec, prefill, say);
+    say('Yargı türü kontrol ediliyor…');
+    const turChanged = await setSelect('yargiTur', rec.yargiTuruAdi, prefill ? 2000 : 0);
+    let changed = turChanged;
+    const birim = rec.yargiTuru === '26' ? null : await soft(waitFor(() => document.getElementById('yargiBirim'), 4000));
+    if (tekrar && !birim && rec.yargiTuru !== '26') throw formYenidenKuruldu();
+    if (birim) {
+      say(turChanged ? 'Yargı birimi listesi bekleniyor…' : 'Yargı birimi kontrol ediliyor…');
+      // Adresten gelen birim, yargı türü uygulanırken UYAP'ın form temizliğiyle silinebilir: kısa beklenir.
+      changed = (await setSelect('yargiBirim', rec.birimTuruAdi, prefill && !turChanged ? 1500 : 0)) || changed;
+    }
+    say('Dosya durumu (açık/kapalı) kontrol ediliyor…');
+    // Tür değişince (clearData) ve açık dosyanın adresiyle kurulunca UYAP'ın iç durumu Açık'tır: görüntü Açık ise
+    // çevirmek gerekmez. Ayrışma yalnız "görüntü Kapalı, iç durum Açık" biçiminde olur; o yüzden zorlama Kapalı içindir.
+    changed = (await setSwitch(rec.sorguDurum !== 1, (turChanged || prefill) && rec.sorguDurum === 1)) || changed;
+    // Anahtar ya da geç gelen adres doldurması birimi değiştirdiyse düzelt; değer doğruysa hemen döner.
+    if (birim) {
+      // Anahtar UYAP'ın formu yeniden kurmasına yol açabilir: birim alanı kaybolur ya da yenisiyle değişir.
+      // Form yeniden kurulduysa seçimler yalnız bir kez baştan uygulanır.
+      const simdiki = await soft(waitFor(() => document.getElementById('yargiBirim'), 8000));
+      if (!simdiki || simdiki !== birim) {
+        if (tekrar || !onFormPage()) throw formYenidenKuruldu();
+        log('Dosya Sorgulama formu anahtardan sonra yeniden kuruldu; seçimler yeniden uygulanıyor.');
+        await ensureForm(rec, false, say, true);
+        return true;
+      }
+      changed = (await setSelect('yargiBirim', rec.birimTuruAdi, 0)) || changed;
+    }
+    return changed;
+  }
+
+  const log = (...a) => console.info('[Legaluga]', ...a);
+
+  // Sonuç tablosu: kimliğiyle; bulunamazsa pencere içinde olmayan ve "Pencere Görünümü" düğmesi ya da
+  // "Dosya No"/"Dosya Görüntüle" başlığı taşıyan tablo. Dar ekranda sütunlar gizlenip başlıktan kaybolabilir.
+  function gridEl() {
+    const byId = document.getElementById('table-dosya-sorgulama');
+    if (byId) return byId;
+    return [...document.querySelectorAll('.dx-datagrid')].find(g => {
+      if (g.closest('.dx-overlay-content')) return false;
+      const head = norm((g.querySelector('.dx-datagrid-headers') || {}).textContent || '');
+      return head.includes('dosya no') || head.includes('dosya goruntule') || !!g.querySelector(EYE);
+    }) || null;
+  }
+  const dataRows = () => { const g = gridEl(); return g ? [...g.querySelectorAll('.dx-datagrid-rowsview tr.dx-data-row')] : []; };
+  // Satır başına 'acik' ya da 'kapali'; sütun bulunamazsa null (gizli sütunun hücresi de DOM'da kalır).
+  function gridStates() {
+    const g = gridEl();
+    const head = g && g.querySelector('.dx-datagrid-headers .dx-header-row');
+    if (!head) return null;
+    const idx = [...head.cells].findIndex(td => norm((td.textContent || '').trim()).startsWith('dosya durumu'));
+    if (idx < 0) return null;
+    return dataRows().map(tr => {
+      const t = tr.cells[idx] ? norm((tr.cells[idx].textContent || '').trim()) : '';
+      return t.startsWith('acik') ? 'acik' : t.startsWith('kapali') ? 'kapali' : null;
+    }).filter(Boolean);
+  }
+  const listInState = rec => {
+    const want = rec.sorguDurum === 1 ? 'kapali' : 'acik';
+    const states = gridStates();
+    return !states || !states.length || states.every(x => x === want);
+  };
+  const freshRows = () => dataRows().filter(tr => !tr.dataset.uhdOld);
+
+  // "Pencere Görünümü" düğmesi: UYAP bunu aria-label ile işaretler; id ikinci yol.
+  const EYE = '[aria-label="Pencere Görünümü"], [id="dosya-goruntule"]';
+  const findEye = scope => scope ? [...scope.querySelectorAll(EYE)].find(visible) || null : null;
+
+  // UYAP bazı isteklerde "Güvenlik Doğrulaması" (reCAPTCHA) ister; o sırada düğme boşta görünür.
+  const captchaOpen = () => [...document.querySelectorAll('.dx-popup-title')].some(t => visible(t) && /Güvenlik Doğrulaması/.test(t.textContent))
+    || visible(document.querySelector('.g-recaptcha'));

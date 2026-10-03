@@ -1,0 +1,6 @@
+    if (sender.id !== chrome.runtime.id || sender.frameId !== 0 || !sender.tab || !uyapUrl(sender.url) ||
+      (sender.documentLifecycle && sender.documentLifecycle !== 'active')) return { ok: false, error: 'İndirme kaynağı doğrulanamadı.' };
+    if (typeof message.url !== 'string' || !/^blob:https:\/\/avukat\.uyap\.gov\.tr\/[0-9a-f-]{36}$/i.test(message.url))
+      return { ok: false, error: 'ZIP indirme adresi doğrulanamadı.' };
+    const currentTab = await chrome.tabs.get(sender.tab.id);
+    if (!uyapUrl(currentTab.url)) return { ok: false, error: 'UYAP sekmesi değişti; indirme başlatılmadı.' };

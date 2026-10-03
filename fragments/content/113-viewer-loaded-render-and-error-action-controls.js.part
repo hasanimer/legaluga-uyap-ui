@@ -1,0 +1,11 @@
+        if (!gecerli()) return;
+        log('Evrak açılıyor:', e.tur);
+        goster(e, doc);
+      } catch (err) {
+        if (!gecerli() || (err && err.name === 'AbortError')) return;
+        if (yeni && yeni.length && ayni(yeni[yeni.length - 1], hedef)) gorulduGoster();   // en eski yeni evrak açılamasa da
+        log('Evrak açılamadı:', err.message);
+        const openUyap = el('button', { type: 'button', class: 'dp-go' }, 'Dosyayı UYAP’ta aç (Evrak sekmesi)');
+        openUyap.addEventListener('click', () => { closeDosyaEkrani(false); openFile(rec, false, false, { sekme: 'evrak' }); });
+        icerik(el('div', { class: 'msg' }, el('p', { class: 'dp-err' }, `Evrak açılamadı: ${err.message}`), el('div', { class: 'dp-actions' }, openUyap)));
+      } finally { if (gezAc === ac) gezAc = null; }

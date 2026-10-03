@@ -1,0 +1,122 @@
+{
+  "packages": {
+    "pdf-lib": "1.17.1",
+    "@pdf-lib/fontkit": "1.1.1",
+    "pdfjs-dist": "6.3.289"
+  },
+  "modifications": [
+    "PDF.js worker automatic global-port bootstrap disabled; the hearing worker uses the local in-process handler."
+  ],
+  "files": [
+    {
+      "file": "vendor/pdf-lib.min.js",
+      "bytes": 525099,
+      "sha256": "0f9a5cad07941f0826586c94e089d89b918c46e5c17cf2d5a3c6f666e3bc694f"
+    },
+    {
+      "file": "vendor/PDF-LIB.LICENSE",
+      "bytes": 1070,
+      "sha256": "f2c9fc00fdb66eb99ac156ba52d734af66d8d309f65753ae809ad34ee2883bcb"
+    },
+    {
+      "file": "vendor/fontkit.umd.js",
+      "bytes": 1506282,
+      "sha256": "d60739f02b41b636ee0cc2fb79ba589958144f9240e585dbc19e6a3b08d82825"
+    },
+    {
+      "file": "vendor/FONTKIT.UPSTREAM.md",
+      "bytes": 16875,
+      "sha256": "7315fcc54511f5ffc906969c39333f93cd47f5217ab014fe45acff14bd5ec4c0"
+    },
+    {
+      "file": "vendor/PDF-STANDARD-FONTS.LICENSE",
+      "bytes": 1070,
+      "sha256": "45cc2bb9957ed43f5c7f5eb1912f9f670730394d614079510477cae626194649"
+    },
+    {
+      "file": "vendor/PDF-UPNG.LICENSE",
+      "bytes": 1065,
+      "sha256": "c1fb8861eca211bf5aea574358aba7039396c0c1824c2a1477cc126d398efd89"
+    },
+    {
+      "file": "vendor/PDF-PAKO.LICENSE",
+      "bytes": 1104,
+      "sha256": "a04665b3b2de56c66730c1f720f528175739e4104f79073614aa611da1e85539"
+    },
+    {
+      "file": "vendor/PDFJS.LICENSE",
+      "bytes": 10174,
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+    },
+    {
+      "file": "vendor/pdfjs-reader.js",
+      "bytes": 1638370,
+      "sha256": "462d5ec705d88282080aa845d7a4d2d52d3be00b3353d767b796381f00e95967"
+    },
+    {
+      "file": "vendor/fonts/LICENSE",
+      "bytes": 4414,
+      "sha256": "93fed46019c38bbe566b479d22148e2e8a1e85ada614accb0211c37b2c61c19b"
+    },
+    {
+      "file": "vendor/fonts/LiberationMono-Bold.ttf",
+      "bytes": 307996,
+      "sha256": "bd62a0672d0b9b6710b01df434c80ad54fa5f0835207eb7b17b7a761463067bb"
+    },
+    {
+      "file": "vendor/fonts/LiberationMono-BoldItalic.ttf",
+      "bytes": 284068,
+      "sha256": "79451f3c09fe25116098853b7a2ca6e2436220ccc11af022979adbcf195be130"
+    },
+    {
+      "file": "vendor/fonts/LiberationMono-Italic.ttf",
+      "bytes": 281536,
+      "sha256": "605c01c711b44480a7508d349dfbf3264e81fa43d69e61cfa7d10b86e764c4d1"
+    },
+    {
+      "file": "vendor/fonts/LiberationMono-Regular.ttf",
+      "bytes": 319508,
+      "sha256": "f2b83c763e8afd21709333370bed4774337fae82267937e2b5aea7e2fbd922c1"
+    },
+    {
+      "file": "vendor/fonts/LiberationSans-Bold.ttf",
+      "bytes": 414456,
+      "sha256": "788abee4c806d660e8aee46689dd8540cd4bb98da03dcc9d171ce3efd99a9173"
+    },
+    {
+      "file": "vendor/fonts/LiberationSans-BoldItalic.ttf",
+      "bytes": 408996,
+      "sha256": "698da70fc191cc5f33ad4d6d3fe830fe4624b898ea2e3169955928b7c491f1ee"
+    },
+    {
+      "file": "vendor/fonts/LiberationSans-Italic.ttf",
+      "bytes": 415816,
+      "sha256": "e5bae5c4cde31f22142753855f4f8fb86da6ff39955ed3c0a11248b0d16948b0"
+    },
+    {
+      "file": "vendor/fonts/LiberationSans-Regular.ttf",
+      "bytes": 410712,
+      "sha256": "76d04c18ea243f426b7de1f3ad208e927008f961dc5945e5aad352d0dfde8ee8"
+    },
+    {
+      "file": "vendor/fonts/LiberationSerif-Bold.ttf",
+      "bytes": 370096,
+      "sha256": "d754ba427cfe0bca54ae052384baa8f842da5bd6550ad4da024ac441e7a7d5ce"
+    },
+    {
+      "file": "vendor/fonts/LiberationSerif-BoldItalic.ttf",
+      "bytes": 376772,
+      "sha256": "f17db8af71e24d2066b587546021d4f0b296be389512b658dec3c09affeb11a7"
+    },
+    {
+      "file": "vendor/fonts/LiberationSerif-Italic.ttf",
+      "bytes": 375632,
+      "sha256": "0e3dea9f8d613e006ccfa62201f33e265d19167bd0907725c3e145368b04fc2e"
+    },
+    {
+      "file": "vendor/fonts/LiberationSerif-Regular.ttf",
+      "bytes": 393576,
+      "sha256": "058ea80864aef09a23f45cbec2bb5400bc3dfbdea01c3f10538a21fcb497fb74"
+    }
+  ]
+}

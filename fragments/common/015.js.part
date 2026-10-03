@@ -1,0 +1,47 @@
+  // Görünen evrak satırlarını UYAP tür adına göre klasörler. Ek, ana evrakın türünü kullanır; ana satır arama
+  // sonucunda bulunmasa da ekin ana referansı yeterlidir. Kimlik tekilleştirilmez, satırlar ve iç sıra korunur.
+  function evrakKategorileri(rows) {
+    const ad = value => typeof value === 'string' ? value.normalize('NFC').trim().replace(/\s+/g, ' ') : '';
+    const categories = new Map();
+    for (const row of Array.isArray(rows) ? rows : []) {
+      const title = ad(row?.ana?.tur) || ad(row?.tur) || 'Diğer evraklar';
+      const key = norm(title);
+      if (!categories.has(key)) categories.set(key, { key, title, items: [], count: 0 });
+      const category = categories.get(key);
+      category.items.push(row);
+      category.count++;
+    }
+    return [...categories.values()].sort((a, b) => a.title.localeCompare(b.title, 'tr-TR', { sensitivity: 'base' }));
+  }
+
+  // HTML evrakın kodlaması (1.19.3). Sıra: bayt sırası işareti, Content-Type'taki charset, belgenin ilk 1024 baytındaki
+  // <meta charset>, geçerli UTF-8; hiçbiri yoksa Türkçe (windows-1254). UYAP'ın eski evrakı çoğunlukla 1254'tür; UTF-8
+  // sanılıp okunursa ğ, ş, ı, İ bozulur. Dönüş TextDecoder'ın tanıdığı ad.
+  function htmlKodlamasi(bayt, icerikTuru = '') {
+    const b = bayt || new Uint8Array(0);
+    if (b[0] === 0xef && b[1] === 0xbb && b[2] === 0xbf) return 'utf-8';
+    if (b[0] === 0xff && b[1] === 0xfe) return 'utf-16le';
+    if (b[0] === 0xfe && b[1] === 0xff) return 'utf-16be';
+    // Bayt sırası işareti olmadan UTF-16 ya da x-user-defined beyanına güvenilmez (ASCII uyumlu okunmuştur).
+    const gecerli = ad => { try { const k = new TextDecoder(ad).encoding; return /^utf-16|^x-user-defined$|^replacement$/.test(k) ? null : k; } catch { return null; } };
+    const baslik = /charset\s*=\s*["']?([\w.:-]{1,40})/i.exec(String(icerikTuru || ''));
+    const b1 = baslik && gecerli(baslik[1]);
+    if (b1) return b1;
+    let bas = '';
+    for (let i = 0; i < Math.min(b.length, 1024); i++) bas += String.fromCharCode(b[i]);
+    bas = bas.replace(/<!--[\s\S]*?(-->|$)/g, '');   // yorumdaki meta sayılmaz
+    const meta = /<meta[^>]+charset\s*=\s*["']?\s*([\w.:-]{1,40})/i.exec(bas);
+    const b2 = meta && gecerli(meta[1]);
+    if (b2) return b2;
+    try { new TextDecoder('utf-8', { fatal: true }).decode(b); return 'utf-8'; } catch { return 'windows-1254'; }
+  }
+
+  // UYAP tarihleri ekranda gg.aa.yyyy yazılır ("12/09/2026" → "12.09.2026"; saat varsa kalır). CSV ve UYAP'a geri yazılan
+  // değerler değişmez.
+  const fmtTrDate = v => String(v == null ? '' : v).replace(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/g, '$1.$2.$3');
+
+  const fmtNum = n => Number(n || 0).toLocaleString('tr-TR');
+  const fmtDate = ts => ts ? new Date(ts).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' }) : '';
+
+  globalThis.UHD = { TURLER, taramaKapsami, kurulumGerekli, CBS, ILLER, BUYUKSEHIRLER, ilSirasi, adliyeOf, cbsIlleri, cbsKapsam, ilAdi, evrakKilidi, dosyaTurAdi, ORIGIN, BRAND, norm, tokens, nameKey, detectMyName, myKeys, isClient, passFilter, fileNoQuery, search, openPath, fmtNum, fmtDate, fmtTrDate, csvCell, csvDosyaNo, evrakKey, trDateTs, parseEvraklar, diffEvrak, unseenEvrak, sonEvrak, lastEvrak, personFiles, parseSafahat, checkSafahatSnapshot, checkSafahatStore, safahatState, safahatFileKey, SAFAHAT_REFRESH_MS, SAFAHAT_LEASE_MS, sonIslemOf, fmtTL, humanKey, trTitle, cleanDurum, cleanBirim, kunyeOf, toastPlan, openErrorPlan, htmlKodlamasi, ekleriYerlestir, evrakKategorileri, evrakTakipAcik, BACKUP_APP, BACKUP_FORMAT, BACKUP_KEYS, checkBackup, todayIso, daysLeft, parseDurusma, upcomingDurusmalar, adliyeAdi, CAKISMA_DK, durusmaCakismalari, uyapDate, durusmaIcs, ihbarCevabiMi, bankaAdi, bankaUnvanAdi, bankaCevabi, bankaBelgeleri };
+})();

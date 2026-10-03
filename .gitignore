@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.private/
+private/
+core/
+artifacts/
+*.zip
+*.har
+*.pdf
+*.xlsx
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx

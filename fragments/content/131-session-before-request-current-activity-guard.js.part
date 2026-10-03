@@ -1,0 +1,6 @@
+            beforeRequest: () => {
+              // Ortak UYAP kuyruğunu beklerken normal bir işlem oturumu tazelemiş olabilir.
+              if (!current() || (!manual && (!recentlyActive() || (!lossWarned && Date.now() - lastUyapRequest < YOKLAMA_MS)))) return false;
+              sent = true;
+              return true;
+            }

@@ -1,0 +1,2 @@
+    if (!job || job.id !== message.jobId || !String(message.filename || '').includes(job.id.slice(0, 8)))
+      return { ok: false, error: 'İndirme planı veya bölüm adı değişti.', job };

@@ -1,0 +1,311 @@
+// Popup ve UYAP sayfası arasında paylaşılan yardımcılar: Türkçe normalleştirme, yerel arama, açılış adresi.
+(() => {
+  if (globalThis.UHD) return;
+
+  // Dosya Sorgulama > Detaylı Sorgulama ekranındaki yargı türleri (UYAP kaynak kodundaki sırayla).
+  // Cbs (kod 3) burada yok: UYAP savcılık dosyalarını il ve başsavcılık seçilerek ayrı bir uçtan verir (aşağıda CBS).
+  const TURLER = [
+    { kod: '0', ad: 'Ceza' },
+    { kod: '1', ad: 'Hukuk' },
+    { kod: '2', ad: 'İcra' },
+    { kod: '6', ad: 'İdari Yargı' },
+    { kod: '11', ad: 'Satış Memurluğu' },
+    { kod: '25', ad: 'Arabuluculuk' },
+    { kod: '26', ad: 'Tazminat Komisyonu Başkanlığı' }
+  ];
+
+  // Liste filtresinden bağımsızdır: bu kapsam UYAP'a gönderilecek sorguları belirler.
+  function taramaKapsami(prefs = {}) {
+    const secili = Array.isArray(prefs?.taramaTurleri) ? new Set(prefs.taramaTurleri.map(String)) : null;
+    return {
+      turler: TURLER.filter(tur => !secili || secili.has(tur.kod)),
+      durumlar: prefs?.taramaDurum === 'acik' ? [0] : prefs?.taramaDurum === 'kapali' ? [1] : [0, 1]
+    };
+  }
+
+  // Yeni kurulumda seçim zorunludur; yükseltmede mevcut indeks kurulumu tamamlanmış sayılır.
+  function kurulumGerekli(prefs, index) {
+    if (typeof prefs?.kurulumTamamlandi === 'boolean') return !prefs.kurulumTamamlandi;
+    return !(index && ((Array.isArray(index.records) && index.records.length) || Number(index.updatedAt) > 0));
+  }
+
+  const ORIGIN = 'https://avukat.uyap.gov.tr';
+
+  // ------------------------------------------------ savcılık (Cbs)
+  // UYAP savcılık dosyalarını yalnız başsavcılık başsavcılık verir: birim seçilmeden gelen sorgu boş liste döner (canlıda
+  // 01.10.2026'da denendi). Eklenti illerin başsavcılık listesini (rehber) bir kez çıkarır ve seçilen illerin bütün
+  // başsavcılıklarını tarar. ad, UYAP'ın yargı türü kutusundaki yazıdır; ekranda "Savcılık" yazılır.
+  const CBS = { kod: '3', ad: 'Cbs', etiket: 'Savcılık' };
+  // İller plaka sırasıyla (ILLER[plaka - 1]); ayarlardaki il seçimi UYAP oturumu olmadan da çalışsın diye burada.
+  const ILLER = ('Adana|Adıyaman|Afyonkarahisar|Ağrı|Amasya|Ankara|Antalya|Artvin|Aydın|Balıkesir|Bilecik|Bingöl|Bitlis|Bolu|Burdur|'
+    + 'Bursa|Çanakkale|Çankırı|Çorum|Denizli|Diyarbakır|Edirne|Elazığ|Erzincan|Erzurum|Eskişehir|Gaziantep|Giresun|Gümüşhane|Hakkâri|'
+    + 'Hatay|Isparta|Mersin|İstanbul|İzmir|Kars|Kastamonu|Kayseri|Kırklareli|Kırşehir|Kocaeli|Konya|Kütahya|Malatya|Manisa|'
+    + 'Kahramanmaraş|Mardin|Muğla|Muş|Nevşehir|Niğde|Ordu|Rize|Sakarya|Samsun|Siirt|Sinop|Sivas|Tekirdağ|Tokat|Trabzon|Tunceli|'
+    + 'Şanlıurfa|Uşak|Van|Yozgat|Zonguldak|Aksaray|Bayburt|Karaman|Kırıkkale|Batman|Şırnak|Bartın|Ardahan|Iğdır|Yalova|Karabük|'
+    + 'Kilis|Osmaniye|Düzce').split('|');
+  // Büyükşehirler önce, nüfus sırasıyla; kalan iller plaka sırasıyla. UYAP'ın il listesindeki "buyuksehir" alanı hep
+  // false geldiği için sıra burada tutulur.
+  const BUYUKSEHIRLER = [34, 6, 35, 16, 7, 42, 1, 63, 27, 41, 33, 21, 31, 45, 38, 55, 10, 59, 9, 65, 54, 20, 46, 48, 26, 47, 61, 52, 44, 25];
+  function ilSirasi(iller) {
+    const sira = il => { const i = BUYUKSEHIRLER.indexOf(Number(il.il)); return i < 0 ? BUYUKSEHIRLER.length + Number(il.il) : i; };
+    return (iller || []).filter(il => il && Number.isInteger(Number(il.il)) && Number(il.il) > 0).slice().sort((a, b) => sira(a) - sira(b));
+  }
+  // "Küçükçekmece Cumhuriyet Başsavcılığı" → "kucukcekmece" (normalleştirilmiş adliye adı); başsavcılık değilse ''.
+  function adliyeOf(birimAdi) {
+    const m = /^(.*?)\s*cumhuriyet\s+(?:bas)?savciligi\b/.exec(norm(birimAdi).trim());
+    return m ? m[1].trim() : '';
+  }
+  // Kayıtların bulunduğu iller. Savcılık kaydı ilini taşır; mahkeme kaydının ili, birim adının başladığı adliye
+  // adından bulunur ("Küçükçekmece 8. Ağır Ceza Mahkemesi" → İstanbul). En uzun ad kazanır ("İstanbul Anadolu" >
+  // "İstanbul"); aynı adlı adliye iki ilde varsa ikisi de alınır.
+  function cbsIlleri(rehber, records) {
+    const adliyeler = new Map();
+    for (const il of (rehber && rehber.iller) || []) {
+      for (const b of il.birimler || []) {
+        const a = adliyeOf(b.birimAdi);
+        if (!a) continue;
+        if (!adliyeler.has(a)) adliyeler.set(a, new Set());
+        adliyeler.get(a).add(Number(il.il));
+      }
+    }
+    const adlar = [...adliyeler.keys()].sort((x, y) => y.length - x.length);
+    const out = new Set();
+    for (const r of records || []) {
+      if (!r) continue;
+      if (r.yargiTuru === CBS.kod && r.ilKodu) { out.add(Number(r.ilKodu)); continue; }
+      const ad = norm(cleanBirim(r.birimAdi)).trim();
+      const a = adlar.find(x => ad === x || ad.startsWith(x + ' '));
+      if (a) for (const il of adliyeler.get(a)) out.add(il);
+    }
+    return out;
+  }
+  // Taranacak iller (rehberdeki il nesneleri, büyükşehirler önce). 'secili' yalnız elle seçilen illeri,
+  // varsayılan kip kayıtların illeri ile elle eklenen illeri kapsar.
+  function cbsKapsam(rehber, records, prefs) {
+    const iller = ilSirasi((rehber && rehber.iller) || []);
+    const mod = prefs && prefs.savcilik;
+    if (mod === 'kapali') return [];
+    if (mod === 'tum') return iller;
+    const secili = mod === 'secili' ? new Set() : cbsIlleri(rehber, records);
+    for (const il of (prefs && prefs.savcilikIller) || []) secili.add(Number(il));
+    return iller.filter(il => secili.has(Number(il.il)));
+  }
+  // UYAP savcılık dosya türünü "CBS Sorusturma Dosyası" diye yazar; ekranda Türkçe harfle gösterilir.
+  const dosyaTurAdi = r => String((r && r.dosyaTur) || '').replace(/\bSorusturma\b/g, 'Soruşturma');
+  // İl adı ekranda "İSTANBUL" yerine "İstanbul".
+  function ilAdi(ad) {
+    return String(ad || '').toLocaleLowerCase('tr-TR').replace(/(^|[\s-])(\S)/g, (m, a, b) => a + b.toLocaleUpperCase('tr-TR'));
+  }
+
+  // Marka kimliği: ad ve renkler yalnızca buradan değiştirilir (arayüz, sayfa paneli, bildirimler).
+  const BRAND = {
+    name: 'Legaluga UYAP Asistanı',
+    short: 'Legaluga',
+    disclaimer: 'Legaluga ürünüdür. T.C. Adalet Bakanlığı veya UYAP ile resmî bir bağlantısı yoktur.',
+    site: 'https://legaluga.com',
+    email: 'info@legaluga.com',
+    // legaluga.com (apps/web/app/globals.css) marka renkleri
+    primary: '#0f817e',
+    primaryDark: '#0b6663',
+    deep: '#104b49',
+    soft: '#e8f7f5',
+    border: '#a7d9d2',
+    focus: '#0b6663'
+  };
+
+  // Her karakter tek karaktere eşlenir; böylece normalleştirilmiş metindeki konumlar
+  // özgün metinle birebir örtüşür (vurgulama bu sayede doğru çalışır).
+  const MAP = { 'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u', 'â': 'a', 'î': 'i', 'û': 'u' };
+  const charCache = new Map();
+  function normChar(ch) {
+    let c = charCache.get(ch);
+    if (c !== undefined) return c;
+    if (/\s/.test(ch)) c = ' ';
+    else {
+      c = ch.toLocaleLowerCase('tr-TR');
+      c = MAP[c] || c;
+      if (c.length !== 1 || c.charCodeAt(0) > 127) {
+        const base = c.normalize('NFD').replace(/[̀-ͯ]/g, '');
+        c = MAP[base] || base[0] || ' ';
+      }
+    }
+    charCache.set(ch, c);
+    return c;
+  }
+  function norm(s) {
+    s = s == null ? '' : String(s);
+    let out = '';
+    for (let i = 0; i < s.length; i++) out += normChar(s[i]);
+    return out;
+  }
+  const tokens = q => norm(q).split(/[\s,;]+/).filter(Boolean);
+
+  // Dosya numarasının farklı yazımları tek biçime çevrilir: "2024-189", "2024 189", "E. 2024/189", "189/2024",
+  // "2024/189 esas", "Soruşturma No: 2024/189", "Sor. 2024/189" → "2024/189". İki sayı yalnız ilki yıl gibiyse (19xx/20xx) birleştirilir ("Ahmet 189" değişmez).
+  // "K." karar numarasıdır ve dizinde yoktur; dokunulmaz.
+  const YIL = '(?:19|20)\\d{2}';
+  function fileNoQuery(q) {
+    let s = ` ${String(q == null ? '' : q)} `;
+    // "Yıl sıra" yalnız sorgunun tamamıysa birleştirilir: "2024 3 asliye" gibi yıl ve mahkeme numarası dokunulmaz.
+    s = s.replace(new RegExp(`^\\s(${YIL})\\s+(\\d{1,7})\\s$`), ' $1/$2 ');
+    // Önek ve sonek (E., Esas) numara biçimi düzeltilmeden de düzeltildikten sonra da ayıklanır ("E.2024-189").
+    const isaret = x => x
+      .replace(new RegExp(`\\s(?:e\\.?|esas(?:\\s+no)?\\.?|soru[sş]turma(?:\\s+no)?\\.?\\s*:?|sor\\.)\\s*(?=\\d+\\s*[/-]\\s*\\d)`, 'giu'), ' ')
+      .replace(new RegExp(`(\\d+\\s*/\\s*\\d+)\\s*(?:e\\.|\\s(?:e|esas))(?=\\s)`, 'giu'), '$1');
+    s = isaret(s);
+    s = s.replace(new RegExp(`(\\s)(${YIL})\\s*-\\s*(\\d+)(?=\\s)`, 'g'), '$1$2/$3');
+    s = s.replace(new RegExp(`(\\s)(\\d{1,7})\\s*/\\s*(${YIL})(?=\\s)`, 'g'), (m, sp, n, y) => new RegExp(`^${YIL}$`).test(n) ? m : `${sp}${y}/${n}`);
+    s = isaret(s);
+    return s.trim().replace(/\s+/g, ' ');
+  }
+  const nameKey = s => norm(s).replace(/^av\.?\s+/, '').replace(/\s+/g, ' ').trim();
+
+  // "Vekil adınız" ayarı boşsa: indekste en çok dosyada vekil olarak geçen ad kullanıcının adıdır.
+  function detectMyName(records) {
+    const counts = new Map();
+    for (const r of records) {
+      const seen = new Set();
+      for (const p of r.taraflar || []) {
+        for (const v of p.vekil || []) {
+          const k = nameKey(v);
+          if (!k || seen.has(k)) continue;
+          seen.add(k);
+          const c = counts.get(k) || { name: v, n: 0 };
+          c.n++;
+          counts.set(k, c);
+        }
+      }
+    }
+    let best = null;
+    for (const c of counts.values()) if (!best || c.n > best.n) best = c;
+    return best && best.n >= 2 ? best.name : '';
+  }
+
+  function myKeys(myName) {
+    return String(myName || '').split(/[,;]/).map(nameKey).filter(k => k.length >= 5);
+  }
+
+  const isClient = (p, keys) => keys.length > 0 && (p.vekil || []).some(v => {
+    const k = nameKey(v);
+    return keys.some(m => k === m || k.includes(m));
+  });
+
+  const OTHER_TUR = new Set(['6', '11', '25', '26']);
+  function passFilter(r, f) {
+    if (f.durum === 'acik' && r.sorguDurum === 1) return false;
+    if (f.durum === 'kapali' && r.sorguDurum !== 1) return false;
+    if (f.tur && f.tur !== 'all') {
+      const selected = Array.isArray(f.tur) ? f.tur : [f.tur];
+      if (selected.length && !selected.some(t => t === 'other' ? OTHER_TUR.has(r.yargiTuru) : r.yargiTuru === t)) return false;
+      if (selected.length === 1 && selected[0] === CBS.kod) {
+        if (f.cbsIl && String(r.ilKodu) !== String(f.cbsIl)) return false;
+        if (f.cbsBirim && r.birimTuru2 !== f.cbsBirim) return false;
+        if (f.cbsIzin === 'izinli' && r.incelemeIzni !== true) return false;
+        if (f.cbsIzin === 'bekliyor' && r.incelemeIzni !== false) return false;
+      }
+    }
+    return true;
+  }
+
+  // Normalleştirilmiş alanlar kayıt başına bir kez hesaplanır; vekil adı değişince yenilenir.
+  const infoCache = new WeakMap();
+  function info(r, keys, ctx) {
+    let c = infoCache.get(r);
+    if (c && c.ctx === ctx) return c;
+    const clients = [], others = [], vekils = [];
+    for (const p of r.taraflar || []) {
+      (isClient(p, keys) ? clients : others).push(norm(p.adi));
+      for (const v of p.vekil || []) {
+        const k = nameKey(v);
+        if (!keys.some(m => k === m || k.includes(m))) vekils.push(norm(v));
+      }
+    }
+    const base = [r.dosyaNo, r.birimAdi, r.dosyaTur, r.yargiTuruAdi, r.birimTuruAdi].map(norm);
+    if (r.yargiTuru === CBS.kod) base.push(`savcilik bassavcilik sorusturma cbs ${norm(r.ilAdi)}`.trim());
+    const fileNo = /^\s*(\d{4})\s*\/\s*(\d+)/.exec(String(r.dosyaNo || ''));
+    const fields = base.concat(clients, others);
+    const fieldsWithVekils = fields.concat(vekils);
+    c = {
+      ctx,
+      no: norm(r.dosyaNo),
+      fileYear: fileNo ? Number(fileNo[1]) : 0,
+      fileSequence: fileNo ? Number(fileNo[2]) : 0,
+      fileSequenceText: fileNo ? fileNo[2] : '',
+      birim: norm(r.birimAdi),
+      clients,
+      parties: clients.concat(others),
+      vekils,
+      fields,
+      fieldsWithVekils,
+      all: fieldsWithVekils.join(' | '),
+      noVek: fields.join(' | '),
+      clientOnly: base.concat(clients).join(' | ')
+    };
+    infoCache.set(r, c);
+    return c;
+  }
+
+  const wordStart = (list, t) => list.some(p => p.startsWith(t) || p.includes(' ' + t));
+
+  // Tüm kelimeler geçmeli; dosya numarası, müvekkil ve taraf adı başından eşleşmeler öne çıkar.
+  // o: { myName, notes: {key: metin}, filter: {durum, tur, turPinned, onlyClient, onlyNew}, yeni: Map(key → en yeni evrak zamanı),
+  //      gizli: {key: true} (aramada gösterilmeyecek dosyalar), vekilAra: false (karşı vekillerde arama),
+  //      sort: 'relevance' | 'newest' | 'fileNo', limit }
+  // Birden çok kelimede, hepsi aynı alanda (ör. mahkeme adında) geçen dosyalar öne çıkar.
+  function search(records, query, o = {}) {
+    const ts = tokens(fileNoQuery(query));
+    const numberQuery = ts.length === 1 && /^\d+$/.test(ts[0]) ? ts[0] : '';
+    const f = o.filter || {};
+    const filtered = (f.durum && f.durum !== 'all') || (Array.isArray(f.tur) ? f.tur.length : f.tur && f.tur !== 'all') || f.onlyClient || f.onlyNew;
+    const yeni = o.yeni || new Map();
+    const gizli = o.gizli || {};
+    const vekilAra = o.vekilAra !== false;
+    if (!ts.length && !filtered) return { total: 0, items: [], tokens: ts };
+    const keys = myKeys(o.myName);
+    const ctx = keys.join('|');
+    const notes = o.notes || {};
+    const hits = [];
+    for (const r of records) {
+      if (!passFilter(r, f)) continue;
+      if (f.onlyNew && !yeni.has(r.key)) continue;
+      if (gizli[r.key]) continue;
+      const c = info(r, keys, ctx);
+      if (f.onlyClient && !c.clients.length) continue;
+      const hay = f.onlyClient ? c.clientOnly : vekilAra ? c.all : c.noVek;
+      const note = ts.length && notes[r.key] ? norm(notes[r.key]) : '';
+      let score = 0;
+      let ok = true;
+      for (const t of ts) {
+        if (!hay.includes(t) && !note.includes(t)) { ok = false; break; }
+        if (c.no === t) score += 100;
+        else if (c.no.includes(t)) score += 20;
+        if (wordStart(c.clients, t)) score += 15;
+        else if (wordStart(c.parties, t)) score += 10;
+        if (note.includes(t)) score += 5;
+        if (c.birim.includes(t)) score += 2;
+      }
+      if (ok && ts.length > 1) {
+        const fields = f.onlyClient ? c.clients : vekilAra ? c.fieldsWithVekils : c.fields;
+        if (fields.some(x => ts.every(t => x.includes(t))) || (note && ts.every(t => note.includes(t)))) score += 60;
+      }
+      if (ok) {
+        const numberRank = !numberQuery || c.fileSequenceText === numberQuery ? 0 : c.fileSequenceText.includes(numberQuery) ? 1 : 2;
+        hits.push({ score, r, c, numberRank, numberLength: numberRank === 1 ? c.fileSequenceText.length : 0 });
+      }
+    }
+    const byRelevance = (a, b) =>
+      a.numberRank - b.numberRank ||
+      a.numberLength - b.numberLength ||
+      b.score - a.score ||
+      (yeni.get(b.r.key) || 0) - (yeni.get(a.r.key) || 0) ||
+      (a.r.sorguDurum || 0) - (b.r.sorguDurum || 0) ||
+      (b.r.acilisTs || 0) - (a.r.acilisTs || 0);
+    hits.sort(o.sort === 'newest'
+      ? (a, b) => (b.r.acilisTs || 0) - (a.r.acilisTs || 0) || byRelevance(a, b)
+      : o.sort === 'fileNo'
+        ? (a, b) => b.c.fileYear - a.c.fileYear || b.c.fileSequence - a.c.fileSequence || byRelevance(a, b)
+        : byRelevance);
+    const limit = o.limit || 60;
+    return { total: hits.length, items: hits.slice(0, limit).map(h => h.r), tokens: ts };
+  }
+

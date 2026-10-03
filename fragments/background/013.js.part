@@ -1,0 +1,4 @@
+  }
+  await chrome.storage.local.remove('ubh_prefs');
+  await chrome.storage.session.remove(['ubh_banks', 'ubh_progress']);
+});

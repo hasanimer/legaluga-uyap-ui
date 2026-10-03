@@ -1,0 +1,6 @@
+        signal.throwIfAborted();
+        if (cost.charged && !confirm(`UYAP banka sorgusu için ${fmtTL(cost.cost)} ücret bildiriyor (${cost.chargedFiles} dosya). Sorguyu başlatmak istiyor musunuz?`)) {
+          bankNotice = 'Ücretli sorgu iptal edildi; önceki kayıt korundu.'; return;
+        }
+        bankNotice = 'Banka sorgulanıyor…'; bankDraw();
+        // Ücretli işlemi withDosya ile tekrarlamayız: bir tıklama, tek sorgu isteği.

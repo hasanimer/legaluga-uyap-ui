@@ -1,0 +1,3 @@
+          if (!gecerli()) return;
+          if (kaynak.list.kilit) { listeHazir(); return; }
+          e = bul();

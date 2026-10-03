@@ -1,0 +1,5 @@
+const UYAP_ORIGIN = 'https://avukat.uyap.gov.tr';
+const uyapUrl = url => typeof url === 'string' && url.startsWith(UYAP_ORIGIN + '/');
+const setupSender = sender => sender.id === chrome.runtime.id &&
+  (String(sender.url || '').startsWith(chrome.runtime.getURL('')) || (sender.frameId === 0 && uyapUrl(sender.url))) &&
+  (!sender.documentLifecycle || sender.documentLifecycle === 'active');
