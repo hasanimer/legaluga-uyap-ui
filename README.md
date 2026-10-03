@@ -7,7 +7,7 @@ Eklenti, **Av. Hasan İmer Akın** tarafından meslektaşlarının ücretsiz kul
 
 Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lisansıyla** sunar. UYAP işlem motoru özel kaynaklıdır; tam eklenti mağazadan kurulur.
 
-> Bu rehber, yerelde doğrulanmış **1.19.30** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+> Bu rehber, **1.19.31** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
 
 Görseller gerçek arayüz bileşenlerinden **örnek verilerle** hazırlanmıştır; gerçek kişi, dava veya UYAP oturumu içermez.
 
@@ -57,17 +57,23 @@ Müvekkil etiketi, ayarlardaki vekil adıyla dosyanın taraf/vekil kaydının e�
 | **Özet** | Dosya bilgileri, son hareketler ve taraflar; icra dosyalarında UYAP'ın hesap ve tahsilat başlıkları ile tutarları. |
 | **Evrak** | Gerçek UYAP evrak türlerine göre klasörler, ana evraklar ve ekleri; PDF, UDF ve TIFF görüntüleme. |
 | **Banka sorgusu** | İcra dosyasında borçlu seçimi, banka sorgusu, talep kontrolü ve banka cevapları. |
-| **Tebligat sorgusu** | Dosyanın tebligat/mazbataları, okunabilen içerik ve barkod, mazbata kayıtları ve isteğe bağlı resmî hizmet sorgusu. |
+| **Tebligat sorgusu** | Seçilebilir tebligat zarfları, içerik ve barkod, eşleşen mazbatanın olayları ve isteğe bağlı resmî hizmet sorgusu. |
 | **Safahat** | Son kaydedilmiş işlem listesi ve kullanıcı düğmeyle başlattığında güncel UYAP kaydı. |
 | **Notlar / Toplu indir** | Dosyaya ait notlar ve seçtiğiniz evrakların özgün biçimleriyle indirilmesi. |
 
 Masaüstünde **Özet** ana pencereye sığacak şekilde düzenlenir; uzun hesap veya taraf listeleri kendi bölümlerinde kaydırılır. Dar ekranda bölümler alt alta yerleşir. Tutarlar UYAP'tan geldiği gibi gösterilir; eklenti dosya borcu hesaplamaz.
 
-**Evrak** klasöründeki sayı ana evrak ve eklerin toplamıdır. Ekler ana evrakın klasöründe kalır. Arama, tarih sırası ve klasör/düz liste görünümüyle listeyi daraltabilirsiniz. Klavyede **↑ ↓** ile gezin, **→ / ←** ile klasörü açıp kapatın, **Enter** ile belgeyi açın.
+![Dosya özeti: hesap bilgisi, tahsilat ve taraflar aynı pencerede — örnek veriler](docs/images/05-dosya-ozeti.png)
+
+**Evrak** klasöründeki sayı ana evrak ve eklerin toplamıdır. Ekler ana evrakın klasöründe kalır. **Son 20** düz listeyi, **Tümü** evrak türüne göre klasörleri açar. Klasörler alfabetik sıralandığı için **Tarih ⓘ** kontrolü pasiftir; açıklaması tarih sırası için düz listeye geçmenizi belirtir. Arama ve klasör/düz liste seçimiyle görünümü daraltabilirsiniz. Klavyede **↑ ↓** ile gezin, **→ / ←** ile klasörü açıp kapatın, **Enter** ile belgeyi açın.
 
 UDF ve TIFF önizlemesi belgeyi cihazınızda işler. UDF'nin sayfa düzeni resmî editörden farklı olabilir; e-imza doğrulaması yapılmaz. Okunamayan veya desteklenmeyen belgede özgün dosyayı indirip uygun araçla açın. Dosya ekranındaki özet ve önizlemeyi resmî belgeyi kontrol ederek kullanın.
 
+![Evrak: türlere göre klasörler, adetler ve ana evrakın ekleri — örnek veriler](docs/images/06-evrak-klasorleri.png)
+
 **Safahat** sekmesini açmak yeni sorgu yapmaz. **Safahatı getir / Güncelle** son işlem listesini alır; son başarılı çekimin tarihi görünür. Kayıt bu Chrome profilinde şifreli saklanır. Aynı dosyada başarılı çekimden sonra **60 dakika** beklenir; hata veya iptal önceki kaydı silmez. Dosya listesini güncellemek safahatı otomatik sorgulamaz.
+
+![Safahat: kaydedilen işlem listesi, alınma tarihi ve yeni sorgu için kalan süre — örnek veriler](docs/images/10-kaydedilen-safahat.png)
 
 ## Banka sorgusu ve cevapları
 
@@ -77,7 +83,11 @@ UDF ve TIFF önizlemesi belgeyi cihazınızda işler. UDF'nin sayfa düzeni resm
 
 Şirket/kurum yanıtı seçili dosya ve borçluyla doğrulanır. Tek bir bilinen bankayla eşleşen unvan kısa adla gösterilir; tanınmayan veya çelişen unvan özgün hâliyle korunur. Kurum yanıtından EFT kodu üretilmez. Eksik ya da çelişen sonuç önceki kaydı değiştirmez; hesap ve IBAN alanları takip kaydına alınmaz.
 
-**Cevapları oku**, gelen belgeleri inceler; ücretli banka sorgusu başlatmaz. Cevabın başlığı tek başına seçili borçluya ait olduğunu kanıtlamaz. Borçlu eşlemesi veya metin belirsizse **Cevabı aç** ile özgün belgeyi inceleyin; taranmış belgeler kesin sonuca dönüştürülemeyebilir.
+**Banka cevapları**, dosyadaki cevap sayısını, özgün evrak başlıklarını ve tarihlerini gösterir. Cevap metninden haciz, bakiye veya borçlu eşleşmesi yorumu çıkarılmaz. **Cevabı aç** özgün evrakı ayrı önizleme penceresinde gösterir; kapatınca aynı banka listesinde kalırsınız. Açtığınız cevaplar **Görüntülendi** işareti ve farklı renkle ayırt edilir. Listeyi yenilemek veya cevabı açmak ücretli banka sorgusu başlatmaz.
+
+![Banka cevapları: özgün başlıklar, tarihler ve görüntülenmiş cevaplar — örnek veriler](docs/images/08-banka-cevaplari.png)
+
+![Banka cevabı: banka sekmesi üzerinde özgün belge önizlemesi — örnek veriler](docs/images/08b-banka-cevabi-onizleme.png)
 
 **Talepleri kontrol et** kayıtlı sorguyu dosyanın ilgili evraklarıyla karşılaştırır. Talep göndermez; talebin gönderildiğini veya tebliğ edildiğini tek başına kanıtlamaz. Cevap bulunmaması da talep gönderilmediği anlamına gelmez.
 
@@ -85,13 +95,17 @@ Eklenti ücretsizdir. UYAP banka sorgusunun ücretleri, limitleri ve PTT/UETS hi
 
 ## Tebligat ve UETS
 
-Tebligat listesindeki belge adının yanında, mevcut açıklamadan veya okunmuş belgeden doğrulanabilen **İçerik** gösterilir. **İçerikleri oku** okunmamış belgeleri sırayla alır; **Durdur** ile bırakabilirsiniz. Sekmeyi açmak tüm belge içeriklerini kendiliğinden indirmez; belirsiz içerik tahmin edilmez.
+Tebligat listesinde zarflar/tebligatlar seçilir; mazbatalar ayrı seçilecek gönderi olarak listelenmez. Belge adının yanında mevcut açıklama veya okunmuş belgeden doğrulanabilen **İçerik** görünür. **Tümünü seç** veya satırların seçim kutularıyla istediğiniz tebligatları seçin; **Sorgula** seçilenleri sırayla işler. Hizmet ve barkod seçilen zarf okunurken belirlenir. Belirsiz veya çok barkodlu evrak tahminle sorgulanmaz.
 
-**UETS / e-Tebligat → Dosyadan bul ve göster** açık UYAP dosyasının e-tebliğ mazbatasını okur. Seçili belge varsa o kullanılır; seçim yoksa aynı dosyanın en yeni uygun mazbatası bulunur ve kaynak adı gösterilir. Barkodu önceden girmeniz veya bu okuma için UETS'ye ayrıca giriş yapmanız gerekmez.
+E-tebligatta önce aynı dosyadaki eşleşen e-tebliğ mazbatası aranır. Bulunursa kaynağı ve olay kayıtları gösterilir; bu okuma için UETS'ye ayrıca giriş gerekmez. Mazbata bulunamazsa **UETS sayfasını aç** düğmesi sunulur; kendiliğinden yeni sekme açılmaz.
 
-**Evraktan barkod ve kayıtları oku** seçili belgenin barkodunu okur. Tekil ve eşleşen mazbatada teslim, hesaba konulma, açılma ve okundu sayılma kayıtları belge üzerindeki tarihleriyle gösterilir. Farklı belge/gönderilerin kayıtları birleştirilmez; hukuki süre hesabı yapılmaz. Taranmış veya çok barkodlu belgede özgün mazbatayı inceleyin.
+![Tebligat: seçim kutuları, tümünü seç ve seçili zarfları sorgulama — örnek veriler](docs/images/09-tebligat-listesi.png)
 
-Güncel resmî sonuç için PTT'de **Sorgula**, UETS'de ayrı **UETS’den güncel sorgula** düğmesini kullanın. Resmî hizmet sekmesi hazırlanır; giriş veya güvenlik doğrulaması gerekiyorsa o sitede kendiniz tamamlayın. UETS'de **Gönderi Sorgulama** bölümüne geçmeniz gerekebilir. CAPTCHA ve oturum doğrulaması aşılmaz.
+**Sorgula**, seçtiğiniz evrakın içeriğini ve barkodunu da okur; ayrı **İçerikleri oku** adımı gerekmez. Tekil ve eşleşen mazbatada teslim, hesaba konulma, açılma ve okundu sayılma kayıtları belge üzerindeki tarihleriyle gösterilir. Farklı belge/gönderilerin kayıtları birleştirilmez; hukuki süre hesabı yapılmaz. Taranmış veya çok barkodlu belgede özgün mazbatayı inceleyin.
+
+![E-tebligat: aynı dosyadaki eşleşen mazbatadan alınan olaylar ve belge kaynağı — örnek veriler](docs/images/09b-uets-olay-kayitlari.png)
+
+PTT sorgusu arka planda hazırlanır; tamamlanabilen sonuç tebligat sekmesinde gösterilir. Resmi hizmet giriş veya güvenlik doğrulaması isterse sayfayı ilgili düğmeyle açıp kendiniz tamamlayın. UETS'de **Gönderi Sorgulama** bölümüne geçmeniz gerekebilir. CAPTCHA ve oturum doğrulaması aşılmaz.
 
 Yalnız seçtiğiniz barkod ilgili resmî hizmete gönderilir. **Durdur** veya dosya ekranını kapatma bekleyen tebligat sorgusunu iptal eder. Barkod, belge metni ve tebligat sonuçları açık ekranın belleğinde tutulur; kalıcı kayıt ve hata raporuna eklenmez.
 
@@ -101,11 +115,13 @@ Yalnız seçtiğiniz barkod ilgili resmî hizmete gönderilir. **Durdur** veya d
 
 **Ekleri de indir** açıksa seçilen ana evrakın ekleri de alınır. Ana evrak dışlanırsa bağlı ekleri de çıkar; bir ekin türünü ayrıca dışlayabilirsiniz. Bu seçeneği kapatırsanız hiçbir ek alınmaz. Başlatmadan önce ana evrak, ek ve toplam sayısını kontrol edin.
 
+![Toplu indir: yalnız seçili evrak türleri, ekler ve indirme öncesi toplam — örnek veriler](docs/images/07-evrak-turu-secimi.png)
+
 100'den fazla evrakta parçalı indirme otomatik seçilir; küçük listelerde de açabilirsiniz. Parçalar en çok **100 evrak veya yaklaşık 32 MiB** olacak şekilde hazırlanır. Büyük bir evrak tek başına ayrı parçaya konabilir; **tek evrak 128 MiB'yi aşarsa** açıklamayla durulur. Dosyalar UYAP'tan alınan özgün biçim ve baytlarla ZIP'e yazılır.
 
 **Parçalı indirme, dosya penceresi veya Legaluga paneli kapansa da UYAP sekmesi açıkken sürer.** **↓ İndirmeler** panelinden sıradaki işleri, kaydedilen evrakları ve mevcut parçayı izleyin; **Duraklat / Devam et** ile yönetin. İlerleme yüzdesi diske kaydı doğrulanmış evraklara dayanır; mevcut parçada alınanlar ayrıca gösterilir.
 
-Sekme veya tarayıcı kapanırsa çalışmaya başlamış işin tamamlanan parçaları korunur. Aynı dosyada **Toplu indir → Kaldığı yerden devam et** ile sürdürün; henüz diske kaydedilmemiş parça yeniden alınabilir. Sekme kapanınca başlamamış kuyruk işlerini yeniden başlatın. Gerekirse **Dosyayı aç** ile duraklayan işin kaynağını yeniden bağlayın.
+UYAP sayfası yenilenirse aynı sekmede geçerli oturumla aktif indirme kaydedilmiş planına yeniden bağlanır. Devam eden Chrome ZIP kaydı kesinleşmeden aynı aralık yeniden indirilmez; henüz diske kaydedilmemiş parça yeniden alınabilir. Sekme veya tarayıcı tamamen kapanırsa tamamlanan parçalar korunur; aynı dosyada **Toplu indir → Kaldığı yerden devam et** ile sürdürün. Manuel duraklatma veya oturum/güvenlik hatası kendiliğinden yeni sorgu başlatmaz. Gerekirse **Dosyayı aç** ile duraklayan işin kaynağını yeniden bağlayın.
 
 Devam edilen iş başlangıçta kaydedilen planı kullanır; sonradan değiştirdiğiniz kapsam ve tür seçimleri o planı değiştirmez. **Yeni indirme planı** ilerlemeyi onayınızla sıfırlar; bilgisayarınızdaki ZIP'leri silmez. **Son parçayı klasörde göster** tamamlanmış parçayı kaydedildiği klasörde gösterir.
 
@@ -119,7 +135,7 @@ Yerel kayıtlar **AES-256-GCM** ile şifrelenir. Dışa aktarılamayan anahtar u
 
 **Şifreli yedekle** için kullanıcı parolası belirlenir; parola gönderilmez veya saklanmaz. Unutulan parola kurtarılamaz. Yanlış parola ya da bozuk yedek mevcut kayıtları değiştirmez. CSV dışa aktarımı şifresizdir; dosya bilgisi içeren çıktıları uygun yerde saklayın.
 
-Teknik hata raporlama başlangıçta kapalıdır. Açarsanız izin verilen teknik hata ve sürüm bilgileri Sentry'ye gönderilir; kişi/dosya bilgileri, belgeler, ham UYAP yanıtı, çerez ve oturum bilgileri rapora eklenmez. Ayrıntılı sınırlar ve bildirim yolu [SECURITY.md](SECURITY.md) içindedir.
+Teknik hata raporlama başlangıçta kapalıdır. Açarsanız izin verilen teknik hata ve sürüm bilgileri Sentry'ye gönderilir; kişi/dosya bilgileri, belgeler, ham UYAP yanıtı, çerez ve oturum bilgileri rapora eklenmez. Ağ bağlantısı alıcıya IP adresini gösterir. Veri akışı ve silme sınırları [Gizlilik politikası](docs/PRIVACY.md), güvenlik bildirim yolu [SECURITY.md](SECURITY.md) içindedir.
 
 ## Açık kaynak kapsamı ve depo yapısı
 

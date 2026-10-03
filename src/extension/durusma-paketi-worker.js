@@ -298,6 +298,37 @@ async function metinCikar(bytes, budget, derinlik = 0, progress = () => {}, sour
   return kaynak(tur === 'html' ? 'text/html' : 'application/xml',
     textCap(model.bolumler.flat().map(block => block.parcalar.map(part => part.yazi).join('')).join('\n')));
 }
+// Önizleme için yalnız özgün dosyaları çıkarır: metin, muhatap veya cevap sonucu okunmaz.
+async function kaynaklariAc(bytes, budget, sources, yol = []) {
+  const b = new Uint8Array(bytes), name = yol.at(-1)?.ad || '';
+  if (b[0] === 0x50 && b[1] === 0x4b && !/\.(udf|usf|docx|xlsx|pptx|odt)$/i.test(name)) {
+    if (yol.length >= 2) throw textError('İç içe ZIP okuma sınırı aşıldı.', 'source-limit');
+    if (!globalThis.DurusmaPaketiZip) importScripts('durusma-paketi-zip.js');
+    const zip = globalThis.DurusmaPaketiZip.girdiler(b);
+    for (const [indis, entry] of zip.liste.entries()) {
+      if (/[\\/]$/.test(entry.ad) || /(^|[\\/])dosyabilgileriv2\.xml$/i.test(entry.ad)) continue;
+      if (++budget.entries > 200) throw textError('ZIP toplam girdi sınırı aşıldı.', 'source-limit');
+      const opened = await globalThis.DurusmaPaketiZip.ac(zip, entry, { maxBytes: METIN_BYTE_SINIR - budget.expanded });
+      budget.expanded += opened.byteLength;
+      await kaynaklariAc(opened, budget, sources, [...yol, { indis, ad: entry.ad }]);
+    }
+    return;
+  }
+  if (!b.byteLength || sources.length >= 200) throw textError('Özgün belge kaynağı sınırı geçersiz.', 'source-limit');
+  // MIME yalnız özgün ad ve biçim imzasından gelir. Etkin HTML içerik sayfa önizlemesinde temizlenir.
+  let type = 'application/octet-stream';
+  if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46) type = 'application/pdf';
+  else if (/\.html?$/i.test(name)) type = 'text/html';
+  else if (/\.txt$/i.test(name)) type = 'text/plain';
+  else if (/\.xml$/i.test(name)) type = 'application/xml';
+  else if (/\.(udf|usf)$/i.test(name)) type = 'text/udf';
+  else if (b[0] === 0xff && b[1] === 0xd8) type = 'image/jpeg';
+  else if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) type = 'image/png';
+  else if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46) type = 'image/gif';
+  else if (b[0] === 0x42 && b[1] === 0x4d) type = 'image/bmp';
+  else if (b[0] === 0x49 && b[1] === 0x49 || b[0] === 0x4d && b[1] === 0x4d) type = 'image/tiff';
+  sources.push({ yol, type, bytes: b.slice().buffer });
+}
 async function metinler(data) {
   if (textBusy) { post({ type: 'TEXT_READY', runId: data.runId, texts: [], error: 'Metin işçisi başka bir evrakı okuyor.' }); return; }
   const items = data.items;
@@ -313,6 +344,12 @@ async function metinler(data) {
     for (const item of items) {
       try {
         const sources = [];
+        if (data.sourcesOnly === true) {
+          await kaynaklariAc(item.bytes, budget, sources);
+          if (!sources.length) throw textError('Pakette özgün belge bulunamadı.', 'source-empty');
+          out.push({ id: item.id, complete: true, sources });
+          continue;
+        }
         const metin = await metinCikar(item.bytes, budget, 0,
           () => post({ type: 'TEXT_PROGRESS', runId: data.runId, itemId: item.id }), sources);
         if (!metin.trim()) throw textError('Evrakta okunabilir metin bulunamadı.', 'text-empty');

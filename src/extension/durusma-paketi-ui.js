@@ -312,7 +312,7 @@
     w.onmessage = e => { if (e.data?.type === 'TEXT_READY' && e.data.runId === jobId) bitir(e.data.texts, e.data.error); };
     w.onerror = () => bitir(null, 'Metin işçisi durdu.');
     w.onmessageerror = () => bitir(null, 'Metin işçisinin yanıtı okunamadı.');
-    try { w.postMessage({ type: 'TEXT', runId: jobId, items }, items.map(x => x.bytes)); }
+    try { w.postMessage({ type: 'TEXT', runId: jobId, items, ...(message.sourcesOnly === true ? { sourcesOnly: true } : {}) }, items.map(x => x.bytes)); }
     catch { bitir(null, 'Metin işçisine evrak aktarılamadı.'); }
   }
   function receive(message) {

@@ -1,6 +1,5 @@
       signal.throwIfAborted(); if (closed) throw new DOMException('Durduruldu.', 'AbortError');
       bankBorrowers = next;
-      if (next.length) bankReplyNotice = '';
       const options = next.length ? next : Object.values(bankSubjects).map(s => ({ key: s.debtorKey, label: s.debtorLabel }));
       if (bankCard) {
         bankCard.select.replaceChildren(el('option', { value: '' }, 'Borçlu seçin'), ...options.map(b => el('option', { value: b.key }, b.label)));

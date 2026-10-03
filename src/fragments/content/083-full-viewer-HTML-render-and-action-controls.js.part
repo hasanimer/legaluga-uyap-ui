@@ -35,54 +35,112 @@
     }
     const bankaSatirlari = () => tum.filter(x => !x.ana && !x.yetimEk && ihbarCevabiMi(x.tur))
       .map(x => ({ x, ekler: tum.filter(e => e.ana && e.ana.k === x.k && e.ana.dosya === x.dosya && !/dosyaBilgileri/i.test(e.tur)) }));
-    const BANKA_SONUC = { haciz: ['Haciz işlendi', 'bc-haciz'], bakiyeYok: ['Hesap var, bakiye yok', 'bc-bakiye'],
-      yok: ['Hesap/alacak kaydı yok', 'bc-yok'], belirsiz: ['Anlaşılamadı; evrakı açın', 'bc-belirsiz'] };
-    function bankaEvrakSekmesi(x) {
-      // Evrak sekmesi ilk kez açılıyorsa ilk evrak kendiliğinden getirilmez; doğrudan bu cevap açılır.
-      if (!yuklenen.has('evrak') && kaynak) { yuklenen.add('evrak'); listeKur(); }
-      sekmeAc('evrak');
-      ara.value = '';
-      grup = 'tumu'; suz(); gruplariCiz();
-      const i = gorunen.findIndex(g => ayni(g, x));
-      listeyiCiz();
-      ilkBekliyor = false;
-      sira = i;
-      secimiCiz(); konumYaz();
-      ++gezEpoch; clearTimeout(gecikme); gezAc?.abort();
-      birak(); simdikiOge = null;
+    function bankReplyClose(restore = true) {
+      const state = bankReplyPopupState;
+      if (!state) return;
+      bankReplyPopupState = null; bankReplyPopup = null;
+      state.ac.abort(); state.readAc?.abort(); state.render?.birak();
+      for (const url of state.urls) URL.revokeObjectURL(url);
+      if (state.dialog.open) state.dialog.close();
+      state.dialog.remove();
+      if (!closed) { bankaCiz(); zipSync(); }
+      if (restore) {
+        const previous = state.previous?.isConnected ? state.previous : Array.from(shadowRoot.querySelectorAll('button')).find(button => state.previousKey && [button.getAttribute('data-bank-reply'), button.getAttribute('data-bank-request')].includes(state.previousKey));
+        previous?.focus({ preventScroll: true });
+      }
     }
-    function bankaBelgeGoster(x, b) {
-      if (closed) return;
-      bankaEvrakSekmesi(x);
-      // Zarf yerine metnin çıkarıldığı özgün PDF/HTML ekinin kendi baytları gösterilir.
-      simdikiOge = { ...x, ana: x, ekIndis: -1, tur: b.ad };
-      goster({ ...(x.e || {}), tur: b.ad, onaylandigiTarih: x.onay, dosyaGrubu: x.dosya }, b.doc);
-      onizleme.focus();
+    async function bankReplyRender(state, target, sourceEntry) {
+      state.readAc?.abort(); state.render?.birak(); state.render = null;
+      for (const url of state.urls) URL.revokeObjectURL(url);
+      state.urls.clear();
+      const ac = state.readAc = new AbortController();
+      const valid = () => !closed && bankReplyPopupState === state && state.readAc === ac && !state.ac.signal.aborted && !ac.signal.aborted;
+      state.content.replaceChildren(el('div', { class: 'msg', role: 'status' }, 'Özgün cevap evrakı alınıyor…'));
+      state.download.hidden = true;
+      state.select.disabled = true; state.sourceSelect.disabled = true;
+      try {
+        let doc;
+        if (sourceEntry) doc = sourceEntry.doc;
+        else {
+          doc = await bankaOku(target, ac.signal);
+          if (!valid()) return;
+          state.target = target; state.sourceDocs = [];
+          state.sourceSelect.replaceChildren(); state.sourceSelect.hidden = true;
+          if (doc?.archiveSources?.length) {
+            state.sourceDocs = [{ ad: 'Paketin tamamı', doc }, ...doc.archiveSources];
+            state.sourceSelect.replaceChildren(...state.sourceDocs.map((entry, i) => el('option', { value: String(i) }, entry.ad)));
+            state.sourceSelect.hidden = false; state.sourceSelect.value = '1';
+            sourceEntry = state.sourceDocs[1]; doc = sourceEntry.doc;
+          }
+        }
+        if (!valid()) return;
+        if (!doc?.blob || !doc.blob.size) throw new Error('Özgün cevap evrakı alınamadı.');
+        const ext = documentExtension(doc), label = `${target.tur} · ${tarihYaz(target.onay)}${sourceEntry ? ` · ${sourceEntry.ad}` : ''}`;
+        const saveUrl = URL.createObjectURL(new Blob([doc.blob], { type: 'application/octet-stream' }));
+        state.urls.add(saveUrl);
+        state.download.href = saveUrl;
+        state.download.download = sourceEntry?.doc.filename || (zipTools?.documentName ? zipTools.documentName(rec, target, ext) : `Banka-cevabi-${target.no || 'evrak'}.${ext}`);
+        state.download.hidden = false;
+        state.title.textContent = label;
+        if (ext === 'html') {
+          const html = await htmlBelgesi(doc.blob);
+          if (!valid()) return;
+          state.content.replaceChildren(el('iframe', { srcdoc: html, title: label, sandbox: '', class: 'htmldoc', referrerpolicy: 'no-referrer' }));
+        } else if (ext === 'pdf') {
+          const url = URL.createObjectURL(new Blob([doc.blob], { type: 'application/pdf' })); state.urls.add(url);
+          state.content.replaceChildren(el('iframe', { src: url, title: label }));
+        } else if (ext === 'txt') {
+          const text = await doc.blob.text();
+          if (!valid()) return;
+          state.content.replaceChildren(el('pre', { class: 'bank-reply-text' }, text));
+        } else if (['jpg', 'png', 'gif', 'bmp'].includes(ext)) {
+          const url = URL.createObjectURL(doc.blob); state.urls.add(url);
+          state.content.replaceChildren(el('div', { class: 'imgdoc' }, el('img', { src: url, alt: label })));
+        } else {
+          const tur = okuyucuTuru(doc, ext), reader = tur === 'udf' ? udf : tur === 'tiff' ? tiff : null;
+          if (reader) {
+            const container = el('div', { class: 'docview', tabindex: '0', 'aria-label': 'Banka cevabı evrak içeriği' });
+            state.content.replaceChildren(container);
+            const model = tur === 'udf' ? await udf.oku(doc.blob, { signal: ac.signal }) : await tiff.ac(doc.blob, { signal: ac.signal });
+            if (!valid()) return;
+            const rendered = reader.ciz(model, { signal: ac.signal, kaydirma: container });
+            if (!valid()) { rendered.birak(); return; }
+            state.render = rendered;
+            container.replaceChildren(rendered.kok);
+            rendered.olcekle(Math.max(.25, Math.min(1, (container.clientWidth - 32) / rendered.dogalEn)));
+          } else state.content.replaceChildren(el('div', { class: 'msg' }, `Bu özgün ${ext.toUpperCase()} evrak bu önizlemede gösterilemiyor. Dosyayı indirin veya aşağıdan varsa ilgili eki seçin.`));
+        }
+        if (valid() && ihbarCevabiMi((target.ana || target).tur)) await bankViewRemember(target.ana || target);
+      } catch (error) {
+        if (valid()) state.content.replaceChildren(el('div', { class: 'msg dp-err', role: 'status' }, error?.name === 'AbortError' ? 'Cevap açma durduruldu.' : 'Cevap evrakı açılamadı. UYAP oturumunu kontrol edip Cevabı aç’a yeniden basın.'));
+      } finally {
+        if (valid()) { state.select.disabled = false; state.sourceSelect.disabled = false; }
+      }
     }
     async function bankaAc(x) {
-      if (closed) return;
-      const key = paketAnahtar(x);
-      const acmaEpoch = gezEpoch;
-      if (!bankaBelgeler.has(key) && !bankaOkuma) await bankaOku(x);
-      if (closed || acmaEpoch !== gezEpoch) return;
-      const r = bankaSonuc.get(key), belgeler = bankaBelgeler.get(key) || [];
-      const asillar = belgeler.filter(b => r?.adaylar?.includes(b.id));
-      const secili = asillar.find(b => b.id === r?.secili);
-      if (secili) { bankaBelgeGoster(x, secili); return; }
-      bankaEvrakSekmesi(x);
-      yeniSekme.hidden = true; indir.hidden = true;
-      if (!asillar.length) {
-        icerik(el('div', { class: 'msg', role: 'status' }, bankaOkuma
-          ? 'Cevap okuması sürüyor; tamamlanınca cevabı açabilirsiniz.'
-          : r?.hata ? `Asıl cevap belgesi belirlenemedi: ${r.hata}`
-            : 'Asıl banka cevap belgesi belirlenemedi. KEP üst yazısı cevap olarak açılmadı; UYAP’taki ekleri inceleyin.'));
-        return;
-      }
-      icerik(el('div', { class: 'msg' }, el('p', null, 'Birden fazla cevap belgesi var. İncelemek istediğiniz belgeyi seçin.'),
-        el('div', { class: 'dp-actions' }, asillar.map((b, i) => {
-          const ac = el('button', { type: 'button', class: 'chip' }, `${i + 1}. ${b.ad}`);
-          ac.addEventListener('click', () => bankaBelgeGoster(x, b));
-          return ac;
-        }))));
+      if (closed || bankBusy()) return;
+      bankReplyClose(false);
+      const previous = shadowRoot.activeElement || document.activeElement;
+      const closeReply = el('button', { type: 'button', 'data-bank-preview': 'close', title: 'Cevap önizlemesini kapat (Esc)' }, 'Kapat');
+      const title = el('b', { 'data-bank-preview': 'title' }, `${x.tur} · ${tarihYaz(x.onay)}`);
+      const download = el('a', { class: 'chip', hidden: true, 'data-bank-preview': 'download' }, 'Özgün evrakı indir');
+      const content = el('div', { class: 'bank-reply-content', 'data-bank-preview': 'content' });
+      const related = [x, ...tum.filter(item => item.ana && item.ana.k === x.k && item.ana.dosya === x.dosya)];
+      const select = el('select', { 'data-bank-preview': 'document', 'aria-label': 'Cevap evrakı veya eki' }, related.map((item, i) => el('option', { value: String(i) }, `${i ? 'Ek: ' : ''}${item.tur}`)));
+      select.hidden = related.length < 2;
+      const sourceSelect = el('select', { 'data-bank-preview': 'source', 'aria-label': 'Paket içindeki özgün belge', hidden: true });
+      const dialog = el('dialog', { class: 'bank-reply-preview', 'aria-label': `${ihbarCevabiMi(x.tur) ? 'Banka cevabı' : 'Talep evrakı'} önizlemesi` },
+        el('div', { class: 'bar' }, title, closeReply),
+        el('div', { class: 'bank-reply-toolbar' }, select, sourceSelect, download), content);
+      const state = bankReplyPopupState = { dialog, title, download, content, select, sourceSelect, sourceDocs: [], target: x, previous, previousKey: previous?.getAttribute?.('data-bank-reply') || previous?.getAttribute?.('data-bank-request'), ac: new AbortController(), readAc: null, urls: new Set(), render: null };
+      bankReplyPopup = dialog;
+      closeReply.addEventListener('click', () => bankReplyClose());
+      dialog.addEventListener('cancel', event => { event.preventDefault(); bankReplyClose(); });
+      dialog.addEventListener('click', event => { if (event.target === dialog) bankReplyClose(); });
+      select.addEventListener('change', () => { const target = related[Number(select.value)]; if (target && !select.disabled) return bankReplyRender(state, target); });
+      sourceSelect.addEventListener('change', () => { const entry = state.sourceDocs[Number(sourceSelect.value)]; if (entry && !sourceSelect.disabled) return bankReplyRender(state, state.target, entry); });
+      viewer.append(dialog);
+      dialog.showModal(); closeReply.focus();
+      await bankReplyRender(state, x);
     }
     

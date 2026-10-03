@@ -4,9 +4,8 @@
       const run = bankRun = { ac: new AbortController() };
       bankNotice = 'Borçlular UYAP’tan alınıyor…'; bankDraw(); zipSync();
       try {
-        const checked = await bankPrepareBorrowers(run.ac.signal);
-        if (checked) await bankSaveEvidence(run.ac.signal);
-        bankNotice = bankBorrowers.length ? '' : 'UYAP borçlu listesi boş; cevaplar borçluyla eşleştirilemedi. Önceki doğrulamalar korundu.';
+        await bankPrepareBorrowers(run.ac.signal);
+        bankNotice = bankBorrowers.length ? '' : 'UYAP borçlu listesi boş; sorgu yapılamadı. Önceki banka kaydı korundu.';
       } catch (error) { bankNotice = error?.name === 'AbortError' ? 'Durduruldu; önceki kayıt korundu.'
         : error?.code === 'API_BORROWERS' ? error.message : 'Borçlular alınamadı. UYAP oturumunu kontrol edip yeniden deneyin.'; }
       finally { if (bankRun === run) bankRun = null; bankDraw(); zipSync(); }

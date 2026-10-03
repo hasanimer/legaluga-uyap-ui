@@ -3,7 +3,7 @@
       if (!bankaKart) {
         const durum = el('div', { class: 'dp-muted ek-banka-status', role: 'status', 'aria-live': 'polite' });
         const govde = el('div', { class: 'ek-banka-tablo' });
-        const oku = el('button', { type: 'button', class: 'dp-go' }, 'Cevapları oku');
+        const oku = el('button', { type: 'button', class: 'chip', 'data-bank-replies': 'refresh' }, 'Listeyi yenile');
         const durdur = el('button', { type: 'button', class: 'chip', hidden: true }, 'Durdur');
         oku.addEventListener('click', () => bankaOku());
         durdur.addEventListener('click', () => { bankaOkuma?.ac.abort(); bankaCiz(); });
@@ -21,10 +21,11 @@
         tumAc.addEventListener('click', () => topluAc(true));
         tumKapat.addEventListener('click', () => topluAc(false));
         bankaKart = { el: el('div', { class: 'dp-card ek-banka' }, el('h4', null, 'Banka cevapları'),
-          el('p', { class: 'dp-muted' }, 'Dosyaya gelen cevapları bankaya göre inceleyin. Sonucu doğrulamak için asıl evrakı açın.'),
+          el('p', { class: 'dp-muted' }, 'Dosyadaki cevap sayısını, özgün evrak başlıklarını ve tarihlerini inceleyin. Cevabı aç, banka sekmesinden ayrılmadan ayrı önizleme açar.'),
           el('div', { class: 'ek-banka-eylem' }, oku, durdur, tumAc, tumKapat), durum, govde,
-          el('details', { class: 'ek-banka-help' }, el('summary', null, 'Cevaplar nasıl okunur?'),
+          el('details', { class: 'ek-banka-help' }, el('summary', null, 'Liste ve görüntüleme hakkında'),
             el('p', null, BANKA_OKUMA_ACIKLAMASI))), durum, govde, oku, durdur };
+        bankViewLoad();
       }
       bankCardAdd(p);
       p.append(bankaKart.el);

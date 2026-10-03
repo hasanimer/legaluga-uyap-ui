@@ -3,81 +3,52 @@
       bankDraw();
       if (!bankaKart || closed) return;
       const { govde, durum, oku, durdur } = bankaKart;
+      const busy = bankBusy();
+      oku.disabled = busy; oku.hidden = false; oku.textContent = 'Listeyi yenile';
+      oku.title = 'Yalnız dosyanın evrak listesini yeniler; banka sorgusu veya cevap metni analizi yapmaz.';
+      durdur.hidden = !bankaOkuma; durdur.disabled = !!bankaOkuma?.ac.signal.aborted;
       if (!kaynak) {
-        durum.textContent = listeBekliyor ? 'Evrak listesi UYAP’tan alınıyor…' : `Evrak listesi alınamadı${listeHata ? ': ' + listeHata : '.'}`;
-        govde.replaceChildren(); oku.hidden = !!listeBekliyor || !!bankaOkuma; oku.textContent = 'Listeyi tekrar al';
-        oku.title = `Evrak listesini UYAP’tan tekrar alır.\n\n${BANKA_OKUMA_ACIKLAMASI}`;
-        oku.setAttribute('aria-description', oku.title);
-        oku.disabled = !!bankRun || !!paketSession || !!zipRun || !!tebligatRead; durdur.hidden = !bankaOkuma; return;
+        durum.textContent = listeBekliyor ? 'Evrak listesi UYAP’tan alınıyor…' : 'Cevap listesi henüz alınamadı. Listeyi yenile’ye basın.';
+        govde.replaceChildren(); return;
       }
-      if (kaynak.list.kilit) { durum.textContent = `UYAP: ${kaynak.list.kilit}`; govde.replaceChildren(); oku.hidden = true; durdur.hidden = true; return; }
+      if (kaynak.list.kilit) { durum.textContent = 'UYAP: ' + kaynak.list.kilit; govde.replaceChildren(); return; }
       const satirlar = bankaSatirlari();
-      const sonuclar = satirlar.map(s => bankaSonuc.get(paketAnahtar(s.x))).filter(r => r && !r.hata);
-      const say = n => sonuclar.filter(r => r.sonuc === n).length;
-      const ustYazi = sonuclar.filter(r => r.sonuc === 'belirsiz' && r.ustYazi && !r.adaylar.length).length;
-      const ozet = [say('haciz') && `${say('haciz')} haciz işlendi`, say('bakiyeYok') && `${say('bakiyeYok')} bakiye yok`,
-        say('yok') && `${say('yok')} kayıt yok`, say('belirsiz') - ustYazi && `${say('belirsiz') - ustYazi} anlaşılamadı`,
-        ustYazi && `${ustYazi} yalnız üst yazı`].filter(Boolean).join(', ');
-      durum.textContent = bankaOkuma ? bankaOkuma.yazi
-        : bankaHata ? `Okuma durdu: ${bankaHata}`
-          : sonuclar.length ? `${fmtNum(satirlar.length)} cevap: ${ozet}.`
-            : !satirlar.length ? (kaynak.list.morePages ? 'Evrak listesinin ilk sayfasında banka cevabı yok; diğer sayfalar kontrol edilebilir.' : 'Bu dosyada banka cevabı yok.')
-              : `${fmtNum(satirlar.length)} cevap. Bankanın ne cevap verdiğini görmek için “Cevapları oku”ya basın.`;
-      if (!bankaOkuma && !bankaHata && bankReplyNotice) durum.textContent += ` ${bankReplyNotice}`;
-      const acikBankalar = new Set([...govde.querySelectorAll('.ek-banka-grup')].filter(g => g.open).map(g => g.dataset.banka));
+      const viewed = satirlar.filter(s => bankViewed.has(bankViewKey(s.x))).length;
+      durum.textContent = bankaOkuma ? bankaOkuma.yazi : bankaHata ? bankaHata
+        : satirlar.length ? fmtNum(satirlar.length) + (kaynak.list.morePages ? '+ cevap listelendi' : ' cevap') + ' · ' + fmtNum(viewed) + ' görüntülendi. Özgün başlıklar ve tarihler gösteriliyor.'
+          : kaynak.list.morePages ? 'Bu sayfada banka cevabı yok. Tam liste için Listeyi yenile’ye basın.' : 'Bu dosyada banka cevabı yok.';
+      const expanded = new Set([...govde.querySelectorAll('.ek-banka-grup')].filter(group => group.open).map(group => group.dataset.banka));
+      const scrollTop = govde.scrollTop;
       const gruplar = new Map();
       for (const { x } of satirlar) {
-        const r = bankaSonuc.get(paketAnahtar(x));
-        const ad = bankaAdi(r?.banka || x.gonderen || '') || r?.banka || 'Banka belirlenemedi';
-        const key = norm(ad);
-        if (!gruplar.has(key)) gruplar.set(key, { key, ad, cevaplar: [] });
-        gruplar.get(key).cevaplar.push(x);
+        const name = bankaAdi(x.gonderen || '') || x.gonderen || 'Gönderen belirtilmemiş';
+        const key = norm(name);
+        if (!gruplar.has(key)) gruplar.set(key, { key, name, replies: [] });
+        gruplar.get(key).replies.push(x);
       }
-      govde.replaceChildren(...[...gruplar.values()].sort((a, b) =>
-        (a.ad === 'Banka belirlenemedi') - (b.ad === 'Banka belirlenemedi') || a.ad.localeCompare(b.ad, 'tr')
-      ).map(({ key, ad, cevaplar }) => {
-        const grup = el('details', { class: 'ek-banka-grup', 'data-banka': key },
-          el('summary', null, ad, el('small', null, `${fmtNum(cevaplar.length)} cevap`)),
-          el('table', null,
-        el('thead', null, el('tr', null, el('th', null, 'Tarih'), el('th', null, 'Cevap'), el('th', null, ''))),
-        el('tbody', null, cevaplar.map(x => {
-          const r = bankaSonuc.get(paketAnahtar(x));
-          const [etiket, sinif] = r && !r.hata
-            ? r.ustYazi && !r.adaylar.length ? ['Yalnız üst yazı; asıl cevap yok', 'bc-belirsiz'] : BANKA_SONUC[r.sonuc]
-            : [r?.hata ? 'Alınamadı' : '—', r?.hata ? 'bc-belirsiz' : 'bc-bos'];
-          const ac = el('button', { type: 'button', class: 'chip', title: 'Cevabın veya tutarın yazılı olduğu asıl belgeyi aç' }, 'Cevabı aç');
-          ac.disabled = !!bankRun || !!paketSession || !!zipRun || !!tebligatRead;
-          ac.addEventListener('click', () => bankaAc(x));
-          return el('tr', null, el('td', null, tarihYaz(x.onay)),
-            el('td', { class: sinif }, etiket, r && r.sonuc === 'haciz' && r.tutar ? el('b', null, ` · ${r.tutar}`) : null,
-              r && r.oncekiHaciz ? el('small', null, ' · önceki hacizler var') : null,
-              r?.hata ? el('small', null, ` · ${r.hata}`) : null),
-            el('td', null, ac));
-        }))));
-        grup.open = bankaTumAcik || acikBankalar.has(key);
-        const acKapat = el('button', { type: 'button', class: 'chip ek-banka-grup-ac', 'aria-label': `${ad} cevaplarını ${grup.open ? 'kapat' : 'aç'}`, 'aria-expanded': String(grup.open) }, grup.open ? 'Kapat' : 'Aç');
-        const durumYaz = () => {
-          acKapat.textContent = grup.open ? 'Kapat' : 'Aç';
-          acKapat.setAttribute('aria-expanded', String(grup.open));
-          acKapat.setAttribute('aria-label', `${ad} cevaplarını ${grup.open ? 'kapat' : 'aç'}`);
-        };
-        acKapat.addEventListener('click', ev => { ev.preventDefault(); ev.stopPropagation(); grup.open = !grup.open; bankaTumAcik = false; durumYaz(); });
-        grup.addEventListener('toggle', () => { if (!govde.contains(grup)) return; if (!grup.open) bankaTumAcik = false; durumYaz(); });
-        grup.children[0].append(acKapat);
-        return grup;
+      govde.replaceChildren(...[...gruplar.values()].sort((a, b) => a.name.localeCompare(b.name, 'tr')).map(({ key, name, replies }) => {
+        const group = el('details', { class: 'ek-banka-grup', 'data-banka': key },
+          el('summary', null, name, el('small', null, fmtNum(replies.length) + ' cevap')),
+          el('table', null, el('thead', null, el('tr', null, ['Tarih', 'Evrak', 'Durum', ''].map(text => el('th', { scope: 'col' }, text)))),
+            el('tbody', null, replies.map(x => {
+              const opened = bankViewed.has(bankViewKey(x));
+              const open = el('button', { type: 'button', class: 'chip', title: 'Özgün evrakı banka sekmesinden ayrılmadan aç', 'data-bank-reply': bankViewKey(x) }, 'Cevabı aç');
+              open.disabled = busy;
+              open.addEventListener('click', () => bankaAc(x));
+              return el('tr', { class: opened ? 'bank-reply-viewed' : '', 'data-bank-viewed': String(opened) }, el('td', null, tarihYaz(x.onay)),
+                el('td', null, x.tur), el('td', { class: 'bank-reply-mark' }, opened ? '✓ Görüntülendi' : 'Yeni'), el('td', null, open));
+            }))));
+        group.open = bankaTumAcik || expanded.has(key);
+        const toggle = el('button', { type: 'button', class: 'chip ek-banka-grup-ac', 'aria-label': name + ' cevaplarını ' + (group.open ? 'kapat' : 'aç'), 'aria-expanded': String(group.open) }, group.open ? 'Kapat' : 'Aç');
+        const update = () => { toggle.textContent = group.open ? 'Kapat' : 'Aç'; toggle.setAttribute('aria-expanded', String(group.open)); toggle.setAttribute('aria-label', name + ' cevaplarını ' + (group.open ? 'kapat' : 'aç')); };
+        toggle.addEventListener('click', event => { event.preventDefault(); event.stopPropagation(); group.open = !group.open; bankaTumAcik = false; update(); });
+        group.addEventListener('toggle', () => { if (govde.contains(group)) update(); });
+        group.children[0].append(toggle);
+        return group;
       }));
-      const kalan = satirlar.filter(s => !bankaSonuc.has(paketAnahtar(s.x)) || bankaSonuc.get(paketAnahtar(s.x)).hata);
-      const istek = kalan.reduce((n, s) => n + 1 + s.ekler.length, 0);
-      oku.hidden = !!bankaOkuma || (!kalan.length && !kaynak.list.morePages);
-      oku.textContent = !satirlar.length && kaynak.list.morePages ? 'Cevapları bul ve oku' : sonuclar.length ? `Kalanları oku (${fmtNum(kalan.length)})` : 'Cevapları oku';
-      oku.disabled = !!bankRun || !!paketSession || !!zipRun || !!tebligatRead;
-      const okumaDurumu = bankRun ? 'Banka sorgusu veya talep kontrolü sürerken okunamaz.' : paketSession ? 'Duruşma paketi hazırlanırken okunamaz.' : zipRun ? 'ZIP indirmesi sürerken okunamaz.'
-        : `${fmtNum(istek)} evrak (gelen banka cevapları ve ekleri); yaklaşık ${Math.max(1, Math.round(istek * (BANKA_ARALIK + 400) / 60000))} dakika sürer.`;
-      oku.title = `${okumaDurumu}\n\n${BANKA_OKUMA_ACIKLAMASI}`;
-      oku.setAttribute('aria-description', oku.title);
-      durdur.hidden = !bankaOkuma;
-      durdur.disabled = !!bankaOkuma?.ac.signal.aborted;
+      govde.scrollTop = scrollTop;
     }
+
     function bankaBekle(signal, promise) {
       return new Promise((resolve, reject) => {
         const iptal = () => reject(new DOMException('Durduruldu.', 'AbortError'));

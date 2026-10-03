@@ -414,7 +414,7 @@
     }
     if (hasDownloads) {
       downloadArea.append(el('button', { type: 'button', class: 'btn sm download-back', onclick: () => showDownloads(false) }, '‹ Dosyalara dön'));
-      downloadArea.append(el('p', { class: 'hint' }, 'Bu UYAP sekmesindeki indirmeler. Dosya penceresini ve paneli kapatabilirsiniz; indirme için UYAP sekmesi açık kalmalıdır.'));
+      downloadArea.append(el('p', { class: 'hint' }, 'Dosya penceresini ve paneli kapatabilirsiniz. UYAP sayfası yenilenirse indirme yeniden bağlanır; kaydedilmiş ZIP parçaları tekrar indirilmez. Sekmeyi kapatırsanız dosyadan kaldığınız yerden devam edebilirsiniz.'));
       globalThis.UHDBulkPanel.mount(downloadArea, { manager: opts.downloads, openFile: opts.openDownload, showPart: opts.showDownloadPart });
       btnDownloads.addEventListener('click', () => showDownloads(downloadArea.hidden));
       downloadMini.addEventListener('click', () => showDownloads());
@@ -1502,7 +1502,7 @@
             el('li', null, '“Şimdi güncelle”ye basın. Vekili olduğunuz dosyaların listesi, taraf adları, vekilleri ve duruşmalarınız UYAP’tan alınıp bu Chrome profilinde şifreli saklanır. Bu bilgiler başka bir sunucuya gönderilmez. Evrak ve banka cevabı araçları, seçtiğiniz belgeleri tarayıcınızda işler. Banka sorgusu ayrıca siz başlatınca, UYAP’ın uygunluk ve ücret kontrolünden sonra çalışır; ücrete ayrıca onay sorulur. İlk güncelleme birkaç dakika sürebilir.'),
             el('li', null, 'Ad, soyad, dosya no veya mahkeme yazın; “Dosya Görüntüle” ile dosya UYAP’ta açılır.')),
           go,
-          el('p', { style: 'margin:12px 0 0;font-size:12px;color:var(--muted)' }, 'Ayrıntılar: ', el('a', { href: BRAND.site + '/gizlilik/uyap-asistani', target: '_blank', rel: 'noopener' }, 'gizlilik politikası'), '.')));
+          el('p', { style: 'margin:12px 0 0;font-size:12px;color:var(--muted)' }, 'Ayrıntılar: ', el('a', { href: 'https://github.com/hasanimer/legaluga-uyap-ui/blob/main/docs/PRIVACY.md', target: '_blank', rel: 'noopener' }, 'gizlilik politikası'), '.')));
         return;
       }
       const keys = myKeys(myName());
@@ -2058,7 +2058,7 @@
       btnClear.disabled = running();
       btnClear.addEventListener('click', async () => {
         if (!confirm('Dosya listesi, duruşmalar, notlarınız, gizlenen dosyalar, son açılanlar ve ayarlarınız bu bilgisayardan silinsin mi? Bu işlem geri alınamaz; UYAP’taki dosyalarınız etkilenmez.')) return;
-        await chrome.storage.local.remove(['uhdIndex', 'uhdProgress', 'uhdRecent', 'uhdNotes', 'uhdPrefs', 'uhdPending', 'uhdEvrakGoruldu', 'uhdJob', 'uhdSureler', 'uhdDurusmalar', 'uhdGizli', 'uhdOturumIstek', 'uhdTurFilter', 'uhdCbsRehber', 'uhdBankChecks', 'uhdSafahat']);
+        await chrome.storage.local.remove(['uhdIndex', 'uhdProgress', 'uhdRecent', 'uhdNotes', 'uhdPrefs', 'uhdPending', 'uhdEvrakGoruldu', 'uhdJob', 'uhdSureler', 'uhdDurusmalar', 'uhdGizli', 'uhdOturumIstek', 'uhdTurFilter', 'uhdCbsRehber', 'uhdBankChecks', 'uhdBankReplyViews', 'uhdSafahat']);
         closeSettings();
         setNotice('Tüm yerel veriler silindi.');
       });
@@ -2171,7 +2171,7 @@
           el('div', { class: 'hint' }, 'Görüş ve öneriler: ', el('a', { href: 'mailto:' + BRAND.email }, BRAND.email)),
           el('div', { class: 'row' },
             el('a', { href: BRAND.site, target: '_blank', rel: 'noopener' }, 'legaluga.com'),
-            el('a', { href: BRAND.site + '/gizlilik/uyap-asistani', target: '_blank', rel: 'noopener' }, 'Gizlilik politikası'),
+            el('a', { href: 'https://github.com/hasanimer/legaluga-uyap-ui/blob/main/docs/PRIVACY.md', target: '_blank', rel: 'noopener' }, 'Gizlilik politikası'),
             el('a', { href: 'https://github.com/hasanimer/legaluga-uyap-ui', target: '_blank', rel: 'noopener' }, 'Arayüz kaynakları'))),
         el('p', { class: 'hint author-note' }, 'Bu eklenti, Av. Hasan İmer Akın tarafından meslektaşlarının ücretsiz kullanımı için geliştirilmiştir. Arayüz ve genel araçlar açık kaynaklıdır. ',
           el('a', { href: 'https://github.com/hasanimer/legaluga-uyap-ui/issues', target: '_blank', rel: 'noopener' }, 'Öneri ve hata bildirimi')));

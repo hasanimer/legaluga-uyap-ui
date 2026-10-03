@@ -5,8 +5,7 @@
           hesapSatirlari.length ? hesapSatirlari.map(x => money(x, 'degerAlan', x.textAlan.trim()))
             : [money(ayrinti, 'alacakKalemToplamTutar', 'Alacak kalemleri toplamı'), money(ayrinti, 'alacakKalemFaizTutar', 'Alacak kalemleri faiz tutarı'),
               money(ayrinti, 'vekaletUcreti', 'Vekâlet ücreti'), money(ayrinti, 'takipSonrasiMasraf', 'Takip sonrası masraf'), money(ayrinti, 'tahsilHarci', 'Tahsil harcı')],
-          !hesapSatirlari.length ? el('div', { class: 'dp-summary-notice' }, 'Dosya Hesabı alınamadı. Dosya hesabının tamamı bu görünümde yer almıyor; UYAP’taki Dosya Hesabı ekranını kontrol edin.')
-            : hesapEksik ? el('div', { class: 'dp-summary-notice' }, 'Dosya Hesabı yanıtı eksik. UYAP’taki Dosya Hesabı ekranını kontrol edin.') : null)),
+          !hesapSatirlari.length ? el('div', { class: 'dp-summary-notice' }, 'Dosya Hesabı alınamadı. Dosya hesabının tamamı bu görünümde yer almıyor; UYAP’taki Dosya Hesabı ekranını kontrol edin.') : null)),
         el('div', { class: 'dp-finance-side' },
           el('details', { class: 'dp-card dp-finance-followup' }, el('summary', null, 'Takip bilgileri'),
             bolum('Takip bilgileri',

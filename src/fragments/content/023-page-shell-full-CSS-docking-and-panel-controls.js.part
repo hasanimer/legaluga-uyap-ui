@@ -5,6 +5,7 @@
       sink: message => chrome.runtime.sendMessage(message),
       reconcile: fileKey => chrome.runtime.sendMessage({ type: 'uhd-download-reconcile', fileKey }),
       locks: globalThis.navigator?.locks, documentExtension,
+      continuation: { remember: rememberDownload, forget: forgetDownload },
       beforeFetch: signal => { uyapBulk(signal); if (captchaOpen()) throw new Blocked(CAPTCHA_MSG); }
     }) : null;
   globalThis.UHDBulkDownloads = downloadManager;
@@ -268,6 +269,18 @@
 .viewer .ek-banka-grup :is(th,td){padding:10px 12px;line-height:1.5}
 .viewer .ek-banka-grup summary .chip{min-width:54px}
 .viewer .ek-banka table td:nth-child(2){overflow-wrap:anywhere}
+.viewer .ek-banka .bank-reply-viewed{background:var(--shell-soft)}
+.viewer .ek-banka .bank-reply-viewed .bank-reply-mark{color:var(--shell-success);font-weight:600}
+.viewer .ek-banka .bank-reply-mark{white-space:nowrap;color:var(--shell-muted)}
+.viewer .bank-reply-preview{padding:0;border:1px solid var(--shell-line);border-radius:12px;width:min(960px,calc(100vw - 32px));height:min(86dvh,900px);max-width:none;max-height:calc(100dvh - 24px);background:var(--shell-bg);color:var(--shell-text);box-shadow:0 20px 55px #10182866}
+.viewer .bank-reply-preview[open]{display:flex;flex-direction:column}
+.viewer .bank-reply-preview::backdrop{background:#101828aa}
+.viewer .bank-reply-preview .bar{flex:none;margin:0}
+.viewer .bank-reply-toolbar{flex:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--shell-line)}
+.viewer .bank-reply-toolbar select{flex:1;min-width:180px;max-width:100%;border:1px solid var(--shell-line);border-radius:6px;padding:6px;background:var(--shell-bg);color:var(--shell-text);font:inherit}
+.viewer .bank-reply-content{flex:1;min-height:0;display:flex;overflow:auto}
+.viewer .bank-reply-content .docview{flex:1;min-width:0}
+.viewer .bank-reply-text{padding:16px;white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font:13px/1.6 "Segoe UI",system-ui,sans-serif}
 .viewer :is(.dp-summary,.dp-finance,.ek-banka,.ek-banka-takip) :is(button,select,summary):focus-visible{outline:2px solid var(--shell-focus);outline-offset:3px}
 .viewer .paket-motor{position:absolute;left:-10000px;top:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none}
 .viewer .ek-paket-ac{align-self:flex-start;font-weight:600}

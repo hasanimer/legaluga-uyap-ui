@@ -70,7 +70,9 @@
       sonraki.disabled = sira < 0 || sira >= n - 1;
     }
     function grupSec(g) {
-      if (zipRun || g === grup) return;
+      const klasor = g === 'tumu' ? true : g === 'son20' ? false : kategorili;
+      if (zipRun || g === grup && kategorili === klasor) return;
+      kategorili = klasor; evrakOdak = null;
       grup = g;
       suz();
       sira = gorunen.findIndex(x => ayni(x, simdikiOge));
@@ -85,7 +87,7 @@
       if (ev.key === 'ArrowDown' && gorunen.length) { ev.preventDefault(); ogeler.focus({ preventScroll: true }); odakSync(true); }
     });
     kategoriGorunum.addEventListener('click', () => { kategorili = !kategorili; evrakOdak = null; listeyiCiz(); });
-    tarihSirasi.addEventListener('click', () => { tarihArtan = !tarihArtan; listeyiCiz(); });
+    tarihSirasi.addEventListener('click', () => { if (kategorili) return; tarihArtan = !tarihArtan; listeyiCiz(); });
     ogeler.addEventListener('keydown', ev => {
       if (!gorunen.length || ev.altKey || ev.ctrlKey || ev.metaKey || ev.target.tagName === 'INPUT') return;
       const entries = kategorili ? [...kategoriDom.values()].flatMap(kat => [kat.head, ...(kat.box.open ? kat.rows : [])]) : [...ogeler.querySelectorAll('.ek-oge')];

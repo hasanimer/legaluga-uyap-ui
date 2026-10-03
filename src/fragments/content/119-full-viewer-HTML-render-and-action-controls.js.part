@@ -78,6 +78,7 @@
     const done = (restore = true) => {
       if (closed) return;
       closed = true;
+      bankReplyClose(false);
       clearTimeout(gecikme);
       listeAc.abort();
       notlarAc.abort();
@@ -92,9 +93,8 @@
       }
       paketKapat();
       bankaOkuma?.ac.abort();
-      bankRun?.ac.abort(); bankBorrowers = []; bankReplySubjects.clear(); bankRequests.clear();
-      bankReplyTexts.clear(); bankReplyCharacters = 0;
-      bankaBelgeler.clear(); bankaByte = 0; bankaSonuc.clear();
+      bankRun?.ac.abort(); bankBorrowers = []; bankRequests.clear();
+      bankaBelgeler.clear(); bankaByte = 0;
       paketOzgunAc?.abort();
       paketSonucBirak();
       zipState = null;
@@ -110,7 +110,7 @@
     // yakınlaştırılmış belge yatay kaydırılabilirken (odak belgedeyken) oklar kendi işine bırakılır.
     const onKey = ev => {
       // Yerel yedek parola penceresi açıkken Escape ve Tab onun doğal davranışını izler.
-      if (shadowRoot.querySelector('.backup-password')?.open) return;
+      if (shadowRoot.querySelector('.backup-password')?.open || bankReplyPopup?.open) return;
       // Sayfa kutusunda Esc yazılanı geri alır (ekranı kapatmaz); kutu gösterilen sayfayı yazıyorsa Esc ekranı kapatır.
       const sn = shadowRoot.activeElement;
       if (ev.key === 'Escape' && sn && sn.classList && sn.classList.contains('sayfa-no') && simdiki && sn.value !== String(simdiki.sayfaNo)) {

@@ -267,9 +267,12 @@
       ogeler.setAttribute('aria-label', kategorili ? 'Evrak türleri ve evraklar' : 'Evraklar');
       kategoriGorunum.setAttribute('aria-pressed', String(kategorili));
       kategoriGorunum.title = kategorili ? 'Düz listeye geç' : 'Türüne göre klasörle';
-      tarihSirasi.textContent = tarihArtan ? 'Tarih ↑' : 'Tarih ↓';
-      tarihSirasi.title = tarihArtan ? 'En eski önce' : 'En yeni önce';
-      tarihSirasi.setAttribute('aria-label', `Tarih sırası: ${tarihArtan ? 'en eski' : 'en yeni'} önce. ${tarihArtan ? 'En yeni' : 'En eski'} önce sıralamak için basın.`);
+      const tarihYardim = 'Klasörler evrak türüne göre alfabetik sıralanır. Tarihe göre sıralamak için düz listeye geçin.';
+      tarihSirasi.disabled = kategorili;
+      tarihSirasi.setAttribute('aria-disabled', String(kategorili));
+      tarihSirasi.textContent = kategorili ? 'Tarih ⓘ' : tarihArtan ? 'Tarih ↑' : 'Tarih ↓';
+      tarihSirasi.title = kategorili ? tarihYardim : tarihArtan ? 'En eski önce' : 'En yeni önce';
+      tarihSirasi.setAttribute('aria-label', kategorili ? tarihYardim : `Tarih sırası: ${tarihArtan ? 'en eski' : 'en yeni'} önce. ${tarihArtan ? 'En yeni' : 'En eski'} önce sıralamak için basın.`);
       if (kategorili) {
         ogeler.replaceChildren(...evrakKategorileri(gorunen).map((kat, index) => {
           const head = el('summary', { class: 'ek-kategori-baslik', id: `${kimlik}-c${index}`, role: 'treeitem', 'aria-level': '1', 'aria-expanded': 'false', tabindex: '-1', 'data-kategori': kat.key,
