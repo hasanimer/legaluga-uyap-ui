@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "9e0b12101f92e028ebe6304605c18717a74dc262c6c7268bd9be79a597b722c5"
+      "sha256": "992422d1b4fabb587a6b06be41fca086a0647b56556e3ea8b35139a9c0af2d68"
     },
     {
       "path": "SECURITY.md",
@@ -104,11 +104,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "8c7f377c443a70eda9a89f51ea240958e8f7cd68eabd6342e87d4a7cc365bc87"
+      "sha256": "6ff3af641ab8a347b36ca8f6d8eba9c992ccbf487ce2af73faede9a26df99d24"
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "d9c2000d909faa233911494f856f8655d29a1b3a94338c7f8f0d3f6e774b5703"
+      "sha256": "9c73ead92af0557385ca913ca16d603bdda1b35d45f4b4b7462593d1b3b5dfc4"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -216,7 +216,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "7ae18981daed5bd5eadec92a2ff4cab69de1cbee13ae203b74a50dafbcd3613c"
+      "sha256": "0dc46af3e063ecf1bd6484084109acc988a27df474b16cd7dc70a33801c1ca0b"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -260,11 +260,11 @@
     },
     {
       "path": "src/extension/tebligat-ui.js",
-      "sha256": "56a3e4d388ddcf26dd74c4e14482e77e17b1464e0a1b85b7ed0f7a532db27721"
+      "sha256": "8ac4a8d2359811daf4e9d12f2259db527edf00e70fbc616a438b27673274efc9"
     },
     {
       "path": "src/extension/telemetry.js",
-      "sha256": "579b470728a0c6ef5fc8b5f6ad966b2c4143968463bae32a7307ea058a5654a6"
+      "sha256": "6da68d7e8432f9bdca912c919a89f5b12b0f26be2abe2d6a2f790f02131cfde6"
     },
     {
       "path": "src/extension/tiff.js",
@@ -536,7 +536,7 @@
     },
     {
       "path": "src/fragments/content/005-context-invalidation-and-progress-boundaries.js.part",
-      "sha256": "52e1bf54ee59af5754d668793ca2b5fd926e3ce74b1764db8b5ca87774e31be7"
+      "sha256": "8031747ed9f40782b59a0bc74275cd8eee9cb7b9b6bd6dbcd4db0f7900775b3c"
     },
     {
       "path": "src/fragments/content/007-setup-profile-DOM-boundary.js.part",
@@ -708,7 +708,7 @@
     },
     {
       "path": "src/fragments/content/087-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "337f89e293ad6e1862bfff3699679bb3ac1d2858f522b6b0a090d1ad030d3762"
+      "sha256": "74e8e3bfe8a5f58e4456ea9bb9783bf3fb55eb86a2c1e22273efed891a9edf92"
     },
     {
       "path": "src/fragments/content/089-full-viewer-HTML-render-and-action-controls.js.part",

@@ -54,4 +54,4 @@
   // orada yapay bekleme yapılmaz; istekler yine de sırayla, birer birer gider.
   const pace = () => (document.hidden ? Promise.resolve() : sleep(DELAY));
 
-  async function setProgress(p) {
+  async function setProgress(p) {

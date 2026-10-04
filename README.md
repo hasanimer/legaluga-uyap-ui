@@ -7,7 +7,7 @@ Eklenti, **Av. Hasan İmer Akın** tarafından meslektaşlarının ücretsiz kul
 
 Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lisansıyla** sunar. UYAP işlem motoru özel kaynaklıdır; tam eklenti mağazadan kurulur.
 
-> Bu rehber, **1.19.31** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+> Bu rehber, **1.19.32** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
 
 Görseller gerçek arayüz bileşenlerinden **örnek verilerle** hazırlanmıştır; gerçek kişi, dava veya UYAP oturumu içermez.
 
@@ -95,17 +95,19 @@ Eklenti ücretsizdir. UYAP banka sorgusunun ücretleri, limitleri ve PTT/UETS hi
 
 ## Tebligat ve UETS
 
-Tebligat listesinde zarflar/tebligatlar seçilir; mazbatalar ayrı seçilecek gönderi olarak listelenmez. Belge adının yanında mevcut açıklama veya okunmuş belgeden doğrulanabilen **İçerik** görünür. **Tümünü seç** veya satırların seçim kutularıyla istediğiniz tebligatları seçin; **Sorgula** seçilenleri sırayla işler. Hizmet ve barkod seçilen zarf okunurken belirlenir. Belirsiz veya çok barkodlu evrak tahminle sorgulanmaz.
+Tebligat listesinde zarflar/tebligatlar seçilir; mazbatalar ayrı seçilecek gönderi olarak listelenmez. Her satırda muhatap, tarih ve evrak numarası, hizmet (**Posta · PTT** ya da **E-tebligat**), UYAP'ın kaydettiği durum (ör. **UYAP: Tebliğ Edildi**) ve sorgu durumu görünür. Tek tebligatı satırdaki **Sorgula** ile, birkaçını seçim kutuları ve **Seçilenleri sorgula** ile sırayla sorgularsınız. Liste birden fazla tür içeriyorsa **Tümü / Posta / E-tebligat** süzgeci çıkar.
+
+Hizmet, UYAP açıklamasındaki tebligat türünden (**Normal Tebligat** posta, **Elektronik Tebligat** e-tebligat) ve zarfın kendisinden belirlenir. E-tebligat zarfı UETS adresini taşır; hizmet adı yazmayan, tek barkodlu posta zarfı PTT posta tebligatı sayılır ve satırda "zarfta hizmet yazmıyor" diye belirtilir. Barkod okunamazsa (taranmış zarf), zarfta birden fazla barkod varsa ya da hizmet çelişkiliyse sorgu kendiliğinden gönderilmez: satırda bulunan barkodlar ve bir barkod kutusu çıkar, **PTT'de sorgula** ya da **E-tebliğ mazbatasında ara** ile siz seçersiniz.
 
 E-tebligatta önce aynı dosyadaki eşleşen e-tebliğ mazbatası aranır. Bulunursa kaynağı ve olay kayıtları gösterilir; bu okuma için UETS'ye ayrıca giriş gerekmez. Mazbata bulunamazsa **UETS sayfasını aç** düğmesi sunulur; kendiliğinden yeni sekme açılmaz.
 
 ![Tebligat: seçim kutuları, tümünü seç ve seçili zarfları sorgulama — örnek veriler](docs/images/09-tebligat-listesi.png)
 
-**Sorgula**, seçtiğiniz evrakın içeriğini ve barkodunu da okur; ayrı **İçerikleri oku** adımı gerekmez. Tekil ve eşleşen mazbatada teslim, hesaba konulma, açılma ve okundu sayılma kayıtları belge üzerindeki tarihleriyle gösterilir. Farklı belge/gönderilerin kayıtları birleştirilmez; hukuki süre hesabı yapılmaz. Taranmış veya çok barkodlu belgede özgün mazbatayı inceleyin.
+**Sorgula**, seçtiğiniz evrakın içeriğini ve barkodunu da okur; ayrı **İçerikleri oku** adımı gerekmez. Tekil ve eşleşen mazbatada teslim, hesaba konulma, açılma ve okundu sayılma kayıtları belge üzerindeki tarihleriyle gösterilir. Ekran açıkken her mazbata bir kez okunur; aynı dosyadaki öteki e-tebligatlar aynı okumayı kullanır. Farklı belge/gönderilerin kayıtları birleştirilmez; hukuki süre hesabı yapılmaz. Taranmış veya çok barkodlu belgede özgün mazbatayı inceleyin.
 
 ![E-tebligat: aynı dosyadaki eşleşen mazbatadan alınan olaylar ve belge kaynağı — örnek veriler](docs/images/09b-uets-olay-kayitlari.png)
 
-PTT sorgusu arka planda hazırlanır; tamamlanabilen sonuç tebligat sekmesinde gösterilir. Resmi hizmet giriş veya güvenlik doğrulaması isterse sayfayı ilgili düğmeyle açıp kendiniz tamamlayın. UETS'de **Gönderi Sorgulama** bölümüne geçmeniz gerekebilir. CAPTCHA ve oturum doğrulaması aşılmaz.
+PTT sorgusu arka planda hazırlanır; tamamlanabilen sonuç tebligat sekmesinde gösterilir. Resmi hizmet giriş veya güvenlik doğrulaması isterse sayfayı ilgili düğmeyle açıp kendiniz tamamlayın. PTT'nin kendi güvenlik doğrulaması tamamlanmazsa satır hemen **Doğrulama bekliyor** olur: **Resmi PTT sayfasını aç** ile sayfaya geçip **SORGULA**'ya bir kez daha basın; sonuç yine tebligatın altına gelir. UETS'de **Gönderi Sorgulama** bölümüne geçmeniz gerekebilir. CAPTCHA ve oturum doğrulaması aşılmaz.
 
 Yalnız seçtiğiniz barkod ilgili resmî hizmete gönderilir. **Durdur** veya dosya ekranını kapatma bekleyen tebligat sorgusunu iptal eder. Barkod, belge metni ve tebligat sonuçları açık ekranın belleğinde tutulur; kalıcı kayıt ve hata raporuna eklenmez.
 
