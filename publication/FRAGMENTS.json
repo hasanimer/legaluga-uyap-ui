@@ -271,8 +271,8 @@
       "source": "content.js",
       "order": 5,
       "path": "src/fragments/content/005-context-invalidation-and-progress-boundaries.js.part",
-      "sha256": "52e1bf54ee59af5754d668793ca2b5fd926e3ce74b1764db8b5ca87774e31be7",
-      "bytes": 2328,
+      "sha256": "8031747ed9f40782b59a0bc74275cd8eee9cb7b9b6bd6dbcd4db0f7900775b3c",
+      "bytes": 2382,
       "purpose": "context-invalidation-and-progress-boundaries"
     },
     {
@@ -615,7 +615,7 @@
       "source": "content.js",
       "order": 87,
       "path": "src/fragments/content/087-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "337f89e293ad6e1862bfff3699679bb3ac1d2858f522b6b0a090d1ad030d3762",
+      "sha256": "74e8e3bfe8a5f58e4456ea9bb9783bf3fb55eb86a2c1e22273efed891a9edf92",
       "bytes": 233,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },

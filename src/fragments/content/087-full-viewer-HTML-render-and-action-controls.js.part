@@ -1,4 +1,4 @@
 
     const tebligatLabel = x => [x.tur, x.ana ? `${x.ana.tur} eki` : '', tarihYaz(x.onay),
-      x.no ? `Evrak no: ${x.no}` : '', x.dosya && x.dosya !== rec.dosyaNo ? evrakDosyaAdi(x.dosya) : ''].filter(Boolean).join(' · ');
+      x.no ? `Evrak no: ${x.no}` : '', x.dosya && !bankMainGroup(x.dosya) ? evrakDosyaAdi(x.dosya) : ''].filter(Boolean).join(' · ');
     

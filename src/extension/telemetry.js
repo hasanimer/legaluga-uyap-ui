@@ -82,4 +82,4 @@
       if (framesOf(event.reason?.stack).length) report(event.reason);
     });
   }
-})();
+})();
