@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "992422d1b4fabb587a6b06be41fca086a0647b56556e3ea8b35139a9c0af2d68"
+      "sha256": "36c675e2f990b791b531dea776f0d3e29ed9ab3af8fce762a53931018bd30887"
     },
     {
       "path": "SECURITY.md",
@@ -104,7 +104,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "6ff3af641ab8a347b36ca8f6d8eba9c992ccbf487ce2af73faede9a26df99d24"
+      "sha256": "eba15c572cd92f511c34490b6e180f04759c858f79bcf22008de0716e9137495"
     },
     {
       "path": "publication/FRAGMENTS.json",
@@ -216,7 +216,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "0dc46af3e063ecf1bd6484084109acc988a27df474b16cd7dc70a33801c1ca0b"
+      "sha256": "c3064791d9a069ce00ad2f8cf449207e4b0348a604842d14f24adccd22de8b0d"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -252,7 +252,7 @@
     },
     {
       "path": "src/extension/storage.js",
-      "sha256": "a32ca7b3c6a2946d3aed689d22fbed171ba968ff11a981124550324b77ef2796"
+      "sha256": "68b1f49094f366fe0a38e66d69e76beffb69e83f3b459dbaf965e0691686f38b"
     },
     {
       "path": "src/extension/tabs.js",
@@ -276,7 +276,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "8998c04a175513bcaf2f7a5b0e54faac1bcc3765c0d26c889db6155e3b13e57a"
+      "sha256": "7da5cd6bdf62267f12005f8cc1e42b4bdf1817b1a98f14d963a42722512b4a51"
     },
     {
       "path": "src/extension/vault-crypto.js",

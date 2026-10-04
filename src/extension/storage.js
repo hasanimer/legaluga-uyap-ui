@@ -180,6 +180,19 @@
         await write({ uhdBankChecks: next });
         return { data: next.files[args.fileKey].subjects[args.snapshot.debtorKey], revision };
       }
+      // "Tüm verileri sil": evrak listesini taşıyan bütün indirme planları ve dizin kaldırılır. Chrome'a kaydı süren
+      // bir parça varsa hiçbir plana dokunulmaz; kullanıcı önce indirmeyi durdurur.
+      if (operation === 'clearBulkDownloads') {
+        const saved = await native.get(null);
+        const keys = Object.keys(saved).filter(name => /^uhdBulkDownload_[0-9a-f]{64}(?:_plan)?$/.test(name));
+        for (const name of keys) {
+          if (name.endsWith('_plan')) continue;
+          const job = (await read(name, false)).data[name];
+          if (job?.pendingDownload) return { data: { cleared: false, pending: true }, revision };
+        }
+        await write({}, [...keys, 'uhdBulkDownloadIndex']);
+        return { data: { cleared: true, plans: keys.filter(name => !name.endsWith('_plan')).length }, revision };
+      }
       if (['createBulkDownload', 'getBulkDownload', 'listBulkDownloads', 'discardBulkDownload', 'reserveBulkPart', 'attachBulkPart', 'settleBulkPart'].includes(operation)) {
         const bulk = globalThis.UHDBulkDownload;
         if (!bulk) throw new Error('Parçalı evrak indirme modülü yüklenemedi.');
@@ -338,6 +351,7 @@
       return (await request('getBulkDownload', { fileKey })).data;
     },
     listBulkDownloads: async () => (await request('listBulkDownloads')).data,
+    clearBulkDownloads: async () => (await request('clearBulkDownloads')).data,
     discardBulkDownload: async (fileKey, jobId) => (await request('discardBulkDownload', { fileKey, jobId })).data,
     reserveBulkPart: async options => (await request('reserveBulkPart', options)).data,
     attachBulkPart: async options => (await request('attachBulkPart', options)).data,
