@@ -2057,7 +2057,12 @@
       const btnClear = el('button', { class: 'btn sm danger', title: 'Eklentinin bu bilgisayarda sakladığı her şeyi siler.' }, 'Tüm verileri sil');
       btnClear.disabled = running();
       btnClear.addEventListener('click', async () => {
-        if (!confirm('Dosya listesi, duruşmalar, notlarınız, gizlenen dosyalar, son açılanlar ve ayarlarınız bu bilgisayardan silinsin mi? Bu işlem geri alınamaz; UYAP’taki dosyalarınız etkilenmez.')) return;
+        if (!confirm('Dosya listesi, duruşmalar, notlarınız, gizlenen dosyalar, son açılanlar, toplu indirme planları ve ayarlarınız bu bilgisayardan silinsin mi? Bu işlem geri alınamaz; UYAP’taki dosyalarınız ve indirilmiş ZIP dosyaları etkilenmez.')) return;
+        // Toplu indirme planları evrak listesini taşır; Chrome'a kaydı süren parça varken hiçbir şey silinmez.
+        let bulk = null;
+        try { if (typeof globalThis.UHDStorage?.clearBulkDownloads === 'function') bulk = await globalThis.UHDStorage.clearBulkDownloads(); }
+        catch { setNotice('Toplu indirme planları silinemedi; hiçbir veri silinmedi. Yeniden deneyin.'); return; }
+        if (bulk?.pending) { setNotice('Devam eden bir toplu indirme var. İndirmeyi durdurup parça kaydı bitince yeniden deneyin; hiçbir veri silinmedi.'); return; }
         await chrome.storage.local.remove(['uhdIndex', 'uhdProgress', 'uhdRecent', 'uhdNotes', 'uhdPrefs', 'uhdPending', 'uhdEvrakGoruldu', 'uhdJob', 'uhdSureler', 'uhdDurusmalar', 'uhdGizli', 'uhdOturumIstek', 'uhdTurFilter', 'uhdCbsRehber', 'uhdBankChecks', 'uhdBankReplyViews', 'uhdSafahat']);
         closeSettings();
         setNotice('Tüm yerel veriler silindi.');
