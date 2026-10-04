@@ -63,7 +63,7 @@
     try {
       if (!error || ['AbortError', 'Stopped', 'Superseded', 'Blocked'].includes(error.name) ||
           ['Stopped', 'Superseded', 'Blocked'].includes(error.constructor?.name) ||
-          /extension context invalidated|context invalidated/i.test(String(error.message || '')) ||
+          /extension context invalidated|context invalidated|Zamanl[ıi] i[şs]lem hatas[ıi]/i.test(String(error.message || '')) ||
           (error.name === 'Fatal' && (error.status === 401 || error.status === 403)) ||
           // UYAP'tan gelen beklenen hatalar (ağ, HTTP, bakım sayfası, UYAP hata yanıtı) eklenti hatası sayılmaz.
           error.uyap === true) return;
@@ -82,4 +82,4 @@
       if (framesOf(event.reason?.stack).length) report(event.reason);
     });
   }
-})();
+})();

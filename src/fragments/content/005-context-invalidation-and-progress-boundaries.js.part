@@ -7,7 +7,7 @@
   let resumeInterval = null;
   let autoInterval = null;
   function invalidated(error) {
-    return /context invalidated|Extension context/i.test(String(error?.message || error));
+    return /context invalidated|Extension context|Zamanl[ıi] i[şs]lem hatas[ıi]/i.test(String(error?.message || error));
   }
   function stopInvalidatedContext() {
     if (contextGone) return;
@@ -45,7 +45,7 @@
   function scheduled(task) {
     if (!contextAvailable()) return;
     Promise.resolve().then(task).catch(error => {
-      if (invalidated(error)) stopInvalidatedContext();
+      if (invalidated(error) || !contextAvailable()) stopInvalidatedContext();
       else { globalThis.UHDReporter?.report(error, 'scheduled'); console.error('Legaluga zamanlı işlem hatası:', error); }
     });
   }
@@ -54,4 +54,4 @@
   // orada yapay bekleme yapılmaz; istekler yine de sırayla, birer birer gider.
   const pace = () => (document.hidden ? Promise.resolve() : sleep(DELAY));
 
-  async function setProgress(p) {
+  async function setProgress(p) {
