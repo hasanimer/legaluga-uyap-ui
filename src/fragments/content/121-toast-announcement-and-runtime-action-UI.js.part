@@ -24,7 +24,7 @@
     t.timer = setTimeout(() => { if (toasts.get(t.id) === t) closeToast(t.id); }, t.remaining);
   }
 
-  // byUser: × ile kapatıldı; bildirimin onClose'u yalnız o zaman çalışır (ör. oturum uyarısı yeniden çizilmesin).
+  // byUser: × ile kapatıldı; bildirimin onClose'u yalnız o zaman çalışır.
   function closeToast(id, byUser = false) {
     const t = toasts.get(id);
     if (!t) return;
@@ -38,7 +38,6 @@
       else ui.focus();
     }
   }
-  const toastVisible = id => toasts.has(id);
 
   // toast(metin, tür, süre, eylem, { id, title, sub, actions, pinned, priority, onClose }). Tür: info, success, warn,
   // danger ya da busy (eski adlar '', 'ok', 'err' de geçer). Süre 0 ise bildirim kalıcıdır. title kalın ilk satır, sub

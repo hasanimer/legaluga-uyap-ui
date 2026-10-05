@@ -25,7 +25,6 @@
           el('div', { class: 'ek-banka-eylem' }, oku, durdur, tumAc, tumKapat), durum, govde,
           el('details', { class: 'ek-banka-help' }, el('summary', null, 'Liste ve görüntüleme hakkında'),
             el('p', null, BANKA_OKUMA_ACIKLAMASI))), durum, govde, oku, durdur };
-        bankViewLoad();
       }
       bankCardAdd(p);
       p.append(bankaKart.el);

@@ -3,47 +3,19 @@
 
     // ------------------------------------------------ İcra Banka sorgusu sekmesi: sorgu, talep kontrolü ve banka cevapları
     // Banka (gönderen), özgün başlık ve tarih yalnız evrak listesinden gelir. Cevaplar yorumlanmaz;
-    // Cevabı aç yalnız seçilen özgün evrakı ayrı önizlemede getirir. Görüntülendi işareti dosyaya göre saklanır.
+    // Cevabı aç yalnız seçilen özgün evrakı ayrı önizlemede getirir. Görüntülendi işareti yalnız açık dosya ekranında tutulur.
     const BANKA_BELGE_MAX = 200, BANKA_BYTE_MAX = 64 * 1024 * 1024;   // metin motoruyla aynı cevap başına sınırlar
-    const BANKA_OKUMA_ACIKLAMASI = 'Liste, dosyadaki banka cevaplarının özgün başlığını ve tarihini gösterir. Cevap metni analiz edilmez; sonuç veya borçlu eşleşmesi yorumlanmaz. Cevabı aç seçilen evrakı ayrı bir önizlemede gösterir. Görüntülediğiniz kayıt bu Chrome profilinde şifreli saklanır.';
+    const BANKA_OKUMA_ACIKLAMASI = 'Liste, dosyadaki banka cevaplarının özgün başlığını ve tarihini gösterir. Cevap metni analiz edilmez; sonuç veya borçlu eşleşmesi yorumlanmaz. Cevabı aç seçilen evrakı ayrı bir önizlemede gösterir. Görüntülendi işaretleri bu dosya ekranı kapanınca sıfırlanır.';
     const bankaBelgeler = new Map();   // özgün asıl belge Blob'ları; dosya ekranı kapanınca bırakılır
     // bankaListe: önbelleğin ait olduğu evrak listesi. Ek anahtarı sıraya dayanır; liste değişince önbellek bırakılır.
     let bankaByte = 0, bankaTumAcik = false, bankaListe = null;
     let bankaKart = null, bankaOkuma = null, bankaHata = '';
     let bankReplyPopup = null, bankReplyPopupState = null;
-    const bankViewStorage = typeof chrome === 'undefined' ? null : chrome.storage?.local;
     const bankViewed = new Set();
     const bankViewKey = x => JSON.stringify([x.k, x.dosya]);
-    function bankViewStore(value) {
-      if (value == null) return { version: 1, items: [] };
-      if (value.version !== 1 || !Array.isArray(value.items) || value.items.length > 10000) throw new Error('Banka görüntüleme kaydı okunamadı.');
-      const valid = text => typeof text === 'string' && text.length > 0 && text.length <= 1200 && !['__proto__', 'constructor', 'prototype'].includes(text);
-      if (value.items.some(item => !item || !valid(item.fileKey) || !valid(item.evrakKey) || !Number.isSafeInteger(item.at) || item.at <= 0)) throw new Error('Banka görüntüleme kaydı okunamadı.');
-      return value;
-    }
-    async function bankViewRemember(x) {
-      const key = bankViewKey(x);
-      bankViewed.add(key); bankaCiz();
-      if (!bankViewStorage?.set) return;
-      const save = async () => {
-        const { uhdBankReplyViews } = await bankViewStorage.get('uhdBankReplyViews');
-        const store = bankViewStore(uhdBankReplyViews);
-        const items = store.items.filter(item => item.fileKey !== rec.key || item.evrakKey !== key);
-        items.push({ fileKey: rec.key, evrakKey: key, at: Date.now() });
-        items.sort((a, b) => b.at - a.at);
-        await bankViewStorage.set({ uhdBankReplyViews: { version: 1, items: items.slice(0, 10000) } });
-      };
-      try {
-        if (globalThis.navigator?.locks?.request) await navigator.locks.request('legaluga-bank-reply-viewed-v1', save);
-        else await save();
-      } catch { if (!closed && bankaKart) bankaKart.durum.textContent += ' Görüntüleme işareti bu oturumda tutuldu; kalıcı kayıt yazılamadı.'; }
-    }
-    function bankViewLoad() {
-      void bankViewStorage?.get?.('uhdBankReplyViews')?.then(({ uhdBankReplyViews }) => {
-        if (closed) return;
-        for (const item of bankViewStore(uhdBankReplyViews).items) if (item.fileKey === rec.key) bankViewed.add(item.evrakKey);
-        bankaCiz();
-      })?.catch(() => {});
+    function bankViewRemember(x) {
+      if (closed) return;
+      bankViewed.add(bankViewKey(x)); bankaCiz();
     }
     // Sorgu ve kanıt özeti şifreli kasada; kimlik, belge metni ve geçici UYAP kimlikleri yalnız bellekte.
     const bankChecks = globalThis.UHDBankChecks, bankAPI = globalThis.UHDBankAPI;

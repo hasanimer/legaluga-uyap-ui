@@ -1,42 +1,18 @@
-  const OTURUM_MS = 30 * 60000, YOKLAMA_MS = 5 * 60000, UYARI_MS = 5 * 60000;
-  const SESSION_GATE = 'uhdOturumKoruma', SESSION_LOCK = 'legaluga-oturum-koruma-v1';
-  const loadedAt = Date.now();
-  let keepAliveBusy = false, lastPingTry = 0, sessionSeen = false, sessionSince = 0;
-  let sessionRevision = 0, recoveryRequestAt = 0;
-  let sessionPingController = null, sessionDisposed = false, lastSessionActivity = 0;
-  let loggingOut = false, lostElsewhere = false, lossWarned = false, lossReason = '', lossGap = null, sharedRequest = 0, priorRequest = null;
-  let sessionNotice = null;   // { tag, text, kind, action }: ekranda tutulan oturum bildirimi
+  const YOKLAMA_MS = 2 * 60000;
+  let sessionPingController = null, sessionDisposed = false;
+  let sessionRevision = 0, sessionLoginState = null;
   const keepAliveOn = () => pagePrefs.oturumAcik !== false;
-  // UYAP girişte localStorage'a loginState=true yazar; oturum düşünce ve çıkışta false yapar. Yalnız bu bayrağa bakılır.
-  // Sözleşme onayı ekranı (/portal-sozlesme-onay) oturum içindedir.
-  const inSession = () => !/^\/(giris|cikis|edevletlogin)(\/|$)/.test(location.pathname) &&
-    localStorage.getItem('loginState') === 'true';
-  // Yoklamada oturum kaybını yalnız UYAP'ın kendi ölçütleriyle tanı; bakım sayfası ya da 403 "kayıp" sayılmaz.
-  const sessionGone = e => e.status === 401 ||
-    ['PRTL_GNL_100026', 'giris-sayfasi', 'baska-oturum'].includes(e.code);
-  function sessionContextAvailable() {
-    if (contextGone) return false;
-    try { if (chrome.runtime?.id) return true; } catch (_) {}
-    if (typeof stopInvalidatedContext === 'function') stopInvalidatedContext();
-    else { contextGone = true; sessionInvalidated(); }
-    return false;
+  // Kurulumun bağlantı önbelleği önceki girişteki yanıtı yeni oturuma taşıyamaz.
+  const inSession = () => {
+    const active = !/^\/(giris|cikis|edevletlogin)(\/|$)/.test(location.pathname) && localStorage.getItem('loginState') === 'true';
+    if (sessionLoginState !== null && active !== sessionLoginState) { sessionRevision++; abortSessionPing(); }
+    sessionLoginState = active;
+    return active;
+  };
+  const sessionGone = error => error.status === 401 || ['PRTL_GNL_100026', 'giris-sayfasi', 'baska-oturum'].includes(error.code);
+  function canProtect() {
+    if (!keepAliveOn() || !inSession() || contextGone || sessionDisposed || navigator.onLine === false) return false;
+    try { return !!chrome.runtime?.id; } catch { return false; }
   }
-  const canProtect = () => keepAliveOn() && inSession() && !loggingOut && !sessionDisposed && navigator.onLine !== false && sessionContextAvailable();
-  const recentlyActive = () => document.hidden !== true && lastSessionActivity > 0 && Date.now() - lastSessionActivity <= 60000;
   function abortSessionPing() { sessionPingController?.abort(); }
-  function sessionInvalidated() {
-    sessionRevision++;
-    abortSessionPing();
-    clearTitleCountdown();
-    if (keepAliveOn() && inSession() && !sessionDisposed) setNotice('yenile', 'Eklenti güncellendi; bu sekmede oturum koruması durdu. Kaydedilmemiş bilgileri bir yere kopyalayın, ardından UYAP sekmesini yenileyin.', 'err');
-  }
-  function sessionPreferencesChanged() {
-    if (keepAliveOn()) return;
-    sessionRevision++;
-    abortSessionPing();
-    clearTitleCountdown();
-    dropNotice();
-  }
-
-  // Sayfanın kendi istekleri de oturumu tazeler; izlenirler ki gereksiz istek gönderilmesin.
-  
+  function sessionPreferencesChanged() { if (!keepAliveOn()) abortSessionPing(); }
