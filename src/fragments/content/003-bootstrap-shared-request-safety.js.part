@@ -27,19 +27,7 @@
 
   // ---------------------------------------------------------------- UYAP istekleri
 
-  // UYAP'a giden son isteğin zamanı (sayfanın kendi istekleri ve eklentininkiler). UYAP oturumu, sunucuya 30 dakika
-  // istek gitmezse kapanır; bkz. "Oturumu açık tutma". Son iki dakikadaki istek aralıkları, oturum kapanınca nedenini
-  // (30 dakikalık kural mı, erken kapanış mı) ayırmak için tutulur.
-  let lastUyapRequest = Date.now();
-  let lastConfirmedUyapRequest = 0;
   let sessionRequestHooks = null;
-  const requestGaps = [];
-  function noteUyapRequest(at = Date.now()) {
-    lastConfirmedUyapRequest = Math.max(lastConfirmedUyapRequest, at);
-    requestGaps.push([at, at - lastUyapRequest]);
-    while (requestGaps.length && at - requestGaps[0][0] > 120000) requestGaps.shift();
-    lastUyapRequest = Math.max(lastUyapRequest, at);
-  }
   // Eklentinin kendi dosya listesi sorgusunun zamanı (güncelleme, numarayla arama). "Doğrulama hatası" günlüğünde yazılır.
   let eklentiSorguAt = 0;
 
@@ -80,7 +68,6 @@
       { status: res.status, retryAt: until, uyap: true });
   }
   async function uyapRequest(signal, request) {
-    const onSessionFailure = typeof sessionRequestHooks === 'undefined' ? null : sessionRequestHooks?.captureError();
     if (signal?.aborted) throw new DOMException('Durduruldu.', 'AbortError');
     // Kilitsiz çalışıp sekmeler arasında eşzamanlı istek üretmek yerine güvenli biçimde dur.
     if (!navigator.locks?.request) throw new Blocked('UYAP istek kuyruğu kullanılamıyor. Chrome’u güncelleyip sayfayı yenileyin.');
@@ -99,7 +86,6 @@
       if (signal?.aborted) throw new DOMException('Durduruldu.', 'AbortError');
       try { return await request(); }
       catch (err) {
-        onSessionFailure?.(err);
         if (err instanceof Blocked) state.blockedUntil = Math.max(state.blockedUntil, Number.isFinite(err.retryAt) ? err.retryAt : Date.now() + UYAP_PAUSE_MS);
         throw err;
       } finally {

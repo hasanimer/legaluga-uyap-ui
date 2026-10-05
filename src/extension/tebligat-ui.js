@@ -25,7 +25,7 @@
     const text = String(status || '').toLocaleLowerCase('tr-TR').replace(/ı/gu, 'i');
     return /teslim\s+edildi|tebli[gğ]\s+edildi/u.test(text) && !/g[öo]nderici|iade|mazbata/u.test(text);
   };
-  function mount(container, { query, readDocument, readSubjectDocument, readUetsDocument, getDocuments, loadDocuments, openDocument, signal }) {
+  function mount(container, { query, readDocument, readSubjectDocument, readUetsDocument, readPttDocument, openPttPage, getDocuments, loadDocuments, openDocument, signal }) {
     const model = globalThis.UHDTebligatBarcode;
     if (!model || typeof query !== 'function' || typeof getDocuments !== 'function')
       throw new Error('Tebligat sorgusu yüklenemedi. Eklentiyi ve UYAP sekmesini yenileyin.');
@@ -126,12 +126,12 @@
       'data-tebligat': 'open-uets' }, 'UETS sayfasını aç');
     // Aç, özgün evrakı (zarf ya da eşleşen mazbata) dosya ekranının önizlemesinde açar; UYAP isteği yalnız bu tıklamayla gider.
     // Sorgu veya liste işi sürerken açılmaz; açma bitmeden ikinci açma ya da sorgu başlamaz. Hata yalnız durum satırına yazılır.
-    const openRow = async (item, key) => {
+    const openRow = async (item, key, sourcePath) => {
       if (current || destroyed || opening || typeof openDocument !== 'function' || typeof key !== 'string' || !key ||
-        (key !== item.key && key !== stateFor(item).receiptKey) || !items.some(value => value.key === item.key && stamp(value) === stamp(item))) return;
+        (key !== item.key && key !== stateFor(item).receiptKey && key !== stateFor(item).fileKey) || !items.some(value => value.key === item.key && stamp(value) === stamp(item))) return;
       opening = true;
       try {
-        await openDocument(key);
+        await openDocument(key, sourcePath);
         if (!destroyed && openError && status.textContent === openError) message('');
         openError = '';
       } catch (error) {
@@ -139,11 +139,11 @@
       } finally { opening = false; }
     };
     // Sorgula gibi aria-disabled taşır: iş sürerken odak kaybolmaz; erişilebilir ad görünen yazıyla başlar.
-    const openButton = (item, kind, key, text, title) => {
-      const node = el('button', attr(kind === 'mazbata' ? 'open-receipt' : 'open-envelope', { type: 'button', class: 'chip te-row-open',
+    const openButton = (item, kind, key, text, title, sourcePath) => {
+      const node = el('button', attr(kind === 'mazbata' ? 'open-receipt' : kind === 'ptt-file' ? 'open-report' : 'open-envelope', { type: 'button', class: 'chip te-row-open',
         'aria-disabled': current ? 'true' : null, 'aria-label': `${text}: ${headingOf(item)}`, title,
         'data-tebligat-open': `${kind}|${item.key}`, 'data-focus': `ac-${kind}|${item.key}` }), text);
-      node.addEventListener('click', () => openRow(item, key));
+      node.addEventListener('click', () => openRow(item, key, sourcePath));
       return node;
     };
     // Belgeden tekil barkod veya hizmet çıkmadığında satırda gösterilir. Sorgu yalnız kullanıcının seçtiği hizmet
@@ -182,35 +182,43 @@
         role: 'status' }, value.message));
       if (value.barcode) nodes.push(el('p', { class: 'dp-muted' }, `Barkod: ${value.barcode} · ${PROVIDERS[value.provider] || 'Hizmet doğrulanmadı'}${value.inferred
         ? ' (zarfta hizmet yazmıyor; UETS izi yok)' : value.chosen ? ' (elle seçildi)' : ''}`));
-      if (value.result) {
-        const result = value.result, events = Array.isArray(result.events) ? result.events : [];
+      if (value.fileMessage) nodes.push(el('p', { class: 'te-msg warn' }, value.fileMessage));
+      if (value.fileResult && value.result) nodes.push(el('p', { class: 'te-source' }, 'İki ayrı kaynak bulundu: dosyadaki PTT sorgu PDF’si ve PTT sitesi.'));
+      const results = [value.fileResult, value.result].filter(Boolean);
+      for (const result of results) {
+        const provider = result.provider, events = Array.isArray(result.events) ? result.events : [];
+        if (provider === 'ptt-file' || value.fileResult && provider === 'ptt')
+          nodes.push(el('p', { class: 'te-source' }, provider === 'ptt-file' ? 'Dosyadaki PTT sorgu PDF’si' : 'PTT sitesi'));
         const facts = Array.isArray(result.details) ? result.details.filter(detail => detail && (detail.label || detail.value)) : [];
         nodes.push(el('div', { class: 'te-result' }, el('strong', null, String(result.status || 'Sorgu sonucu')),
-          value.sourceLabel ? el('span', { class: 'dp-muted' }, value.sourceLabel) : null));
+          (provider === 'ptt-file' ? value.fileLabel : value.sourceLabel) ? el('span', { class: 'dp-muted' }, provider === 'ptt-file' ? value.fileLabel : value.sourceLabel) : null));
         if (facts.length) nodes.push(el('dl', { class: 'te-facts' }, facts.map(detail => el('div', null,
           el('dt', null, String(detail.label || '')), el('dd', null, String(detail.value || ''))))));
-        nodes.push(events.length ? el('details', { class: 'te-events', open: value.provider === 'uets' || events.length <= 4 },
-          el('summary', null, `${value.provider === 'uets' ? 'Mazbata kayıtları' : 'Gönderi hareketleri'} (${events.length})`),
+        nodes.push(events.length ? el('details', { class: 'te-events', open: provider === 'uets' || events.length <= 4 },
+          el('summary', null, `${provider === 'uets' ? 'Mazbata kayıtları' : 'Gönderi hareketleri'} (${events.length})`),
           el('div', { class: 'te-tablewrap' }, el('table', { class: 'te-table' },
             el('thead', null, el('tr', null, ['Tarih', 'İşlem', 'Ayrıntı'].map(text => el('th', { scope: 'col' }, text)))),
             el('tbody', null, events.map(event => el('tr', null,
               el('td', { class: 'te-date' }, String(event.time || '—')),
               el('td', null, `${event.mazbata === true ? 'Mazbata · ' : ''}${String(event.status || '—')}`),
               el('td', null, [event.detail, event.location].filter(Boolean).map(String).join(' · ') || '—')))))))
-          : el('p', { class: 'dp-muted' }, value.provider === 'uets'
+          : el('p', { class: 'dp-muted' }, provider === 'uets'
             ? 'Mazbata eşleşti; olay tarihleri ayrı okunamadı. Belgeden kontrol edin.'
             : 'PTT bu sorgu için hareket kaydı döndürmedi.'));
-        nodes.push(el('p', { class: 'te-source' }, `${value.provider === 'uets' ? 'Kaynak: Bu dosyanın barkodla eşleşen e-tebliğ mazbatası.'
-          : 'Kaynak: Resmi PTT sorgu sonucu.'}${Number.isFinite(result.queriedAt) ? ` · Sorgulama: ${new Date(result.queriedAt).toLocaleString('tr-TR')}` : ''}`));
+        nodes.push(el('p', { class: 'te-source' }, `${provider === 'uets' ? 'Kaynak: Bu dosyanın barkodla eşleşen e-tebliğ mazbatası.'
+          : provider === 'ptt-file' ? 'Kaynak: Bu dosyanın barkodla eşleşen PTT sorgu PDF’si.' : 'Kaynak: Resmi PTT sorgu sonucu.'}${provider === 'ptt-file' && result.reportDate
+          ? ` · Rapor tarihi: ${result.reportDate}` : Number.isFinite(result.queriedAt) ? ` · Sorgulama: ${new Date(result.queriedAt).toLocaleString('tr-TR')}` : ''}`));
       }
       const actions = [];
       if (value.uetsFallback) actions.push(uetsLink());
       if (value.result?.provider === 'uets' && !value.error && value.receiptKey && typeof openDocument === 'function')
         actions.push(openButton(item, 'mazbata', value.receiptKey, 'Mazbatayı aç', 'Eşleşen e-tebliğ mazbatasını önizlemede açar'));
+      if (value.fileResult && value.fileKey && typeof openDocument === 'function')
+        actions.push(openButton(item, 'ptt-file', value.fileKey, 'PTT sorgu PDF’sini aç', 'Barkodla eşleşen PTT sorgu raporunu önizlemede açar', value.fileSourcePath));
       if (value.action) {
         const action = value.action;
         const button = el('button', attr('open-ptt', { type: 'button', class: 'chip', disabled: action.opening, 'data-focus': `ptt|${item.key}` }),
-          'Resmi PTT sayfasını aç');
+          'PTT sorgulamasını kontrol et');
         button.addEventListener('click', async () => {
           if (!validRow(action.task, item) || stateFor(item).action !== action || action.opening) return;
           action.opening = true; sync();
@@ -220,6 +228,18 @@
               value.message = error?.message || 'PTT sayfası açılamadı. Yeniden deneyin.'; value.error = true;
             }
           } finally { action.opening = false; if (validRow(action.task, item) && stateFor(item).action === action) sync(); }
+        });
+        actions.push(button);
+      }
+      if (!value.action && value.provider === 'ptt' && value.barcode && typeof openPttPage === 'function') {
+        const button = el('button', attr('open-ptt', { type: 'button', class: 'chip', disabled: !!current || opening,
+          'data-focus': `ptt|${item.key}` }), 'PTT sorgulamasını kontrol et');
+        button.addEventListener('click', async () => {
+          if (destroyed || current || opening || stateFor(item) !== value || !items.some(row => row.key === item.key && stamp(row) === stamp(item))) return;
+          opening = true; sync();
+          try { await openPttPage(value.barcode); }
+          catch (error) { if (!destroyed && stateFor(item) === value) { value.message = error?.message || 'PTT sayfası açılamadı.'; value.error = true; } }
+          finally { opening = false; if (!destroyed) sync(); }
         });
         actions.push(button);
       }
@@ -243,6 +263,7 @@
         return [delivered(String(value.result.status || '')) ? 'done' : 'info', sentence(value.result.status) || 'Sonuç alındı'];
       }
       if (value.manual) return ['attn', value.uetsFallback ? 'Mazbata bulunamadı' : value.code === 'TEBLIGAT_NOT_FOUND' ? 'PTT’de kayıt yok' : 'Seçim gerekiyor'];
+      if (value.fileResult) return ['info', value.error ? 'PDF sonucu var · PTT sorgulanamadı' : 'PDF sonucu var'];
       if (value.error) return ['err', value.code === 'TEBLIGAT_NOT_FOUND' ? 'PTT’de kayıt yok' : value.uetsFallback ? 'Mazbata bulunamadı' : 'Sorgulanamadı'];
       if (value.message) return ['info', 'Durduruldu'];
       return ['idle', 'Sorgulanmadı'];
@@ -262,7 +283,7 @@
         : [...item.label.split(' · ').slice(1), info.party ? title : '']).filter(Boolean);
       const subject = value.subject || (info.party ? '' : model.extractSubject(item.aciklama || '', { metadata: true }));
       const badges = [el('span', { class: `te-badge ${service}` }, BADGES[service] || 'Hizmet zarftan okunacak')];
-      if (info.state) badges.push(el('span', { class: 'te-badge uyap', title: 'UYAP’taki tebligat durumu' }, `UYAP: ${info.state}`));
+      if (info.state) badges.push(el('span', { class: 'te-badge uyap', title: 'UYAP’taki tebligat durumu' }, sentence(info.state)));
       const [kind, label] = stateOf(value);
       const goText = value.result || value.error || value.manual ? 'Yeniden sorgula' : 'Sorgula';
       const go = el('button', { type: 'button', class: 'chip te-row-go', 'data-tebligat-row-query': item.key, 'aria-disabled': current ? 'true' : null,
@@ -404,12 +425,35 @@
           value.result = { provider: 'uets', barcode: value.barcode, status: 'Mazbatadaki kayıtlar', events: records.events };
           value.sourceLabel = receipt.label || '';
         } else {
+          const noticeTitle = titleOf(item).toLocaleLowerCase('tr-TR').normalize('NFD').replace(/\p{M}/gu, '').replace(/ı/gu, 'i').replace(/[^a-z0-9]/gu, '');
+          const physicalClosed = /^kapaliteblig(?:at)?(?:evraki|belgesi)?$/u.test(noticeTitle);
+          if (physicalClosed && typeof readPttDocument === 'function') {
+            value.message = 'Dosyadaki PTT sorgu PDF’si aranıyor…'; sync();
+            try {
+              const file = await readPttDocument(task.ac.signal, { documentKey: item.key, barcode: value.barcode });
+              if (!validRow(task, item)) return true;
+              if (file) {
+                if (file.documentKey !== item.key || file.barcode !== value.barcode || file.result?.provider !== 'ptt-file' ||
+                    file.result.barcode !== value.barcode || typeof file.key !== 'string' || !file.key)
+                  throw Object.assign(new Error('PTT raporu seçili tebligatın barkoduyla eşleşmedi.'), { code: 'TEBLIGAT_SCOPE' });
+                const sourcePath = file.sourcePath === undefined ? [] : file.sourcePath;
+                if (!Array.isArray(sourcePath) || sourcePath.length > 2 || sourcePath.some(part => !Number.isSafeInteger(part?.indis) || part.indis < 0 || typeof part.ad !== 'string' || !part.ad || part.ad.length > 4096))
+                  throw Object.assign(new Error('PTT raporunun özgün PDF kaynağı doğrulanamadı.'), { code: 'TEBLIGAT_SCOPE' });
+                value.fileResult = file.result; value.fileKey = file.key; value.fileLabel = file.label || '';
+                value.fileSourcePath = sourcePath.map(part => ({ indis: part.indis, ad: part.ad }));
+              }
+            } catch (error) {
+              if (['Fatal', 'Blocked', 'AbortError', 'Stopped', 'Superseded'].includes(error?.name) ||
+                  [401, 403, 429, 503].includes(error?.status) || Number.isFinite(error?.retryAt)) throw error;
+              value.fileMessage = error?.message || 'Dosyadaki PTT sorgu PDF’si okunamadı.';
+            }
+          }
           value.message = value.inferred ? 'Zarfta hizmet adı yok; UETS izi bulunmadığı için PTT posta tebligatı olarak sorgulanıyor…'
             : 'PTT sorgusu arka planda yürütülüyor…'; sync();
           const result = await query('ptt', value.barcode, { signal: task.ac.signal, onStatus: (text, action) => {
             if (!validRow(task, item)) return;
             if (action?.needsVerification === true) value.verification = true;
-            value.message = action?.needsVerification === true ? `Doğrulama bekliyor. ${text || 'Resmi PTT sayfasını açıp güvenlik doğrulamasını tamamlayın.'}` : String(text || 'PTT sorgusu sürüyor…');
+            value.message = action?.needsVerification === true ? `Doğrulama bekliyor. ${text || 'PTT sorgulamasını kontrol et düğmesiyle resmî sayfayı açıp güvenlik doğrulamasını tamamlayın.'}` : String(text || 'PTT sorgusu sürüyor…');
             value.action = typeof action?.openPage === 'function' ? { task, openPage: action.openPage, opening: false } : null;
             sync();
           } });

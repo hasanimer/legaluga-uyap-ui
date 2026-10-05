@@ -1,1 +1,1 @@
-          if (!sent || !current()) return;
+      // Yanıt kullanılmaz veya saklanmaz.

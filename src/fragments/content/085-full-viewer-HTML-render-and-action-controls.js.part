@@ -36,7 +36,7 @@
               open.disabled = busy;
               open.addEventListener('click', () => bankaAc(x));
               return el('tr', { class: opened ? 'bank-reply-viewed' : '', 'data-bank-viewed': String(opened) }, el('td', null, tarihYaz(x.onay)),
-                el('td', null, x.tur), el('td', { class: 'bank-reply-mark' }, opened ? '✓ Görüntülendi' : 'Yeni'), el('td', null, open));
+                el('td', null, x.tur), el('td', { class: 'bank-reply-mark' }, opened ? '✓ Görüntülendi' : '-'), el('td', null, open));
             }))));
         group.open = bankaTumAcik || expanded.has(key);
         const toggle = el('button', { type: 'button', class: 'chip ek-banka-grup-ac', 'aria-label': name + ' cevaplarını ' + (group.open ? 'kapat' : 'aç'), 'aria-expanded': String(group.open) }, group.open ? 'Kapat' : 'Aç');

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Legaluga UYAP Asistanı",
   "short_name": "Legaluga UYAP",
-  "version": "1.19.35",
+  "version": "1.19.36",
   "description": "UYAP dosyalarınızı ad veya numarayla bulun, açın. Veriler cihazınızda; isteğe bağlı teknik hata raporları Sentry’ye gider.",
   "homepage_url": "https://legaluga.com",
   "icons": {
@@ -15,7 +15,9 @@
     "storage",
     "unlimitedStorage",
     "downloads",
-    "scripting"
+    "scripting",
+    "offscreen",
+    "declarativeNetRequestWithHostAccess"
   ],
   "host_permissions": [
     "https://avukat.uyap.gov.tr/*",
@@ -59,6 +61,7 @@
         "common.js",
         "banka-api.js",
         "tebligat-barkod.js",
+        "ptt-report.js",
         "tebligat-ptt.js",
         "tebligat-ui.js",
         "vendor/UTIF.js",
@@ -84,7 +87,19 @@
         "tebligat-ptt.js",
         "ptt-content.js"
       ],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://www.ptt.gov.tr/*"
+      ],
+      "js": [
+        "ptt-main.js"
+      ],
+      "world": "MAIN",
+      "all_frames": true,
+      "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [

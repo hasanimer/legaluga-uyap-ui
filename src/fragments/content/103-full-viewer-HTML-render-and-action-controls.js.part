@@ -101,7 +101,7 @@
       // Ekleri listelenen ana evrakta → ekleri açar, açıksa ilk eke iner; ← açık ekleri kapatır. Ekte ← ana evraka döner. Açıp kapamak
       // ve ana evraka dönmek belge istemez. Düz listede option aria-expanded taşıyamadığı için durum duyurulur.
       const y = folder ? null : gorunen[Number(active.dataset.i)];
-      const anaK = y && !y.ana && ekDom.get(paketAnahtar(y))?.dugme ? paketAnahtar(y) : null;
+      const anaK = y && !y.ana && ekDom.get(paketAnahtar(y))?.ana ? paketAnahtar(y) : null;
       const ustK = y?.ana && ekDom.get(paketAnahtar(y.ana))?.ana ? paketAnahtar(y.ana) : null;
       const duyur = on => { if (!kategorili) announce(on ? 'Ekler gösteriliyor.' : 'Ekler gizlendi.'); };
       const focus = node => {
@@ -133,6 +133,7 @@
         kategoriAc(key, !kategoriDom.get(key).box.open); evrakOdak = { kat: key }; odakSync();
       } else if (ev.key === 'Enter') { ev.preventDefault(); sec(Number(active.dataset.i), true); }
       else if (ev.key === ' ' && paketMod) { ev.preventDefault(); paketIsaretle(gorunen[Number(active.dataset.i)]); }
+      else if (ev.key === ' ' && anaK) { ev.preventDefault(); ekAc(anaK, !ekAcik(anaK)); duyur(ekAcik(anaK)); evrakOdak = { row: anaK }; odakSync(); }
     });
 
     // Önizlemedeki içerik: çubuk yerinde kalır (odaktaki düğme kaybolmasın); değişen içerikteki odak belgeye taşınır.

@@ -2153,7 +2153,7 @@
           check('durusmaBildirim', true, 'Yaklaşan duruşmaları hatırlat', 'Bugün ve yarınki duruşmaları bildirir. Duruşmalar ekranına her zaman ulaşabilirsiniz.', () => autoNotice()),
           check('cakismaBildirim', true, 'Duruşma çakışmalarını bildir', `Tarama varsayılan olarak kapalıdır; Duruşmalarım bölümünden açılır. Tarama açıkken aynı gün farklı mahkemelerdeki iki duruşma arasında aynı adliyede ${CAKISMA_DK.ayniAdliye} dakikadan, başka adliyede ${CAKISMA_DK.ayriAdliye / 60} saatten az varsa uyarır. Aynı mahkemedeki ve saati belli olmayan duruşmalar sayılmaz.`, () => autoNotice()),
           check('duyuruBildirim', true, 'Duyuruları bildirim olarak göster', 'Kesinti duyurusu UYAP Ana Sayfa’da, diğer duyurular sağ altta görünür. Metnin tamamını okuyabilirsiniz. × ile, sayfada boş bir yere tıklayarak ya da asistandan dosya açarak kapanır; başka bir ekrana geçince gizlenir.'),
-          check('oturumAcik', true, 'UYAP oturumunu koru', 'UYAP, sunucuya 30 dakika istek gitmezse oturumu kapatır; form doldururken yazdıklarınız istek sayılmaz. Çalışırken en çok 5 dakikada bir küçük bir okuma isteği gönderilir; açık sekmeler birlikte çalışır. Boşta veya çevrimdışı sekme yoklama yapmaz. Kapanmaya 5 dakika kala güncel geri sayım gösterilir. Bağlantı hatasında denemeler seyrekleşir; güvenlik engelinde otomatik koruma duraklar. Eklenti güncellenirse, formdaki bilgileri kopyalamanız ve sekmeyi yenilemeniz için uyarı gösterilir.')),
+          check('oturumAcik', true, 'UYAP oturumunu koru')),
 
         el('h3', null, 'Veriler'),
         el('div', { class: 'box' },

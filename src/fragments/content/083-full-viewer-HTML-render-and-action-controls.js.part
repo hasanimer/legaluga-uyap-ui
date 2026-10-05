@@ -49,7 +49,7 @@
         previous?.focus({ preventScroll: true });
       }
     }
-    async function bankReplyRender(state, target, sourceEntry) {
+    async function bankReplyRender(state, target, sourceEntry, sourcePath) {
       state.readAc?.abort(); state.render?.birak(); state.render = null;
       for (const url of state.urls) URL.revokeObjectURL(url);
       state.urls.clear();
@@ -69,8 +69,13 @@
           if (doc?.archiveSources?.length) {
             state.sourceDocs = [{ ad: 'Paketin tamamı', doc }, ...doc.archiveSources];
             state.sourceSelect.replaceChildren(...state.sourceDocs.map((entry, i) => el('option', { value: String(i) }, entry.ad)));
-            state.sourceSelect.hidden = false; state.sourceSelect.value = '1';
-            sourceEntry = state.sourceDocs[1]; doc = sourceEntry.doc;
+            const matches = sourcePath === undefined ? [1] : state.sourceDocs.map((entry, i) =>
+              i && JSON.stringify(entry.sourcePath) === JSON.stringify(sourcePath) ? i : -1).filter(i => i > 0);
+            if (matches.length !== 1) throw Object.assign(new Error('Eşleşen PDF’nin özgün kaynak yolu bu evrak paketinde bulunamadı. Raporu yeniden sorgulayın.'), { code: 'TEBLIGAT_SCOPE' });
+            state.sourceSelect.hidden = false; state.sourceSelect.value = String(matches[0]);
+            sourceEntry = state.sourceDocs[matches[0]]; doc = sourceEntry.doc;
+          } else if (sourcePath?.length) {
+            throw Object.assign(new Error('Eşleşen PDF’nin özgün kaynak yolu bu evrakta bulunamadı. Raporu yeniden sorgulayın.'), { code: 'TEBLIGAT_SCOPE' });
           }
         }
         if (!valid()) return;
@@ -112,14 +117,22 @@
         }
         if (valid() && !state.kind && ihbarCevabiMi((target.ana || target).tur)) await bankViewRemember(target.ana || target);
       } catch (error) {
-        if (valid()) state.content.replaceChildren(el('div', { class: 'msg dp-err', role: 'status' }, error?.name === 'AbortError' ? (state.kind ? 'Açma durduruldu.' : 'Cevap açma durduruldu.') : state.kind ? 'Evrak açılamadı. UYAP oturumunu kontrol edip yeniden açın.' : 'Cevap evrakı açılamadı. UYAP oturumunu kontrol edip Cevabı aç’a yeniden basın.'));
+        if (valid()) {
+          state.content.replaceChildren(el('div', { class: 'msg dp-err', role: 'status' }, error?.code === 'TEBLIGAT_SCOPE' ? error.message : error?.name === 'AbortError' ? (state.kind ? 'Açma durduruldu.' : 'Cevap açma durduruldu.') : state.kind ? 'Evrak açılamadı. UYAP oturumunu kontrol edip yeniden açın.' : 'Cevap evrakı açılamadı. UYAP oturumunu kontrol edip Cevabı aç’a yeniden basın.'));
+          if (error?.code === 'TEBLIGAT_SCOPE') throw error;
+        }
       } finally {
         if (valid()) { state.select.disabled = false; state.sourceSelect.disabled = false; }
       }
     }
     // kind 'tebligat': Tebligat sekmesindeki Aç aynı önizlemeyi kullanır; yazılar evrak geneline uyar, banka görüntüleme işareti yazılmaz.
-    async function bankaAc(x, { kind = '' } = {}) {
+    async function bankaAc(x, { kind = '', sourcePath } = {}) {
       if (closed || bankBusy()) return;
+      if (sourcePath !== undefined) {
+        if (!Array.isArray(sourcePath) || sourcePath.length > 2 || sourcePath.some(part => !Number.isSafeInteger(part?.indis) || part.indis < 0 || typeof part.ad !== 'string' || !part.ad || part.ad.length > 4096))
+          throw Object.assign(new Error('Eşleşen PDF’nin özgün kaynak yolu doğrulanamadı. Raporu yeniden sorgulayın.'), { code: 'TEBLIGAT_SCOPE' });
+        sourcePath = sourcePath.map(part => ({ indis: part.indis, ad: part.ad }));
+      }
       bankReplyClose(false);
       const previous = shadowRoot.activeElement || document.activeElement;
       const closeReply = el('button', { type: 'button', 'data-bank-preview': 'close', title: kind ? 'Önizlemeyi kapat (Esc)' : 'Cevap önizlemesini kapat (Esc)' }, 'Kapat');
@@ -142,6 +155,6 @@
       sourceSelect.addEventListener('change', () => { const entry = state.sourceDocs[Number(sourceSelect.value)]; if (entry && !sourceSelect.disabled) return bankReplyRender(state, state.target, entry); });
       viewer.append(dialog);
       dialog.showModal(); closeReply.focus();
-      await bankReplyRender(state, x);
+      await bankReplyRender(state, x, undefined, sourcePath);
     }
     

@@ -263,8 +263,8 @@
       "source": "content.js",
       "order": 3,
       "path": "src/fragments/content/003-bootstrap-shared-request-safety.js.part",
-      "sha256": "a0dc46d9f75fda59ad3f4767cd6070e76b2db3aabc170d98e748173d5c7c1c05",
-      "bytes": 7407,
+      "sha256": "e591fae6ad0d02c224aa4e3d13566fbfc06c3d54ff2f6ad0b181d10738698f64",
+      "bytes": 6511,
       "purpose": "bootstrap-shared-request-safety"
     },
     {
@@ -343,8 +343,8 @@
       "source": "content.js",
       "order": 23,
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "71814df42821f079cec1d27c3a89818f4e8d423c1ed961db9159a76377ca97b3",
-      "bytes": 88751,
+      "sha256": "e2555558cb2fe5abb0d61e85087dd8c25f3638ac7f5f3c45c0d743714c66aefb",
+      "bytes": 88658,
       "purpose": "page-shell-full-CSS-docking-and-panel-controls"
     },
     {
@@ -407,8 +407,8 @@
       "source": "content.js",
       "order": 39,
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "bca38b3281f5684eb73dd421ec57e2863a20e43605bba7c0795f83cd0e4ed78a",
-      "bytes": 43389,
+      "sha256": "c1f26ac059a00efd2494330f66b6b31ca33f418060f9e4fa39f4774d5a09b8a1",
+      "bytes": 43394,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -471,8 +471,8 @@
       "source": "content.js",
       "order": 51,
       "path": "src/fragments/content/051-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "08fc7960daa294e8ddd57326b5aed36b0340b4cfb2ea9e03e8ced3ea34244642",
-      "bytes": 4942,
+      "sha256": "b283695dbfb6282d0ad086e66df4f515a2c7968b3e10c41a48264d37e288ce4c",
+      "bytes": 3011,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -599,16 +599,16 @@
       "source": "content.js",
       "order": 83,
       "path": "src/fragments/content/083-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "e9dfb106dae3971fac9e1b41e292bbfe8be90d69482017aedaf7dbd368b3429f",
-      "bytes": 12301,
+      "sha256": "f8fdd085fd842df6c4098dc546b82b2f6a3704ac3d10f3bbef5481d68da04b50",
+      "bytes": 13620,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
       "source": "content.js",
       "order": 85,
       "path": "src/fragments/content/085-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "d585217e72fe30ece36e65999c1e2937d526d4029ff0a862b1e0aaaac0a9ee2a",
-      "bytes": 5041,
+      "sha256": "b4a06f54d4a2fa2ac632c92c6b02ccadd7505b0cb4b2783cac5c205551ddd4a5",
+      "bytes": 5037,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -663,8 +663,8 @@
       "source": "content.js",
       "order": 99,
       "path": "src/fragments/content/099-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "733d8c8ef1cc127c7981a144d442ed91fb72a66682d8cf6c6056193789c4d03c",
-      "bytes": 2403,
+      "sha256": "b6bf1134494676d90b618882ba5b63ef3dc7ef70680ed14c3f2824868ad3b50b",
+      "bytes": 2378,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -679,8 +679,8 @@
       "source": "content.js",
       "order": 103,
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "10c9d6719b6a5ea9418491ca65b7acf31c8f0ce4b17dd8af355651e0f3b7af35",
-      "bytes": 24407,
+      "sha256": "9cd2e8564bed95c777ae18797a63a8fd296876350574894f515ff5946b0ccb96",
+      "bytes": 24554,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -751,16 +751,16 @@
       "source": "content.js",
       "order": 119,
       "path": "src/fragments/content/119-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "2d599102c7b4509088a25fb8194b1f6f691c7a6c84ab33b2426a924144553a26",
-      "bytes": 9893,
+      "sha256": "603d88101bbe023f23bd220cea1eedc359c663bc7a1829852fcb49633cec7115",
+      "bytes": 10139,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
       "source": "content.js",
       "order": 121,
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",
-      "sha256": "7433fef9557994c328590fb49bf419bc33e00f474de36e298df8e747f3184192",
-      "bytes": 17841,
+      "sha256": "731ebbaf1d2fa25947925d015db5ddddd21e79ed5cc78549d209d6b0e6a05203",
+      "bytes": 17750,
       "purpose": "toast-announcement-and-runtime-action-UI"
     },
     {
@@ -783,40 +783,40 @@
       "source": "content.js",
       "order": 127,
       "path": "src/fragments/content/127-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "8ce633621e3f43d9c697508df0dc7e17035c1d0c56cb3f4dd34e12f9db9c7c37",
-      "bytes": 2598,
+      "sha256": "5fb9e1c0599ad2b09141eae3e5984d80a31c7062269c2f0b3363196026afaf47",
+      "bytes": 1117,
       "purpose": "session-protection-lifecycle-and-visible-safety-gates"
     },
     {
       "source": "content.js",
       "order": 129,
       "path": "src/fragments/content/129-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "7ec81a21726e37aee68d5230bb5248d565801cfce234433ec9e9b0fac78ca2a6",
-      "bytes": 8195,
+      "sha256": "c677661d2944019a9701b61c55a6d8859fe62fe5daa15fa88a9c430a63ab5e3d",
+      "bytes": 223,
       "purpose": "session-protection-lifecycle-and-visible-safety-gates"
     },
     {
       "source": "content.js",
       "order": 131,
       "path": "src/fragments/content/131-session-before-request-current-activity-guard.js.part",
-      "sha256": "7144727a62b07f9160129e74dc4bef8bae392dcba0821196676abb895ed74210",
-      "bytes": 347,
+      "sha256": "44dcce6bae7d392a6f2b9129af3608cd49a3e82f593daad2470361d12b69e50a",
+      "bytes": 112,
       "purpose": "session-before-request-current-activity-guard"
     },
     {
       "source": "content.js",
       "order": 133,
       "path": "src/fragments/content/133-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "bc7be52f378eff61bf55b143a520d452c43959b3c0da58e29a981d7c525f0865",
-      "bytes": 44,
+      "sha256": "3fb972502d1262fc8df633f585fec783058ddfdf4f246f03834a4ee30341b2b0",
+      "bytes": 45,
       "purpose": "session-protection-lifecycle-and-visible-safety-gates"
     },
     {
       "source": "content.js",
       "order": 135,
       "path": "src/fragments/content/135-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "40cad72cc02ee7a4fc7dfbfffc1b5a452e4597646bee954b8ad42fbe64776c13",
-      "bytes": 11432,
+      "sha256": "ad2e4665edd15697ce833595363eb113a251101c67fa4df34844819f0be4287c",
+      "bytes": 756,
       "purpose": "session-protection-lifecycle-and-visible-safety-gates"
     }
   ]

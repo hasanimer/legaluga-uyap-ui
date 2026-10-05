@@ -7,7 +7,7 @@ Eklenti, **Av. Hasan İmer Akın** tarafından meslektaşlarının ücretsiz kul
 
 Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lisansıyla** sunar. UYAP işlem motoru özel kaynaklıdır; tam eklenti mağazadan kurulur.
 
-> Bu rehber, **1.19.35** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+> Bu rehber, **1.19.36** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
 
 Görseller gerçek arayüz bileşenlerinden **örnek verilerle** hazırlanmıştır; gerçek kişi, dava veya UYAP oturumu içermez.
 
@@ -65,7 +65,7 @@ Masaüstünde **Özet** ana pencereye sığacak şekilde düzenlenir; uzun hesap
 
 ![Dosya özeti: hesap bilgisi, tahsilat ve taraflar aynı pencerede — örnek veriler](docs/images/05-dosya-ozeti.png)
 
-**Evrak** klasöründeki sayı ana evrak ve eklerin toplamıdır. Ekler ana evrakın klasöründe kalır ve kapalı başlar (kartın yeni evrakının ekleri açık gelir); ana evraktaki **▸ 19 ek** gibi düğme ekleri açıp kapatır, evrak açmaz ve UYAP'a istek göndermez. Arama, ana evrakıyla birlikte eşleşen ekleri açar; aramayı temizleyince önceki açık/kapalı durum geri gelir, aramada eki seçilen ana evrakın ekleri ise açık kalır. **← →** ile kapalı bir eke gelince ana evrakın ekleri açılır. **Son 20** düz listeyi, **Tümü** evrak türüne göre klasörleri açar. Klasörler evrak türüne göre alfabetik sıralanır; **Tarih ↓ / ↑** klasör içindeki ve düz listedeki tarih sırasını değiştirir, ekler ana evrakının altında kalır. Arama ve klasör/düz liste seçimiyle görünümü daraltabilirsiniz. Klavyede **↑ ↓** ile gezin, **→ / ←** ile klasörü ya da ana evrakın eklerini açıp kapatın (ekteyken **←** ana evraka döner), **Enter** ile belgeyi açın. Kapalı ekler, **Listelenenleri seç** ve toplu indirmedeki **Evrak sekmesinde listelenenler** kapsamında kalır.
+**Evrak** klasöründeki sayı ana evrak ve eklerin toplamıdır. Ekler ana evrakın klasöründe kalır ve kapalı başlar (kartın yeni evrakının ekleri açık gelir). Ekli ana evrak küçük **▸** işareti taşır; satıra tıklamak ekleri açıp kapatır ve UYAP'a istek göndermez. Ana evrakı **Evrakı aç** veya **Enter** ile görüntüleyin. Arama, ana evrakıyla birlikte eşleşen ekleri açar; aramayı temizleyince önceki açık/kapalı durum geri gelir, aramada eki seçilen ana evrakın ekleri ise açık kalır. **← →** ile kapalı bir eke gelince ana evrakın ekleri açılır. **Son 20** düz listeyi, **Tümü** evrak türüne göre klasörleri açar. Klasörler evrak türüne göre alfabetik sıralanır; **Tarih ↓ / ↑** klasör içindeki ve düz listedeki tarih sırasını değiştirir, ekler ana evrakının altında kalır. Klavyede **↑ ↓** ile gezin, **→ / ←** ile klasörü ya da ana evrakın eklerini açıp kapatın (ekteyken **←** ana evraka döner). **Boşluk** da ekli satırın eklerini açıp kapatır; paket modunda evrakı işaretler. Kapalı ekler, **Listelenenleri seç** ve toplu indirmedeki **Evrak sekmesinde listelenenler** kapsamında kalır.
 
 UDF ve TIFF önizlemesi belgeyi cihazınızda işler. UDF'nin sayfa düzeni resmî editörden farklı olabilir; e-imza doğrulaması yapılmaz. Okunamayan veya desteklenmeyen belgede özgün dosyayı indirip uygun araçla açın. Dosya ekranındaki özet ve önizlemeyi resmî belgeyi kontrol ederek kullanın.
 
@@ -83,7 +83,7 @@ UDF ve TIFF önizlemesi belgeyi cihazınızda işler. UDF'nin sayfa düzeni resm
 
 Şirket/kurum yanıtı seçili dosya ve borçluyla doğrulanır. Tek bir bilinen bankayla eşleşen unvan kısa adla gösterilir; tanınmayan veya çelişen unvan özgün hâliyle korunur. Kurum yanıtından EFT kodu üretilmez. Eksik ya da çelişen sonuç önceki kaydı değiştirmez; hesap ve IBAN alanları takip kaydına alınmaz.
 
-**Banka cevapları**, dosyadaki cevap sayısını, özgün evrak başlıklarını ve tarihlerini gösterir. Cevap metninden haciz, bakiye veya borçlu eşleşmesi yorumu çıkarılmaz. **Cevabı aç** özgün evrakı ayrı önizleme penceresinde gösterir; kapatınca aynı banka listesinde kalırsınız. Açtığınız cevaplar **Görüntülendi** işareti ve farklı renkle ayırt edilir. Listeyi yenilemek veya cevabı açmak ücretli banka sorgusu başlatmaz.
+**Banka cevapları**, dosyadaki cevap sayısını, özgün evrak başlıklarını ve tarihlerini gösterir. Cevap metninden haciz, bakiye veya borçlu eşleşmesi yorumu çıkarılmaz. **Cevabı aç** özgün evrakı ayrı önizleme penceresinde gösterir; kapatınca aynı banka listesinde kalırsınız. Açtığınız cevaplar **Görüntülendi** işareti ve farklı renkle ayırt edilir; açılmamış cevaplarda **-** görünür. Bu işaretler dosya ekranı açıkken korunur, dosya ekranı kapanınca temizlenir. Listeyi yenilemek veya cevabı açmak ücretli banka sorgusu başlatmaz.
 
 ![Banka cevapları: özgün başlıklar, tarihler ve görüntülenmiş cevaplar — örnek veriler](docs/images/08-banka-cevaplari.png)
 
@@ -95,7 +95,7 @@ Eklenti ücretsizdir. UYAP banka sorgusunun ücretleri, limitleri ve PTT/UETS hi
 
 ## Tebligat ve UETS
 
-Tebligat listesinde zarflar/tebligatlar seçilir; mazbatalar ayrı seçilecek gönderi olarak listelenmez. Her satırda muhatap, tarih ve evrak numarası, hizmet (**Posta · PTT** ya da **E-tebligat**), UYAP'ın kaydettiği durum (ör. **UYAP: Tebliğ Edildi**) ve sorgu durumu görünür. Tek tebligatı satırdaki **Sorgula** ile, birkaçını seçim kutuları ve **Seçilenleri sorgula** ile sırayla sorgularsınız. Liste birden fazla tür içeriyorsa **Tümü / Posta / E-tebligat** süzgeci çıkar.
+Tebligat listesinde zarflar/tebligatlar seçilir; mazbatalar ayrı seçilecek gönderi olarak listelenmez. Her satırda muhatap, tarih ve evrak numarası, hizmet (**Posta · PTT** ya da **E-tebligat**), UYAP'ın kaydettiği durum (ör. **Tebliğ edildi**) ve sorgu durumu görünür. Tek tebligatı satırdaki **Sorgula** ile, birkaçını seçim kutuları ve **Seçilenleri sorgula** ile sırayla sorgularsınız. Liste birden fazla tür içeriyorsa **Tümü / Posta / E-tebligat** süzgeci çıkar.
 
 Hizmet, UYAP açıklamasındaki tebligat türünden (**Normal Tebligat** posta, **Elektronik Tebligat** e-tebligat) ve zarfın kendisinden belirlenir. E-tebligat zarfı UETS adresini taşır; hizmet adı yazmayan, tek barkodlu posta zarfı PTT posta tebligatı sayılır ve satırda "zarfta hizmet yazmıyor" diye belirtilir. Barkod okunamazsa (taranmış zarf), zarfta birden fazla barkod varsa ya da hizmet çelişkiliyse sorgu kendiliğinden gönderilmez: satırda bulunan barkodlar ve bir barkod kutusu çıkar, **PTT'de sorgula** ya da **E-tebliğ mazbatasında ara** ile siz seçersiniz.
 
@@ -107,7 +107,9 @@ E-tebligatta önce aynı dosyadaki eşleşen e-tebliğ mazbatası aranır. Bulun
 
 ![E-tebligat: aynı dosyadaki eşleşen mazbatadan alınan olaylar ve belge kaynağı — örnek veriler](docs/images/09b-uets-olay-kayitlari.png)
 
-PTT sorgusu arka planda hazırlanır; tamamlanabilen sonuç tebligat sekmesinde gösterilir. Resmi hizmet giriş veya güvenlik doğrulaması isterse sayfayı ilgili düğmeyle açıp kendiniz tamamlayın. PTT'nin kendi güvenlik doğrulaması tamamlanmazsa satır hemen **Doğrulama bekliyor** olur: **Resmi PTT sayfasını aç** ile sayfaya geçip **SORGULA**'ya bir kez daha basın; sonuç yine tebligatın altına gelir. UETS'de **Gönderi Sorgulama** bölümüne geçmeniz gerekebilir. CAPTCHA ve oturum doğrulaması aşılmaz. PTT hareketleri zarfı ve iade-i taahhüt mazbatasını ayrı işaretlediğinde sonuçta **Zarfın teslimi** ile **Mazbata** ayrı satırlarda gösterilir; satırın durumu zarfın teslimini PTT'nin ifadesiyle gösterir (ör. muhtara teslim), birden çok teslim kaydında ilkini alır; teslimden sonra iade edilen zarf ya da yalnız mazbatanın teslimi olumlu sayılmaz. Mazbata hareketleri tabloda **Mazbata ·** ile başlar. Tebliğ tarihi veya süre hesaplanmaz.
+Kapalı posta tebligatında önce aynı dosyadaki **PTT Tebligat Sorgulaması** PDF'lerinde tam barkod eşleşmesi aranır. Bulunan raporun hareketleri ve rapor tarihi gösterilir; **PTT sorgu PDF’sini aç** eşleşen özgün PDF'yi açar. Ardından canlı PTT sorgusu yapılır. **Dosyadaki PTT sorgu PDF’si** ile **PTT sitesi** sonuçları ayrı gösterilir; canlı sorgu başarısız olsa da PDF sonucu korunur.
+
+PTT sorgusu sekme açmadan arka planda çalışır; sonuç tebligat sekmesinde gösterilir. **PTT sorgulamasını kontrol et**, barkodu doldurup sorgulamayı başlatan resmî PTT sekmesini açar. Güvenlik doğrulaması kullanıcı işlemi gerektiriyorsa bu sayfada tamamlayın. UETS'de **Gönderi Sorgulama** bölümüne geçmeniz gerekebilir. CAPTCHA ve oturum doğrulaması aşılmaz. PTT hareketleri zarfı ve iade-i taahhüt mazbatasını ayrı işaretlediğinde sonuçta **Zarfın teslimi** ile **Mazbata** ayrı satırlarda gösterilir; mazbata hareketleri tabloda **Mazbata ·** ile başlar. Tebliğ tarihi veya süre hesaplanmaz.
 
 Yalnız seçtiğiniz barkod ilgili resmî hizmete gönderilir. **Durdur** veya dosya ekranını kapatma bekleyen tebligat sorgusunu iptal eder. Barkod, belge metni ve tebligat sonuçları açık ekranın belleğinde tutulur; kalıcı kayıt ve hata raporuna eklenmez.
 
