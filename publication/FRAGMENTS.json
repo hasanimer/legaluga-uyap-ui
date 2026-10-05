@@ -343,8 +343,8 @@
       "source": "content.js",
       "order": 23,
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "e2555558cb2fe5abb0d61e85087dd8c25f3638ac7f5f3c45c0d743714c66aefb",
-      "bytes": 88658,
+      "sha256": "2c6cb0a948a2b457dcda1bae5bb0864b792e4ba345993f8b93c8366cbd16ef8c",
+      "bytes": 88767,
       "purpose": "page-shell-full-CSS-docking-and-panel-controls"
     },
     {
@@ -759,8 +759,8 @@
       "source": "content.js",
       "order": 121,
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",
-      "sha256": "731ebbaf1d2fa25947925d015db5ddddd21e79ed5cc78549d209d6b0e6a05203",
-      "bytes": 17750,
+      "sha256": "6b6dcfaeb957fc8aeb52bcac87abddf1da32df4e1b256ac784142182be7fcf63",
+      "bytes": 18175,
       "purpose": "toast-announcement-and-runtime-action-UI"
     },
     {
@@ -783,8 +783,8 @@
       "source": "content.js",
       "order": 127,
       "path": "src/fragments/content/127-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "5fb9e1c0599ad2b09141eae3e5984d80a31c7062269c2f0b3363196026afaf47",
-      "bytes": 1117,
+      "sha256": "fdacc0701921e81f973858b80b384d62ecbc2b7d68247cc894f6ff33d113b39f",
+      "bytes": 1562,
       "purpose": "session-protection-lifecycle-and-visible-safety-gates"
     },
     {

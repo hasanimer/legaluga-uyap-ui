@@ -228,7 +228,7 @@
 
   function renderAnnouncement() {
     if (!announcementEl) return;
-    announcementEl.hidden = !compactDuyuru || !lastAnnouncement || dismissedAnnouncement === lastAnnouncement.signature || announcementAway();
+    announcementEl.hidden = isLoginPage() || !compactDuyuru || !lastAnnouncement || dismissedAnnouncement === lastAnnouncement.signature || announcementAway();
     placeAnnouncement();
     if (announcementEl.hidden) return;
     announcementEl.classList.toggle('outage', lastAnnouncement.outage);
@@ -259,14 +259,24 @@
 
   function compactAnnouncement() {
     duyuruQueued = false;
-    if (!compactDuyuru || !announcementEl || contextGone) return;
+    if (contextGone) return;
+    const login = isLoginPage();
+    if (!login && (!compactDuyuru || !announcementEl)) return;
     const body = document.getElementById('duyuruicerik');
     const pop = body && body.closest('.dx-overlay-content');
     if (!pop || !visible(pop) || closingAnnouncements.has(pop)) return;
     const buttons = [...pop.querySelectorAll('.dx-button, button')].filter(b => !body.contains(b) && !b.disabled && b.getAttribute('aria-disabled') !== 'true');
     // Yalnız "Kapat": "Tekrar Gösterme" UYAP'ta duyuruyu oturum boyunca susturur, kullanıcı adına basılmaz.
-    const close = buttons.find(b => norm(b.textContent.trim()) === 'kapat');
+    const close = buttons.find(b => visible(b) && norm(b.textContent.trim()) === 'kapat');
     if (!close) return;
+    // Girişte duyuru, PIN formunu örtmeden kapanır; panel veya duyuru kartı açılmaz.
+    if (login) {
+      if (announcementEl) announcementEl.hidden = true;
+      closingAnnouncements.add(pop);
+      close.click();
+      setTimeout(() => closingAnnouncements.delete(pop), 250);
+      return;
+    }
     let snapshot;
     try { snapshot = announcementSnapshot(body, pop); } catch { return; }
     // Aktarılamayan (ör. iframe içeren) duyuru UYAP'ın kendi penceresinde okunabilir kalır.
@@ -282,7 +292,7 @@
   }
 
   function queueAnnouncement() {
-    if (compactDuyuru && !duyuruQueued && !contextGone) {
+    if ((compactDuyuru || isLoginPage()) && !duyuruQueued && !contextGone) {
       duyuruQueued = true;
       setTimeout(() => { compactAnnouncement(); announcementRouteChanged(); placeAnnouncement(); }, 50);
     }

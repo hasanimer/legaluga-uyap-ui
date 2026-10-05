@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "659b1ff2cded5d92d094b1b8149e153d6c4e58c42e25ef1fa695ad81be419fd0"
+      "sha256": "eacfe3881531cce309f0e70126536a5da7796911fde5abd00672345275c9bef6"
     },
     {
       "path": "SECURITY.md",
@@ -52,7 +52,7 @@
     },
     {
       "path": "docs/PRIVACY.md",
-      "sha256": "6c31cb91f113f22511c5752f085ac0eee5844db09a01105949c9cefe63586d78"
+      "sha256": "d466a5e3659763c61d0a635eabd0f183b84fe7561645c91b24009c8a910273e8"
     },
     {
       "path": "docs/images/01-uyap-baglantisi.png",
@@ -104,11 +104,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "06527caff431b20d3d13e72e50417e030d9e22bde9e1b7eaef8c6f614908f4d2"
+      "sha256": "36fef17bb45bd3a090e020e07c10325cf7011f265ec6f25375c6e49f598d3c79"
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "2c866d9d3a74bb84e0acf510eca9b6fe9839df5bbd87c855109829a5802ef3bf"
+      "sha256": "9520e61385365a499254c10e52cf803e58ac7e83d3ac9d67b98c69a67f095ac1"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -216,7 +216,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "aa90f8b24e1b996958fa535b6d14763e9d87954cb58011cc25cbb0ebe65511b6"
+      "sha256": "f8c614b635a8f7dea52ab0768cb2535243afd8a500f1267dc00f1a4019928f92"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -576,7 +576,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "e2555558cb2fe5abb0d61e85087dd8c25f3638ac7f5f3c45c0d743714c66aefb"
+      "sha256": "2c6cb0a948a2b457dcda1bae5bb0864b792e4ba345993f8b93c8366cbd16ef8c"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -784,7 +784,7 @@
     },
     {
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",
-      "sha256": "731ebbaf1d2fa25947925d015db5ddddd21e79ed5cc78549d209d6b0e6a05203"
+      "sha256": "6b6dcfaeb957fc8aeb52bcac87abddf1da32df4e1b256ac784142182be7fcf63"
     },
     {
       "path": "src/fragments/content/123-panel-command-action-boundary.js.part",
@@ -796,7 +796,7 @@
     },
     {
       "path": "src/fragments/content/127-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "5fb9e1c0599ad2b09141eae3e5984d80a31c7062269c2f0b3363196026afaf47"
+      "sha256": "fdacc0701921e81f973858b80b384d62ecbc2b7d68247cc894f6ff33d113b39f"
     },
     {
       "path": "src/fragments/content/129-session-protection-lifecycle-and-visible-safety-gates.js.part",

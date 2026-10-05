@@ -1075,7 +1075,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
       else applyPanelMode();
       syncPinAvailability();
       if (!pagePrefs.panelSabit) ssSet(SS_PANEL, null);
-      else if (ssGet(SS_PANEL) === '1' && panel.hidden && !openRun && document.querySelector('#root')) showPanel({ focus: false });
+      else restorePinnedPanel();
     }).catch(error => {
       if (invalidated(error)) stopInvalidatedContext();
       else { prefsLoaded = true; syncPinAvailability(); }
@@ -1126,6 +1126,11 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
       openRun.cancelled = true;
       openRun.ctl.abort();
     }, true);
+  }
+
+  function restorePinnedPanel() {
+    if (panelPinned() && ssGet(SS_PANEL) === '1' && panel?.hidden && !openRun && inSession() && document.querySelector('#root'))
+      showPanel({ focus: false });
   }
 
   function showPanel({ focus = true } = {}) {

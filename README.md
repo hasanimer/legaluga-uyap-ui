@@ -7,20 +7,22 @@ Eklenti, **Av. Hasan İmer Akın** tarafından meslektaşlarının ücretsiz kul
 
 Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lisansıyla** sunar. UYAP işlem motoru özel kaynaklıdır; tam eklenti mağazadan kurulur.
 
-> Bu rehber, **1.19.36** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+> Bu rehber, **1.19.37** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
 
 Görseller gerçek arayüz bileşenlerinden **örnek verilerle** hazırlanmıştır; gerçek kişi, dava veya UYAP oturumu içermez.
 
 ## İlk kurulum
 
 1. Mağaza bağlantısından **Chrome'a ekle**'ye basın; Legaluga simgesini araç çubuğuna sabitleyin.
-2. [UYAP Avukat Portalı](https://avukat.uyap.gov.tr/)'nı açın. İlk kurulum **Legaluga Asistan** panelinde otomatik görünür; ayrı kurulum sekmesi açılmaz.
+2. [UYAP Avukat Portalı](https://avukat.uyap.gov.tr/)'nı açıp giriş yapın. Giriş tamamlandığında ilk kurulum **Legaluga Asistan** panelinde otomatik görünür; ayrı kurulum sekmesi açılmaz.
 3. Önce bağlantı ve UYAP oturumu kontrol edilir. Giriş gerekiyorsa resmî UYAP ekranında tamamlayın; giriş bilgilerinizi Legaluga paneline yazmanız gerekmez.
 4. İlk bağlantıda hesabınızdaki ad **vekil adı** alanına alınır. Bu adın vekil olarak geçtiği taraflar **Müvekkil** olarak gösterilir. Gerektiğinde adı düzenleyin; birden fazla adı virgülle ayırabilirsiniz.
 5. Taranacak yargı türlerini, açık/kapalı dosya kapsamını ve gerekirse savcılık illerini seçin. Ardından görünüm, güncelleme ve bildirim ayarlarını belirleyin.
 6. **Kaydet ve taramayı başlat** ilk taramayı başlatır. **Kurulumu tamamla** yalnız seçimlerinizi kaydeder.
 
 Tarama başlatırken oturum hazır değilse istek bağlantıyı bekler. Giriş tamamlanıp bağlantı doğrulandığında seçtiğiniz kapsamda kendiliğinden başlar; yeniden **Güncelle**'ye basmanız gerekmez. Bekleyen isteği iptal edebilirsiniz. Bir bağlantı veya doğrulama hatası gösterilirse paneldeki yönlendirmeyi izleyin.
+
+E-imza ekranındaki duyuru kapanır. Panelin otomatik açılması ve bekleyen dosya işlemleri giriş tamamlanmasını bekler.
 
 Yeni kurulumda mahkeme yargı türleri ile açık ve kapalı dosyalar seçilidir. Savcılık taraması, otomatik güncelleme, yeni evrak takibi ve teknik hata raporları başlangıçta kapalıdır. Kurulumdaki kapsam, UYAP dosyalarını seçer; bilgisayarınızdaki klasörleri taramaz.
 
