@@ -19,8 +19,12 @@
     return value ? (value.charAt(0).toLocaleUpperCase('tr-TR') + value.slice(1).toLocaleLowerCase('tr-TR'))
       .replace(/(^|[^\p{L}])(ptt|uets|kep|uyap)(?=$|[^\p{L}])/giu, (_, before, word) => before + word.toLocaleUpperCase('tr-TR')) : '';
   };
-  // PTT'nin teslim ifadesi; göndericiye teslim (iade) olumlu sonuç sayılmaz.
-  const delivered = status => /teslim\s+edildi|tebli[gğ]\s+edildi/iu.test(status) && !/g[öo]nderici|iade/iu.test(status);
+  // PTT'nin teslim ifadesi; göndericiye teslim (iade) ve mazbatanın teslimi olumlu sonuç sayılmaz. PTT büyük harf
+  // yazar: Türkçe küçültme "İ"yi "i", ASCII "I"yı "ı" yapar; ikisi de "i"ye indirilip karşılaştırılır.
+  const delivered = status => {
+    const text = String(status || '').toLocaleLowerCase('tr-TR').replace(/ı/gu, 'i');
+    return /teslim\s+edildi|tebli[gğ]\s+edildi/u.test(text) && !/g[öo]nderici|iade|mazbata/u.test(text);
+  };
   function mount(container, { query, readDocument, readSubjectDocument, readUetsDocument, getDocuments, loadDocuments, signal }) {
     const model = globalThis.UHDTebligatBarcode;
     if (!model || typeof query !== 'function' || typeof getDocuments !== 'function')
@@ -166,7 +170,8 @@
           el('div', { class: 'te-tablewrap' }, el('table', { class: 'te-table' },
             el('thead', null, el('tr', null, ['Tarih', 'İşlem', 'Ayrıntı'].map(text => el('th', { scope: 'col' }, text)))),
             el('tbody', null, events.map(event => el('tr', null,
-              el('td', { class: 'te-date' }, String(event.time || '—')), el('td', null, String(event.status || '—')),
+              el('td', { class: 'te-date' }, String(event.time || '—')),
+              el('td', null, `${event.mazbata === true ? 'Mazbata · ' : ''}${String(event.status || '—')}`),
               el('td', null, [event.detail, event.location].filter(Boolean).map(String).join(' · ') || '—')))))))
           : el('p', { class: 'dp-muted' }, value.provider === 'uets'
             ? 'Mazbata eşleşti; olay tarihleri ayrı okunamadı. Belgeden kontrol edin.'
@@ -202,6 +207,13 @@
       if (value.pending) return value.verification ? ['attn', 'Doğrulama bekliyor'] : ['busy', 'Sorgulanıyor…'];
       if (value.result && !value.error) {
         if (value.result.provider === 'uets') return ['done', 'Mazbata bulundu'];
+        // PTT zarfın teslimini mazbatadan ayrı işaretlediyse o gösterilir; son durum mazbatanın dönüşünü anlatıyor olabilir.
+        // Kime teslim edildiği PTT'nin kendi ifadesiyle yazılır (ör. muhtara teslim).
+        const delivery = value.result.delivery;
+        if (delivery && typeof delivery === 'object')
+          return ['done', [sentence(delivery.status) || 'Teslim edildi', String(delivery.time || '')].filter(Boolean).join(' · ')];
+        // Ayrım yapılmış ama zarfın teslim kaydı yoksa son durum olumlu sayılmaz.
+        if (value.result.split) return ['info', sentence(value.result.status) || 'Sonuç alındı'];
         return [delivered(String(value.result.status || '')) ? 'done' : 'info', sentence(value.result.status) || 'Sonuç alındı'];
       }
       if (value.manual) return ['attn', value.uetsFallback ? 'Mazbata bulunamadı' : value.code === 'TEBLIGAT_NOT_FOUND' ? 'PTT’de kayıt yok' : 'Seçim gerekiyor'];

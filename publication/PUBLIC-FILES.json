@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "36c675e2f990b791b531dea776f0d3e29ed9ab3af8fce762a53931018bd30887"
+      "sha256": "12d1c8a6b39ab51f0ae53224e3a2488c40cb4e368e3ccd7dbb122bbba942f45a"
     },
     {
       "path": "SECURITY.md",
@@ -104,7 +104,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "eba15c572cd92f511c34490b6e180f04759c858f79bcf22008de0716e9137495"
+      "sha256": "e0b1e3b6262bc5da7ab8335cdcd040d5d8552343d167a70ef08cf09e6daeeb3e"
     },
     {
       "path": "publication/FRAGMENTS.json",
@@ -216,7 +216,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "c3064791d9a069ce00ad2f8cf449207e4b0348a604842d14f24adccd22de8b0d"
+      "sha256": "4f52e317a169c2fd92b0872a4b37f1f449b28a998379a84e5c0ba329038c7032"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -260,7 +260,7 @@
     },
     {
       "path": "src/extension/tebligat-ui.js",
-      "sha256": "8ac4a8d2359811daf4e9d12f2259db527edf00e70fbc616a438b27673274efc9"
+      "sha256": "882f62a12862c99da4357636a9d73c2c4d039f715a55c800ca3405bfb71f063e"
     },
     {
       "path": "src/extension/telemetry.js",
