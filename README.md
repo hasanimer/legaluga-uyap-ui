@@ -7,7 +7,7 @@ Eklenti, **Av. Hasan İmer Akın** tarafından meslektaşlarının ücretsiz kul
 
 Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lisansıyla** sunar. UYAP işlem motoru özel kaynaklıdır; tam eklenti mağazadan kurulur.
 
-> Bu rehber, **1.19.33** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+> Bu rehber, **1.19.34** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
 
 Görseller gerçek arayüz bileşenlerinden **örnek verilerle** hazırlanmıştır; gerçek kişi, dava veya UYAP oturumu içermez.
 
@@ -107,7 +107,7 @@ E-tebligatta önce aynı dosyadaki eşleşen e-tebliğ mazbatası aranır. Bulun
 
 ![E-tebligat: aynı dosyadaki eşleşen mazbatadan alınan olaylar ve belge kaynağı — örnek veriler](docs/images/09b-uets-olay-kayitlari.png)
 
-PTT sorgusu arka planda hazırlanır; tamamlanabilen sonuç tebligat sekmesinde gösterilir. Resmi hizmet giriş veya güvenlik doğrulaması isterse sayfayı ilgili düğmeyle açıp kendiniz tamamlayın. PTT'nin kendi güvenlik doğrulaması tamamlanmazsa satır hemen **Doğrulama bekliyor** olur: **Resmi PTT sayfasını aç** ile sayfaya geçip **SORGULA**'ya bir kez daha basın; sonuç yine tebligatın altına gelir. UETS'de **Gönderi Sorgulama** bölümüne geçmeniz gerekebilir. CAPTCHA ve oturum doğrulaması aşılmaz.
+PTT sorgusu arka planda hazırlanır; tamamlanabilen sonuç tebligat sekmesinde gösterilir. Resmi hizmet giriş veya güvenlik doğrulaması isterse sayfayı ilgili düğmeyle açıp kendiniz tamamlayın. PTT'nin kendi güvenlik doğrulaması tamamlanmazsa satır hemen **Doğrulama bekliyor** olur: **Resmi PTT sayfasını aç** ile sayfaya geçip **SORGULA**'ya bir kez daha basın; sonuç yine tebligatın altına gelir. UETS'de **Gönderi Sorgulama** bölümüne geçmeniz gerekebilir. CAPTCHA ve oturum doğrulaması aşılmaz. PTT hareketleri zarfı ve iade-i taahhüt mazbatasını ayrı işaretlediğinde sonuçta **Zarfın teslimi** ile **Mazbata** ayrı satırlarda gösterilir; satırın durumu zarfın teslimini PTT'nin ifadesiyle gösterir (ör. muhtara teslim), birden çok teslim kaydında ilkini alır; teslimden sonra iade edilen zarf ya da yalnız mazbatanın teslimi olumlu sayılmaz. Mazbata hareketleri tabloda **Mazbata ·** ile başlar. Tebliğ tarihi veya süre hesaplanmaz.
 
 Yalnız seçtiğiniz barkod ilgili resmî hizmete gönderilir. **Durdur** veya dosya ekranını kapatma bekleyen tebligat sorgusunu iptal eder. Barkod, belge metni ve tebligat sonuçları açık ekranın belleğinde tutulur; kalıcı kayıt ve hata raporuna eklenmez.
 
