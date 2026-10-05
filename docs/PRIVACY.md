@@ -1,6 +1,6 @@
 # Legaluga UYAP Asistanı gizlilik politikası
 
-Son güncelleme: **5 Ekim 2026** · **1.19.35** sürümü için hazırlanmıştır. Özellikler kurulu sürüme göre farklı olabilir.
+Son güncelleme: **5 Ekim 2026** · **1.19.36** sürümü için hazırlanmıştır. Özellikler kurulu sürüme göre farklı olabilir.
 
 Legaluga UYAP Asistanı, Av. Hasan İmer Akın tarafından meslektaşlarının ücretsiz kullanımı için geliştirilmiştir. UYAP'ta erişim yetkiniz bulunan dosyaları bulma, görüntüleme ve evraklarını yönetme amacıyla çalışır. T.C. Adalet Bakanlığı, UYAP veya PTT ile resmi bir bağlantısı yoktur. İletişim: **info@legaluga.com**.
 
@@ -14,7 +14,7 @@ Belge baytları ve okunmuş metin, açık görünüm veya başlatılmış işlem
 
 UYAP ve e-imza parolanız istenmez. Resmi UYAP istekleri, tarayıcının mevcut oturumunu kullanır; oturum çerezleri ve giriş belirteçleri dosya indeksine veya teknik rapora kopyalanmaz. Şifreli yedek oluştururken girdiğiniz **yedek parolası yalnız cihazınızda anahtar türetmek için kullanılır**; saklanmaz veya gönderilmez.
 
-Oturum koruma açıkken izinli UYAP sayfasında son gerçek kullanıcı etkileşiminin zamanı geçici olarak izlenir. Yazdığınız tuşlar, fare konumları, mesajlar veya bir etkinlik geçmişi kaydedilmez. Genel web geçmişiniz okunmaz. Geçici iş koordinasyonu Chrome oturum alanını ve ilgili UYAP sekmesinin oturum depolamasını kullanabilir; bunlar belge içeriklerini veya giriş bilgilerini taşımaz.
+Genel web geçmişiniz okunmaz. Geçici iş koordinasyonu Chrome oturum alanını ve ilgili UYAP sekmesinin oturum depolamasını kullanabilir; bunlar belge içeriklerini veya giriş bilgilerini taşımaz.
 
 ## Ne zaman resmi hizmetlere bağlanılır?
 
@@ -22,9 +22,9 @@ Oturum koruma açıkken izinli UYAP sayfasında son gerçek kullanıcı etkileş
 - **Dosya ve evrak ekranı:** Açtığınız ekran için gerekli dosya bilgisi ve evrak listesi alınır. Bir evrakı açmak veya indirmek o belgeyi UYAP'tan getirir. Yerel arama için yeni UYAP isteği gerekmez.
 - **Safahat:** Güncel liste yalnız ilgili düğmeye basıldığında alınır. Son başarılı kayıt, alınma tarihiyle şifreli saklanır. Aynı dosyada başarılı çekimler arasında en az 60 dakika beklenir; hata önceki kaydı silmez.
 - **Banka:** Sorguyu kullanıcı başlatır. UYAP uygunluk ve ücret yanıtları kontrol edilir; ücret varsa ayrıca onay istenir. Dosya ve borçlu kapsamı doğrulanmadan sorgu sonucu kaydedilmez. Cevap başlıklarını listelemek veya bir cevabı açmak yeni ücretli banka sorgusu başlatmaz. Cevap metninden hukuki sonuç çıkarılmaz. Talep kontrolü ayrı kullanıcı işlemidir; talep göndermez ve tebliğ kanıtı oluşturmaz.
-- **Tebligat:** Liste, dosyanın evrak kayıtlarını kullanır. Seçili tebligatı sorgulamak zarfı okuyup hizmet ve barkodu belirler; e-tebligatta önce aynı dosyadaki eşleşen mazbata aranır. Mazbata ve olaylar cihazda okunur. **Aç** ve **Mazbatayı aç**, özgün evrakı yalnız tıklandığında UYAP'tan alıp dosya ekranında önizler; görüntüleme kalıcı kayda yazılmaz. Resmi canlı sorgu istendiğinde seçilen barkod `www.ptt.gov.tr` veya `ptt.etebligat.gov.tr` hizmetine iletilir. Hizmet giriş veya CAPTCHA isterse kullanıcı tamamlar; kontroller aşılmaz. Mazbata bulunmaması kendiliğinden UETS sekmesi açmaz. Barkod ve olay sonuçları açık sorgunun belleğindedir; kalıcı kayda veya hata raporuna eklenmez. Hukuki süre hesabı yapılmaz.
+- **Tebligat:** Liste, dosyanın evrak kayıtlarını kullanır. Seçili tebligatı sorgulamak zarfı okuyup hizmet ve barkodu belirler. Kapalı fiziki tebligatta önce aynı dosyadaki barkodu eşleşen PTT sorgu PDF'i, e-tebligatta eşleşen mazbata aranır; belge ve olaylar cihazda okunur. Fiziki tebligat sorgusunda seçilen barkod resmi PTT hizmetine iletilir; bulunan PDF ve canlı sonuç ayrı kaynaklar olarak gösterilir. **Aç**, **Mazbatayı aç** ve **PTT sorgu PDF'sini aç**, özgün evrakı yalnız tıklandığında UYAP'tan alıp dosya ekranında önizler; görüntüleme kalıcı kayda yazılmaz. Kullanıcı resmi canlı sorguyu kontrol etmek istediğinde seçilen barkod `www.ptt.gov.tr` veya `ptt.etebligat.gov.tr` hizmetine iletilebilir. Hizmet giriş veya CAPTCHA isterse kullanıcı tamamlar; kontroller aşılmaz. Mazbata bulunmaması kendiliğinden UETS sekmesi açmaz. Barkod, okunmuş belge metni ve olay sonuçları açık sorgunun belleğindedir; kalıcı kayda veya hata raporuna eklenmez. Hukuki süre hesabı yapılmaz.
 - **Toplu indirme:** Kullanıcının seçtiği evraklar sıralı alınır ve ZIP parçaları olarak kaydedilir. Dosya penceresini kapatmak aktif parçalı işi durdurmak zorunda değildir. Sayfa yenilenirken kaydedilmiş parça ilerlemesi korunur; devam için geçerli UYAP oturumu gerekir. Kaydedilmemiş parça yeniden alınabilir. Sekme/tarayıcı tamamen kapanınca devam davranışı mevcut kaydedilmiş plan ve kullanıcı işlemiyle sınırlıdır.
-- **Oturum koruma:** Ayar açıkken UYAP'ta yakın zamanda gerçek etkileşim varsa en çok beş dakikada bir okuma isteği yapılır. Oturum sona ermişse yeniden giriş gerekir; kapanmış oturum otomatik açılmaz.
+- **Oturum koruma:** Ayarlardan açılıp kapatılır.
 
 UYAP, PTT ve UETS kendi hizmet ve gizlilik koşulları kapsamında istekleri işler; ağ adresinizi görürler. Başlamış bir isteği sonradan durdurmak alıcıya ulaşmış bilgiyi geri alamaz. Dosya ve belge bilgileri geliştiricinin sunucusuna gönderilmez.
 
@@ -52,11 +52,13 @@ Raporlamayı kapatmak sonraki gönderimleri durdurur; başlamış isteği veya �
 | `unlimitedStorage` | Büyük dosya indeksi ve şifreli indirme planlarında depolama kotasına takılmama. |
 | `downloads` | Kullanıcının başlattığı ZIP parçalarını kaydetme ve yalnız ilgili işe ait tamamlanmayı doğrulama; genel indirme geçmişini analiz etmez. |
 | `scripting` | İzinli UYAP/PTT/UETS sekmelerinde paketlenmiş içerik betiklerini çalıştırma. |
+| `offscreen` | Kullanıcının başlattığı resmi PTT sorgusunu geçici görünmeyen belgede yürütme. |
+| `declarativeNetRequestWithHostAccess` | Yalnız geçici PTT sorgu çerçevesinin yüklenmesi için gerekli yanıt başlıklarını sorgu boyunca düzenleme. |
 | `avukat.uyap.gov.tr` | Yetkili resmi oturumla dosya ve evrak işlemleri. |
 | `www.ptt.gov.tr`, `ptt.etebligat.gov.tr` | Kullanıcının seçtiği tebligatın resmi sorgusu. |
 | İzinli Sentry adresi | Yalnız kullanıcı hata raporlamasını açarsa teknik rapor gönderme. |
 
-Çalışan JavaScript paket içindedir; uzaktan çalıştırılacak kod indirilmez. Diğer sitelerin içeriğine genel erişim yoktur.
+Uzantının JavaScript kodu paket içindedir; uzantıda çalıştırılmak üzere uzak kod indirilmez. Gömülen resmi PTT sayfası kendi site kodunu çalıştırır. Diğer sitelerin içeriğine genel erişim yoktur.
 
 ## Saklama, silme ve sınırlı kullanım
 
