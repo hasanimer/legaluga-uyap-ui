@@ -828,7 +828,7 @@
     },
     {
       "path": "tests/onboarding-ui.test.js",
-      "sha256": "2f3c990dd1643cf5c106f551b2019c6049a3e406c3e1fea3d811227b96269c04"
+      "sha256": "d91ccd61da1da5a52a786d5c5644d9999c66e15836145a13a4c6f616f8e6cd01"
     },
     {
       "path": "tests/publication-boundary.test.js",
