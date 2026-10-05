@@ -87,14 +87,23 @@
       if (ev.key === 'ArrowDown' && gorunen.length) { ev.preventDefault(); ogeler.focus({ preventScroll: true }); odakSync(true); }
     });
     kategoriGorunum.addEventListener('click', () => { kategorili = !kategorili; evrakOdak = null; listeyiCiz(); });
-    tarihSirasi.addEventListener('click', () => { if (kategorili) return; tarihArtan = !tarihArtan; listeyiCiz(); });
+    tarihSirasi.addEventListener('click', () => { tarihArtan = !tarihArtan; listeyiCiz(); });
     ogeler.addEventListener('keydown', ev => {
       if (!gorunen.length || ev.altKey || ev.ctrlKey || ev.metaKey || ev.target.tagName === 'INPUT') return;
-      const entries = kategorili ? [...kategoriDom.values()].flatMap(kat => [kat.head, ...(kat.box.open ? kat.rows : [])]) : [...ogeler.querySelectorAll('.ek-oge')];
+      // Kapalı ekler DOM'da gizli durur; gezinme onları atlar.
+      const gorunur = node => !node.hidden;
+      const entries = kategorili ? [...kategoriDom.values()].flatMap(kat => [kat.head, ...(kat.box.open ? kat.rows.filter(gorunur) : [])])
+        : [...ogeler.querySelectorAll('.ek-oge')].filter(gorunur);
       const id = ogeler.getAttribute('aria-activedescendant');
       const active = entries.find(node => node === ev.target) || entries.find(node => node.id === id) || entries[0];
       const i = entries.indexOf(active);
       const folder = active.classList.contains('ek-kategori-baslik');
+      // Ekleri listelenen ana evrakta → ekleri açar, açıksa ilk eke iner; ← açık ekleri kapatır. Ekte ← ana evraka döner. Açıp kapamak
+      // ve ana evraka dönmek belge istemez. Düz listede option aria-expanded taşıyamadığı için durum duyurulur.
+      const y = folder ? null : gorunen[Number(active.dataset.i)];
+      const anaK = y && !y.ana && ekDom.get(paketAnahtar(y))?.dugme ? paketAnahtar(y) : null;
+      const ustK = y?.ana && ekDom.get(paketAnahtar(y.ana))?.ana ? paketAnahtar(y.ana) : null;
+      const duyur = on => { if (!kategorili) announce(on ? 'Ekler gösteriliyor.' : 'Ekler gizlendi.'); };
       const focus = node => {
         if (!node) return;
         if (node.classList.contains('ek-oge')) sec(Number(node.dataset.i), false, true);
@@ -103,6 +112,12 @@
       const adim = { ArrowDown: 1, ArrowUp: -1, PageDown: 10, PageUp: -10 }[ev.key];
       if (adim) { ev.preventDefault(); focus(entries[Math.max(0, Math.min(entries.length - 1, i + adim))]); }
       else if (ev.key === 'Home' || ev.key === 'End') { ev.preventDefault(); focus(ev.key === 'Home' ? entries[0] : entries[entries.length - 1]); }
+      else if (ev.key === 'ArrowRight' && anaK) {
+        ev.preventDefault();
+        if (ekAcik(anaK)) focus(ekDom.get(anaK).rows.find(gorunur));
+        else { ekAc(anaK, true); duyur(true); evrakOdak = { row: anaK }; odakSync(); }
+      } else if (ev.key === 'ArrowLeft' && anaK && ekAcik(anaK)) { ev.preventDefault(); ekAc(anaK, false); duyur(false); evrakOdak = { row: anaK }; odakSync(true); }
+      else if (ev.key === 'ArrowLeft' && ustK) { ev.preventDefault(); evrakOdak = { row: ustK }; odakSync(true); }
       else if (kategorili && ev.key === 'ArrowRight' && folder) {
         ev.preventDefault();
         const kat = kategoriDom.get(active.dataset.kategori);

@@ -45,7 +45,7 @@
       state.dialog.remove();
       if (!closed) { bankaCiz(); zipSync(); }
       if (restore) {
-        const previous = state.previous?.isConnected ? state.previous : Array.from(shadowRoot.querySelectorAll('button')).find(button => state.previousKey && [button.getAttribute('data-bank-reply'), button.getAttribute('data-bank-request')].includes(state.previousKey));
+        const previous = state.previous?.isConnected ? state.previous : Array.from(shadowRoot.querySelectorAll('button')).find(button => state.previousKey && [button.getAttribute('data-bank-reply'), button.getAttribute('data-bank-request'), button.getAttribute('data-tebligat-open')].includes(state.previousKey));
         previous?.focus({ preventScroll: true });
       }
     }
@@ -55,7 +55,7 @@
       state.urls.clear();
       const ac = state.readAc = new AbortController();
       const valid = () => !closed && bankReplyPopupState === state && state.readAc === ac && !state.ac.signal.aborted && !ac.signal.aborted;
-      state.content.replaceChildren(el('div', { class: 'msg', role: 'status' }, 'Özgün cevap evrakı alınıyor…'));
+      state.content.replaceChildren(el('div', { class: 'msg', role: 'status' }, state.kind ? 'Özgün evrak alınıyor…' : 'Özgün cevap evrakı alınıyor…'));
       state.download.hidden = true;
       state.select.disabled = true; state.sourceSelect.disabled = true;
       try {
@@ -79,7 +79,7 @@
         const saveUrl = URL.createObjectURL(new Blob([doc.blob], { type: 'application/octet-stream' }));
         state.urls.add(saveUrl);
         state.download.href = saveUrl;
-        state.download.download = sourceEntry?.doc.filename || (zipTools?.documentName ? zipTools.documentName(rec, target, ext) : `Banka-cevabi-${target.no || 'evrak'}.${ext}`);
+        state.download.download = sourceEntry?.doc.filename || (zipTools?.documentName ? zipTools.documentName(rec, target, ext) : `${state.kind ? 'Tebligat' : 'Banka-cevabi'}-${target.no || 'evrak'}.${ext}`);
         state.download.hidden = false;
         state.title.textContent = label;
         if (ext === 'html') {
@@ -99,7 +99,7 @@
         } else {
           const tur = okuyucuTuru(doc, ext), reader = tur === 'udf' ? udf : tur === 'tiff' ? tiff : null;
           if (reader) {
-            const container = el('div', { class: 'docview', tabindex: '0', 'aria-label': 'Banka cevabı evrak içeriği' });
+            const container = el('div', { class: 'docview', tabindex: '0', 'aria-label': state.kind ? 'Tebligat evrakı içeriği' : 'Banka cevabı evrak içeriği' });
             state.content.replaceChildren(container);
             const model = tur === 'udf' ? await udf.oku(doc.blob, { signal: ac.signal }) : await tiff.ac(doc.blob, { signal: ac.signal });
             if (!valid()) return;
@@ -110,29 +110,30 @@
             rendered.olcekle(Math.max(.25, Math.min(1, (container.clientWidth - 32) / rendered.dogalEn)));
           } else state.content.replaceChildren(el('div', { class: 'msg' }, `Bu özgün ${ext.toUpperCase()} evrak bu önizlemede gösterilemiyor. Dosyayı indirin veya aşağıdan varsa ilgili eki seçin.`));
         }
-        if (valid() && ihbarCevabiMi((target.ana || target).tur)) await bankViewRemember(target.ana || target);
+        if (valid() && !state.kind && ihbarCevabiMi((target.ana || target).tur)) await bankViewRemember(target.ana || target);
       } catch (error) {
-        if (valid()) state.content.replaceChildren(el('div', { class: 'msg dp-err', role: 'status' }, error?.name === 'AbortError' ? 'Cevap açma durduruldu.' : 'Cevap evrakı açılamadı. UYAP oturumunu kontrol edip Cevabı aç’a yeniden basın.'));
+        if (valid()) state.content.replaceChildren(el('div', { class: 'msg dp-err', role: 'status' }, error?.name === 'AbortError' ? (state.kind ? 'Açma durduruldu.' : 'Cevap açma durduruldu.') : state.kind ? 'Evrak açılamadı. UYAP oturumunu kontrol edip yeniden açın.' : 'Cevap evrakı açılamadı. UYAP oturumunu kontrol edip Cevabı aç’a yeniden basın.'));
       } finally {
         if (valid()) { state.select.disabled = false; state.sourceSelect.disabled = false; }
       }
     }
-    async function bankaAc(x) {
+    // kind 'tebligat': Tebligat sekmesindeki Aç aynı önizlemeyi kullanır; yazılar evrak geneline uyar, banka görüntüleme işareti yazılmaz.
+    async function bankaAc(x, { kind = '' } = {}) {
       if (closed || bankBusy()) return;
       bankReplyClose(false);
       const previous = shadowRoot.activeElement || document.activeElement;
-      const closeReply = el('button', { type: 'button', 'data-bank-preview': 'close', title: 'Cevap önizlemesini kapat (Esc)' }, 'Kapat');
+      const closeReply = el('button', { type: 'button', 'data-bank-preview': 'close', title: kind ? 'Önizlemeyi kapat (Esc)' : 'Cevap önizlemesini kapat (Esc)' }, 'Kapat');
       const title = el('b', { 'data-bank-preview': 'title' }, `${x.tur} · ${tarihYaz(x.onay)}`);
       const download = el('a', { class: 'chip', hidden: true, 'data-bank-preview': 'download' }, 'Özgün evrakı indir');
       const content = el('div', { class: 'bank-reply-content', 'data-bank-preview': 'content' });
       const related = [x, ...tum.filter(item => item.ana && item.ana.k === x.k && item.ana.dosya === x.dosya)];
-      const select = el('select', { 'data-bank-preview': 'document', 'aria-label': 'Cevap evrakı veya eki' }, related.map((item, i) => el('option', { value: String(i) }, `${i ? 'Ek: ' : ''}${item.tur}`)));
+      const select = el('select', { 'data-bank-preview': 'document', 'aria-label': kind ? 'Evrak veya eki' : 'Cevap evrakı veya eki' }, related.map((item, i) => el('option', { value: String(i) }, `${i ? 'Ek: ' : ''}${item.tur}`)));
       select.hidden = related.length < 2;
       const sourceSelect = el('select', { 'data-bank-preview': 'source', 'aria-label': 'Paket içindeki özgün belge', hidden: true });
-      const dialog = el('dialog', { class: 'bank-reply-preview', 'aria-label': `${ihbarCevabiMi(x.tur) ? 'Banka cevabı' : 'Talep evrakı'} önizlemesi` },
+      const dialog = el('dialog', { class: 'bank-reply-preview', 'aria-label': `${kind === 'tebligat' ? 'Tebligat evrakı' : ihbarCevabiMi(x.tur) ? 'Banka cevabı' : 'Talep evrakı'} önizlemesi` },
         el('div', { class: 'bar' }, title, closeReply),
         el('div', { class: 'bank-reply-toolbar' }, select, sourceSelect, download), content);
-      const state = bankReplyPopupState = { dialog, title, download, content, select, sourceSelect, sourceDocs: [], target: x, previous, previousKey: previous?.getAttribute?.('data-bank-reply') || previous?.getAttribute?.('data-bank-request'), ac: new AbortController(), readAc: null, urls: new Set(), render: null };
+      const state = bankReplyPopupState = { dialog, title, download, content, select, sourceSelect, sourceDocs: [], target: x, kind, previous, previousKey: previous?.getAttribute?.('data-bank-reply') || previous?.getAttribute?.('data-bank-request') || previous?.getAttribute?.('data-tebligat-open'), ac: new AbortController(), readAc: null, urls: new Set(), render: null };
       bankReplyPopup = dialog;
       closeReply.addEventListener('click', () => bankReplyClose());
       dialog.addEventListener('cancel', event => { event.preventDefault(); bankReplyClose(); });

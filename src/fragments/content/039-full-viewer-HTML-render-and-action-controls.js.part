@@ -3,7 +3,7 @@
     const previous = (o.sira && o.sira.previous) || shadowRoot.activeElement || document.activeElement;
     const { udf, tiff } = globalThis.UHD;
     const cbs = rec.yargiTuru === CBS.kod;   // UYAP savcılık dosyalarında safahat vermez
-    const SEKMELER = [['ozet', 'Özet'], rec.yargiTuru === '2' && ['banka', 'Banka sorgusu'], ['evrak', 'Evrak'], ['tebligat', 'Tebligat sorgusu'], !cbs && ['safahat', 'Safahat'], ['notlar', 'Notlar'], ['indir', 'Toplu İndir']].filter(Boolean);
+    const SEKMELER = [['ozet', 'Özet'], ['evrak', 'Evrak'], rec.yargiTuru === '2' && ['banka', 'Banka sorgusu'], ['tebligat', 'Tebligat sorgusu'], !cbs && ['safahat', 'Safahat'], ['notlar', 'Notlar'], ['indir', 'Toplu İndir']].filter(Boolean);
     const kimlik = `ek${++ekranSayac}`;
     let tebligatUi = null;
     const beside = besideDock();
@@ -138,6 +138,11 @@
     let tum = [], yeni = null, grup = 'tumu', gorunen = [], sira = -1, simdiki = null, simdikiOge = null, gezEpoch = 0, gecikme = null, gezAc = null;
     let kategorili = true, tarihArtan = false, evrakOdak = null, aramaImza = '';
     const acikKategoriler = new Set(), aramadaKapali = new Set(), kategoriDom = new Map();
+    // Ana evrakın ekleri kapalı başlar; Yeni listesindeki ana evrakın ekleri açık (yeniAcilanEk: ekranda bir kez açılanlar). Açık olanlar
+    // (paketAnahtar) yalnız bu ekranda tutulur, hiçbir yere yazılmaz; aramada kapatılanlar arama değişince unutulur.
+    // ekDom: ana evrak anahtarı -> { ana satır, aç/kapa düğmesi, ek sayısı yazısı, ek satırları }.
+    const acikEkler = new Set(), aramadaKapaliEk = new Set(), ekDom = new Map(), yeniAcilanEk = new Set();
+    let bekleyenAna = null;   // ana evrakı listede yokken seçilen ekin ana evrakı: listede görününce bir kez açılır
     let tebligatRead = null, tebligatList = null, tebligatCache = null;
     let zipRun = null, zipState = null, zipUrl = null;
     let bulkJob = null, bulkRead = null, bulkLoaded = false, bulkChoice = false, bulkIssue = '';
@@ -179,6 +184,9 @@
         const alindi = new Set();
         yeni = yeni.flatMap(a => [a, ...tum.filter(x => x.ana && x.ana.k === a.k && (!a.dosya || !x.dosya || x.dosya === a.dosya))])
           .filter(x => { const a = x.k + '\n' + x.dosya; if (alindi.has(a)) return false; alindi.add(a); return true; });
+        // Yeni evrakın ekleri açık gelir: son ek görünür, End ve son satıra tıklama ona ulaşır. Her ana evrakın ekleri ekranda bir kez
+        // açılır; kullanıcının sonradan kapattığı ekler liste yenilense de kapalı kalır.
+        for (const a of yeni.filter(x => x.ana).map(x => paketAnahtar(x.ana))) if (!yeniAcilanEk.has(a)) { yeniAcilanEk.add(a); acikEkler.add(a); }
       }
     }
     // Son 20: en yeni 20 evrak ve ekleri.
@@ -188,7 +196,7 @@
     function suz() {
       const t = norm(ara.value).split(/\s+/).filter(Boolean);
       const imza = t.join(' ');
-      if (imza !== aramaImza) { aramaImza = imza; aramadaKapali.clear(); }
+      if (imza !== aramaImza) { aramaImza = imza; aramadaKapali.clear(); aramadaKapaliEk.clear(); }
       const liste = grupListesi(grup);
       gorunen = t.length ? liste.filter(x => { const m = aranan(x); return t.every(w => m.includes(w)); }) : liste;
     }
@@ -201,13 +209,14 @@
         return b;
       }));
     }
-    // Görünüm sırası ayrı tutulur: Son 20, ZIP, paket ve önizleme gezintisi aynı evrak kapsamını kullanır.
+    // Görünüm sırası (düz listede ve klasör içinde) ayrı tutulur: Son 20, ZIP, paket ve önizleme gezintisi aynı evrak kapsamını kullanır.
+    // Ekler ana evrakının ardında kalır; aramada yalnız ekleri kalan ana evrakın ekleri de birlikte taşınır.
     function gorunumSirasi(rows) {
       if (!tarihArtan) return rows;
       const bloklar = [];
       for (const x of rows) {
-        const son = bloklar[bloklar.length - 1];
-        if (x.ana && son && ayni(son[0], x.ana)) son.push(x); else bloklar.push([x]);
+        const son = bloklar[bloklar.length - 1], bas = son && (son[0].ana || son[0]);
+        if (x.ana && bas && ayni(bas, x.ana)) son.push(x); else bloklar.push([x]);
       }
       return bloklar.reverse().flat();
     }
@@ -217,6 +226,21 @@
       const kat = kategoriDom.get(key);
       if (kat) { kat.box.open = on; kat.head.setAttribute('aria-expanded', String(on)); }
     }
+    // Ekler aramasızken kapalı, aramada açık gelir. Satırlar DOM'da kalır, yalnız gizlenir: liste yeniden çizilmez, seçim ve önizleme
+    // değişmez, UYAP isteği yapılmaz. kalici: aramada açılan ekler arama temizlenince de açık kalır (seçilen ek görünür kalsın).
+    const ekAcik = key => aramaImza ? !aramadaKapaliEk.has(key) : acikEkler.has(key);
+    // Düz listede (listbox) option aria-expanded taşıyamaz: ek sayısı, açık/kapalı durum ve tuşu option açıklamasında okunur.
+    const ekDurum = (on, sayi) => `${sayi} ${on ? 'açık; kapatmak için sol' : 'kapalı; açmak için sağ'} ok tuşu.`;
+    function ekAc(key, on, kalici = false) {
+      if (aramaImza) { if (on) aramadaKapaliEk.delete(key); else aramadaKapaliEk.add(key); }
+      else if (!on) acikEkler.delete(key);
+      if (on && (kalici || !aramaImza)) acikEkler.add(key);
+      const d = ekDom.get(key);
+      if (!d) return;
+      for (const row of d.rows) row.hidden = !on;
+      if (d.dugme) { d.dugme.setAttribute('aria-expanded', String(on)); d.dugme.title = on ? 'Ekleri gizle' : 'Ekleri göster'; }
+      if (kategorili) d.ana?.setAttribute('aria-expanded', String(on)); else d.ana?.setAttribute('aria-description', ekDurum(on, d.sayi));
+    }
     function odakSync(visible = false) {
       let node = null;
       if (evrakOdak?.kat && kategorili) node = kategoriDom.get(evrakOdak.kat)?.head;
@@ -225,6 +249,8 @@
         node = ogeler.querySelector(`[data-i="${i}"]`);
       }
       if (!node && sira >= 0) node = ogeler.querySelector(`[data-i="${sira}"]`);
+      // Kapalı ekteki odak ana evraka düşer; seçim (.on), önizleme ve konum değişmez.
+      if (node?.hidden && node.classList.contains('ek-oge')) { const y = gorunen[Number(node.dataset.i)]; node = (y?.ana && ekDom.get(paketAnahtar(y.ana))?.ana) || null; }
       if (node && kategorili && node.dataset.kategori) {
         const kat = kategoriDom.get(node.dataset.kategori);
         if (kat && !kat.box.open) node = kat.head;
@@ -243,36 +269,52 @@
       const scrollTop = ogeler.scrollTop;
       const paketNo = new Map(paketMod ? paketSirasi().map((x, i) => [paketAnahtar(x), i + 1]) : []);
       const indisler = new Map(gorunen.map((x, i) => [x, i]));
+      // Listelenen ana evrakların listelenen ek sayısı. Ana evrakı listede olmayan ek (yalnız eki bulan arama, yetim ek) hep görünür.
+      const anaVar = new Set(gorunen.filter(x => !x.ana && x.ekSayisi).map(paketAnahtar)), ekSay = new Map();
+      for (const x of gorunen) if (x.ana && anaVar.has(paketAnahtar(x.ana))) ekSay.set(paketAnahtar(x.ana), (ekSay.get(paketAnahtar(x.ana)) || 0) + 1);
+      const ekGiris = k => ekDom.get(k) || ekDom.set(k, { ana: null, dugme: null, rows: [] }).get(k);
       const satir = (x, kategori = null) => {
         const i = indisler.get(x);
         const on = i === sira;
-        // Ek: girintili, "Ek" rozetiyle ve hangi evrakın eki olduğu yazılarak; ana evrakta ek sayısı.
+        // Ek: girintili, "Ek" rozetiyle ve hangi evrakın eki olduğu yazılarak; ana evrakta ek sayısı. Ekleri listelenen ana evrakta (anaK)
+        // sayı ekleri açıp kapatan düğmedir; böyle bir ana evrakın eki (ustK) kapalıyken gizlenir.
+        const anaK = !x.ana && ekSay.has(paketAnahtar(x)) ? paketAnahtar(x) : null, ustK = x.ana && ekSay.has(paketAnahtar(x.ana)) ? paketAnahtar(x.ana) : null;
+        const acik = !!anaK && ekAcik(anaK), n = anaK ? ekSay.get(anaK) : 0;
         const alt = (x.ana ? [`${x.ana.tur} eki`, tarihYaz(x.onay)]
-          : [tarihYaz(x.onay), x.dosya && x.dosya !== ana ? evrakDosyaAdi(x.dosya) : '', x.gonderen, x.ekSayisi ? `${fmtNum(x.ekSayisi)} ek` : '']).filter(Boolean).join(' · ');
+          : [tarihYaz(x.onay), x.dosya && x.dosya !== ana ? evrakDosyaAdi(x.dosya) : '', x.gonderen, x.ekSayisi && !anaK ? `${fmtNum(x.ekSayisi)} ek` : '']).filter(Boolean).join(' · ');
         const ad = el('b', null, (x.ana || x.yetimEk) && !/^Ek\s/.test(x.tur) ? el('span', { class: 'ek-rozet' }, 'Ek') : null, x.tur);
         const no = paketNo.get(paketAnahtar(x));
         const alinir = paketMod && paketAlinir(x);
         const kutu = paketMod ? el('input', { type: 'checkbox', class: 'ek-paket-kutu', tabindex: '-1', 'aria-hidden': 'true', checked: !!no, disabled: !alinir,
           title: alinir ? (no ? 'Paketten çıkar' : 'Pakete al') : 'UYAP bu eke kimlik vermediği için pakete alınamıyor' }) : null;
         if (kutu) kutu.addEventListener('click', ev => { ev.stopPropagation(); paketIsaretle(x, kutu.checked); });
-        const b = el('div', { class: 'ek-oge' + (x.ana ? ' ek-alt' : '') + (on ? ' on' : '') + (paketMod ? ' paketli' : ''), role: kategorili ? 'treeitem' : 'option', 'aria-level': kategorili ? '2' : null, id: `${kimlik}-o${i}`, 'aria-selected': String(on),
+        // Düğme yalnız ekleri gösterir/gizler: tıklama satırın seçimine yayılmaz, belge istenmez. Yazısı durumla değişmez. Düz listede
+        // option içinde düğme bulunamaz: düğme yardımcı teknolojiden gizlenir (fareyle tıklanır), durum option açıklamasındadır.
+        const sayi = anaK ? (n === x.ekSayisi ? `${fmtNum(n)} ek` : `${fmtNum(n)}/${fmtNum(x.ekSayisi)} ek`) : '';
+        const dugme = anaK ? el('button', { type: 'button', class: 'ek-ekler-ac', tabindex: '-1', 'aria-expanded': String(acik), 'aria-hidden': kategorili ? null : 'true',
+          title: acik ? 'Ekleri gizle' : 'Ekleri göster' }, el('span', { class: 'ek-ekler-ok', 'aria-hidden': 'true' }, '▸'), sayi) : null;
+        if (dugme) dugme.addEventListener('click', ev => { ev.stopPropagation(); ekAc(anaK, !ekAcik(anaK)); evrakOdak = { row: anaK }; odakSync(); ogeler.focus({ preventScroll: true }); });
+        const b = el('div', { class: 'ek-oge' + (x.ana ? ' ek-alt' : '') + (on ? ' on' : '') + (paketMod ? ' paketli' : ''), role: kategorili ? 'treeitem' : 'option', 'aria-level': kategorili ? (ustK ? '3' : '2') : null,
+          'aria-expanded': kategorili && anaK ? String(acik) : null, 'aria-description': !kategorili && anaK ? ekDurum(acik, sayi) : null,
+          id: `${kimlik}-o${i}`, 'aria-selected': String(on),
           'aria-checked': paketMod ? String(!!no) : null, 'data-i': String(i), 'data-kategori': kategori },
-          ...(paketMod ? [kutu, el('span', { class: 'ek-oge-metin' }, ad, el('small', null, alt)), no ? el('span', { class: 'ek-paket-no', title: 'Paketteki sırası' }, String(no)) : null]
-            : [ad, el('small', null, alt)]));
+          ...(paketMod ? [kutu, el('span', { class: 'ek-oge-metin' }, ad, el('small', null, alt, dugme)), no ? el('span', { class: 'ek-paket-no', title: 'Paketteki sırası' }, String(no)) : null]
+            : [ad, el('small', null, alt, dugme)]));
         b.addEventListener('click', () => { sec(i, true); ogeler.focus({ preventScroll: true }); });
+        if (anaK) Object.assign(ekGiris(anaK), { ana: b, dugme, sayi });
+        if (ustK) { ekGiris(ustK).rows.push(b); b.hidden = !ekAcik(ustK); }
         return b;
       };
-      kategoriDom.clear();
+      // Ek, ana evrakı listelenmezken seçildiyse (yalnız eki bulan arama, Yeni'de ayrı listelenen ek) ana evrak listelenince ekleri bir kez
+      // açılır ve seçili ek görünür kalır. Kullanıcının sonradan kapattığı ana evrak arama ya da grup değişince yeniden açılmaz.
+      kategoriDom.clear(); ekDom.clear();
       ogeler.setAttribute('role', kategorili ? 'tree' : 'listbox');
       ogeler.setAttribute('aria-label', kategorili ? 'Evrak türleri ve evraklar' : 'Evraklar');
       kategoriGorunum.setAttribute('aria-pressed', String(kategorili));
       kategoriGorunum.title = kategorili ? 'Düz listeye geç' : 'Türüne göre klasörle';
-      const tarihYardim = 'Klasörler evrak türüne göre alfabetik sıralanır. Tarihe göre sıralamak için düz listeye geçin.';
-      tarihSirasi.disabled = kategorili;
-      tarihSirasi.setAttribute('aria-disabled', String(kategorili));
-      tarihSirasi.textContent = kategorili ? 'Tarih ⓘ' : tarihArtan ? 'Tarih ↑' : 'Tarih ↓';
-      tarihSirasi.title = kategorili ? tarihYardim : tarihArtan ? 'En eski önce' : 'En yeni önce';
-      tarihSirasi.setAttribute('aria-label', kategorili ? tarihYardim : `Tarih sırası: ${tarihArtan ? 'en eski' : 'en yeni'} önce. ${tarihArtan ? 'En yeni' : 'En eski'} önce sıralamak için basın.`);
+      tarihSirasi.textContent = tarihArtan ? 'Tarih ↑' : 'Tarih ↓';
+      tarihSirasi.title = tarihArtan ? 'En eski önce' : 'En yeni önce';
+      tarihSirasi.setAttribute('aria-label', `Tarih sırası: ${tarihArtan ? 'en eski' : 'en yeni'} önce. ${tarihArtan ? 'En yeni' : 'En eski'} önce sıralamak için basın.`);
       if (kategorili) {
         ogeler.replaceChildren(...evrakKategorileri(gorunen).map((kat, index) => {
           const head = el('summary', { class: 'ek-kategori-baslik', id: `${kimlik}-c${index}`, role: 'treeitem', 'aria-level': '1', 'aria-expanded': 'false', tabindex: '-1', 'data-kategori': kat.key,
@@ -293,6 +335,7 @@
         }));
       } else ogeler.replaceChildren(...gorunumSirasi(gorunen).map(x => satir(x)));
       ogeler.scrollTop = scrollTop;
+      if (bekleyenAna && ekDom.has(bekleyenAna) && gorunen[sira]?.ana && paketAnahtar(gorunen[sira].ana) === bekleyenAna) { ekAc(bekleyenAna, true, true); bekleyenAna = null; }
       odakSync();
       listeDurum.textContent = !gorunen.length ? (ara.value.trim() ? 'Aramaya uyan evrak yok.'
         : kaynak && kaynak.list.kilit ? 'Evrak, savcı onayından sonra görünür.' : 'Bu grupta evrak yok.') : '';
@@ -308,8 +351,13 @@
       if (sira >= 0) {
         const node = ogeler.querySelector(`[data-i="${sira}"]`);
         if (node?.dataset.kategori) kategoriAc(node.dataset.kategori, true);
+        // Kapalı eke gelinince (önceki/sonraki, ← →, Sırayla oku) ana evrakın ekleri açılır; arama temizlense de açık kalır.
+        const x = gorunen[sira];
+        const a = x?.ana ? paketAnahtar(x.ana) : null;
+        if (a && ekDom.has(a)) ekAc(a, true, true);
+        bekleyenAna = a && !ekDom.has(a) ? a : null;
         evrakOdak = { row: paketAnahtar(gorunen[sira]) };
-      } else evrakOdak = null;
+      } else { evrakOdak = null; bekleyenAna = null; }
       odakSync(visible);
     }
     const zipSelection = () => ({ mode: zipTypeMode.value || 'all', keys: [...zipSelectedTypes], includeAttachments: zipEkler.checked });
