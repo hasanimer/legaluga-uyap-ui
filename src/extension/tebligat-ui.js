@@ -25,7 +25,7 @@
     const text = String(status || '').toLocaleLowerCase('tr-TR').replace(/ı/gu, 'i');
     return /teslim\s+edildi|tebli[gğ]\s+edildi/u.test(text) && !/g[öo]nderici|iade|mazbata/u.test(text);
   };
-  function mount(container, { query, readDocument, readSubjectDocument, readUetsDocument, getDocuments, loadDocuments, signal }) {
+  function mount(container, { query, readDocument, readSubjectDocument, readUetsDocument, getDocuments, loadDocuments, openDocument, signal }) {
     const model = globalThis.UHDTebligatBarcode;
     if (!model || typeof query !== 'function' || typeof getDocuments !== 'function')
       throw new Error('Tebligat sorgusu yüklenemedi. Eklentiyi ve UYAP sekmesini yenileyin.');
@@ -79,6 +79,7 @@
       .te-state.busy::before{content:"";display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:currentColor;animation:te-pulse 1s ease-in-out infinite}
       @keyframes te-pulse{50%{opacity:.25}}@media(prefers-reduced-motion:reduce){.te-state.busy::before{animation:none}}
       .te-row-go{flex:none}.te-notice-form .chip:is(:disabled,[aria-disabled="true"]){opacity:.45;cursor:default}.te-row-subject{margin:4px 0 0 28px!important}
+      .te-row-cmds{display:flex;gap:6px;flex:none;align-items:center}.te-row-cmds .chip{white-space:nowrap}
       .te-row-body{display:grid;gap:6px;margin:8px 0 2px 28px;min-width:0;overflow-wrap:anywhere}.te-row-body:empty{display:none}
       .te-row-body p{margin:0}.te-msg.warn{color:var(--shell-warn-text,#9a6700)}.te-msg.err{color:var(--shell-error,#cf222e)}
       .te-result{display:flex;gap:4px 12px;align-items:baseline;flex-wrap:wrap}.te-result strong{font-size:13px}
@@ -95,7 +96,7 @@
       @media(max-width:720px){.te-state{min-width:0;text-align:left}.te-row-body,.te-row-subject{margin-left:0!important}.te-notice-actions{margin-left:0}}
     `);
     container.replaceChildren(style, form);
-    let destroyed = false, current = null, items = [], revision, revisionKnown = false, initialSelection = false, filter = 'all';
+    let destroyed = false, current = null, opening = false, openError = '', items = [], revision, revisionKnown = false, initialSelection = false, filter = 'all';
     const selected = new Set(), states = new Map();
     const stamp = item => JSON.stringify([item.key, item.title || '', item.label, item.aciklama || '']);
     const message = (text, error = false) => { status.textContent = text; status.classList.toggle('err', error); };
@@ -115,6 +116,7 @@
     };
     const stateFor = item => states.get(item.key) || {};
     const titleOf = item => item.title || item.label.split(' · ')[0];
+    const headingOf = item => describe(item.aciklama).party || titleOf(item);
     // Süzgeç UYAP'ın evrak türü ve açıklamasıyla çalışır; sorgu sırasında satır başka türe kayıp gizlenmez.
     // Rozet ise okunmuş zarfın hizmetini de gösterir. İşlenen ya da bekleyen satır her süzgeçte görünür.
     const metaServiceOf = item => model.noticeProvider({ title: titleOf(item), aciklama: item.aciklama || '' }) || 'unknown';
@@ -122,6 +124,28 @@
     const visible = item => filter === 'all' || metaServiceOf(item) === filter || current?.rowKey === item.key || !!stateFor(item).pending;
     const uetsLink = () => el('a', { class: 'chip', href: UETS_PAGE, target: '_blank', rel: 'noopener noreferrer',
       'data-tebligat': 'open-uets' }, 'UETS sayfasını aç');
+    // Aç, özgün evrakı (zarf ya da eşleşen mazbata) dosya ekranının önizlemesinde açar; UYAP isteği yalnız bu tıklamayla gider.
+    // Sorgu veya liste işi sürerken açılmaz; açma bitmeden ikinci açma ya da sorgu başlamaz. Hata yalnız durum satırına yazılır.
+    const openRow = async (item, key) => {
+      if (current || destroyed || opening || typeof openDocument !== 'function' || typeof key !== 'string' || !key ||
+        (key !== item.key && key !== stateFor(item).receiptKey) || !items.some(value => value.key === item.key && stamp(value) === stamp(item))) return;
+      opening = true;
+      try {
+        await openDocument(key);
+        if (!destroyed && openError && status.textContent === openError) message('');
+        openError = '';
+      } catch (error) {
+        if (!destroyed && error?.name !== 'AbortError') { openError = error?.message || 'Evrak açılamadı. Yeniden deneyin.'; message(openError, true); }
+      } finally { opening = false; }
+    };
+    // Sorgula gibi aria-disabled taşır: iş sürerken odak kaybolmaz; erişilebilir ad görünen yazıyla başlar.
+    const openButton = (item, kind, key, text, title) => {
+      const node = el('button', attr(kind === 'mazbata' ? 'open-receipt' : 'open-envelope', { type: 'button', class: 'chip te-row-open',
+        'aria-disabled': current ? 'true' : null, 'aria-label': `${text}: ${headingOf(item)}`, title,
+        'data-tebligat-open': `${kind}|${item.key}`, 'data-focus': `ac-${kind}|${item.key}` }), text);
+      node.addEventListener('click', () => openRow(item, key));
+      return node;
+    };
     // Belgeden tekil barkod veya hizmet çıkmadığında satırda gösterilir. Sorgu yalnız kullanıcının seçtiği hizmet
     // düğmesiyle başlar; yazılan barkod yalnız ekranın belleğinde tutulur.
     const manualNodes = (item, manual) => {
@@ -181,6 +205,8 @@
       }
       const actions = [];
       if (value.uetsFallback) actions.push(uetsLink());
+      if (value.result?.provider === 'uets' && !value.error && value.receiptKey && typeof openDocument === 'function')
+        actions.push(openButton(item, 'mazbata', value.receiptKey, 'Mazbatayı aç', 'Eşleşen e-tebliğ mazbatasını önizlemede açar'));
       if (value.action) {
         const action = value.action;
         const button = el('button', attr('open-ptt', { type: 'button', class: 'chip', disabled: action.opening, 'data-focus': `ptt|${item.key}` }),
@@ -231,7 +257,7 @@
         if (box.checked) selected.add(item.key); else selected.delete(item.key);
         sync();
       });
-      const heading = info.party || title;
+      const heading = headingOf(item);
       const meta = (item.date || item.no ? [item.date, item.no ? `Evrak no ${item.no}` : '', info.party ? title : '', item.attachment]
         : [...item.label.split(' · ').slice(1), info.party ? title : '']).filter(Boolean);
       const subject = value.subject || (info.party ? '' : model.extractSubject(item.aciklama || '', { metadata: true }));
@@ -242,12 +268,13 @@
       const go = el('button', { type: 'button', class: 'chip te-row-go', 'data-tebligat-row-query': item.key, 'aria-disabled': current ? 'true' : null,
         'aria-label': `${goText}: ${heading}`, 'data-focus': `sorgu|${item.key}` }, goText);
       go.addEventListener('click', () => run([item]));
+      const open = typeof openDocument === 'function' ? openButton(item, 'zarf', item.key, 'Aç', 'Özgün evrakı bu sekmeden ayrılmadan önizlemede açar') : null;
       return el('article', { class: `te-row ${kind}`, 'data-tebligat-row': item.key },
         el('div', { class: 'te-row-head' }, box,
           el('label', { for: `${id}-item-${index}`, class: 'te-row-main' }, el('span', { class: 'te-row-title' }, heading),
             meta.length ? el('span', { class: 'te-row-meta' }, meta.join(' · ')) : null),
           el('span', { class: 'te-badges' }, badges),
-          el('span', { class: `te-state ${kind}`, id: `${id}-state-${index}`, 'data-tebligat-state': item.key }, label), go),
+          el('span', { class: `te-state ${kind}`, id: `${id}-state-${index}`, 'data-tebligat-state': item.key }, label), el('span', { class: 'te-row-cmds' }, open, go)),
         subject ? el('p', { class: 'dp-muted te-row-subject' }, `İçerik: ${subject}`) : null,
         el('div', { class: 'te-row-body', 'data-tebligat-result': item.key }, resultNodes(item, value)));
     };
@@ -373,6 +400,7 @@
           const records = model.analyzeDocument(receipt.text);
           if (records.provider !== 'uets' || records.barcodes.length !== 1 || records.barcodes[0] !== value.barcode)
             throw new Error('Mazbata barkodu seçili tebligatla tekil olarak eşleşmedi.');
+          value.receiptKey = typeof receipt.key === 'string' ? receipt.key : '';
           value.result = { provider: 'uets', barcode: value.barcode, status: 'Mazbatadaki kayıtlar', events: records.events };
           value.sourceLabel = receipt.label || '';
         } else {
@@ -422,7 +450,7 @@
     // Satırdaki elle seçimle tek tebligat sorgulanır; toplu işle aynı guardlar ve iptal yolu kullanılır.
     const manualQuery = async (item, provider) => {
       const state = stateFor(item), manual = state.manual;
-      if (current || destroyed || !manual || state.stamp !== stamp(item) || !items.some(value => value.key === item.key && stamp(value) === stamp(item))) return;
+      if (current || destroyed || opening || !manual || state.stamp !== stamp(item) || !items.some(value => value.key === item.key && stamp(value) === stamp(item))) return;
       if (!['ptt', 'uets'].includes(provider) || provider === 'uets' && typeof readUetsDocument !== 'function') return;
       const barcode = model.normalizeBarcode(String(manual.barcode || ''));
       if (!barcode) { manual.error = '13 haneli barkodu yalnız rakamlarla yazın.'; message(manual.error, true); sync(); return; }
@@ -436,7 +464,7 @@
     };
     // Seçilenler ya da satırdaki Sorgula düğmesiyle tek tebligat aynı sırayla ve aynı guardlarla işlenir.
     const run = async chosen => {
-      if (current || destroyed || !chosen.length) return;
+      if (current || destroyed || opening || !chosen.length) return;
       const pending = chosen.map(item => ({ ...item }));
       const task = { kind: 'batch', ac: new AbortController(), revision, rowKey: pending[0].key, rowStamp: stamp(pending[0]) };
       current = task;

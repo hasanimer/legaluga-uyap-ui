@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "12d1c8a6b39ab51f0ae53224e3a2488c40cb4e368e3ccd7dbb122bbba942f45a"
+      "sha256": "c95bb0862d5278ad85618bbfe97905e6107b1c007e06076c41a53ee93f1fcd52"
     },
     {
       "path": "SECURITY.md",
@@ -52,7 +52,7 @@
     },
     {
       "path": "docs/PRIVACY.md",
-      "sha256": "0222f2554eb57e585061b95e97a11f9c7e3f3514e32904854b18a2d2bff5bdad"
+      "sha256": "6c31cb91f113f22511c5752f085ac0eee5844db09a01105949c9cefe63586d78"
     },
     {
       "path": "docs/images/01-uyap-baglantisi.png",
@@ -104,11 +104,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "e0b1e3b6262bc5da7ab8335cdcd040d5d8552343d167a70ef08cf09e6daeeb3e"
+      "sha256": "9dacbe3157d99be678f1c6aa7d0441862fa7a50994e09cdf87ddefa95d84c42f"
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "9c73ead92af0557385ca913ca16d603bdda1b35d45f4b4b7462593d1b3b5dfc4"
+      "sha256": "9ca15a58de91e1b63c7c8076cdd0e1e6292559c9bb1623236e0f386a8c357647"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -216,7 +216,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "4f52e317a169c2fd92b0872a4b37f1f449b28a998379a84e5c0ba329038c7032"
+      "sha256": "95ed09eab335a42a501c2edd2ca251eb1945c8dc2c1b7d5635efd345bfd9a992"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -260,7 +260,7 @@
     },
     {
       "path": "src/extension/tebligat-ui.js",
-      "sha256": "882f62a12862c99da4357636a9d73c2c4d039f715a55c800ca3405bfb71f063e"
+      "sha256": "2ff5a46986249d9d95ade51317e02cc733d4a6162a86f43044f2dc3ef0d5c853"
     },
     {
       "path": "src/extension/telemetry.js",
@@ -572,7 +572,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "cd24c07c9a5a8ae7721c104e0e48015df557490232b49686a6bb38adb24af1c8"
+      "sha256": "71814df42821f079cec1d27c3a89818f4e8d423c1ed961db9159a76377ca97b3"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -604,7 +604,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "50abd4353894c3f1bcc9175e89abcc07f95527b9b94fefe9511d391fd56c822a"
+      "sha256": "bca38b3281f5684eb73dd421ec57e2863a20e43605bba7c0795f83cd0e4ed78a"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -636,7 +636,7 @@
     },
     {
       "path": "src/fragments/content/051-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "a5c1c2520eb42e8f68eacc52161f2d2d096aef073b7bcfc8c5b801264d6b4c6d"
+      "sha256": "08fc7960daa294e8ddd57326b5aed36b0340b4cfb2ea9e03e8ced3ea34244642"
     },
     {
       "path": "src/fragments/content/053-full-viewer-HTML-render-and-action-controls.js.part",
@@ -700,7 +700,7 @@
     },
     {
       "path": "src/fragments/content/083-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "df888e872ce48e25bd428a7c23706f4d760a66be71197ea25a98500314c4b034"
+      "sha256": "e9dfb106dae3971fac9e1b41e292bbfe8be90d69482017aedaf7dbd368b3429f"
     },
     {
       "path": "src/fragments/content/085-full-viewer-HTML-render-and-action-controls.js.part",
@@ -740,7 +740,7 @@
     },
     {
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "3501994387b40616d995d9c42152c65e763a5c6c9bd5d0fe350d077866d1a20d"
+      "sha256": "10c9d6719b6a5ea9418491ca65b7acf31c8f0ce4b17dd8af355651e0f3b7af35"
     },
     {
       "path": "src/fragments/content/105-viewer-navigation-abort-epoch-boundary.js.part",
@@ -776,7 +776,7 @@
     },
     {
       "path": "src/fragments/content/119-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "880f5b0aabf0896ca90c716133f98bc66376a2e67a7fce686ed4c0d9e46cc508"
+      "sha256": "2d599102c7b4509088a25fb8194b1f6f691c7a6c84ab33b2426a924144553a26"
     },
     {
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",

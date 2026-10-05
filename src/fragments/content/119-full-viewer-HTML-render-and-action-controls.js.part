@@ -60,6 +60,15 @@
                 loadDocuments: loadTebligatDocuments,
                 getDocumentLabel: () => simdiki?.title || '',
                 getDocumentKey: () => simdiki,
+                // Aç yalnız bu dosyanın tebligat veya mazbata anahtarını banka cevaplarıyla aynı önizlemede açar. İstek tıklamayla,
+                // toplu indirme aralığıyla gider; meşgulken ya da anahtar listede yoksa sessiz kalmak yerine neden bildirilir.
+                openDocument: async key => {
+                  if (closed || tebligatAc.signal.aborted) throw new DOMException('Durduruldu.', 'AbortError');
+                  const x = typeof key === 'string' ? tebligatTargets().get(key) : null;
+                  if (!x || !bankMainGroup(x.dosya)) throw new Error('Tebligat evrakı listede bulunamadı. Listeyi yenileyip tekrar deneyin.');
+                  if (bankBusy()) throw new Error('Devam eden indirme veya okuma tamamlanınca tekrar açın.');
+                  await bankaAc(x, { kind: 'tebligat' });
+                },
                 signal: tebligatAc.signal
               });
             }

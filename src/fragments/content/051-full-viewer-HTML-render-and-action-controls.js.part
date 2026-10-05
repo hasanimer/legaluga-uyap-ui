@@ -7,7 +7,8 @@
     const BANKA_BELGE_MAX = 200, BANKA_BYTE_MAX = 64 * 1024 * 1024;   // metin motoruyla aynı cevap başına sınırlar
     const BANKA_OKUMA_ACIKLAMASI = 'Liste, dosyadaki banka cevaplarının özgün başlığını ve tarihini gösterir. Cevap metni analiz edilmez; sonuç veya borçlu eşleşmesi yorumlanmaz. Cevabı aç seçilen evrakı ayrı bir önizlemede gösterir. Görüntülediğiniz kayıt bu Chrome profilinde şifreli saklanır.';
     const bankaBelgeler = new Map();   // özgün asıl belge Blob'ları; dosya ekranı kapanınca bırakılır
-    let bankaByte = 0, bankaTumAcik = false;
+    // bankaListe: önbelleğin ait olduğu evrak listesi. Ek anahtarı sıraya dayanır; liste değişince önbellek bırakılır.
+    let bankaByte = 0, bankaTumAcik = false, bankaListe = null;
     let bankaKart = null, bankaOkuma = null, bankaHata = '';
     let bankReplyPopup = null, bankReplyPopupState = null;
     const bankViewStorage = typeof chrome === 'undefined' ? null : chrome.storage?.local;
