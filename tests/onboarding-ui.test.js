@@ -100,15 +100,15 @@ function harness({ prefs = {}, hasFiles = false, stored = prefs, fallback = fals
 
 test('bağlantı önce kontrol edilir; açık hesabın adı alınır, tarama veya kayıt otomatik yapılmaz', async () => {
   const requests = [];
-  const h = harness({ onConnection: async request => { requests.push(plain(request)); return { ready: true, status: 'ready', name: '  Hasan İmer Akın  ' }; } });
+  const h = harness({ onConnection: async request => { requests.push(plain(request)); return { ready: true, status: 'ready', name: '  Örnek Hesap Sahibi  ' }; } });
   assert.match(h.root.textContent, /UYAP bağlantısı/);
   assert.equal(h.type('2'), undefined);
   await h.settle();
   assert.deepEqual(requests, [{ manual: false }]);
   assert.ok(h.type('2'));
-  assert.match(h.root.textContent, /UYAP’a bağlı · Hasan İmer Akın/);
+  assert.match(h.root.textContent, /UYAP’a bağlı · Örnek Hesap Sahibi/);
   await h.next();
-  assert.equal(h.field('myName').value, 'Hasan İmer Akın');
+  assert.equal(h.field('myName').value, 'Örnek Hesap Sahibi');
   assert.match(h.root.textContent, /Bu adın vekil olduğu taraflar “Müvekkil” olarak gösterilir/);
   assert.deepEqual(h.writes, []);
   assert.deepEqual(h.callbacks, []);
@@ -317,7 +317,7 @@ test('il araması Türkçe adları bulur ve adımlar arasında taslak seçimler 
   assert.equal(h.city(6).parentNode.hidden, false);
   await h.city(6).click();
   await h.next();
-  await h.field('myName').fill('  Hasan İmer  ');
+  await h.field('myName').fill('  Örnek Hesap  ');
   await h.field('tema').choose('dark');
   await h.field('evrakTakip').click();
   await h.button('Geri').click();
@@ -327,12 +327,12 @@ test('il araması Türkçe adları bulur ve adımlar arasında taslak seçimler 
   assert.equal(h.city(6).checked, true);
   assert.equal(h.city(34).checked, true);
   await h.next();
-  assert.equal(h.field('myName').value, '  Hasan İmer  ');
+  assert.equal(h.field('myName').value, '  Örnek Hesap  ');
   assert.equal(h.field('tema').value, 'dark');
   assert.equal(h.field('evrakTakip').checked, true);
   assert.equal(h.writes.length, 0);
   await h.button('Kaydet ve taramayı başlat').click();
-  assert.equal(h.store.myName, 'Hasan İmer');
+  assert.equal(h.store.myName, 'Örnek Hesap');
   assert.equal(h.store.kurulumVekilBekliyor, false);
   assert.deepEqual(h.store.savcilikIller, [6, 34]);
   assert.equal(h.store.tema, 'dark');
