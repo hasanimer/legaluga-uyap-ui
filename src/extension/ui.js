@@ -13,14 +13,14 @@
   --shadow:0 2px 8px #182b4010;--accent-text:#0b6663;
   --bg:#f5f7fb;--card:#fff;--text:#1d2939;--text2:#344054;--muted:#667085;--line:#e3e8f2;--line2:#cfd6e4;
   --green:#12805c;--green-bg:#e7f6ef;--grey:#98a2b3;--grey-bg:#eef0f3;--amber:#b54708;--amber-bg:#fef0c7;--blue:#356b91;--blue-bg:#edf4f8;--red:#b42318;
-  --note-bg:#fffbea;--note-bd:#f2c94c;--ev-bg:#f0f5ff;--ev-bd:#528bff;--ev-tx:#1849a9;--warn-bg:#fff4e5;--warn-tx:#7a4b00;
+  --note-bg:#fffbea;--note-bd:#f2c94c;--note-red:#b42318;--ev-bg:#f0f5ff;--ev-bd:#528bff;--ev-tx:#1849a9;--warn-bg:#fff4e5;--warn-tx:#7a4b00;
   --tur-bg:#f3efff;--tur-tx:#5b3cc4;--err-bg:#fdecea;--err-tx:#8a1f17;--mark:#ffe58a;
   font:13px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;color:var(--text);background:var(--bg);
   display:flex;flex-direction:column;height:100%;min-height:0;box-sizing:border-box;color-scheme:light;container-type:inline-size}
 .uhd[data-theme=dark]{--soft:#173d39;--bord:#428d83;--shadow:0 2px 8px #0002;--accent-text:#8ae0d2;--focus:#7fd6cc;
   --bg:#0f1720;--card:#18222d;--text:#e6edf3;--text2:#c9d3de;--muted:#98a2b3;--line:#2a3644;--line2:#3a4756;
   --green:#4fd1a5;--green-bg:#0f2e25;--grey:#667085;--grey-bg:#25303c;--amber:#f5b04c;--amber-bg:#33260f;--blue:#86b7da;--blue-bg:#1b2d3d;--red:#f97066;
-  --note-bg:#2b2716;--note-bd:#b38f1f;--ev-bg:#16233a;--ev-bd:#528bff;--ev-tx:#9ec1ff;--warn-bg:#33270f;--warn-tx:#f5c26b;
+  --note-bg:#2b2716;--note-bd:#b38f1f;--note-red:#ff9292;--ev-bg:#16233a;--ev-bd:#528bff;--ev-tx:#9ec1ff;--warn-bg:#33270f;--warn-tx:#f5c26b;
   --tur-bg:#261e3f;--tur-tx:#c9bbff;--err-bg:#3a1714;--err-tx:#f7a8a1;--mark:#6b5a12;color-scheme:dark}
 .uhd[data-theme=dark] :is(.onboard b,.ib:hover,.ib.on,.pmore,.pname:hover,.lnk:hover,.rolein:not(.other),.dayhead:not(.today),.durrow .t,.tag:not(.auto)){color:#7fd6cc}
 .uhd *{box-sizing:border-box}
@@ -153,10 +153,19 @@
   background:var(--note-bg);border-radius:0 6px 6px 0;font-size:12px;line-height:1.45;color:var(--text);text-align:left;white-space:pre-line;overflow-wrap:anywhere;cursor:text}
 .uhd .pname{border:0;background:none;padding:0;color:inherit;cursor:pointer;text-align:left;border-bottom:1px dotted transparent}
 .uhd .pname:hover{color:var(--navy);border-bottom-color:currentColor}
-.uhd .note-ta{display:block;width:100%;margin-top:3px;padding:5px 8px;border:0;border-left:3px solid var(--note-bd);background:var(--note-bg);border-radius:0 6px 6px 0;
-  font:inherit;font-size:12px;color:var(--text);resize:none;outline:none;overflow-wrap:anywhere;max-height:150px;overflow:auto;cursor:text;
-  field-sizing:content;min-height:calc(1.5em + 10px)}
+.uhd .note-card-editor{margin-top:6px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--note-bg)}
+.uhd .note-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.uhd .note-format{min-height:28px;padding:3px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--text);font:inherit;font-size:12px;cursor:pointer}
+.uhd .note-format[aria-pressed="true"]{border-color:var(--focus);background:var(--soft);color:var(--navy)}
+.uhd .note-format:disabled{opacity:.55;cursor:default}
+.uhd .note-red{color:var(--note-red)}
+.uhd .note-ta{display:block;box-sizing:border-box;width:100%;padding:8px;border:1px solid var(--line);background:var(--bg);border-radius:6px;
+  font:inherit;font-size:13px;line-height:1.6;color:var(--text);resize:vertical;outline:none;white-space:pre-wrap;overflow-wrap:anywhere;min-height:96px;max-height:240px;overflow:auto;cursor:text}
 .uhd .note-ta:focus{box-shadow:0 0 0 2px var(--note-bd)}
+.uhd .note-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:8px}
+.uhd .note-hint,.uhd .note-status{font-size:11px;color:var(--muted)}
+.uhd .note-status{margin-top:6px;min-height:1.4em}
+.uhd .note-status.err{color:var(--warn-tx)}
 .uhd mark{background:var(--mark);color:inherit;border-radius:2px}
 .uhd .son{margin-top:2px;font-size:12px;color:var(--muted)}
 .uhd .son b{font-weight:600;color:var(--text2)}
@@ -465,7 +474,8 @@
     let detected = '';
     let current = [];
     let sel = 0;
-    let editing = null;        // notu düzenlenen kayıt (düzenleme sürerken liste yeniden çizilmez)
+    let editing = null;        // notu düzenlenen kayıt
+    const noteDrafts = new Map();
     let manualNotice = false;
     let goruldu = {};
     let gizli = {};            // aramada gösterilmeyecek dosyalar (uhdGizli): { key: { dosyaNo, birimAdi, at } }
@@ -993,44 +1003,103 @@
       return el('div', { class: 'prow' }, line, more);
     }
 
-    // Not doğrudan metin kutusunda gösterilir: tıklanan yerde imleçle düzenlenir, Enter kaydeder, Esc vazgeçer.
-    // Notlar yalnız bu bilgisayarda tutulur; UYAP'taki notlarla ilgisi yoktur.
+    // Kart ve dosya ekranı aynı notu kullanır; taslaklar yalnız açık panelin belleğinde tutulur.
     function noteBlock(r, toks = []) {
+      const draft = noteDrafts.get(r.key);
       const has = !!notes[r.key];
-      if (!has && editing !== r.key) return null;
+      if (!has && !draft && editing !== r.key) return null;
       if (editing !== r.key) {
-        const line = el('button', { class: 'note-line', 'data-focus': 'noteline', title: 'Kişisel not (yalnız bu bilgisayarda) · düzenlemek için tıklayın' }, highlight(notes[r.key], toks));
+        const line = el('button', { class: 'note-line', 'data-focus': 'noteline', title: draft ? 'Kaydedilmemiş not · düzenlemek için tıklayın' : 'Kişisel not · düzenlemek için tıklayın' }, ...globalThis.UHD.noteDisplay(draft ? draft.text : notes[r.key], text => highlight(text, toks)));
         line.addEventListener('click', e => { e.stopPropagation(); editing = r.key; render(); });
-        return line;
+        return draft ? el('div', null, line, el('div', { class: 'note-status err' }, 'Kaydedilmedi')) : line;
       }
-      const ta = el('textarea', { class: 'note-ta', 'data-focus': 'noteline', rows: '1', placeholder: 'Bu dosyaya not yazın (yalnız bu bilgisayarda saklanır)…', 'aria-label': `${r.dosyaNo} kişisel notu`, title: 'Kişisel not · Enter: kaydet · Shift+Enter: yeni satır · Esc: vazgeç', spellcheck: 'true' });
-      ta.value = notes[r.key] || '';
-      // Panel gizliyken çizilen kutunun ölçüsü 0 çıkar: o zaman yükseklik yazılmaz, boyu CSS belirler.
+      const state = draft || { text: notes[r.key] || '', base: notes[r.key] || '', saving: null, error: false };
+      noteDrafts.set(r.key, state);
+      state.rich?.destroy?.();
+      const field = globalThis.UHD.noteEditor({ value: state.text, label: r.dosyaNo + ' kişisel notu', placeholder: 'Dosya notunuzu yazın…', compact: true });
+      state.rich = field;
+      const ta = field.input;
+      ta.classList.add('note-ta');
+      ta.setAttribute('data-focus', 'noteline');
+      const save = el('button', { type: 'button', class: 'btn sm primary', 'data-focus': 'notesave' }, 'Kaydet');
+      const cancel = el('button', { type: 'button', class: 'btn sm', 'data-focus': 'notecancel' }, 'Vazgeç');
+      const status = el('div', { class: 'note-status', role: 'status', 'aria-live': 'polite' });
+      const editor = el('div', { class: 'note-card-editor' }, field.root,
+        el('div', { class: 'note-actions' }, save, cancel, el('span', { class: 'note-hint' }, 'Ctrl/⌘ + Enter ile kaydet')), status);
+      state.editor = editor;
+      const sync = () => {
+        ta.disabled = !!state.saving;
+        save.disabled = !!state.saving || (!state.error && state.text.trim() === state.base);
+        cancel.disabled = !!state.saving;
+        status.classList.toggle('err', state.error);
+        status.textContent = state.saving ? 'Kaydediliyor…' : state.error ? 'Kaydedilemedi. Yeniden deneyin.' : state.text.trim() !== state.base ? 'Kaydedilmedi' : '';
+      };
       const fit = () => {
         ta.style.height = 'auto';
         if (!ta.isConnected || !ta.scrollHeight) { ta.style.height = ''; return; }
-        ta.style.height = Math.min(ta.scrollHeight + 2, 150) + 'px';
+        ta.style.height = Math.min(ta.scrollHeight + 2, 240) + 'px';
       };
-      let cancelled = false, finished = false;
-      const done = () => {
-        if (finished) return;
+      let finished = false;
+      const discard = () => {
+        if (state.editor !== editor || finished || state.saving) return;
         finished = true;
+        state.rich?.destroy?.();
+        noteDrafts.delete(r.key);
         if (editing === r.key) editing = null;
-        if (!cancelled && ta.value.trim() !== (notes[r.key] || '')) saveNote(r.key, ta.value).catch(() => {}); // hata saveNote'ta gösterilir
-        else render();
+        render();
       };
-      ta.addEventListener('click', e => e.stopPropagation());
-      ta.addEventListener('mousedown', e => e.stopPropagation());
+      const done = () => {
+        if (state.editor !== editor || finished || state.saving) return state.saving;
+        state.text = ta.value;
+        if (state.text.trim() === state.base && !state.error) { discard(); return; }
+        state.error = false;
+        // saveNote çizimi iyimser olarak yeniler; yeni düzenleyici aynı taslağı ve kayıt durumunu kullanır.
+        state.saving = true;
+        sync();
+        const pending = saveNote(r.key, state.text).then(() => {
+          if (noteDrafts.get(r.key) !== state) return;
+          state.rich?.destroy?.();
+          noteDrafts.delete(r.key);
+          if (editing === r.key) editing = null;
+          finished = true;
+          render();
+        }).catch(() => {
+          if (noteDrafts.get(r.key) !== state) return;
+          state.saving = null;
+          state.error = true;
+          if (!editing) editing = r.key;
+          render();
+        });
+        state.saving = pending;
+        return pending;
+      };
+      const leave = ev => { if (!field.owns(ev.relatedTarget) && !editor.contains(ev.relatedTarget)) return done(); };
+      editor.addEventListener('click', e => e.stopPropagation());
+      editor.addEventListener('mousedown', e => e.stopPropagation());
+      editor.addEventListener('keydown', e => {
+        e.stopPropagation();
+        if (e.key === 'Escape') { e.preventDefault(); discard(); if (!state.saving) input.focus(); }
+      });
       ta.addEventListener('focus', () => { editing = r.key; fit(); });
-      ta.addEventListener('input', fit);
+      ta.addEventListener('input', () => {
+        if (state.editor !== editor || state.saving) return;
+        state.text = ta.value; state.error = false; fit(); sync();
+      });
       ta.addEventListener('keydown', e => {
         e.stopPropagation();
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); done(); }
-        else if (e.key === 'Escape') { e.preventDefault(); cancelled = true; done(); input.focus(); }
+        if (e.key === 'Escape') { e.preventDefault(); discard(); if (!state.saving) input.focus(); }
+        else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.isComposing) { e.preventDefault(); done(); }
       });
-      ta.addEventListener('blur', done);
-      setTimeout(() => { fit(); if (editing === r.key) ta.focus(); }, 0);
-      return ta;
+      for (const control of [save, cancel, ...field.toolbar.querySelectorAll('button')]) {
+        control.addEventListener('mousedown', e => { e.preventDefault(); });
+        control.addEventListener('blur', leave);
+      }
+      save.addEventListener('click', done);
+      cancel.addEventListener('click', discard);
+      ta.addEventListener('blur', leave);
+      sync();
+      setTimeout(() => { fit(); if (editing === r.key && !state.saving) field.focus(); }, 0);
+      return editor;
     }
 
     // Evrak "2024/555(Talimat Dosyası)" gibi bağlı bir dosyadansa hangi dosya olduğu gösterilir.
@@ -1346,7 +1415,7 @@
             turEtiket(r),
             yeniMap.has(r.key) ? el('span', { class: 'pill new' }, 'Yeni evrak') : null)),
         el('div', { class: 'birim' }, highlight(cleanBirim(r.birimAdi), toks)),
-        notes[r.key] ? el('div', { class: 'note-line ro', title: 'Kişisel not (yalnız bu bilgisayarda); UYAP’taki panelden düzenlenir' }, highlight(notes[r.key], toks)) : null,
+        notes[r.key] ? el('div', { class: 'note-line ro', title: 'Kişisel not (yalnız bu bilgisayarda); UYAP’taki panelden düzenlenir' }, ...globalThis.UHD.noteDisplay(notes[r.key], text => highlight(text, toks))) : null,
         extra || null,
         partyBlock(r, toks, keys),
         el('div', { class: 'ifoot' }, open));
@@ -1455,6 +1524,7 @@
     function render() {
       if (syncSetup()) return;
       if (optionsPage) return;   // ayarlar sayfasında liste yok
+      for (const draft of noteDrafts.values()) draft.rich?.destroy?.();
       const rn = root.getRootNode();
       const act = rn && rn.activeElement;
       const card = act && list.contains(act) ? act.closest('.item') : null;
@@ -1692,7 +1762,7 @@
           vek.join(', '),
           sonText(r),
           (d => (d ? `${fmtIso(d.tarih)} ${d.saat} ${d.islem}` : ''))((durusmaByKey.get(r.key) || [])[0]),
-          notes[r.key] || ''
+          globalThis.UHD.noteText(notes[r.key] || '')
         ]);
       }
       const csv = '﻿' + rows.map((row, r) => row.map((v, i) => (r > 0 && i === 0 ? csvDosyaNo(v) : csvCell(v))).join(';')).join('\r\n');

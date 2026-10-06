@@ -125,6 +125,8 @@
       if (shadowRoot.querySelector('.backup-password')?.open || bankReplyPopup?.open) return;
       // Sayfa kutusunda Esc yazılanı geri alır (ekranı kapatmaz); kutu gösterilen sayfayı yazıyorsa Esc ekranı kapatır.
       const sn = shadowRoot.activeElement;
+      // Not yazarken Escape önce taslağı bırakır; düzenleyicinin kendi tuş işleyicisi çalışır.
+      if (ev.key === 'Escape' && aktif === 'notlar' && sn?.closest?.('.ek-notlar')) return;
       if (ev.key === 'Escape' && sn && sn.classList && sn.classList.contains('sayfa-no') && simdiki && sn.value !== String(simdiki.sayfaNo)) {
         ev.preventDefault();
         ev.stopImmediatePropagation();

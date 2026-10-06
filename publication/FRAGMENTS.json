@@ -7,8 +7,8 @@
       "source": "common.js",
       "order": 1,
       "path": "src/fragments/common/001.js.part",
-      "sha256": "764fa3030c7b0989d7555255708829fcdaa315800b047d410500b3bb30f95a79",
-      "bytes": 15885,
+      "sha256": "bf807b2aefee37d52c39bb800389160e7c84eb08213df581cd62436cb849bd0e",
+      "bytes": 15894,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
@@ -63,8 +63,8 @@
       "source": "common.js",
       "order": 15,
       "path": "src/fragments/common/015.js.part",
-      "sha256": "8f42e060e1c1264d4ec12f5ac3d6184f674be17b374972bc696b80d56c51d527",
-      "bytes": 3875,
+      "sha256": "24f09cd137507cfe32351c421beb04d0a26ec15933c595563f187a7a33086caf",
+      "bytes": 17508,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
@@ -343,8 +343,8 @@
       "source": "content.js",
       "order": 23,
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "d2a3ae932c23d310e9c703ad6a1877054509107fe5f1f155668edbfddcef13e9",
-      "bytes": 94158,
+      "sha256": "f54faeab28fec6b923b6e09cf34138decea672236faa67336f3ed45a0e0ecf9c",
+      "bytes": 96107,
       "purpose": "page-shell-full-CSS-docking-and-panel-controls"
     },
     {
@@ -399,8 +399,8 @@
       "source": "content.js",
       "order": 37,
       "path": "src/fragments/content/037-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "c089a4bf1dd1451471aee57acfed34ac83b5fe12fa08167f7de08340333591cf",
-      "bytes": 12023,
+      "sha256": "1522e651957517f6ee8f79b85eca5f7506cc0e6b6584556ab7b566fe1cc37ee5",
+      "bytes": 13526,
       "purpose": "overview-safahat-notes-and-safe-document-rendering"
     },
     {
@@ -751,8 +751,8 @@
       "source": "content.js",
       "order": 119,
       "path": "src/fragments/content/119-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "c1f04875f2ed88797f9bc7a13126b2140baaff0cb6d5905b7b6175b00d1f5238",
-      "bytes": 10145,
+      "sha256": "9e366c77eefc31d9b63a888d0eb4fdd97f8a95bd52ba2d64e3ab2b544f647b4d",
+      "bytes": 10343,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {

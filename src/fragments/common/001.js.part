@@ -272,7 +272,7 @@
       const c = info(r, keys, ctx);
       if (f.onlyClient && !c.clients.length) continue;
       const hay = f.onlyClient ? c.clientOnly : vekilAra ? c.all : c.noVek;
-      const note = ts.length && notes[r.key] ? norm(notes[r.key]) : '';
+      const note = ts.length && notes[r.key] ? norm(noteText(notes[r.key])) : '';
       let score = 0;
       let ok = true;
       for (const t of ts) {

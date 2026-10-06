@@ -25,62 +25,93 @@
   // Dosya kartıyla ortak, yalnız bu bilgisayarda saklanan not. Ayrı bir not deposu veya UYAP isteği yoktur.
   async function loadNotlar(rec, body, signal) {
     let saved = ui.getNote(rec.key), saving = null, again = false, inFlight = null;
-    const textarea = el('textarea', { 'aria-label': 'Dosya notu', placeholder: 'Bu dosya için not ekleyin', spellcheck: 'true' });
-    textarea.value = saved;
+    const editor = globalThis.UHD.noteEditor({ value: saved, label: 'Dosya notu', placeholder: 'Önemli bilgiler, yapılacak işler, görüşme notları…' });
+    const textarea = editor.input;
     const status = el('span', { class: 'ek-not-status', role: 'status', 'aria-live': 'polite' });
-    const save = el('button', { type: 'button', class: 'dp-go' }, 'Notu kaydet');
-    const reload = el('button', { type: 'button', class: 'chip', hidden: true }, 'Karttaki notu yükle');
+    const save = el('button', { type: 'button', class: 'dp-go' }, 'Kaydet');
+    const cancel = el('button', { type: 'button', class: 'chip' }, 'Vazgeç');
+    const reload = el('button', { type: 'button', class: 'chip', hidden: true }, 'Kayıtlı notu yükle');
+    const actions = el('div', { class: 'ek-not-actions' }, save, cancel, reload);
+    const controls = new Set([save, cancel, reload]);
     const dirty = () => textarea.value.trim() !== saved;
-    const message = (text, error = false) => { status.textContent = text; status.classList.toggle('err', error); };
+    const message = (text, error = false, state = '') => {
+      status.textContent = text;
+      status.classList.toggle('err', error);
+      status.classList.toggle('pending', state === 'saving');
+      status.classList.toggle('unsaved', state === 'dirty' || state === 'conflict');
+    };
+    const buttons = () => {
+      save.disabled = !!saving || !dirty();
+      cancel.disabled = !!saving || !dirty();
+      reload.disabled = !!saving;
+    };
     const sync = () => {
+      buttons();
       if (saving) return;
-      save.disabled = !dirty();
-      message(dirty() ? 'Kaydedilmemiş değişiklik var.' : saved ? 'Kartla aynı not gösteriliyor.' : 'Henüz not eklenmemiş.');
+      save.textContent = 'Kaydet';
+      message(dirty() ? 'Kaydedilmemiş değişiklikler' : saved ? 'Kaydedildi' : 'Henüz not yok', false, dirty() ? 'dirty' : '');
     };
     const kaydet = () => {
       if (saving) { again = true; return saving; }
       if (!dirty()) return Promise.resolve();
       save.disabled = true;
+      cancel.disabled = true;
+      reload.disabled = true;
       saving = (async () => {
         do {
           again = false;
           const text = inFlight = textarea.value.trim();
-          if (!signal.aborted) message('Not kaydediliyor…');
+          if (!signal.aborted) message('Kaydediliyor…', false, 'saving');
           try {
             await ui.saveNote(rec.key, text);
             saved = text;
             if (textarea.value.trim() === text) textarea.value = text;
             reload.hidden = true;
           } catch {
-            if (!signal.aborted) message('Not kaydedilemedi. Taslağınız burada duruyor; yeniden deneyin.', true);
+            if (!signal.aborted) { save.textContent = 'Tekrar dene'; message('Not kaydedilemedi. Taslağınız korundu.', true); }
             return;
           } finally { inFlight = null; }
         } while (again && dirty());
-        if (!signal.aborted) message(dirty() ? 'Kaydedilmemiş değişiklik var.' : 'Not kaydedildi; kartla aynı not kullanılıyor.');
-      })().finally(() => { saving = null; save.disabled = !dirty(); });
+        if (!signal.aborted) {
+          save.textContent = 'Kaydet';
+          message(dirty() ? 'Kaydedilmemiş değişiklikler' : 'Kaydedildi', false, dirty() ? 'dirty' : '');
+        }
+      })().finally(() => { saving = null; buttons(); });
       return saving;
     };
     save.addEventListener('click', kaydet);
     textarea.addEventListener('input', sync);
-    textarea.addEventListener('blur', kaydet);
-    textarea.addEventListener('keydown', ev => {
+    // Düzenleyicinin kendi kontrollerine geçmek taslağı kaydetmez: Vazgeç/Yükle önce uygulanır.
+    textarea.addEventListener('blur', ev => { if (!editor.owns(ev.relatedTarget) && !controls.has(ev.relatedTarget)) return kaydet(); });
+    editor.toolbar.addEventListener('focusout', ev => { if (!editor.owns(ev.relatedTarget) && !controls.has(ev.relatedTarget)) kaydet(); });
+    actions.addEventListener('focusout', ev => { if (!editor.owns(ev.relatedTarget) && !controls.has(ev.relatedTarget)) kaydet(); });
+    const notKeys = ev => {
       if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') { ev.preventDefault(); kaydet(); }
-    });
+      else if (ev.key === 'Escape' && !saving) { ev.preventDefault(); geriAl('Değişikliklerden vazgeçildi'); }
+    };
+    textarea.addEventListener('keydown', notKeys);
+    editor.toolbar.addEventListener('keydown', notKeys);
+    actions.addEventListener('keydown', notKeys);
     const changed = (changes, area) => {
       if (area !== 'local' || !changes.uhdNotes || signal.aborted) return;
       const next = changes.uhdNotes.newValue?.[rec.key] || '';
       if (next === inFlight || next === saved) return;
       if (!dirty() && !saving) { saved = next; textarea.value = next; reload.hidden = true; sync(); }
-      else { reload.hidden = false; message('Karttaki not değişti. Taslağınız korundu; karttaki notu yükleyebilir veya kendi notunuzu kaydedebilirsiniz.'); }
+      else { reload.hidden = false; message('Not başka yerde değişti. Taslağınız korundu.', false, 'conflict'); }
     };
-    reload.addEventListener('click', () => { saved = ui.getNote(rec.key); textarea.value = saved; reload.hidden = true; sync(); });
+    function geriAl(text) {
+      if (saving || signal.aborted) return;
+      saved = ui.getNote(rec.key); textarea.value = saved; reload.hidden = true; sync(); message(text);
+      textarea.focus?.();
+    }
+    cancel.addEventListener('click', () => geriAl('Değişikliklerden vazgeçildi'));
+    reload.addEventListener('click', () => geriAl('Kayıtlı not yüklendi'));
     chrome.storage.onChanged.addListener(changed);
-    signal.addEventListener('abort', () => { chrome.storage.onChanged.removeListener(changed); kaydet(); }, { once: true });
+    signal.addEventListener('abort', () => { chrome.storage.onChanged.removeListener(changed); kaydet().finally(() => editor.destroy?.()); }, { once: true });
     body.replaceChildren(el('div', { class: 'ek-notlar' },
-      el('h3', null, 'Dosya notu'),
-      el('p', { class: 'dp-muted' }, 'Bu not karttaki notla aynıdır. Bu bilgisayarın Chrome profilinde saklanır; buluta veya UYAP’a gönderilmez. Ayarlar → Yedekleme ile dışa aktarabilirsiniz.'),
-      textarea, el('div', { class: 'ek-not-actions' }, save, reload, status),
-      el('div', { class: 'dp-muted' }, 'Kaydet düğmesini veya Ctrl/⌘ + Enter kullanın. Alanı terk ederken ve ekranı kapatırken de kaydedilir.')));
+      el('div', { class: 'ek-not-heading' }, el('h3', null, 'Dosya notu'), el('span', { class: 'ek-not-local' }, 'Yalnız bu cihazda')),
+      el('div', { class: 'ek-not-editor' }, editor.root, el('div', { class: 'ek-not-meta' }, status, el('span', { class: 'ek-not-shortcut' }, 'Ctrl/⌘ + Enter ile kaydet'))),
+      actions));
     sync();
   }
 
