@@ -78,10 +78,17 @@
       sira = gorunen.findIndex(x => ayni(x, simdikiOge));
       gruplariCiz(); listeyiCiz(); konumYaz();
     }
-    ara.addEventListener('input', () => {
+    const aramaUygula = () => {
+      araTemizle.hidden = !ara.value;
       suz();
       sira = gorunen.findIndex(x => ayni(x, simdikiOge));
       listeyiCiz(); konumYaz();
+    };
+    ara.addEventListener('input', aramaUygula);
+    araTemizle.addEventListener('click', () => {
+      ara.value = '';
+      aramaUygula();
+      ara.focus({ preventScroll: true });
     });
     ara.addEventListener('keydown', ev => {
       if (ev.key === 'ArrowDown' && gorunen.length) { ev.preventDefault(); ogeler.focus({ preventScroll: true }); odakSync(true); }

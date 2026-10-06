@@ -82,7 +82,7 @@
             p.replaceChildren(el('div', { class: 'dp-err' }, `Alınamadı: ${err.message}`));
           });
         }
-      } else if (k === 'evrak' && ilkBekliyor) { ilkBekliyor = false; sec(0, true); }
+      } else if (k === 'evrak' && ilkBekliyor) { ilkBekliyor = false; sec(0, true, true); }
       if (k === 'tebligat') tebligatUi?.sync();
     }
 

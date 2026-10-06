@@ -34,9 +34,9 @@
     const tebligatAc = new AbortController();
 
     // ------------------------------------------------ Evrak sekmesi
-    const onceki = el('button', { type: 'button', class: 'nav', title: 'Daha yeni evrak (←)', 'aria-label': 'Daha yeni evrak' }, '‹ Daha yeni');
+    const onceki = el('button', { type: 'button', class: 'nav', disabled: true, title: 'Daha yeni evrak (←)', 'aria-label': 'Daha yeni evrak' }, '‹ Daha yeni');
     const konum = el('span', { class: 'konum', 'aria-live': 'polite' });
-    const sonraki = el('button', { type: 'button', class: 'nav', title: 'Daha eski evrak (→)', 'aria-label': 'Daha eski evrak' }, 'Daha eski ›');
+    const sonraki = el('button', { type: 'button', class: 'nav', disabled: true, title: 'Daha eski evrak (→)', 'aria-label': 'Daha eski evrak' }, 'Daha eski ›');
     const evrakAdi = el('b', { class: 'ek-evrakad' });
     const yeniSekme = el('a', { target: '_blank', rel: 'noopener', hidden: true }, 'Yeni sekmede aç');
     const indir = el('a', { hidden: true }, 'İndir');
@@ -51,8 +51,11 @@
       goruldu.hidden = false;
       announce('Bu dosyanın son yeni evrakı açıldı; yeni evrakları görüldü sayabilirsiniz.');
     };
-    const onbar = el('div', { class: 'ek-onbar' }, el('span', { class: 'gezinme', role: 'group', 'aria-label': 'Evraklar arasında gezinme' }, onceki, konum, sonraki),
-      evrakAdi, goruldu, yeniSekme, indir);
+    const onbar = el('div', { class: 'ek-onbar' },
+      el('div', { class: 'ek-onbar-bilgi' }, evrakAdi),
+      el('div', { class: 'ek-onbar-eylemler' },
+        el('span', { class: 'gezinme', role: 'group', 'aria-label': 'Evraklar arasında gezinme' }, onceki, konum, sonraki),
+        el('div', { class: 'ek-belge-eylemler', role: 'group', 'aria-label': 'Evrak işlemleri' }, goruldu, yeniSekme, indir)));
     goruldu.addEventListener('click', () => {
       if (ui && typeof ui.markSeen === 'function') ui.markSeen([rec.key], o.baglam && o.baglam.kadar);
       if (okuma) okuma.kuyruk[okuma.i].goruldu = true;
@@ -62,10 +65,14 @@
     });
     const onizleme = el('div', { class: 'ek-onizleme', tabindex: '-1' }, onbar);
     const gruplar = el('div', { class: 'ek-gruplar', role: 'group', 'aria-label': 'Evrak grubu' });
-    const ara = el('input', { type: 'search', class: 'ek-ara', placeholder: 'Evrakta ara (tür, tarih, gönderen)', 'aria-label': 'Evrak listesinde ara', autocomplete: 'off', spellcheck: 'false' });
+    const ara = el('input', { type: 'search', class: 'ek-ara', placeholder: 'Tür, tarih veya gönderen ara', 'aria-label': 'Evrak listesinde ara', autocomplete: 'off', spellcheck: 'false' });
+    const araTemizle = el('button', { type: 'button', class: 'chip ek-ara-temizle', hidden: true, 'aria-label': 'Evrak aramasını temizle', title: 'Aramayı temizle' }, 'Temizle');
+    const aramaAlani = el('div', { class: 'ek-arama' }, ara, araTemizle);
+    const filtreler = el('div', { class: 'ek-filtreler' }, gruplar);
+    const listeSayi = el('span', { class: 'ek-liste-sayi', title: 'Aramaya ve seçili gruba uyan ana evraklar ile eklerin toplamı' });
     const kategoriGorunum = el('button', { type: 'button', class: 'chip ek-gorunum', 'aria-label': 'Evrakları türüne göre klasörle', 'aria-pressed': 'true', title: 'Düz listeye geç' }, 'Klasörler');
     const tarihSirasi = el('button', { type: 'button', class: 'chip ek-tarih', 'aria-label': 'Tarih sırası: en yeni önce. En eski önce sıralamak için basın.', title: 'En yeni önce' }, 'Tarih ↓');
-    const listeArac = el('div', { class: 'ek-liste-arac' }, ara, kategoriGorunum, tarihSirasi);
+    const listeArac = el('div', { class: 'ek-liste-arac' }, kategoriGorunum, tarihSirasi, listeSayi);
     const ogeler = el('div', { class: 'ek-ogeler', role: 'tree', 'aria-label': 'Evrak türleri ve evraklar', tabindex: '0' });
     const listeDurum = el('div', { class: 'dp-muted', role: 'status' });
     const zipTools = globalThis.UHD.evrakZip;
@@ -131,7 +138,9 @@
       el('div', { class: 'ek-paket-ust' }, paketSayi, paketSiraSec),
       el('div', { class: 'ek-paket-eylem' }, paketHazirla, paketDurdur, paketSiraGor, paketGorunen, paketTemizle),
       paketDurum);
-    const evrakPanel = el('div', { class: 'ek-evrak' }, el('div', { class: 'ek-liste' }, gruplar, listeArac, paketAc, paketBar, listeDurum, ogeler), onizleme);
+    const paketAraclari = el('div', { class: 'ek-paket-araclari' }, paketAc, paketBar);
+    const evrakPanel = el('div', { class: 'ek-evrak' }, el('div', { class: 'ek-liste' },
+      el('h3', { class: 'ek-liste-baslik' }, 'Evraklar'), aramaAlani, filtreler, listeArac, paketAraclari, listeDurum, ogeler), onizleme);
 
     let kaynak = o.kaynak || null;   // { dosyaId, list }
     let ilkBekliyor = false, listeBekliyor = null, listeHata = '';   // liste isteği ve ilk evrak sekmeler arasında paylaşılır
@@ -346,6 +355,7 @@
       listeDurum.textContent = !gorunen.length ? (ara.value.trim() ? 'Aramaya uyan evrak yok.'
         : kaynak && kaynak.list.kilit ? 'Evrak, savcı onayından sonra görünür.' : 'Bu grupta evrak yok.') : '';
       listeDurum.hidden = !!gorunen.length;
+      listeSayi.textContent = `${fmtNum(gorunen.length)} evrak ve ek`;
       zipSync();
     }
     function secimiCiz(visible = false) {

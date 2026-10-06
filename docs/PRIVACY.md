@@ -1,6 +1,6 @@
 # Legaluga UYAP Asistanı gizlilik politikası
 
-Son güncelleme: **6 Ekim 2026** · **1.19.37** sürümü için hazırlanmıştır. Özellikler kurulu sürüme göre farklı olabilir.
+Son güncelleme: **6 Ekim 2026** · **1.19.38** sürümü için hazırlanmıştır. Özellikler kurulu sürüme göre farklı olabilir.
 
 Legaluga UYAP Asistanı, Av. Hasan İmer Akın tarafından meslektaşlarının ücretsiz kullanımı için geliştirilmiştir. UYAP'ta erişim yetkiniz bulunan dosyaları bulma, görüntüleme ve evraklarını yönetme amacıyla çalışır. T.C. Adalet Bakanlığı, UYAP veya PTT ile resmi bir bağlantısı yoktur. İletişim: **info@legaluga.com**.
 
