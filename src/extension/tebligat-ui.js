@@ -46,13 +46,19 @@
     const status = el('p', attr('status', { role: 'status', 'aria-live': 'polite', class: 'dp-muted te-status' }));
     const summary = el('span', attr('summary', { class: 'dp-muted te-summary' }));
     const filters = el('div', attr('filters', { class: 'te-filters', role: 'group', 'aria-label': 'Tebligat türüne göre süz' }));
+    const queryFilters = el('div', attr('query-filters', { class: 'te-filters', role: 'group', 'aria-label': 'Sorgu durumuna göre süz' }));
+    const pickUnqueried = el('button', attr('pick-unqueried', { type: 'button', class: 'chip', 'data-focus': 'secim|unqueried' }), 'Sorgulanmamışları seç');
+    const pickCheck = el('button', attr('pick-check', { type: 'button', class: 'chip', 'data-focus': 'secim|check' }), 'Kontrol gerekenleri seç');
+    const clearSelection = el('button', attr('clear-selection', { type: 'button', class: 'chip', 'data-focus': 'secim|clear' }), 'Seçimi temizle');
     const list = el('div', attr('documents', { class: 'te-notice-list' }));
     const form = el('form', { class: 'te-notice-form', novalidate: true },
       el('div', { class: 'te-notice-header' }, el('h4', null, 'Tebligat sorgusu'),
         el('p', { class: 'dp-muted' }, 'Posta tebligatları PTT’de, e-tebligatlar bu dosyadaki e-tebliğ mazbatasından sorgulanır. Sorgu yalnız siz başlatınca yapılır.')),
       el('div', { class: 'te-notice-toolbar' },
         el('label', { for: `${id}-all`, class: 'te-notice-selectall' }, all, ' Tümünü seç'), filters, summary,
-        el('div', { class: 'te-notice-actions' }, submit, stop)), status, list);
+        el('div', { class: 'te-notice-actions' }, submit, stop)),
+      el('div', { class: 'te-query-toolbar' }, queryFilters,
+        el('div', { class: 'te-query-selection' }, pickUnqueried, pickCheck, clearSelection)), status, list);
     const style = el('style', null, `
       .te-notice-form{width:100%;min-width:0;display:grid;gap:8px}.te-notice-header h4{margin:0 0 4px;font-size:15px}.te-notice-header p{margin:0}
       .te-notice-toolbar{position:sticky;top:-12px;z-index:2;display:flex;gap:8px 14px;align-items:center;flex-wrap:wrap;padding:8px 0;
@@ -60,6 +66,8 @@
       .te-notice-selectall{display:flex;gap:6px;align-items:center;white-space:nowrap;cursor:pointer;font-weight:600}
       .te-filters{display:flex;gap:4px;flex-wrap:wrap}.te-filters:empty{display:none}
       .te-filters .chip[aria-pressed="true"]{border-color:var(--shell-accent,#0b6663);color:var(--shell-accent,#0b6663);font-weight:600}
+      .te-query-toolbar{display:flex;gap:6px 14px;align-items:center;flex-wrap:wrap}.te-query-toolbar[hidden]{display:none}
+      .te-query-selection{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}.te-query-selection .chip{font-size:12px}
       .te-summary{margin:0}.te-notice-actions{display:flex;gap:8px;margin-left:auto;align-items:center}
       .te-status{margin:0}.te-status:empty{display:none}.te-status.err{color:var(--shell-error,#cf222e)}
       .te-notice-list{display:grid;gap:6px}
@@ -93,10 +101,10 @@
       .te-manual-chips .chip[aria-pressed="true"]{border-color:var(--shell-accent,#0b6663);color:var(--shell-accent,#0b6663);font-weight:600}
       .te-manual-row input{width:17ch;font:inherit;padding:5px 8px;border:1px solid var(--shell-line,#d0d7de);border-radius:6px;background:transparent;color:inherit}
       .te-empty{margin:12px 0}
-      @media(max-width:720px){.te-state{min-width:0;text-align:left}.te-row-body,.te-row-subject{margin-left:0!important}.te-notice-actions{margin-left:0}}
+      @media(max-width:720px){.te-state{min-width:0;text-align:left}.te-row-body,.te-row-subject{margin-left:0!important}.te-notice-actions,.te-query-selection{margin-left:0}}
     `);
     container.replaceChildren(style, form);
-    let destroyed = false, current = null, opening = false, openError = '', items = [], revision, revisionKnown = false, initialSelection = false, filter = 'all';
+    let destroyed = false, current = null, opening = false, openError = '', items = [], revision, revisionKnown = false, initialSelection = false, filter = 'all', queryFilter = 'all';
     const selected = new Set(), states = new Map();
     const stamp = item => JSON.stringify([item.key, item.title || '', item.label, item.aciklama || '']);
     const message = (text, error = false) => { status.textContent = text; status.classList.toggle('err', error); };
@@ -121,7 +129,9 @@
     // Rozet ise okunmuş zarfın hizmetini de gösterir. İşlenen ya da bekleyen satır her süzgeçte görünür.
     const metaServiceOf = item => model.noticeProvider({ title: titleOf(item), aciklama: item.aciklama || '' }) || 'unknown';
     const serviceOf = item => stateFor(item).provider || metaServiceOf(item);
-    const visible = item => filter === 'all' || metaServiceOf(item) === filter || current?.rowKey === item.key || !!stateFor(item).pending;
+    const matchesProvider = item => filter === 'all' || metaServiceOf(item) === filter;
+    const visible = item => (matchesProvider(item) && (queryFilter === 'all' || queryStatusOf(item) === queryFilter)) ||
+      current?.rowKey === item.key || !!stateFor(item).pending;
     const uetsLink = () => el('a', { class: 'chip', href: UETS_PAGE, target: '_blank', rel: 'noopener noreferrer',
       'data-tebligat': 'open-uets' }, 'UETS sayfasını aç');
     // Aç, özgün evrakı (zarf ya da eşleşen mazbata) dosya ekranının önizlemesinde açar; UYAP isteği yalnız bu tıklamayla gider.
@@ -268,6 +278,15 @@
       if (value.message) return ['info', 'Durduruldu'];
       return ['idle', 'Sorgulanmadı'];
     };
+    // Bunlar sorgu durumlarıdır: bir sonuç alınması teslim veya hukuki tebliğ anlamına gelmez.
+    const queryStatusOf = item => {
+      const value = stateFor(item), [kind] = stateOf(value);
+      if (kind === 'idle') return 'unqueried';
+      if (kind === 'busy') return 'working';
+      if (kind === 'attn' || kind === 'err' || value.error || value.manual) return 'check';
+      if (value.result || value.fileResult) return 'result';
+      return 'check';
+    };
     const rowFor = (item, index, busy) => {
       const value = stateFor(item), info = describe(item.aciklama), service = serviceOf(item), title = titleOf(item);
       const box = el('input', { type: 'checkbox', 'data-tebligat-select': item.key, id: `${id}-item-${index}`, disabled: busy,
@@ -311,6 +330,7 @@
     };
     function sync() {
       if (destroyed) return;
+      const focus = focusedKey();
       const snapshot = getDocuments() || {};
       const next = Array.isArray(snapshot.items) ? snapshot.items.filter(item => typeof item?.key === 'string' && item.key &&
         typeof item.label === 'string' && item.own !== false && !model.isMazbata(item.title || item.label)) : [];
@@ -351,6 +371,25 @@
           });
           return button;
         }) : []));
+      const providerItems = items.filter(matchesProvider);
+      const queryCounts = { all: providerItems.length, unqueried: 0, result: 0, check: 0, working: 0 };
+      for (const item of providerItems) queryCounts[queryStatusOf(item)]++;
+      if (queryFilter !== 'all' && !queryCounts[queryFilter] && !busy) queryFilter = 'all';
+      queryFilters.replaceChildren(...[['all', 'Tümü'], ['unqueried', 'Sorgulanmamış'], ['result', 'Sonuç var'], ['check', 'Kontrol gereken']]
+        .map(([kind, text]) => {
+          const button = el('button', attr(`query-filter-${kind}`, { type: 'button', class: 'chip', 'aria-pressed': String(queryFilter === kind),
+            disabled: kind !== 'all' && !queryCounts[kind] && !busy, 'data-focus': `sorgu-filtre|${kind}` }), `${text} (${queryCounts[kind]})`);
+          button.addEventListener('click', () => {
+            if (queryFilter === kind || kind !== 'all' && !queryCounts[kind] && current?.kind !== 'batch') return;
+            queryFilter = kind;
+            if (current?.kind !== 'batch') for (const item of items) if (!visible(item)) selected.delete(item.key);
+            sync();
+          });
+          return button;
+        }));
+      pickUnqueried.disabled = !!current || !queryCounts.unqueried;
+      pickCheck.disabled = !!current || !queryCounts.check;
+      clearSelection.disabled = !!current || !selected.size;
       const shown = items.filter(visible), chosen = shown.filter(item => selected.has(item.key)).length;
       all.checked = !!shown.length && chosen === shown.length;
       all.indeterminate = chosen > 0 && chosen < shown.length;
@@ -360,7 +399,6 @@
       submit.textContent = busy ? 'Sorgulanıyor…' : selected.size ? `Seçilenleri sorgula (${selected.size})` : 'Seçilenleri sorgula';
       stop.hidden = !current;
       form.setAttribute('aria-busy', String(!!current));
-      const focus = focusedKey();
       list.replaceChildren(...shown.map((item, index) => rowFor(item, index, busy)));
       if (!items.length) list.append(el('p', { class: 'dp-muted te-empty' }, loading ? 'Tebligatlar geldikçe burada gösterilir…' : 'Bu dosyada zarf veya tebligat kaydı bulunamadı. Mazbatalar sorgulanan tebligata barkodla eşleştirilir.'));
       else if (!shown.length) list.append(el('p', { class: 'dp-muted te-empty' }, 'Bu süzgeçte tebligat yok.'));
@@ -537,6 +575,21 @@
       selected.clear();
       if (all.checked) for (const item of items.filter(visible)) selected.add(item.key);
       sync();
+    });
+    const pickByStatus = kind => {
+      if (destroyed || current || opening) return;
+      const chosen = items.filter(item => matchesProvider(item) && queryStatusOf(item) === kind);
+      if (!chosen.length) return;
+      selected.clear();
+      for (const item of chosen) selected.add(item.key);
+      queryFilter = kind;
+      sync();
+    };
+    pickUnqueried.addEventListener('click', () => pickByStatus('unqueried'));
+    pickCheck.addEventListener('click', () => pickByStatus('check'));
+    clearSelection.addEventListener('click', () => {
+      if (destroyed || current || opening) return;
+      selected.clear(); sync();
     });
     stop.addEventListener('click', () => { cancel('İşlem durduruldu. Tamamlanan sonuçlar korundu.'); sync(); });
     const refresh = async () => {

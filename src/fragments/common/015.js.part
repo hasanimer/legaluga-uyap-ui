@@ -43,5 +43,205 @@
   const fmtNum = n => Number(n || 0).toLocaleString('tr-TR');
   const fmtDate = ts => ts ? new Date(ts).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' }) : '';
 
-  globalThis.UHD = { TURLER, taramaKapsami, kurulumGerekli, CBS, ILLER, BUYUKSEHIRLER, ilSirasi, adliyeOf, cbsIlleri, cbsKapsam, ilAdi, evrakKilidi, dosyaTurAdi, ORIGIN, BRAND, norm, tokens, nameKey, detectMyName, myKeys, isClient, passFilter, fileNoQuery, search, openPath, fmtNum, fmtDate, fmtTrDate, csvCell, csvDosyaNo, evrakKey, trDateTs, parseEvraklar, diffEvrak, unseenEvrak, sonEvrak, lastEvrak, personFiles, parseSafahat, checkSafahatSnapshot, checkSafahatStore, safahatState, safahatFileKey, SAFAHAT_REFRESH_MS, SAFAHAT_LEASE_MS, sonIslemOf, fmtTL, humanKey, trTitle, cleanDurum, cleanBirim, kunyeOf, toastPlan, openErrorPlan, htmlKodlamasi, ekleriYerlestir, evrakKategorileri, evrakTakipAcik, BACKUP_APP, BACKUP_FORMAT, BACKUP_KEYS, checkBackup, todayIso, daysLeft, parseDurusma, upcomingDurusmalar, adliyeAdi, CAKISMA_DK, durusmaCakismalari, uyapDate, durusmaIcs, ihbarCevabiMi, bankaAdi, bankaUnvanAdi, bankaCevabi, bankaBelgeleri };
+  // Notlar aynı string deposunu kullanır; yalnız kalın ve kırmızı aralıkları saklanır, HTML saklanmaz.
+  const NOTE_PREFIX = '[[LEGALUGA_NOTE_V1]]';
+  function noteRuns(text, runs) {
+    const events = new Map();
+    const event = (at, b, r) => { const old = events.get(at) || [0, 0]; events.set(at, [old[0] + b, old[1] + r]); };
+    for (const run of Array.isArray(runs) ? runs.slice(0, 5000) : []) {
+      if (!run || typeof run !== 'object' || !Number.isInteger(run.s) || !Number.isInteger(run.e) || run.s < 0 || run.e > text.length || run.e <= run.s) continue;
+      const b = run.b === true ? 1 : 0, r = run.r === true ? 1 : 0;
+      if (!b && !r) continue;
+      let s = run.s, e = run.e;
+      // UTF-16 aralığı emoji/surrogate çiftinin ortasından bölünmez.
+      const paired = at => at > 0 && at < text.length && /[\uD800-\uDBFF]/.test(text[at - 1]) && /[\uDC00-\uDFFF]/.test(text[at]);
+      if (paired(s)) s--;
+      if (paired(e)) e++;
+      event(s, b, r); event(e, -b, -r);
+    }
+    const out = []; let previous = 0, bold = 0, red = 0;
+    for (const [at, delta] of [...events].sort(([a], [b]) => a - b)) {
+      if (at > previous && (bold > 0 || red > 0)) {
+        const run = { s: previous, e: at, ...(bold > 0 ? { b: true } : {}), ...(red > 0 ? { r: true } : {}) };
+        const last = out[out.length - 1];
+        if (last && last.e === run.s && !!last.b === !!run.b && !!last.r === !!run.r) last.e = run.e;
+        else out.push(run);
+      }
+      bold += delta[0]; red += delta[1]; previous = at;
+    }
+    return out;
+  }
+  function noteDecode(raw) {
+    const value = typeof raw === 'string' ? raw : '';
+    if (value.startsWith(NOTE_PREFIX)) {
+      try {
+        const data = JSON.parse(value.slice(NOTE_PREFIX.length));
+        if (data && data.v === 1 && typeof data.text === 'string' && Array.isArray(data.runs)) return { text: data.text, runs: noteRuns(data.text, data.runs) };
+      } catch { /* eski veya bozuk metin olduğu gibi, güvenli düz metin olarak gösterilir */ }
+    }
+    return { text: value, runs: [] };
+  }
+  function noteEncode(text, runs = []) {
+    text = typeof text === 'string' ? text : '';
+    const leading = text.length - text.trimStart().length, clean = text.trim();
+    const marks = noteRuns(clean, noteRuns(text, runs).map(run => ({ ...run, s: Math.max(0, run.s - leading), e: Math.min(clean.length, run.e - leading) })));
+    return marks.length ? NOTE_PREFIX + JSON.stringify({ v: 1, text: clean, runs: marks }) : clean;
+  }
+  const noteText = raw => noteDecode(raw).text;
+  function noteDisplay(raw, highlightFn) {
+    const data = noteDecode(raw), out = []; let offset = 0;
+    const children = text => {
+      if (typeof highlightFn !== 'function') return [text];
+      const result = highlightFn(text);
+      return result == null ? [text] : Array.isArray(result) ? result.flat(Infinity) : [result];
+    };
+    for (const run of data.runs) {
+      if (offset < run.s) out.push(...children(data.text.slice(offset, run.s)));
+      let kids = children(data.text.slice(run.s, run.e));
+      if (run.b) { const strong = document.createElement('strong'); strong.append(...kids); kids = [strong]; }
+      if (run.r) { const span = document.createElement('span'); span.className = 'note-red'; span.append(...kids); kids = [span]; }
+      out.push(...kids); offset = run.e;
+    }
+    if (offset < data.text.length || !out.length) out.push(...children(data.text.slice(offset)));
+    return out;
+  }
+  function noteEditor({ value = '', label = 'Dosya notu', placeholder = '', compact = false } = {}) {
+    const root = document.createElement('div'), toolbar = document.createElement('div'), input = document.createElement('div');
+    root.className = 'note-editor' + (compact ? ' note-compact' : '');
+    toolbar.className = 'note-toolbar'; toolbar.setAttribute('role', 'toolbar'); toolbar.setAttribute('aria-label', 'Not biçimlendirme');
+    input.className = 'note-input'; input.contentEditable = 'true'; input.setAttribute('role', 'textbox'); input.setAttribute('aria-multiline', 'true');
+    input.setAttribute('aria-label', label); input.setAttribute('data-placeholder', placeholder); input.setAttribute('spellcheck', 'true'); input.tabIndex = 0;
+    root.append(toolbar, input);
+    const doc = input.ownerDocument, win = doc.defaultView || globalThis, listeners = [];
+    let disabled = false, destroyed = false, lastRange = null;
+    const owns = target => !!target && (target === root || root.contains(target));
+    const listen = (node, event, fn, options) => { node.addEventListener(event, fn, options); listeners.push(() => node.removeEventListener(event, fn, options)); };
+    const redColors = new Set(['red', '#b42318', '#dc2626', '#ff8f87', '#ff9292', '#ff8e82', 'rgb(180,35,24)', 'rgb(220,38,38)', 'rgb(255,143,135)', 'rgb(255,146,146)', 'rgb(255,142,130)']);
+    const redColor = color => redColors.has(String(color || '').replace(/\s/g, '').toLowerCase());
+    const selection = () => root.getRootNode().getSelection?.() || doc.getSelection?.();
+    function read() {
+      let text = ''; const runs = [], positions = new Map(), texts = [];
+      const append = (part, b, r) => { const s = text.length; text += part; if (part.length && (b || r)) runs.push({ s, e: text.length, ...(b ? { b: true } : {}), ...(r ? { r: true } : {}) }); };
+      const walk = (node, bold, red) => {
+        if (node.nodeType === 3) { const s = text.length; append(node.data || '', bold, red); positions.set(node, { s, e: text.length }); texts.push({ node, s, e: text.length }); return; }
+        if (node.nodeType !== 1) return;
+        const tag = node.tagName, block = node !== input && /^(?:DIV|P|LI)$/.test(tag);
+        if (block && text && !text.endsWith('\n')) append('\n', bold, red);
+        bold = bold || tag === 'STRONG' || tag === 'B' || /^(?:bold|bolder|[6-9]00)$/.test(String(node.style?.fontWeight || '').toLowerCase());
+        red = red || node.classList.contains('note-red') || tag === 'FONT' && redColor(node.getAttribute('color')) || redColor(node.style?.color);
+        const boundaries = [], s = text.length;
+        if (tag === 'BR') append('\n', bold, red);
+        else {
+          for (const child of node.childNodes) { boundaries.push(text.length); walk(child, bold, red); }
+          boundaries.push(text.length);
+          if (block && (!node.childNodes.length || !text.endsWith('\n'))) append('\n', bold, red);
+        }
+        positions.set(node, { s, e: text.length, boundaries });
+      };
+      walk(input, false, false);
+      return { text, runs: noteRuns(text, runs), positions, texts };
+    }
+    const point = (model, node, offset) => {
+      const p = model.positions.get(node);
+      if (!p) return null;
+      return node.nodeType === 3 ? Math.min(p.e, p.s + offset) : p.boundaries?.[offset] ?? p.e;
+    };
+    function selected(model) {
+      const sel = selection();
+      if (!sel?.rangeCount) return null;
+      const range = sel.getRangeAt(0);
+      if (!input.contains(range.startContainer) || !input.contains(range.endContainer)) return null;
+      const s = point(model, range.startContainer, range.startOffset), e = point(model, range.endContainer, range.endOffset);
+      return s == null || e == null ? null : { s: Math.min(s, e), e: Math.max(s, e) };
+    }
+    function restore(range) {
+      const model = read(), sel = selection();
+      if (!sel || !doc.createRange) return;
+      const at = offset => { const t = model.texts.find(item => offset >= item.s && offset <= item.e); return t ? [t.node, Math.min(t.e - t.s, offset - t.s)] : [input, input.childNodes.length]; };
+      const target = doc.createRange();
+      target.setStart(...at(Math.min(model.text.length, range.s))); target.setEnd(...at(Math.min(model.text.length, range.e)));
+      sel.removeAllRanges(); sel.addRange(target); lastRange = range;
+    }
+    function flagged(model, range, flag) {
+      if (!range) return false;
+      if (range.s === range.e) { const at = Math.max(0, range.s - 1); return model.runs.some(run => run.s <= at && run.e > at && run[flag]); }
+      return model.runs.filter(run => run[flag]).reduce((n, run) => n + Math.max(0, Math.min(run.e, range.e) - Math.max(run.s, range.s)), 0) === range.e - range.s;
+    }
+    const buttons = {};
+    function capture() {
+      if (destroyed) return;
+      const model = read(), range = selected(model);
+      if (range) lastRange = range;
+      const active = range || lastRange;
+      let bold = flagged(model, active, 'b'), red = flagged(model, active, 'r');
+      if (range && range.s === range.e) {
+        try {
+          bold = doc.queryCommandState?.('bold') ?? bold;
+          const color = doc.queryCommandValue?.('foreColor');
+          if (color != null && color !== '') red = redColor(color);
+        } catch { /* DOM aralıkları yeterlidir */ }
+      }
+      buttons.b?.setAttribute('aria-pressed', String(bold)); buttons.r?.setAttribute('aria-pressed', String(red)); buttons.normal?.setAttribute('aria-pressed', String(!red));
+    }
+    const emit = () => input.dispatchEvent(new win.Event('input', { bubbles: true }));
+    function apply(action) {
+      if (disabled || destroyed) return;
+      const model = read(), range = selected(model) || lastRange || { s: model.text.length, e: model.text.length };
+      input.focus({ preventScroll: true }); restore(range);
+      if (range.s === range.e) {
+        if (typeof doc.execCommand === 'function') {
+          if (action === 'b') doc.execCommand('bold', false);
+          else {
+            const style = win.getComputedStyle?.(input), red = style?.getPropertyValue?.('--note-red').trim();
+            doc.execCommand('foreColor', false, action === 'r' ? redColor(red) ? red : '#b42318' : style?.color || '#17252b');
+          }
+        }
+        capture(); emit(); return;
+      }
+      const flag = action === 'b' ? 'b' : 'r', enabled = action === 'normal' ? false : action === 'r' ? true : !flagged(model, range, flag);
+      const cuts = [...new Set([0, model.text.length, range.s, range.e, ...model.runs.flatMap(run => [run.s, run.e])])].sort((a, b) => a - b);
+      const runs = [];
+      for (let i = 1; i < cuts.length; i++) {
+        const s = cuts[i - 1], e = cuts[i], old = model.runs.find(run => run.s <= s && run.e >= e) || {}, mark = { s, e, ...(old.b ? { b: true } : {}), ...(old.r ? { r: true } : {}) };
+        if (s >= range.s && e <= range.e) { if (enabled) mark[flag] = true; else delete mark[flag]; }
+        if (mark.b || mark.r) runs.push(mark);
+      }
+      input.replaceChildren(...noteDisplay(NOTE_PREFIX + JSON.stringify({ v: 1, text: model.text, runs })));
+      restore(range); capture(); emit();
+    }
+    for (const [action, text] of [['b', 'Kalın'], ['r', 'Kırmızı yazı'], ['normal', 'Normal renk']]) {
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'note-format'; button.textContent = text;
+      button.setAttribute('data-format', action === 'b' ? 'bold' : action === 'r' ? 'red' : 'normal');
+      button.setAttribute('aria-pressed', 'false'); button.setAttribute('title', action === 'b' ? 'Kalın (Ctrl/⌘ + B)' : text);
+      buttons[action] = button; toolbar.append(button);
+      const hold = event => { if (!disabled) { capture(); event.preventDefault(); } };
+      listen(button, 'pointerdown', hold); listen(button, 'mousedown', hold); listen(button, 'click', () => apply(action));
+    }
+    Object.defineProperty(input, 'value', {
+      get() { const model = read(); return noteEncode(model.text, model.runs); },
+      set(raw) { const data = noteDecode(raw); input.replaceChildren(...(data.text ? noteDisplay(raw) : [])); lastRange = null; capture(); }, configurable: true
+    });
+    Object.defineProperty(input, 'disabled', {
+      get: () => disabled,
+      set(value) { disabled = !!value; input.contentEditable = disabled ? 'false' : 'true'; input.setAttribute('aria-disabled', String(disabled)); for (const button of Object.values(buttons)) button.disabled = disabled; }, configurable: true
+    });
+    listen(input, 'input', capture); listen(input, 'keyup', capture); listen(input, 'pointerup', capture); listen(input, 'focus', capture); listen(doc, 'selectionchange', capture);
+    listen(input, 'keydown', event => { if ((event.ctrlKey || event.metaKey) && String(event.key).toLowerCase() === 'b') { event.preventDefault(); apply('b'); } });
+    const insertText = text => {
+      input.focus({ preventScroll: true });
+      if (doc.execCommand?.('insertText', false, text)) return;
+      const sel = selection();
+      if (!sel?.rangeCount) return;
+      const range = sel.getRangeAt(0);
+      if (!input.contains(range.startContainer) || !input.contains(range.endContainer)) return;
+      range.deleteContents(); const node = doc.createTextNode(text); range.insertNode(node); range.setStartAfter(node); range.collapse(true); sel.removeAllRanges(); sel.addRange(range); emit();
+    };
+    listen(input, 'paste', event => { event.preventDefault(); if (!disabled) insertText(event.clipboardData?.getData('text/plain') || ''); });
+    listen(input, 'drop', event => { event.preventDefault(); if (!disabled) insertText(event.dataTransfer?.getData('text/plain') || ''); });
+    listen(toolbar, 'focusout', event => { if (!owns(event.relatedTarget)) input.dispatchEvent(new win.FocusEvent('blur', { relatedTarget: event.relatedTarget })); });
+    input.value = value;
+    return { root, input, toolbar, owns, focus: () => input.focus({ preventScroll: true }), destroy() { if (destroyed) return; destroyed = true; for (const off of listeners) off(); } };
+  }
+
+  globalThis.UHD = { TURLER, taramaKapsami, kurulumGerekli, CBS, ILLER, BUYUKSEHIRLER, ilSirasi, adliyeOf, cbsIlleri, cbsKapsam, ilAdi, evrakKilidi, dosyaTurAdi, ORIGIN, BRAND, norm, tokens, nameKey, detectMyName, myKeys, isClient, passFilter, fileNoQuery, search, openPath, fmtNum, fmtDate, fmtTrDate, csvCell, csvDosyaNo, evrakKey, trDateTs, parseEvraklar, diffEvrak, unseenEvrak, sonEvrak, lastEvrak, personFiles, parseSafahat, checkSafahatSnapshot, checkSafahatStore, safahatState, safahatFileKey, SAFAHAT_REFRESH_MS, SAFAHAT_LEASE_MS, sonIslemOf, fmtTL, humanKey, trTitle, cleanDurum, cleanBirim, kunyeOf, toastPlan, openErrorPlan, htmlKodlamasi, ekleriYerlestir, evrakKategorileri, noteText, noteDisplay, noteEditor, evrakTakipAcik, BACKUP_APP, BACKUP_FORMAT, BACKUP_KEYS, checkBackup, todayIso, daysLeft, parseDurusma, upcomingDurusmalar, adliyeAdi, CAKISMA_DK, durusmaCakismalari, uyapDate, durusmaIcs, ihbarCevabiMi, bankaAdi, bankaUnvanAdi, bankaCevabi, bankaBelgeleri };
 })();
