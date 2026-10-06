@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "d09ed76013863a15b607fd313cae75af7ebd34236ff853226119f198905ad9bd"
+      "sha256": "d0226b05bd74b6fa8b6db61bf9b68892dfb6ed9233cc995dbfe8ae7949fa1acd"
     },
     {
       "path": "SECURITY.md",
@@ -72,11 +72,11 @@
     },
     {
       "path": "docs/images/05-dosya-ozeti.png",
-      "sha256": "3fe5f3d838116e4f5c2ef5445dfdc1ec69ad768165b17252cf954c6f1930dbae"
+      "sha256": "2eab186b689b76cc96f147efe8148042a3fab62c71a367d3e43149df691ec2dc"
     },
     {
       "path": "docs/images/06-evrak-klasorleri.png",
-      "sha256": "95b52f2d97611c0f266c6095a12f6e45c98154fbe29b5db5caf6869b8cdffae3"
+      "sha256": "001b1d37203af51677eae98ff676ca624d2ab74bf9c2f2d585ea6462015daff8"
     },
     {
       "path": "docs/images/07-evrak-turu-secimi.png",

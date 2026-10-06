@@ -65,7 +65,7 @@ Müvekkil etiketi, ayarlardaki vekil adıyla dosyanın taraf/vekil kaydının e�
 
 Masaüstünde **Özet** ana pencereye sığacak şekilde düzenlenir; uzun hesap veya taraf listeleri kendi bölümlerinde kaydırılır. Taraflar Davacı, Davalı, Sanık, Müşteki gibi UYAP sıfatlarına göre ayrı gruplarda gösterilir; vekiller ilgili tarafın satırında kalır. Dar ekranda bölümler alt alta yerleşir. Tutarlar UYAP'tan geldiği gibi gösterilir; eklenti dosya borcu hesaplamaz.
 
-![Dosya özeti: hesap bilgisi, tahsilat ve taraflar aynı pencerede — örnek veriler](docs/images/05-dosya-ozeti.png)
+![Dosya özeti: dosya bilgileri, son hareketler ve sıfata göre gruplandırılmış taraflar — örnek veriler](docs/images/05-dosya-ozeti.png)
 
 Evrak ekranında arama üstte tam genişlikte, grup ve tarih kontrolleri ayrı satırlardadır. **Temizle** aramayı kaldırır; listede aramaya uyan evrak ve eklerin toplamı görünür. Seçili evrak vurgulanır; belge başlığı uzun olduğunda satıra yayılır. Dar pencerede liste ile önizleme alt alta yerleşir.
 
