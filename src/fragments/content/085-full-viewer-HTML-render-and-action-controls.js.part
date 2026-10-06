@@ -57,12 +57,20 @@
         Promise.resolve(promise).then(resolve, reject).finally(() => signal.removeEventListener('abort', iptal));
       });
     }
-    const tebligatKey = x => JSON.stringify(x.ana ? [x.ana.k, x.dosya, 'ek', x.tur] : [x.k, x.dosya]);
-    const tebligatEligible = x => {
-      const title = norm(x.tur).replace(/[^a-z0-9]/g, '');
-      return /^(?:acik|kapali)?e?teblig(?:at)?(?:mazbatasi)?(?:evraki|belgesi)?$/.test(title) && paketAlinir(x) &&
-        (x.ana || x.e?.evrakId != null && x.e.evrakId !== '');
+    // Tebligat anahtarı liste yenilense de aynı kalır; UYAP evrak ve ek kimliklerini yanıttan yanıta değiştirebilir. Ana evrak
+    // ve ayrı satırdaki ek kendi evrak anahtarıyla, yalnız ek listesindeki ek ana evrak ve ek adıyla tanınır. Aynı ana evrakta
+    // aynı adlı birden fazla ek (ör. iki muhatabın zarfı) adla ayrılamaz: bu ikizler listenin verdiği ek kimliğini de taşır.
+    // Sıra kullanılmaz; yenilenen listede sıra değişince anahtar başka eke kaymamalı. Kimlik yenilenirse ikizin eski anahtarı düşer.
+    const tebligatKey = x => {
+      if (x.ekIndis == null) return JSON.stringify([x.k, x.dosya]);
+      const ekler = Array.isArray(x.ana.e?.ekEvrakListesi) ? x.ana.e.ekEvrakListesi : [];
+      const ikiz = ekler.filter((ek, j) => ek && typeof ek === 'object' && (String(ek.ekTuru ?? '').trim() || `Ek ${j + 1}`) === x.tur).length > 1;
+      return JSON.stringify(ikiz ? [x.ana.k, x.dosya, 'ek', x.tur, String(x.ekId ?? '')] : [x.ana.k, x.dosya, 'ek', x.tur]);
     };
+    const tebligatTuru = x => /^(?:acik|kapali)?e?teblig(?:at)?(?:mazbatasi)?(?:evraki|belgesi)?$/.test(norm(x.tur).replace(/[^a-z0-9]/g, ''));
+    // Okunabilen tebligat: ana evrak ve ayrı satırdaki ek kendi UYAP kimliğiyle, yalnız ek listesindeki ek ana evrakın verdiği ek
+    // kimliğiyle alınır. Kimliksiz kayıt hedef olmaz; seçici onu listelenemeyen kayıt olarak sayar.
+    const tebligatEligible = x => tebligatTuru(x) && !!x.k && (x.ekIndis != null ? paketAlinir(x) : x.e?.evrakId != null && x.e.evrakId !== '');
     const tebligatUets = x => /^(?:acik|kapali)?eteblig(?:at)?(?:mazbatasi)?(?:evraki|belgesi)?$/.test(norm(x.tur).replace(/[^a-z0-9]/g, ''));
     const tebligatComplete = () => !!kaynak && !kaynak.list.kilit && !kaynak.list.morePages && !kaynak.list.scopeUnknown;
     
