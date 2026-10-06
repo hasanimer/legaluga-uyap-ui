@@ -115,13 +115,76 @@
   // Kaldırılan süre özelliğinin eski kayıtları yalnızca yedeklerde kayıpsız korunur.
   const BACKUP_KEYS = ['uhdIndex', 'uhdNotes', 'uhdSureler', 'uhdEvrakGoruldu', 'uhdDurusmalar', 'uhdPrefs', 'uhdRecent', 'uhdGizli', 'uhdTurFilter', 'uhdBankChecks', 'uhdSafahat'];
   function checkBackup(obj) {
-    if (!obj || typeof obj !== 'object' || obj.app !== BACKUP_APP) throw new Error('Bu dosya Legaluga UYAP Asistanı yedeği değil.');
+    const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+    if (!object(obj) || obj.app !== BACKUP_APP) throw new Error('Bu dosya Legaluga UYAP Asistanı yedeği değil.');
     if (obj.format !== BACKUP_FORMAT) throw new Error(`Bu yedeğin biçimi (${obj.format}) bu sürümde desteklenmiyor.`);
-    if (!obj.data || typeof obj.data !== 'object') throw new Error('Yedek dosyası bozuk.');
+    if (!object(obj.data)) throw new Error('Yedek dosyası bozuk.');
     const data = {};
-    for (const k of BACKUP_KEYS) if (k in obj.data) data[k] = obj.data[k];
-    if (data.uhdIndex && !Array.isArray(data.uhdIndex.records)) throw new Error('Yedekteki dosya listesi bozuk.');
-    if (data.uhdPrefs && (typeof data.uhdPrefs !== 'object' || Array.isArray(data.uhdPrefs))) throw new Error('Yedekteki ayarlar bozuk.');
+    for (const k of BACKUP_KEYS) if (Object.hasOwn(obj.data, k)) data[k] = obj.data[k];
+    const fail = label => { throw new Error(`Yedekteki ${label} bozuk. Mevcut veriler değiştirilmedi.`); };
+    const string = value => typeof value === 'string';
+    const number = value => typeof value === 'number' && Number.isFinite(value);
+    const scalar = value => string(value) || number(value);
+    const fields = (value, names, check, label) => {
+      for (const name of names) if (value[name] != null && !check(value[name])) fail(label);
+    };
+    const list = (value, check, label) => {
+      if (value != null && (!Array.isArray(value) || Array.from(value).some(item => !check(item)))) fail(label);
+    };
+    const record = value => {
+      if (!object(value) || !string(value.key) || !value.key.trim()) return false;
+      fields(value, ['dosyaId', 'birimId', 'dosyaTurKod', 'birimTuru2', 'ilKodu'], scalar, 'dosya bilgisi');
+      fields(value, ['dosyaNo', 'birimAdi', 'dosyaTur', 'durum', 'yargiTuru', 'yargiTuruAdi',
+        'birimTuruAdi', 'acilis', 'ilAdi', 'evrakKilit'], string, 'dosya bilgisi');
+      fields(value, ['sorguDurum', 'acilisTs', 'tarafAt', 'tarafV', 'evrakAt', 'islemAt'], number, 'dosya bilgisi');
+      list(value.taraflar, taraf => object(taraf) && string(taraf.adi) &&
+        (taraf.rol == null || string(taraf.rol)) && (taraf.vekil == null || Array.isArray(taraf.vekil) && taraf.vekil.every(string)), 'taraf bilgisi');
+      list(value.evrakSeen, string, 'evrak bilgisi');
+      const evrak = item => {
+        if (!object(item)) return false;
+        fields(item, ['k', 'tur', 'onay', 'gonderim', 'gonderen', 'aciklama', 'dosya', 'tarih'], string, 'evrak bilgisi');
+        fields(item, ['at'], number, 'evrak bilgisi');
+        return true;
+      };
+      list(value.yeniEvrak, evrak, 'evrak bilgisi');
+      for (const name of ['sonEvrak', 'sonIslem']) if (value[name] != null && !evrak(value[name])) fail('son hareket bilgisi');
+      return true;
+    };
+    if (data.uhdIndex != null) {
+      if (!object(data.uhdIndex) || !Array.isArray(data.uhdIndex.records)) fail('dosya listesi');
+      list(data.uhdIndex.records, record, 'dosya listesi');
+    }
+    if (data.uhdPrefs != null) {
+      if (!object(data.uhdPrefs)) fail('ayarlar');
+      list(data.uhdPrefs.taramaTurleri, scalar, 'tarama ayarları');
+      list(data.uhdPrefs.savcilikIller, scalar, 'savcılık ayarları');
+    }
+    const dictionary = (value, check, label) => {
+      if (value != null && (!object(value) || Object.values(value).some(item => !check(item)))) fail(label);
+    };
+    dictionary(data.uhdNotes, string, 'notlar');
+    dictionary(data.uhdEvrakGoruldu, number, 'evrak görüntüleme bilgisi');
+    dictionary(data.uhdGizli, item => {
+      if (!object(item)) return false;
+      fields(item, ['dosyaNo', 'birimAdi'], string, 'gizlenen dosya bilgisi');
+      fields(item, ['at'], number, 'gizlenen dosya bilgisi');
+      return true;
+    }, 'gizlenen dosya bilgisi');
+    list(data.uhdRecent, string, 'son açılan dosyalar');
+    if (data.uhdDurusmalar != null) {
+      if (!object(data.uhdDurusmalar)) fail('duruşma bilgisi');
+      fields(data.uhdDurusmalar, ['at', 'gun'], number, 'duruşma bilgisi');
+      list(data.uhdDurusmalar.list, item => {
+        if (!object(item) || !string(item.tarih) || !string(item.saat)) return false;
+        fields(item, ['id', 'key', 'tarih', 'saat', 'birimAdi', 'dosyaNo', 'dosyaTur', 'islem', 'sonuc', 'durum'], string, 'duruşma bilgisi');
+        list(item.taraflar, taraf => object(taraf) && string(taraf.ad) && (taraf.sifat == null || string(taraf.sifat)), 'duruşma taraf bilgisi');
+        return true;
+      }, 'duruşma bilgisi');
+    }
+    if (data.uhdTurFilter != null) {
+      if (!object(data.uhdTurFilter)) fail('yargı türü seçimi');
+      list(data.uhdTurFilter.tur, string, 'yargı türü seçimi');
+    }
     if (Object.hasOwn(data, 'uhdBankChecks')) {
       if (!globalThis.UHDBankChecks) throw new Error('Banka takip yedeği bu ekranda doğrulanamadı.');
       data.uhdBankChecks = globalThis.UHDBankChecks.sanitizeStore(data.uhdBankChecks);

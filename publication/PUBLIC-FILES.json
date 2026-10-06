@@ -104,11 +104,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "42771ed11584465e28c5e91c056f427bd0d2ab2ed6d7c3ae58123cd48d277305"
+      "sha256": "4253b175a3a1e6f5bf3227acc64b1178eeac7a959c3c045beabb2d8f8467d4fe"
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "01d19667d1dc550194b1ed6ed0db4e408a432fa487fe3f1ad21d5d5b1a74c1a8"
+      "sha256": "023a30e1004e759a5c534871abb757b855e68e5f589070af3ecce88c5f9e013d"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -216,7 +216,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "6b03253d247ae1edadc3d48854ea98ae904c8b735387b044690c1bd95264df92"
+      "sha256": "50871919ed30d02eab41539723d9caa199c086607281590a71a447189248b498"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -256,7 +256,7 @@
     },
     {
       "path": "src/extension/storage.js",
-      "sha256": "68b1f49094f366fe0a38e66d69e76beffb69e83f3b459dbaf965e0691686f38b"
+      "sha256": "239b14951bd290d203e1d90b46c76ab9eab057fc5976f3ee14d07febd2ca1dd8"
     },
     {
       "path": "src/extension/tabs.js",
@@ -280,7 +280,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "0a9e63ebdec6e68700df4e2496d2ee4eac44545f3bc107499413bedf76913866"
+      "sha256": "bf28cedbf003fc6d60dba06b5626c888cde231710aa12036961e2f9b0e01ff51"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -524,7 +524,7 @@
     },
     {
       "path": "src/fragments/common/013.js.part",
-      "sha256": "e3b4f2d5c2cd26f9e4f11e5fff6522b35df0c74e5b2a8974a698c5ac467ef3ca"
+      "sha256": "886d7b5e8b5d938054286d14bec1f82e8832d92918d079219b07b45ae0f0124f"
     },
     {
       "path": "src/fragments/common/015.js.part",
@@ -548,7 +548,7 @@
     },
     {
       "path": "src/fragments/content/009-explicit-scan-stop.js.part",
-      "sha256": "90c87da700b02a2b365c993ed81759bba1328a635e1b71b9219631c8daae0aa5"
+      "sha256": "522b87bcaa7babac54a6705654007bd6b9fdb190ccdcb1988b4eb5aa7bdd770c"
     },
     {
       "path": "src/fragments/content/011-scan-owner-and-abort-guards.js.part",
@@ -580,7 +580,7 @@
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
-      "sha256": "58ceafb673c04bd429e0d7103d94b7ad997d3dcb881a08cc8042f52e6d1613b9"
+      "sha256": "325c1f7032792bdf5473333c1f04cc8b494d485eb7be61af7f2630d5707db71b"
     },
     {
       "path": "src/fragments/content/027-document-view-command-abort-guards.js.part",
@@ -748,7 +748,7 @@
     },
     {
       "path": "src/fragments/content/105-viewer-navigation-abort-epoch-boundary.js.part",
-      "sha256": "b84b157143604ec5c6a611f0fed29c496cbb6f200c1eb8fb3dbcca6addd3080b"
+      "sha256": "8197be5211ea09917c9c3fe4a64044fbe4ef1ac47de1d7dc0b8fa0e64c0a83ae"
     },
     {
       "path": "src/fragments/content/107-viewer-read-fatal-CAPTCHA-abort-guard.js.part",
@@ -760,7 +760,7 @@
     },
     {
       "path": "src/fragments/content/111-viewer-refresh-epoch-source-lock-guard.js.part",
-      "sha256": "4f8260ac8afe07dd41d6aa436764c75dd453ef91a516c9915b3304127481ee91"
+      "sha256": "d03bc9efad0ac60b5c761269505a1ba1bf615517b152f65f02813b36f1917452"
     },
     {
       "path": "src/fragments/content/113-viewer-loaded-render-and-error-action-controls.js.part",
