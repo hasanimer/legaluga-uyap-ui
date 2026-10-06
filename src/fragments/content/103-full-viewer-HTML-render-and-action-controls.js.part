@@ -138,9 +138,9 @@
         ev.preventDefault(); ev.stopPropagation();
         const key = active.dataset.kategori;
         kategoriAc(key, !kategoriDom.get(key).box.open); evrakOdak = { kat: key }; odakSync();
-      } else if (ev.key === 'Enter') { ev.preventDefault(); sec(Number(active.dataset.i), true); }
+      } else if (ev.key === 'Enter') { ev.preventDefault(); satirEtkinlestir(Number(active.dataset.i)); }
       else if (ev.key === ' ' && paketMod) { ev.preventDefault(); paketIsaretle(gorunen[Number(active.dataset.i)]); }
-      else if (ev.key === ' ' && anaK) { ev.preventDefault(); ekAc(anaK, !ekAcik(anaK)); duyur(ekAcik(anaK)); evrakOdak = { row: anaK }; odakSync(); }
+      else if (ev.key === ' ') { ev.preventDefault(); satirEtkinlestir(Number(active.dataset.i)); }
     });
 
     // Önizlemedeki içerik: çubuk yerinde kalır (odaktaki düğme kaybolmasın); değişen içerikteki odak belgeye taşınır.

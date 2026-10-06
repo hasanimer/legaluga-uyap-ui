@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "97fee3e3f138720969e23a3c5e15d5b445ef8dd633d40c9497a8f779e7333774"
+      "sha256": "d0226b05bd74b6fa8b6db61bf9b68892dfb6ed9233cc995dbfe8ae7949fa1acd"
     },
     {
       "path": "SECURITY.md",
@@ -72,11 +72,11 @@
     },
     {
       "path": "docs/images/05-dosya-ozeti.png",
-      "sha256": "3fe5f3d838116e4f5c2ef5445dfdc1ec69ad768165b17252cf954c6f1930dbae"
+      "sha256": "2eab186b689b76cc96f147efe8148042a3fab62c71a367d3e43149df691ec2dc"
     },
     {
       "path": "docs/images/06-evrak-klasorleri.png",
-      "sha256": "95b52f2d97611c0f266c6095a12f6e45c98154fbe29b5db5caf6869b8cdffae3"
+      "sha256": "001b1d37203af51677eae98ff676ca624d2ab74bf9c2f2d585ea6462015daff8"
     },
     {
       "path": "docs/images/07-evrak-turu-secimi.png",
@@ -104,11 +104,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "55ad23a8e3c20d5df2dcd9e133b5292d3622020bae6b73fe85acd1b0d37a6b6b"
+      "sha256": "42771ed11584465e28c5e91c056f427bd0d2ab2ed6d7c3ae58123cd48d277305"
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "8598643ace206f7f3b7ab96d8ea79e552f04586991384b0f86f1fcea0528505a"
+      "sha256": "01d19667d1dc550194b1ed6ed0db4e408a432fa487fe3f1ad21d5d5b1a74c1a8"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -216,7 +216,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "a2b21a5c1f4ab6923b511dcab012df12e9bdd6b211aa5b681b4128ff8f8df836"
+      "sha256": "6b03253d247ae1edadc3d48854ea98ae904c8b735387b044690c1bd95264df92"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -576,7 +576,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "cb7a067a20518c1ab932cf1fa65245c69a2b5792ef2e7f507e645acdc26b3100"
+      "sha256": "d2a3ae932c23d310e9c703ad6a1877054509107fe5f1f155668edbfddcef13e9"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -596,7 +596,7 @@
     },
     {
       "path": "src/fragments/content/033-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "6b332f92620c87eb8b3dac84130f8c6e869b8a69478bf09117829f373eedd932"
+      "sha256": "58d77c5f0ea0e50eca09068fd40d83d461e9387edbb0d1584afa4953389e7dee"
     },
     {
       "path": "src/fragments/content/035-overview-safahat-notes-and-safe-document-rendering.js.part",
@@ -608,7 +608,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "ce2f6407c73c3e7fe0325c511c5e9387b216b3eec703504d7201dfa6dc4ae86c"
+      "sha256": "d91da945f546c1a0276b719741e31e5113f354c9ed429f1b68d6dab030cac5a0"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -744,7 +744,7 @@
     },
     {
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "c7b9b7c2f1fcd41a79444f9cdf46565bcaaead51986347af3a47a0a9f8664908"
+      "sha256": "612438d0a519aedd1d6290e06620aa3ca88e3fbc2306270a1cc71a76c1d6795d"
     },
     {
       "path": "src/fragments/content/105-viewer-navigation-abort-epoch-boundary.js.part",
