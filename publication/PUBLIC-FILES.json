@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "659b1ff2cded5d92d094b1b8149e153d6c4e58c42e25ef1fa695ad81be419fd0"
+      "sha256": "97fee3e3f138720969e23a3c5e15d5b445ef8dd633d40c9497a8f779e7333774"
     },
     {
       "path": "SECURITY.md",
@@ -52,7 +52,7 @@
     },
     {
       "path": "docs/PRIVACY.md",
-      "sha256": "6c31cb91f113f22511c5752f085ac0eee5844db09a01105949c9cefe63586d78"
+      "sha256": "2848f6d0fc3e1cafad82699fe514197feca3f74b82348d64ed3965cc07b07668"
     },
     {
       "path": "docs/images/01-uyap-baglantisi.png",
@@ -76,7 +76,7 @@
     },
     {
       "path": "docs/images/06-evrak-klasorleri.png",
-      "sha256": "6711d307db25aecf69b729b8f15de909e9b86e6a46f6bbf2f64d10a8014f8b7a"
+      "sha256": "95b52f2d97611c0f266c6095a12f6e45c98154fbe29b5db5caf6869b8cdffae3"
     },
     {
       "path": "docs/images/07-evrak-turu-secimi.png",
@@ -104,11 +104,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "06527caff431b20d3d13e72e50417e030d9e22bde9e1b7eaef8c6f614908f4d2"
+      "sha256": "55ad23a8e3c20d5df2dcd9e133b5292d3622020bae6b73fe85acd1b0d37a6b6b"
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "2c866d9d3a74bb84e0acf510eca9b6fe9839df5bbd87c855109829a5802ef3bf"
+      "sha256": "8598643ace206f7f3b7ab96d8ea79e552f04586991384b0f86f1fcea0528505a"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -216,7 +216,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "aa90f8b24e1b996958fa535b6d14763e9d87954cb58011cc25cbb0ebe65511b6"
+      "sha256": "a2b21a5c1f4ab6923b511dcab012df12e9bdd6b211aa5b681b4128ff8f8df836"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -576,7 +576,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "e2555558cb2fe5abb0d61e85087dd8c25f3638ac7f5f3c45c0d743714c66aefb"
+      "sha256": "cb7a067a20518c1ab932cf1fa65245c69a2b5792ef2e7f507e645acdc26b3100"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -608,7 +608,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "c1f26ac059a00efd2494330f66b6b31ca33f418060f9e4fa39f4774d5a09b8a1"
+      "sha256": "ce2f6407c73c3e7fe0325c511c5e9387b216b3eec703504d7201dfa6dc4ae86c"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -744,7 +744,7 @@
     },
     {
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "9cd2e8564bed95c777ae18797a63a8fd296876350574894f515ff5946b0ccb96"
+      "sha256": "c7b9b7c2f1fcd41a79444f9cdf46565bcaaead51986347af3a47a0a9f8664908"
     },
     {
       "path": "src/fragments/content/105-viewer-navigation-abort-epoch-boundary.js.part",
@@ -768,7 +768,7 @@
     },
     {
       "path": "src/fragments/content/115-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "78503eb24aaa446d85073b9150132ce96f4265c92d1d1af965a543e53e749b80"
+      "sha256": "29d42fc5aa37ad2188a6114461eb243b581024d4bb8da7aee810bf24d0584e96"
     },
     {
       "path": "src/fragments/content/116-viewer-list-loading-retry-and-error-controls.js.part",
@@ -780,11 +780,11 @@
     },
     {
       "path": "src/fragments/content/119-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "603d88101bbe023f23bd220cea1eedc359c663bc7a1829852fcb49633cec7115"
+      "sha256": "c1f04875f2ed88797f9bc7a13126b2140baaff0cb6d5905b7b6175b00d1f5238"
     },
     {
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",
-      "sha256": "731ebbaf1d2fa25947925d015db5ddddd21e79ed5cc78549d209d6b0e6a05203"
+      "sha256": "6b6dcfaeb957fc8aeb52bcac87abddf1da32df4e1b256ac784142182be7fcf63"
     },
     {
       "path": "src/fragments/content/123-panel-command-action-boundary.js.part",
@@ -796,7 +796,7 @@
     },
     {
       "path": "src/fragments/content/127-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "5fb9e1c0599ad2b09141eae3e5984d80a31c7062269c2f0b3363196026afaf47"
+      "sha256": "fdacc0701921e81f973858b80b384d62ecbc2b7d68247cc894f6ff33d113b39f"
     },
     {
       "path": "src/fragments/content/129-session-protection-lifecycle-and-visible-safety-gates.js.part",

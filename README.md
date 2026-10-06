@@ -7,20 +7,22 @@ Eklenti, **Av. Hasan İmer Akın** tarafından meslektaşlarının ücretsiz kul
 
 Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lisansıyla** sunar. UYAP işlem motoru özel kaynaklıdır; tam eklenti mağazadan kurulur.
 
-> Bu rehber, **1.19.36** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+> Bu rehber, **1.19.38** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
 
 Görseller gerçek arayüz bileşenlerinden **örnek verilerle** hazırlanmıştır; gerçek kişi, dava veya UYAP oturumu içermez.
 
 ## İlk kurulum
 
 1. Mağaza bağlantısından **Chrome'a ekle**'ye basın; Legaluga simgesini araç çubuğuna sabitleyin.
-2. [UYAP Avukat Portalı](https://avukat.uyap.gov.tr/)'nı açın. İlk kurulum **Legaluga Asistan** panelinde otomatik görünür; ayrı kurulum sekmesi açılmaz.
+2. [UYAP Avukat Portalı](https://avukat.uyap.gov.tr/)'nı açıp giriş yapın. Giriş tamamlandığında ilk kurulum **Legaluga Asistan** panelinde otomatik görünür; ayrı kurulum sekmesi açılmaz.
 3. Önce bağlantı ve UYAP oturumu kontrol edilir. Giriş gerekiyorsa resmî UYAP ekranında tamamlayın; giriş bilgilerinizi Legaluga paneline yazmanız gerekmez.
 4. İlk bağlantıda hesabınızdaki ad **vekil adı** alanına alınır. Bu adın vekil olarak geçtiği taraflar **Müvekkil** olarak gösterilir. Gerektiğinde adı düzenleyin; birden fazla adı virgülle ayırabilirsiniz.
 5. Taranacak yargı türlerini, açık/kapalı dosya kapsamını ve gerekirse savcılık illerini seçin. Ardından görünüm, güncelleme ve bildirim ayarlarını belirleyin.
 6. **Kaydet ve taramayı başlat** ilk taramayı başlatır. **Kurulumu tamamla** yalnız seçimlerinizi kaydeder.
 
 Tarama başlatırken oturum hazır değilse istek bağlantıyı bekler. Giriş tamamlanıp bağlantı doğrulandığında seçtiğiniz kapsamda kendiliğinden başlar; yeniden **Güncelle**'ye basmanız gerekmez. Bekleyen isteği iptal edebilirsiniz. Bir bağlantı veya doğrulama hatası gösterilirse paneldeki yönlendirmeyi izleyin.
+
+E-imza ekranındaki duyuru kapanır. Panelin otomatik açılması ve bekleyen dosya işlemleri giriş tamamlanmasını bekler.
 
 Yeni kurulumda mahkeme yargı türleri ile açık ve kapalı dosyalar seçilidir. Savcılık taraması, otomatik güncelleme, yeni evrak takibi ve teknik hata raporları başlangıçta kapalıdır. Kurulumdaki kapsam, UYAP dosyalarını seçer; bilgisayarınızdaki klasörleri taramaz.
 
@@ -64,6 +66,8 @@ Müvekkil etiketi, ayarlardaki vekil adıyla dosyanın taraf/vekil kaydının e�
 Masaüstünde **Özet** ana pencereye sığacak şekilde düzenlenir; uzun hesap veya taraf listeleri kendi bölümlerinde kaydırılır. Dar ekranda bölümler alt alta yerleşir. Tutarlar UYAP'tan geldiği gibi gösterilir; eklenti dosya borcu hesaplamaz.
 
 ![Dosya özeti: hesap bilgisi, tahsilat ve taraflar aynı pencerede — örnek veriler](docs/images/05-dosya-ozeti.png)
+
+Evrak ekranında arama üstte tam genişlikte, grup ve tarih kontrolleri ayrı satırlardadır. **Temizle** aramayı kaldırır; listede aramaya uyan evrak ve eklerin toplamı görünür. Seçili evrak vurgulanır; belge başlığı uzun olduğunda satıra yayılır. Dar pencerede liste ile önizleme alt alta yerleşir.
 
 **Evrak** klasöründeki sayı ana evrak ve eklerin toplamıdır. Ekler ana evrakın klasöründe kalır ve kapalı başlar (kartın yeni evrakının ekleri açık gelir). Ekli ana evrak küçük **▸** işareti taşır; satıra tıklamak ekleri açıp kapatır ve UYAP'a istek göndermez. Ana evrakı **Evrakı aç** veya **Enter** ile görüntüleyin. Arama, ana evrakıyla birlikte eşleşen ekleri açar; aramayı temizleyince önceki açık/kapalı durum geri gelir, aramada eki seçilen ana evrakın ekleri ise açık kalır. **← →** ile kapalı bir eke gelince ana evrakın ekleri açılır. **Son 20** düz listeyi, **Tümü** evrak türüne göre klasörleri açar. Klasörler evrak türüne göre alfabetik sıralanır; **Tarih ↓ / ↑** klasör içindeki ve düz listedeki tarih sırasını değiştirir, ekler ana evrakının altında kalır. Klavyede **↑ ↓** ile gezin, **→ / ←** ile klasörü ya da ana evrakın eklerini açıp kapatın (ekteyken **←** ana evraka döner). **Boşluk** da ekli satırın eklerini açıp kapatır; paket modunda evrakı işaretler. Kapalı ekler, **Listelenenleri seç** ve toplu indirmedeki **Evrak sekmesinde listelenenler** kapsamında kalır.
 

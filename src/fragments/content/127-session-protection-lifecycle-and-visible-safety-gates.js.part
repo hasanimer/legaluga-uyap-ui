@@ -2,9 +2,15 @@
   let sessionPingController = null, sessionDisposed = false;
   let sessionRevision = 0, sessionLoginState = null;
   const keepAliveOn = () => pagePrefs.oturumAcik !== false;
+  function isLoginPage() {
+    if (/^\/(giris|cikis|edevletlogin|testlogin|autologin)(\/|$)|^\/(web1|login)\.uyap(\/|$)/i.test(location.pathname)) return true;
+    // E-imza penceresi SPA içinde açıkken eski giriş bayrağı kalabilir. PIN değerini okumayız.
+    return [...document.querySelectorAll('.login-page, .login-menu-root, input[type="password"][name="password"][placeholder="Pin Kodu"]')].some(visible);
+  }
   // Kurulumun bağlantı önbelleği önceki girişteki yanıtı yeni oturuma taşıyamaz.
   const inSession = () => {
-    const active = !/^\/(giris|cikis|edevletlogin)(\/|$)/.test(location.pathname) && localStorage.getItem('loginState') === 'true';
+    const active = localStorage.getItem('loginState') === 'true' && !isLoginPage() &&
+      !!document.getElementById('av-sidebar-wrapper')?.isConnected;
     if (sessionLoginState !== null && active !== sessionLoginState) { sessionRevision++; abortSessionPing(); }
     sessionLoginState = active;
     return active;

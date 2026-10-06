@@ -20,11 +20,11 @@
       if (ilkOge) {
         sira = gorunen.findIndex(x => ayni(x, ilkOge));
         simdikiOge = gorunen[sira] || ilkOge;
-        listeyiCiz(); secimiCiz(); konumYaz();
+        listeyiCiz(); secimiCiz(aktif === 'evrak'); konumYaz();
         goster(o.ilk.e, o.ilk.doc);
       } else if (gorunen.length) {
         listeyiCiz();
-        if (aktif === 'evrak') sec(0, true);
+        if (aktif === 'evrak') sec(0, true, true);
         else { ilkBekliyor = true; konumYaz(); }
       } else {
         listeyiCiz(); konumYaz();
