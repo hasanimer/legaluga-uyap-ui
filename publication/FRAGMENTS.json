@@ -55,8 +55,8 @@
       "source": "common.js",
       "order": 13,
       "path": "src/fragments/common/013.js.part",
-      "sha256": "e3b4f2d5c2cd26f9e4f11e5fff6522b35df0c74e5b2a8974a698c5ac467ef3ca",
-      "bytes": 12781,
+      "sha256": "886d7b5e8b5d938054286d14bec1f82e8832d92918d079219b07b45ae0f0124f",
+      "bytes": 16458,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
@@ -287,8 +287,8 @@
       "source": "content.js",
       "order": 9,
       "path": "src/fragments/content/009-explicit-scan-stop.js.part",
-      "sha256": "90c87da700b02a2b365c993ed81759bba1328a635e1b71b9219631c8daae0aa5",
-      "bytes": 586,
+      "sha256": "522b87bcaa7babac54a6705654007bd6b9fdb190ccdcb1988b4eb5aa7bdd770c",
+      "bytes": 480,
       "purpose": "explicit-scan-stop"
     },
     {
@@ -351,8 +351,8 @@
       "source": "content.js",
       "order": 25,
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
-      "sha256": "58ceafb673c04bd429e0d7103d94b7ad997d3dcb881a08cc8042f52e6d1613b9",
-      "bytes": 2808,
+      "sha256": "325c1f7032792bdf5473333c1f04cc8b494d485eb7be61af7f2630d5707db71b",
+      "bytes": 3003,
       "purpose": "document-source-and-attachment-identity-validators"
     },
     {
@@ -687,8 +687,8 @@
       "source": "content.js",
       "order": 105,
       "path": "src/fragments/content/105-viewer-navigation-abort-epoch-boundary.js.part",
-      "sha256": "b84b157143604ec5c6a611f0fed29c496cbb6f200c1eb8fb3dbcca6addd3080b",
-      "bytes": 106,
+      "sha256": "8197be5211ea09917c9c3fe4a64044fbe4ef1ac47de1d7dc0b8fa0e64c0a83ae",
+      "bytes": 163,
       "purpose": "viewer-navigation-abort-epoch-boundary"
     },
     {
@@ -711,8 +711,8 @@
       "source": "content.js",
       "order": 111,
       "path": "src/fragments/content/111-viewer-refresh-epoch-source-lock-guard.js.part",
-      "sha256": "4f8260ac8afe07dd41d6aa436764c75dd453ef91a516c9915b3304127481ee91",
-      "bytes": 117,
+      "sha256": "d03bc9efad0ac60b5c761269505a1ba1bf615517b152f65f02813b36f1917452",
+      "bytes": 320,
       "purpose": "viewer-refresh-epoch-source-lock-guard"
     },
     {

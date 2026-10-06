@@ -121,6 +121,15 @@
         const next = { ...prefs, ...args };
         await write({ uhdPrefs: next }); return { data: next, revision };
       }
+      if (operation === 'mergeNote') {
+        if (!globalThis.UHD.safahatFileKey(args?.key) || typeof args?.text !== 'string') throw new Error('Not kaydı geçersiz.');
+        const current = (await read('uhdNotes', false)).data.uhdNotes || {};
+        if (typeof current !== 'object' || Array.isArray(current) || Object.values(current).some(value => typeof value !== 'string'))
+          throw new Error('Not deposu geçersiz; mevcut notlar korundu.');
+        const text = args.text.trim(), next = { ...current, [args.key]: text };
+        if (!text) delete next[args.key];
+        await write({ uhdNotes: next }); return { data: next, revision };
+      }
       if (operation === 'queueSetupScan') {
         const saved = (await read(['uhdPrefs', 'uhdIndex', 'uhdJob', 'uhdProgress'])).data;
         if (globalThis.UHD.kurulumGerekli(saved.uhdPrefs, saved.uhdIndex)) return { data: { ok: false, error: 'Önce kurulum seçimlerini kaydedin.' }, revision };
@@ -141,16 +150,24 @@
         return { data: { ok: true, pending: true, id: job.id }, revision };
       }
       if (operation === 'fillSetupNameIfEmpty') {
+        const name = typeof args === 'string' ? args : args?.name;
+        if (typeof args === 'object' && args?.scanGuard) {
+          const saved = (await read(['uhdJob', 'uhdProgress'], false)).data;
+          if (saved.uhdJob?.id !== args.scanGuard.jobId || saved.uhdProgress?.owner !== args.scanGuard.owner)
+            return { data: null, revision };
+        }
         const prefs = (await read('uhdPrefs')).data.uhdPrefs || {};
         if (prefs.kurulumVekilBekliyor !== true) return { data: null, revision };
-        if (typeof args !== 'string' || args.length < 5 || args.length > 100 || args.trim().split(/\s+/).length < 2 ||
-          !/^[\p{L}\p{M} '’.-]+$/u.test(args)) throw new Error('Profil adı geçersiz.');
-        const next = { ...prefs, myName: String(prefs.myName || '').trim() ? prefs.myName : args.trim(), kurulumVekilBekliyor: false };
+        if (typeof name !== 'string' || name.length < 5 || name.length > 100 || name.trim().split(/\s+/).length < 2 ||
+            !/^[\p{L}\p{M} '’.-]+$/u.test(name)) throw new Error('Profil adı geçersiz.');
+        const next = { ...prefs, myName: String(prefs.myName || '').trim() ? prefs.myName : name.trim(), kurulumVekilBekliyor: false };
         await write({ uhdPrefs: next }); return { data: next, revision };
       }
       if (operation === 'activateSetupScan') {
+        const id = typeof args === 'string' ? args : args?.id;
         const saved = (await read(['uhdPrefs', 'uhdIndex', 'uhdJob'])).data, job = saved.uhdJob;
-        if (!job?.setupPending || job.stop || job.id !== args || globalThis.UHD.kurulumGerekli(saved.uhdPrefs, saved.uhdIndex))
+        const progress = typeof args === 'object' && args?.owner ? (await read('uhdProgress', false)).data.uhdProgress : null;
+        if (!job?.setupPending || job.stop || job.id !== id || (args?.owner && progress?.owner !== args.owner) || globalThis.UHD.kurulumGerekli(saved.uhdPrefs, saved.uhdIndex))
           return { data: null, revision };
         const next = { ...job, paused: null };
         delete next.setupPending;
@@ -169,9 +186,73 @@
         const next = { ...prefs, [args]: !prefs[args] };
         await write({ uhdPrefs: next }); return { data: next, revision };
       }
+      if (operation === 'writeScan') {
+        if (!args || typeof args.jobId !== 'string' || !args.jobId || typeof args.owner !== 'string' || !args.owner ||
+            !args.values || typeof args.values !== 'object' || Array.isArray(args.values) || !Array.isArray(args.absent))
+          throw new Error('Güncelleme yazma isteği geçersiz.');
+        const saved = (await read(['uhdJob', 'uhdProgress'], false)).data;
+        // Sahiplik kontrolü ve yazma aynı kuyruktadır: geri yükleme, silme veya devirden sonra eski sekme yazamaz.
+        if (saved.uhdJob?.id !== args.jobId || saved.uhdProgress?.owner !== args.owner)
+          return { data: false, revision };
+        // Kontrol sırasında gelen kullanıcı durdurması eski iş nesnesiyle silinmez; sahibi duraklamayı kaydedebilir.
+        const values = saved.uhdJob.stop && args.values.uhdJob && args.values.uhdJob.paused !== 'kullanici'
+          ? { ...args.values, uhdJob: { ...args.values.uhdJob, stop: true } } : args.values;
+        await write(values, args.absent);
+        return { data: true, revision };
+      }
+      if (operation === 'stopScan') {
+        if (!args || typeof args.jobId !== 'string' || !args.jobId || typeof args.running !== 'boolean' || typeof args.stop !== 'boolean')
+          throw new Error('Güncelleme durdurma isteği geçersiz.');
+        const saved = (await read(['uhdJob', 'uhdProgress', 'uhdScanEpoch'], false)).data, progress = saved.uhdProgress;
+        if (saved.uhdJob?.id !== args.jobId || (saved.uhdScanEpoch ?? null) !== (args.epoch ?? null) ||
+            (progress?.owner ?? null) !== (args.owner ?? null) || !!progress?.running !== args.running ||
+            (!args.stop && (progress?.beat ?? null) !== (args.beat ?? null))) return { data: false, revision };
+        if (args.stop) await write({ uhdJob: { ...saved.uhdJob, stop: true } });
+        else await write({ uhdProgress: { running: false, text: 'Yarıda kalan güncelleme iptal edildi.', endedAt: Date.now() } }, ['uhdJob']);
+        return { data: true, revision };
+      }
+      if (operation === 'claimScan') {
+        if (!args || typeof args.owner !== 'string' || !args.owner ||
+            (args.expectedJobId != null && typeof args.expectedJobId !== 'string') ||
+            (args.job != null && (typeof args.job !== 'object' || Array.isArray(args.job) || typeof args.job.id !== 'string' || !args.job.id)))
+          throw new Error('Güncelleme sahiplik isteği geçersiz.');
+        const saved = (await read(['uhdJob', 'uhdProgress', 'uhdScanEpoch'], false)).data;
+        const current = saved.uhdJob, progress = saved.uhdProgress;
+        if ((saved.uhdScanEpoch ?? null) !== (args.epoch ?? null) ||
+            (current?.id ?? null) !== (args.expectedJobId ?? null) || (!args.job && (!current || current.stop)))
+          return { data: null, revision };
+        if (progress?.running && progress.owner && Date.now() - (progress.beat || 0) < 90000 &&
+            progress.owner !== args.owner && progress.owner !== args.previousOwner)
+          return { data: null, revision };
+        if ((Object.hasOwn(args, 'expectedPaused') && (current?.paused ?? null) !== args.expectedPaused) ||
+            (Object.hasOwn(args, 'expectedStop') && !!current?.stop !== args.expectedStop)) return { data: null, revision };
+        const next = args.job || current;
+        await write({ uhdJob: next, uhdProgress: { running: true, owner: args.owner, beat: Date.now(), jobId: next.id, text: String(args.text || '') } });
+        return { data: clone(next), revision };
+      }
+      if (operation === 'pauseSetupScan') {
+        const saved = (await read(['uhdJob', 'uhdProgress', 'uhdScanEpoch'], false)).data, job = saved.uhdJob;
+        if (!job?.setupPending || job.stop || job.id !== args?.id ||
+            (saved.uhdScanEpoch ?? null) !== (args?.epoch ?? null) ||
+            (saved.uhdProgress?.running && Date.now() - (saved.uhdProgress.beat || 0) < 90000))
+          return { data: false, revision };
+        await write({ uhdJob: { ...job, paused: 'dogrulama' }, uhdProgress: { running: false, paused: true, error: true, setupPending: true, jobId: job.id,
+          text: String(args.text || 'İlk tarama bağlantıyı bekliyor.') } });
+        return { data: true, revision };
+      }
       if (operation === 'replaceBackup') {
         const data = globalThis.UHD.checkBackup({ app: UHD.BACKUP_APP, format: UHD.BACKUP_FORMAT, data: args });
-        await write(data, UHD.BACKUP_KEYS.filter(k => !Object.hasOwn(data, k))); return { revision };
+        // Önce bütün yedek doğrulanır; eski işin iptali ve yedek tek şifreli commit ile birlikte görünür.
+        await write({ ...data, uhdScanEpoch: crypto.randomUUID(), uhdProgress: { running: false, text: 'Yedek geri yüklendi.', endedAt: Date.now() } },
+          [...UHD.BACKUP_KEYS.filter(k => !Object.hasOwn(data, k)), 'uhdJob']);
+        return { revision };
+      }
+      if (operation === 'clearAppData') {
+        const saved = (await read(null, false)).data;
+        if (Object.entries(saved).some(([key, value]) => /^uhdBulkDownload_[0-9a-f]{64}$/.test(key) && value?.pendingDownload))
+          return { data: { cleared: false, pending: true }, revision };
+        await write({ uhdScanEpoch: crypto.randomUUID() }, Object.keys(saved).filter(key => key !== 'uhdScanEpoch'));
+        return { data: { cleared: true }, revision };
       }
       if (operation === 'mergeBankCheck') {
         if (!args || typeof args.fileKey !== 'string' || !args.snapshot) throw new Error('Banka takip isteği geçersiz.');
@@ -339,9 +420,13 @@
   chrome.storage.onChanged.removeListener = fn => listeners.delete(fn);
   chrome.storage.onChanged.hasListener = fn => listeners.has(fn);
   globalThis.UHDStorage = { local, patchPrefs: async patch => (await request('patchPrefs', patch)).data,
-    fillSetupNameIfEmpty: async name => (await request('fillSetupNameIfEmpty', name)).data,
+    mergeNote: async (key, text) => (await request('mergeNote', { key, text })).data,
+    fillSetupNameIfEmpty: async (name, scanGuard) => (await request('fillSetupNameIfEmpty', scanGuard ? { name, scanGuard } : name)).data,
     queueSetupScan: async () => (await request('queueSetupScan')).data,
-    activateSetupScan: async id => (await request('activateSetupScan', id)).data,
+    activateSetupScan: async (id, owner) => (await request('activateSetupScan', owner ? { id, owner } : id)).data,
+    claimScan: async options => (await request('claimScan', options)).data,
+    stopScan: async options => (await request('stopScan', options)).data,
+    pauseSetupScan: async (id, epoch, text) => (await request('pauseSetupScan', { id, epoch, text })).data,
     cancelSetupScan: async () => (await request('cancelSetupScan')).data,
     createBulkDownload: async options => (await request('createBulkDownload', options)).data,
     readBulkDownload: async fileKey => (await request('getBulkDownload', { fileKey })).data,
@@ -352,11 +437,13 @@
     },
     listBulkDownloads: async () => (await request('listBulkDownloads')).data,
     clearBulkDownloads: async () => (await request('clearBulkDownloads')).data,
+    clearAppData: async () => (await request('clearAppData')).data,
     discardBulkDownload: async (fileKey, jobId) => (await request('discardBulkDownload', { fileKey, jobId })).data,
     reserveBulkPart: async options => (await request('reserveBulkPart', options)).data,
     attachBulkPart: async options => (await request('attachBulkPart', options)).data,
     settleBulkPart: async options => (await request('settleBulkPart', options)).data,
     togglePref: async name => (await request('togglePref', name)).data,
+    writeScan: async (jobId, owner, values, absent = []) => (await request('writeScan', { jobId, owner, values, absent })).data,
     replaceBackup: async data => { await request('replaceBackup', data); },
     mergeBankCheck: async (fileKey, snapshot) => (await request('mergeBankCheck', { fileKey, snapshot })).data,
     getSafahat: async fileKey => (await request('getSafahat', { fileKey })).data,

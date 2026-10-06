@@ -1,7 +1,9 @@
   function evrakBul(list, key, group) {
     const candidates = list.filter(x => evrakKey(x) === key);
     const grouped = group ? candidates.filter(x => x.dosyaGrubu === group) : [];
-    const matches = grouped.length ? grouped : candidates;
+    // Son 20 yanıtı grup taşımayabilir; açık bir hedef başka bilinen dosya grubuna taşınmaz.
+    const unknown = group ? candidates.filter(x => !x.dosyaGrubu) : [];
+    const matches = grouped.length ? grouped : group ? unknown : candidates;
     if (matches.length > 1) throw new Error('Aynı bilgileri taşıyan birden fazla evrak var; yanlış evrakı açmamak için dosyayı UYAP’ta açın.');
     if (!matches[0]) throw new Error('Evrak dosyanın evrak listesinde bulunamadı; Güncelle’ye basıp tekrar deneyin.');
     return matches[0];

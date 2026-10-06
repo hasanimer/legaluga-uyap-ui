@@ -1664,7 +1664,8 @@
       notes = next;
       render();
       try {
-        await chrome.storage.local.set({ uhdNotes: next });
+        const saved = await globalThis.UHDStorage.mergeNote(key, text);
+        if (notes === next) { notes = saved; render(); }
       } catch (error) {
         if (notes === next) { notes = before; render(); }
         setNotice('Not kaydedilemedi. Lütfen yeniden deneyin.', 'err');
@@ -2058,12 +2059,12 @@
       btnClear.disabled = running();
       btnClear.addEventListener('click', async () => {
         if (!confirm('Dosya listesi, duruşmalar, notlarınız, gizlenen dosyalar, son açılanlar, toplu indirme planları ve ayarlarınız bu bilgisayardan silinsin mi? Bu işlem geri alınamaz; UYAP’taki dosyalarınız ve indirilmiş ZIP dosyaları etkilenmez.')) return;
-        // Toplu indirme planları evrak listesini taşır; Chrome'a kaydı süren parça varken hiçbir şey silinmez.
-        let bulk = null;
-        try { if (typeof globalThis.UHDStorage?.clearBulkDownloads === 'function') bulk = await globalThis.UHDStorage.clearBulkDownloads(); }
-        catch { setNotice('Toplu indirme planları silinemedi; hiçbir veri silinmedi. Yeniden deneyin.'); return; }
-        if (bulk?.pending) { setNotice('Devam eden bir toplu indirme var. İndirmeyi durdurup parça kaydı bitince yeniden deneyin; hiçbir veri silinmedi.'); return; }
-        await chrome.storage.local.remove(['uhdIndex', 'uhdProgress', 'uhdRecent', 'uhdNotes', 'uhdPrefs', 'uhdPending', 'uhdEvrakGoruldu', 'uhdJob', 'uhdSureler', 'uhdDurusmalar', 'uhdGizli', 'uhdOturumIstek', 'uhdTurFilter', 'uhdCbsRehber', 'uhdBankChecks', 'uhdBankReplyViews', 'uhdSafahat']);
+        // İş sahipliği ve bütün veriler tek commit ile silinir; eski sekme tarama verilerini geri yazamaz.
+        let result;
+        try { result = await globalThis.UHDStorage.clearAppData(); }
+        catch { setNotice('Yerel veriler silinemedi; hiçbir veri silinmedi. Yeniden deneyin.'); return; }
+        if (result?.pending) { setNotice('Devam eden bir toplu indirme var. İndirmeyi durdurup parça kaydı bitince yeniden deneyin; hiçbir veri silinmedi.'); return; }
+        if (!result?.cleared) { setNotice('Yerel veriler silinemedi; hiçbir veri silinmedi. Yeniden deneyin.'); return; }
         closeSettings();
         setNotice('Tüm yerel veriler silindi.');
       });
@@ -2235,8 +2236,11 @@
         return opts.onStop();
       }
       // Yürüten sekme yok: duraklamış işi doğrudan iptal et (popup'ta açık UYAP sekmesi olmayabilir).
-      await chrome.storage.local.remove('uhdJob');
-      await chrome.storage.local.set({ uhdProgress: { running: false, text: 'Yarıda kalan güncelleme iptal edildi.', endedAt: Date.now() } });
+      const pending = pendingJob, priorProgress = progress;
+      if (!pending?.id) return;
+      const { uhdScanEpoch: epoch } = await chrome.storage.local.get('uhdScanEpoch');
+      await globalThis.UHDStorage.stopScan({ jobId: pending.id, epoch, owner: priorProgress?.owner ?? null,
+        running: !!priorProgress?.running, beat: priorProgress?.beat ?? null, stop: false });
     });
     btnSettings.addEventListener('click', () => {
       if (hasDownloads && !downloadArea.hidden) { showDownloads(false); openSettings(); return; }
