@@ -239,7 +239,10 @@
     // değişmez, UYAP isteği yapılmaz. kalici: aramada açılan ekler arama temizlenince de açık kalır (seçilen ek görünür kalsın).
     const ekAcik = key => aramaImza ? !aramadaKapaliEk.has(key) : acikEkler.has(key);
     // Düz listede (listbox) option aria-expanded taşıyamaz: ek sayısı, açık/kapalı durum ve tuşu option açıklamasında okunur.
-    const ekDurum = (on, sayi) => `${sayi} ${on ? 'açık; kapatmak için sol' : 'kapalı; açmak için sağ'} ok tuşu. Evrakı açmak için Enter.`;
+    const ekDurum = (on, sayi) => {
+      const etkinlestir = paketMod ? 'Enter' : 'Enter veya Boşluk';
+      return `${sayi} ${on ? `açık; kapatmak için ${etkinlestir} ya da sol ok tuşu.` : `kapalı; evrakı ve ekleri açmak için ${etkinlestir}. Yalnız ekleri açmak için sağ ok tuşu.`}`;
+    };
     function ekAc(key, on, kalici = false) {
       if (aramaImza) { if (on) aramadaKapaliEk.delete(key); else aramadaKapaliEk.add(key); }
       else if (!on) acikEkler.delete(key);
@@ -250,6 +253,18 @@
       d.ana?.setAttribute('data-ek-expanded', String(on));
       d.ana?.setAttribute('aria-description', ekDurum(on, d.sayi));
       if (kategorili) d.ana?.setAttribute('aria-expanded', String(on));
+    }
+    // Kapalı ekli satırı etkinleştirmek evrakı seçer ve eklerini açar; açık satır yalnız eklerini kapatır.
+    // Yön tuşları ekAc ile yalnız liste durumunu değiştirir, paket kutusu kendi seçim eylemini sürdürür.
+    function satirEtkinlestir(i) {
+      const x = gorunen[i];
+      if (!x) return;
+      const anaK = !x.ana && ekDom.get(paketAnahtar(x))?.ana ? paketAnahtar(x) : null;
+      const acik = !!anaK && ekAcik(anaK);
+      if (anaK) ekAc(anaK, !acik);
+      if (acik) { evrakOdak = { row: anaK }; odakSync(); }
+      else sec(i, true);
+      ogeler.focus({ preventScroll: true });
     }
     function odakSync(visible = false) {
       let node = null;
@@ -287,7 +302,7 @@
         const i = indisler.get(x);
         const on = i === sira;
         // Ek: girintili, "Ek" rozetiyle ve hangi evrakın eki olduğu yazılarak. Ekli ana evrakın satırı (anaK) ekleri açıp kapatır;
-        // başlıktaki küçük ok açık/kapalı durumu gösterir. Ana evrakın kendisi ayrı Evrakı aç eylemiyle görüntülenir.
+        // başlıktaki küçük ok açık/kapalı durumu gösterir. Kapalı satır tıklanınca evrak da görüntülenir.
         const anaK = !x.ana && ekSay.has(paketAnahtar(x)) ? paketAnahtar(x) : null, ustK = x.ana && ekSay.has(paketAnahtar(x.ana)) ? paketAnahtar(x.ana) : null;
         const acik = !!anaK && ekAcik(anaK), n = anaK ? ekSay.get(anaK) : 0;
         const alt = (x.ana ? [`${x.ana.tur} eki`, tarihYaz(x.onay)]
@@ -299,23 +314,14 @@
         const kutu = paketMod ? el('input', { type: 'checkbox', class: 'ek-paket-kutu', tabindex: '-1', 'aria-hidden': 'true', checked: !!no, disabled: !alinir,
           title: alinir ? (no ? 'Paketten çıkar' : 'Pakete al') : 'UYAP bu eke kimlik vermediği için pakete alınamıyor' }) : null;
         if (kutu) kutu.addEventListener('click', ev => { ev.stopPropagation(); paketIsaretle(x, kutu.checked); });
-        // Önizleme eylemi satırın ek aç/kapa tıklamasına yayılmaz. Düz listedeki option içinde eylem yardımcı teknolojiden gizlenir;
-        // odaktaki evrak Enter ile açılır, sağ/sol oklar yalnız ekleri açıp kapatır.
         const sayi = anaK ? (n === x.ekSayisi ? `${fmtNum(n)} ek` : `${fmtNum(n)}/${fmtNum(x.ekSayisi)} ek`) : '';
-        const ac = anaK ? el('button', { type: 'button', class: 'ek-evrak-ac', tabindex: '-1', 'aria-hidden': kategorili ? null : 'true',
-          title: 'Ana evrakı görüntüle (Enter)', 'aria-label': `${x.tur} evrakını aç` }, 'Evrakı aç') : null;
-        if (ac) ac.addEventListener('click', ev => { ev.stopPropagation(); sec(i, true); ogeler.focus({ preventScroll: true }); });
         const b = el('div', { class: 'ek-oge' + (x.ana ? ' ek-alt' : '') + (on ? ' on' : '') + (paketMod ? ' paketli' : ''), role: kategorili ? 'treeitem' : 'option', 'aria-level': kategorili ? (ustK ? '3' : '2') : null,
           'aria-expanded': kategorili && anaK ? String(acik) : null, 'aria-description': anaK ? ekDurum(acik, sayi) : null, 'data-ek-expanded': anaK ? String(acik) : null,
           id: `${kimlik}-o${i}`, 'aria-selected': String(on),
           'aria-checked': paketMod ? String(!!no) : null, 'data-i': String(i), 'data-kategori': kategori },
-          ...(paketMod ? [kutu, el('span', { class: 'ek-oge-metin' }, ad, el('small', null, alt, ac)), no ? el('span', { class: 'ek-paket-no', title: 'Paketteki sırası' }, String(no)) : null]
-            : [ad, el('small', null, alt, ac)]));
-        b.addEventListener('click', () => {
-          if (anaK) { ekAc(anaK, !ekAcik(anaK)); evrakOdak = { row: anaK }; odakSync(); }
-          else sec(i, true);
-          ogeler.focus({ preventScroll: true });
-        });
+          ...(paketMod ? [kutu, el('span', { class: 'ek-oge-metin' }, ad, el('small', null, alt)), no ? el('span', { class: 'ek-paket-no', title: 'Paketteki sırası' }, String(no)) : null]
+            : [ad, el('small', null, alt)]));
+        b.addEventListener('click', () => satirEtkinlestir(i));
         if (anaK) Object.assign(ekGiris(anaK), { ana: b, sayi });
         if (ustK) { ekGiris(ustK).rows.push(b); b.hidden = !ekAcik(ustK); }
         return b;

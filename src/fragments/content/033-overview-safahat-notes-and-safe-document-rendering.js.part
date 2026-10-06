@@ -56,6 +56,24 @@
       satir('Son evrak', son && son.onay ? `${fmtTrDate(son.onay)}${son.tur ? ' · ' + son.tur : ''}` : '')
     ].filter(Boolean);
     const taraflar = Array.isArray(rec.taraflar) ? rec.taraflar : [];
+    // UYAP'ın verdiği sıfatlar aynen ayrı tutulur; taraf ve vekil sırası kendi grubunda korunur.
+    const tarafGruplari = new Map();
+    for (const taraf of taraflar) {
+      const rol = typeof taraf?.rol === 'string' ? taraf.rol.trim() : '';
+      if (!tarafGruplari.has(rol)) tarafGruplari.set(rol, []);
+      tarafGruplari.get(rol).push(taraf);
+    }
+    const tarafGrubu = ([rol, taraflar]) => {
+      const baslik = rol || 'Sıfatı belirtilmeyen taraflar';
+      return el('section', { class: 'dp-party-group', 'aria-label': baslik },
+        el('h5', { class: 'dp-party-group-title' }, baslik,
+          el('span', { class: 'dp-party-count', 'aria-label': `${taraflar.length} taraf` }, String(taraflar.length))),
+        el('table', { class: 'dp-table dp-parties-table', 'aria-label': baslik },
+          el('thead', null, el('tr', null, ['Taraf', 'Vekil'].map(h => el('th', { scope: 'col' }, h)))),
+          el('tbody', null, taraflar.map(t => el('tr', null,
+            el('td', { 'data-label': 'Taraf' }, t?.adi || '—'),
+            el('td', { 'data-label': 'Vekil' }, (Array.isArray(t?.vekil) ? t.vekil : []).join(', ') || '—'))))));
+    };
     const yerel = el('div', { class: 'dp-summary' },
       el('div', { class: 'dp-summary-grid' },
         el('div', { class: 'dp-card dp-summary-info' }, el('h4', null, 'Dosya bilgileri'),
@@ -77,12 +95,7 @@
         el('h4', null, 'Taraflar', !cbs ? el('span', { class: 'dp-summary-count' }, String(taraflar.length)) : null),
         bolum('Taraflar', 'dp-tablewrap',
         cbs ? el('div', { class: 'dp-muted' }, 'UYAP savcılık dosyalarında taraf ve safahat bilgisi vermez.')
-          : taraflar.length ? el('table', { class: 'dp-table dp-parties-table' },
-            el('thead', null, el('tr', null, ['Rol', 'Taraf', 'Vekil'].map(h => el('th', { scope: 'col' }, h)))),
-            el('tbody', null, taraflar.map(t => el('tr', null,
-              el('td', { class: 'nw', 'data-label': 'Rol' }, t.rol || '—'),
-              el('td', { 'data-label': 'Taraf' }, t.adi || '—'),
-              el('td', { 'data-label': 'Vekil' }, (Array.isArray(t.vekil) ? t.vekil : []).join(', ') || '—')))))
+          : taraflar.length ? el('div', { class: 'dp-party-groups' }, [...tarafGruplari].map(tarafGrubu))
             : el('div', { class: 'dp-muted' }, 'Kaydedilmiş taraf bilgisi yok. Ayarlar → Güncelleme’den taraf bilgilerini yenileyebilirsiniz.')));
     if (rec.yargiTuru !== '2') { body.replaceChildren(el('div', { class: 'dp-overview' }, yerel, tarafKarti)); return; }
     const uyap = el('div', { class: 'dp-finance' });

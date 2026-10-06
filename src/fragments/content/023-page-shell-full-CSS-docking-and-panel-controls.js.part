@@ -204,6 +204,11 @@
 .viewer .dp-parties-table th{background:var(--shell-soft)}
 .viewer .dp-parties-table td:first-child{width:20%;color:var(--shell-muted)}
 .viewer .dp-parties-table td.nw{white-space:normal}
+.viewer .dp-party-groups{display:flex;flex-direction:column;gap:16px}
+.viewer .dp-party-group{min-width:0}
+.viewer .dp-party-group-title{display:flex;align-items:center;gap:6px;margin:0;padding:10px;font-size:13px;line-height:1.5;background:var(--shell-soft);border-bottom:1px solid var(--shell-line);overflow-wrap:anywhere}
+.viewer .dp-party-count{flex:none;padding:0 6px;border:1px solid var(--shell-line);border-radius:10px;color:var(--shell-muted);font-size:12px;font-weight:400}
+.viewer .dp-party-group .dp-parties-table td:first-child{width:44%;color:var(--shell-text)}
 .viewer .sf{min-width:0}
 .viewer .sf-head{display:flex;gap:14px;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
 .viewer .sf-head h3{margin:0 0 7px;font-size:17px}
@@ -375,9 +380,8 @@
 .viewer .ek-rozet{display:inline-block;margin-right:6px;padding:0 5px;border:1px solid var(--shell-line);border-radius:4px;font-size:10.5px;font-weight:600;line-height:16px;color:var(--shell-muted);vertical-align:1px}
 .viewer .ek-ekler-ok{display:inline-block;margin-right:5px;color:var(--shell-muted);transition:transform .12s}
 .viewer .ek-oge[data-ek-expanded=true] .ek-ekler-ok{transform:rotate(90deg)}
-.viewer .ek-evrak-ac{margin:5px 0 0 6px;padding:6px 8px;min-height:32px;border:1px solid var(--shell-line);border-radius:6px;background:var(--shell-bg);color:var(--shell-accent);font:inherit;font-size:12px;cursor:pointer}
-.viewer .ek-evrak-ac:hover{background:var(--shell-soft)}
 @media(prefers-reduced-motion:reduce){.viewer .ek-ekler-ok{transition:none}}
+@container ekran (max-width:460px){.viewer .dp-party-group .dp-parties-table td:first-child{width:auto}}
 .viewer .ek-onizleme{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--evrak-paper)}
 .viewer .ek-onizleme:focus{outline:none}
 .viewer .ek-onbar{flex:none;display:flex;flex-direction:column;align-items:stretch;gap:12px;padding:16px 20px;border-bottom:1px solid var(--shell-line);background:var(--shell-bg);font-size:12px}
