@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Legaluga UYAP Asistanı",
   "short_name": "Legaluga UYAP",
-  "version": "1.19.41",
+  "version": "1.19.42",
   "description": "UYAP dosyalarınızı ad veya numarayla bulun, açın. Veriler cihazınızda; isteğe bağlı teknik hata raporları Sentry’ye gider.",
   "homepage_url": "https://legaluga.com",
   "icons": {

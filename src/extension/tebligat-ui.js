@@ -400,8 +400,12 @@
       stop.hidden = !current;
       form.setAttribute('aria-busy', String(!!current));
       list.replaceChildren(...shown.map((item, index) => rowFor(item, index, busy)));
-      if (!items.length) list.append(el('p', { class: 'dp-muted te-empty' }, loading ? 'Tebligatlar geldikçe burada gösterilir…' : 'Bu dosyada zarf veya tebligat kaydı bulunamadı. Mazbatalar sorgulanan tebligata barkodla eşleştirilir.'));
-      else if (!shown.length) list.append(el('p', { class: 'dp-muted te-empty' }, 'Bu süzgeçte tebligat yok.'));
+      // Kimliksiz ya da ayırt edilemeyen tebligat kaydı sorgulanamaz; sessizce düşmez, sayısı listenin altında yazılır.
+      const omitted = Number.isSafeInteger(snapshot.omitted) && snapshot.omitted > 0 ? snapshot.omitted : 0;
+      if (!items.length && !omitted) list.append(el('p', { class: 'dp-muted te-empty' }, loading ? 'Tebligatlar geldikçe burada gösterilir…' : 'Bu dosyada zarf veya tebligat kaydı bulunamadı. Mazbatalar sorgulanan tebligata barkodla eşleştirilir.'));
+      else if (items.length && !shown.length) list.append(el('p', { class: 'dp-muted te-empty' }, 'Bu süzgeçte tebligat yok.'));
+      if (omitted) list.append(el('p', attr('omitted', { class: 'dp-muted te-omitted' }),
+        `${omitted} tebligat kaydı listelenmedi: UYAP kimlik vermediği ya da aynı bilgileri taşıyan başka kayıt bulunduğu için güvenle ayırt edilemiyor. UYAP’ta kontrol edin.`));
       restoreFocus(focus);
     }
     const finish = task => {

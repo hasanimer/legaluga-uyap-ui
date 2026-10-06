@@ -104,11 +104,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "41a2063d3939357434be14590981d37987a22b80e4f3df6ed3be2dd54686cf93"
+      "sha256": "14ba206f70ae0082b7c989232719bdaa2ce5f99dd4b441f9f20928f806b46f73"
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "4d1b371aef551593c87b739546c3e3306db5158348574f9ba703072fd992aa62"
+      "sha256": "63160b3727ffbdd2c48ff5de14444ecb59617642dccd170f938fae3f5cab9da5"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -216,7 +216,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "12b71cf522be0b84502860acb0ed6a2166319fdefc79091da1bedc737afa4924"
+      "sha256": "f870e19a6772271fcbc66d7a75cef0c2f9475aaffa059d9a6027bff9a32c6654"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -264,7 +264,7 @@
     },
     {
       "path": "src/extension/tebligat-ui.js",
-      "sha256": "13efc48c8dd2b4b2aecb070f961983785af9eb4e45cd0cf183e7e0c1628a9279"
+      "sha256": "1e919ec837f20e88588b4ec3fe018e1721c23c8565105351c8226ff4964121a2"
     },
     {
       "path": "src/extension/telemetry.js",
@@ -708,7 +708,7 @@
     },
     {
       "path": "src/fragments/content/085-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "b4a06f54d4a2fa2ac632c92c6b02ccadd7505b0cb4b2783cac5c205551ddd4a5"
+      "sha256": "05ecf8e5167dc03bde09282b9e65ba74f7e365a24590242d7d402082c2cf8218"
     },
     {
       "path": "src/fragments/content/087-full-viewer-HTML-render-and-action-controls.js.part",
