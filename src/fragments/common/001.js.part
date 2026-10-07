@@ -104,6 +104,8 @@
     disclaimer: 'Legaluga ürünüdür. T.C. Adalet Bakanlığı veya UYAP ile resmî bir bağlantısı yoktur.',
     site: 'https://legaluga.com',
     email: 'info@legaluga.com',
+    // Atıflardaki "Tam metni aç" bağlantısı; künye yalnız adresin # parçasında taşınır (kunye-ayikla.js).
+    kararBul: 'https://mcp.legaluga.com/karar-bul',
     // legaluga.com (apps/web/app/globals.css) marka renkleri
     primary: '#0f817e',
     primaryDark: '#0b6663',

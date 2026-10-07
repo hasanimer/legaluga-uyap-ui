@@ -2236,6 +2236,10 @@
           select('acilisSekme', 'yok', 'Dosya açılınca geçilecek sekme', [['yok', 'Hiçbiri'], ['evrak', 'Evrak'], ['taraf', 'Taraf bilgileri']]),
           el('div', { class: 'hint' }, 'Sekme o dosyada yoksa (ör. Yargıtay dosyaları) hiçbir şeye basılmaz.')),
 
+        el('h3', null, 'Evrak görüntüleyici'),
+        el('div', { class: 'box' },
+          check('atifIsaretle', true, 'Evraktaki karar atıflarını işaretle', 'Açılan evrakın metni yalnız bu cihazda taranır; bulunan Yargıtay, Danıştay, AYM ve bölge adliye künyeleri Atıflar listesinde gösterilir. “Tam metni aç”a tıkladığınızda yalnız künye bilgisi mcp.legaluga.com’da açılan yeni sekmenin adresine eklenir; evrak metni gönderilmez.')),
+
         el('h3', null, 'Güncelleme'),
         el('div', { class: 'box' },
           el('div', null, 'Taranacak yargı türleri'),

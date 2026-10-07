@@ -1,5 +1,6 @@
-  function evrakBul(list, key, group) {
-    const candidates = list.filter(x => evrakKey(x) === key);
+  function evrakBul(list, key, group, index) {
+    const candidates = index?.list === list && index.count === list.length && index.byKey instanceof Map
+      ? index.byKey.get(key) || [] : list.filter(x => evrakKey(x) === key);
     const grouped = group ? candidates.filter(x => x.dosyaGrubu === group) : [];
     // Son 20 yanıtı grup taşımayabilir; açık bir hedef başka bilinen dosya grubuna taşınmaz.
     const unknown = group ? candidates.filter(x => !x.dosyaGrubu) : [];
@@ -9,10 +10,22 @@
     return matches[0];
   }
 
+  // İndirme okuyucusunun kendi liste kopyası: adaylar korunur; aynı anahtar tek evraka indirgenmez.
+  function evrakIndeksi(list) {
+    const rows = list.map(row => row && typeof row === 'object' ? { ...row,
+      ...(Array.isArray(row.ekEvrakListesi) ? { ekEvrakListesi: row.ekEvrakListesi.map(item => item && typeof item === 'object' ? { ...item } : item) } : {}) } : row);
+    const byKey = new Map();
+    rows.forEach(row => {
+      const key = evrakKey(row), candidates = byKey.get(key) || [];
+      candidates.push(row); byKey.set(key, candidates);
+    });
+    return { list: rows, count: rows.length, byKey };
+  }
+
   // Yalnız ana evrakın ekEvrakListesi'nde olan ek (1.19.4): ana evrak anahtarıyla bulunur, ek sırasıyla alınır. UYAP'ın ek
   // düğümü gibi görüntüleme adresine ekin kendi evrakId'si ve ana evrakın dosya kimliği verilir.
-  function ekBul(list, hedef) {
-    const ana = evrakBul(list, hedef.ana.k, hedef.ana.dosya);
+  function ekBul(list, hedef, index) {
+    const ana = evrakBul(list, hedef.ana.k, hedef.ana.dosya, index);
     const liste = Array.isArray(ana.ekEvrakListesi) ? ana.ekEvrakListesi : [];
     // Önce ilk listedeki kimlik aranır; aynı adlı ekler sırayla eşleştirilmez. UYAP bütün kimlikleri
     // yenilediyse yalnız ana evrakın kimlik değişimi ve iki listedeki tek açık ek adı birlikte yeterlidir.

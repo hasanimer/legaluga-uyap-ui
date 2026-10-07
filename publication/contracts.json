@@ -9,8 +9,39 @@
     "UHDTebligatAPI": "PTT/UETS query adapters; interactive security challenges remain user completed.",
     "UHDBulkDownload": "Encrypted immutable plan and saved-part checkpoint model.",
     "UHDBulkDownloadEngine": "Per-UYAP-tab queue, pause/resume and saved-progress snapshots.",
-    "UHDBulkPanel": {"mount": "mount(container,{manager,openFile,showPart})", "manager": ["list", "subscribe", "pause", "resume"], "progress": "saved is disk-completed prefix; inPart is provisional", "destroy": "unsubscribe view only; do not stop manager"}
+    "UHDBulkPanel": {
+      "mount": "mount(container,{manager,openFile,showPart})",
+      "manager": [
+        "list",
+        "subscribe",
+        "pause",
+        "resume"
+      ],
+      "progress": "saved is disk-completed prefix; inPart is provisional",
+      "destroy": "unsubscribe view only; do not stop manager"
+    },
+    "UHDKunye": "Pure local citation extractor (no DOM, network or storage); only disaAktar fields leave the page, inside a user-clicked BRAND.kararBul #k= link.",
+    "UHDAtifPaneli": {
+      "olustur": "olustur({el,onbar,eylemler,kutu,kok,kimlik,duyur,acikMi,motorKabi,kopru,mesgulMu})",
+      "controller": [
+        "belge(tur,{doc,model,gorunum,kap,cerceve,ext,signal,gecerli})",
+        "temizle",
+        "htmlIsaretci",
+        "icerir",
+        "kapat"
+      ],
+      "pdf": "text via the hidden hearing-package frame: EXTRACT_PDF_TEXT {jobId,bytes,sayfaSiniri} -> PDF_TEXT_RESULT {jobId,sayfalar,toplamSayfa,bosSayfa,hataSayfa,kesildi,code?}; CANCEL_TEXT {jobId}; never starts while mesgulMu() and stops when another feature takes the bridge",
+      "privacy": "document text is scanned locally; no network, storage or logging; reports carry only error type and extension frames"
+    }
   },
-  "authorization": ["extension sender", "origin", "top frame", "session", "file/debtor/document identity", "explicit fee consent", "download job/part ownership"],
+  "authorization": [
+    "extension sender",
+    "origin",
+    "top frame",
+    "session",
+    "file/debtor/document identity",
+    "explicit fee consent",
+    "download job/part ownership"
+  ],
   "demo": "Synthetic UI data only, no remote requests or download execution"
 }

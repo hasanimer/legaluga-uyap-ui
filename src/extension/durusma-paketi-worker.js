@@ -222,6 +222,11 @@ async function start(message) {
 const METIN_SINIR = 400000;
 const METIN_BYTE_SINIR = 64 * 1024 * 1024;
 const METIN_TOPLAM_SINIR = 2 * 1024 * 1024;
+// pdf.js metin okumasının ortak ayarları (banka cevabı ve Atıflar): betik, eval, WASM, yazı tipi/CMap indirme kapalı.
+const PDF_OKUMA = Object.freeze({ isEvalSupported: false, enableScripting: false, useWasm: false,
+  disableFontFace: true, useSystemFonts: false, useWorkerFetch: false, disableAutoFetch: true,
+  cMapUrl: null, standardFontDataUrl: null, wasmUrl: null, isOffscreenCanvasSupported: false,
+  isImageDecoderSupported: false, verbosity: 0 });
 let textBusy = false;
 const textError = (message, code = 'text-incomplete') => Object.assign(new Error(message), { code });
 function textCap(text) {
@@ -237,10 +242,7 @@ async function metinCikar(bytes, budget, derinlik = 0, progress = () => {}, sour
   };
   if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46) {
     const pdfjs = globalThis.DurusmaPaketiPDFJS;
-    const task = pdfjs.getDocument({ data: b.slice(), isEvalSupported: false, enableScripting: false, useWasm: false,
-      disableFontFace: true, useSystemFonts: false, useWorkerFetch: false, disableAutoFetch: true,
-      cMapUrl: null, standardFontDataUrl: null, wasmUrl: null, isOffscreenCanvasSupported: false,
-      isImageDecoderSupported: false, verbosity: 0 });
+    const task = pdfjs.getDocument({ data: b.slice(), ...PDF_OKUMA });
     try {
       const doc = await task.promise;
       if (!Number.isSafeInteger(doc.numPages) || !doc.numPages) throw textError('PDF sayfa sayısı geçersiz.', 'pdf-text');
@@ -366,9 +368,60 @@ async function metinler(data) {
     textBusy = false;
   }
 }
+// Atıflar (1.19.47): dosya ekranında açık tek PDF'in sayfa sayfa metni. Metni olmayan ve okunamayan sayfalar ayrı sayılır;
+// yalnız okunamayan sayfalardan oluşan sonuç hata verir. Sayfa ve karakter sınırından sonrası okunmaz (kesildi). pdf.js'in
+// hata iletisi evrak bilgisi taşıyabileceği için yalnız kod döner. Metin yalnız dosya ekranına gider, saklanmaz.
+const PDF_SAYFA_SINIR = 300;
+const PDF_METIN_SINIR = 2 * 1024 * 1024;
+async function pdfSayfalari(data) {
+  const b = data.bytes instanceof ArrayBuffer ? new Uint8Array(data.bytes) : null;
+  const sinir = Number.isSafeInteger(data.sayfaSiniri) && data.sayfaSiniri > 0 ? Math.min(data.sayfaSiniri, PDF_SAYFA_SINIR) : PDF_SAYFA_SINIR;
+  const sayfalar = [];
+  let sonuc, task = null, bosSayfa = 0, hataSayfa = 0, karakter = 0;
+  if (!b || b.byteLength < 5 || b.byteLength > METIN_BYTE_SINIR || b[0] !== 0x25 || b[1] !== 0x50 || b[2] !== 0x44 || b[3] !== 0x46) sonuc = { code: 'pdf-invalid' };
+  else {
+    try {
+      task = globalThis.DurusmaPaketiPDFJS.getDocument({ data: b.slice(), ...PDF_OKUMA });
+      const doc = await task.promise;
+      const toplamSayfa = doc.numPages;
+      if (!Number.isSafeInteger(toplamSayfa) || toplamSayfa < 1) throw textError('PDF sayfa sayısı geçersiz.', 'pdf-text');
+      const son = Math.min(toplamSayfa, sinir);
+      let kesildi = toplamSayfa > son;
+      for (let no = 1; no <= son; no++) {
+        // Sayfalar arasına "\n" konur; sınıra ulaşıldıysa kalan sayfalar okunmaz.
+        if (karakter >= PDF_METIN_SINIR) { kesildi = true; break; }
+        let metin = '';
+        try {
+          const page = await doc.getPage(no);
+          try {
+            const items = (await page.getTextContent()).items;
+            if (!Array.isArray(items)) throw textError('PDF sayfası okunamadı.', 'pdf-text');
+            for (const it of items) {
+              if (typeof it?.str !== 'string') continue;
+              metin += it.str + (it.hasEOL ? '\n' : ' ');
+              if (karakter + metin.length > PDF_METIN_SINIR) break;
+            }
+          } finally { page.cleanup(); }
+        } catch { hataSayfa++; continue; }
+        if (!metin.trim()) { bosSayfa++; continue; }
+        if (karakter + metin.length > PDF_METIN_SINIR) { metin = metin.slice(0, PDF_METIN_SINIR - karakter); kesildi = true; }
+        sayfalar.push({ no, metin });
+        karakter += metin.length + 1;
+      }
+      sonuc = { sayfalar, toplamSayfa, bosSayfa, kesildi,
+        ...(hataSayfa ? { hataSayfa } : {}), ...(!sayfalar.length && hataSayfa ? { code: 'pdf-text' } : {}) };
+    } catch {
+      sonuc = { code: 'pdf-text' };
+    } finally {
+      try { await task?.destroy(); } catch { /* işçi iş bitince kapatılır */ }
+    }
+  }
+  post({ type: 'PDF_TEXT_READY', runId: data.runId, sayfalar: [], toplamSayfa: 0, bosSayfa: 0, kesildi: false, ...sonuc });
+}
 self.onmessage = ({ data }) => {
   if (!data || typeof data.runId !== 'string') return;
   if (data.type === 'TEXT') { void metinler(data); return; }
+  if (data.type === 'PDF_TEXT') { void pdfSayfalari(data); return; }
   if (data.type === 'INIT') {
     controller?.abort();
     session = { runId: data.runId, items: data.items || [], excluded: data.excluded || [], limits: data.limits || {} };

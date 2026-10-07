@@ -32,7 +32,8 @@
   let eklentiSorguAt = 0;
 
   // Aynı UYAP kökenindeki, aynı normal Chrome profilinin eklenti sekmeleri tek ağ kuyruğunu paylaşır. Kilit, yanıt gövdesi
-  // okunana kadar tutulur; toplu işten sonraki istek en az 1,2 saniye bekler. Diğer istekler mevcut
+  // okunana kadar tutulur; başarılı toplu isteklerin başlangıçları arasında en az 1,2 saniye vardır.
+  // Aktarım süresi bu aralığa dahildir; hata veya iptalden sonra 1,2 saniye beklenir. Diğer istekler mevcut
   // 150 ms taban aralığını kullanır. Arka plan sekmesi
   // beklemeyi kaldırmaz. Depolanan kayıt yalnız teknik zamanları taşır, dosya/evrak bilgisi içermez.
   const UYAP_REQUEST_INTERVAL = 1200, UYAP_PAUSE_MS = 60000;
@@ -84,12 +85,20 @@
       }
       if (state.nextAt > Date.now()) await uyapWait(state.nextAt - Date.now(), signal);
       if (signal?.aborted) throw new DOMException('Durduruldu.', 'AbortError');
-      try { return await request(); }
+      const startedAt = Date.now();
+      let completed = false;
+      try {
+        const result = await request();
+        completed = !signal?.aborted;
+        return result;
+      }
       catch (err) {
         if (err instanceof Blocked) state.blockedUntil = Math.max(state.blockedUntil, Number.isFinite(err.retryAt) ? err.retryAt : Date.now() + UYAP_PAUSE_MS);
         throw err;
       } finally {
-        state.nextAt = Date.now() + (signal && uyapBulkSignals.has(signal) ? UYAP_REQUEST_INTERVAL : DELAY);
+        const finishedAt = Date.now(), bulk = signal && uyapBulkSignals.has(signal);
+        state.nextAt = bulk && completed ? Math.max(finishedAt, startedAt + UYAP_REQUEST_INTERVAL)
+          : finishedAt + (bulk ? UYAP_REQUEST_INTERVAL : DELAY);
         await chrome.storage.local.set({ [UYAP_REQUEST_STATE]: state });
       }
     });

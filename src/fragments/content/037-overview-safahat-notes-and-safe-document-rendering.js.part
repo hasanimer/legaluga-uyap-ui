@@ -147,7 +147,9 @@
   const HTML_CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:";
   const HTML_SINIR = 10 * 1024 * 1024;   // daha büyüğü görüntüleyicide açılmaz, indirilir
   const HTML_ADRES = ['href', 'src', 'srcset', 'action', 'formaction', 'xlink:href', 'poster', 'background', 'ping', 'longdesc', 'cite', 'data', 'manifest'];
-  async function htmlBelgesi(blob) {
+  // isaretle (isteğe bağlı): temizlenmiş belgeyi yazılmadan önce işaretler (Atıflar: künyelerin altı satır içi biçimle çizilir).
+  // Çerçevenin sandbox'ı ve CSP'si değişmez; işaretleyicinin hatası evrakın gösterilmesini engellemez.
+  async function htmlBelgesi(blob, isaretle) {
     if (blob.size > HTML_SINIR) throw Object.assign(new Error('buyuk'), { kod: 'buyuk' });
     const bayt = new Uint8Array(await blob.arrayBuffer());
     const d = new DOMParser().parseFromString(new TextDecoder(htmlKodlamasi(bayt, blob.type)).decode(bayt), 'text/html');
@@ -169,6 +171,7 @@
     yonlendiren.setAttribute('content', 'no-referrer');
     d.head.prepend(csp, yonlendiren);
     if (!d.body || (!d.body.textContent.trim() && !d.body.querySelector('img'))) throw Object.assign(new Error('bos'), { kod: 'bos' });
+    if (typeof isaretle === 'function') try { isaretle(d); } catch { /* işaretlenmeden gösterilir */ }
     return (d.doctype ? '<!doctype html>' : '') + d.documentElement.outerHTML;
   }
 
