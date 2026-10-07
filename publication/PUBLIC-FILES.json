@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "8e547413539d3873790ec43e14b2982ad9deff1365781b3ec28d31885f79263b"
+      "sha256": "45d325d82fe491c47bcac332c071f44228ec18753b292cce18c38f7bd14f25ff"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -768,7 +768,7 @@
     },
     {
       "path": "src/fragments/content/115-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "debbc293a9fcf80ad622fa53ba95c06bacd9a854ac1941cc770a3083094ec18c"
+      "sha256": "502b7a7bce180bb020846f9e0d01e6aa9f250e719eca87b0c8d2f4d08cc1552b"
     },
     {
       "path": "src/fragments/content/116-viewer-list-loading-retry-and-error-controls.js.part",

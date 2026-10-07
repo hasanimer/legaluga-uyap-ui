@@ -15,7 +15,8 @@
         return;
       }
       const ilkOge = o.ilk ? oge(evrakKey(o.ilk.e) || '', o.ilk.e.dosyaGrubu, o.ilk.e) : null;
-      const sirayla = !!okuma && !!yeni?.length;
+      const okumaIstegi = o.sira && Array.isArray(o.sira.kuyruk) && Number.isInteger(o.sira.i) && o.sira.i >= 0 && o.sira.i < o.sira.kuyruk.length;
+      const sirayla = !!okumaIstegi && !!yeni?.length;
       grup = sirayla ? 'yeni' : ilkOge && !son20().some(x => ayni(x, ilkOge)) ? 'tumu' : 'son20';
       kategorili = grup === 'tumu';
       suz();
