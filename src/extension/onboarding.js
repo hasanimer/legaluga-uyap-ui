@@ -2,7 +2,7 @@
 (() => {
   const { el, TURLER, ILLER, norm } = globalThis.UHD;
   const DEFAULTS = {
-    taramaDurum: 'tum', savcilik: 'kapali', myName: '', tema: 'auto', panelSabit: false,
+    taramaDurum: 'tum', savcilik: 'kapali', myName: '', tema: 'auto', panelSabit: true,
     acilisSekme: 'yok', evrakTakip: false, safahatTakipOptIn: false, otoGuncelle: 'kapali',
     durusmaBildirim: true, cakismaBildirim: true, duyuruBildirim: true, oturumAcik: true, hataRaporu: false
   };

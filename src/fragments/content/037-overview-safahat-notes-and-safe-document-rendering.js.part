@@ -129,9 +129,13 @@
     chrome.storage.onChanged.addListener(changed);
     signal.addEventListener('abort', () => { chrome.storage.onChanged.removeListener(changed); kaydet().finally(() => editor.destroy?.()); }, { once: true });
     body.replaceChildren(el('div', { class: 'ek-notlar' },
-      el('div', { class: 'ek-not-heading' }, el('h3', null, 'Dosya notu'), el('span', { class: 'ek-not-local' }, 'Yalnız bu cihazda')),
+      el('div', { class: 'ek-not-heading' }, el('h3', null, 'Dosya notu')),
       el('div', { class: 'ek-not-editor' }, editor.root, el('div', { class: 'ek-not-meta' }, status, el('span', { class: 'ek-not-shortcut' }, 'Ctrl/⌘ + Enter ile kaydet'))),
-      actions));
+      actions,
+      el('div', { class: 'ek-not-disclosure' },
+        el('p', null, 'Notlarınız sunucuya veya internete gönderilmez; kendi cihazınızda şifreli olarak saklanır.'),
+        el('p', null, 'Ayarlar bölümündeki “Şifreli yedekle” seçeneğiyle tüm notlarınızı ve kayıtlı verilerinizi şifreli olarak yedekleyebilirsiniz.'),
+        el('p', null, 'Cihazınız kaybolur veya zarar görürse ve yedeğinizi başka bir cihaza kopyalamadıysanız notlarınız geri getirilemez.'))));
     sync();
   }
 

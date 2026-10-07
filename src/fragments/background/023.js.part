@@ -1,3 +1,9 @@
+  } else if (msg.type === 'uhd-page-zoom') {
+    if (!sender.tab || sender.frameId !== 0 || !uyapUrl(sender.url)) return;
+    if (sender.documentLifecycle && sender.documentLifecycle !== 'active') return;
+    chrome.tabs.getZoom(sender.tab.id)
+      .then(zoom => reply({ zoom }), () => reply({ zoom: 1 }));
+    return true;
   } else if (msg.type === 'uhd-shortcut') {
     // Kullanıcı kısayolu chrome://extensions/shortcuts'ta değiştirebilir ya da kaldırabilir; anlatılan tuş buradan okunur.
     chrome.commands.getAll()
@@ -5,6 +11,10 @@
       .catch(() => reply({ shortcut: '' }));
     return true;
   }
+});
+
+chrome.tabs.onZoomChange.addListener(({ tabId, newZoomFactor }) => {
+  chrome.tabs.sendMessage(tabId, { type: 'uhd-page-zoom', zoom: newZoomFactor }, { frameId: 0 }).catch(() => {});
 });
 
 chrome.action.onClicked.addListener(async tab => {
