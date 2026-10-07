@@ -63,8 +63,8 @@
       "source": "common.js",
       "order": 15,
       "path": "src/fragments/common/015.js.part",
-      "sha256": "24f09cd137507cfe32351c421beb04d0a26ec15933c595563f187a7a33086caf",
-      "bytes": 17508,
+      "sha256": "584960a127c4ece9f4e6e0976d8d81f5f866ec2066ba7c1c3d92b86994cf16be",
+      "bytes": 29253,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
@@ -255,8 +255,8 @@
       "source": "content.js",
       "order": 1,
       "path": "src/fragments/content/001-bootstrap-shared-request-safety.js.part",
-      "sha256": "89b74c03f009bda350e1ed4c60aad30e0b392b473c44b73f9d14ed0e8792f3e4",
-      "bytes": 1278,
+      "sha256": "a13388eefff0c755ba77b58f9d233c8f730ae0b46e96a0a6a76bb6068f8b26d1",
+      "bytes": 1319,
       "purpose": "bootstrap-shared-request-safety"
     },
     {
@@ -343,8 +343,8 @@
       "source": "content.js",
       "order": 23,
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "f54faeab28fec6b923b6e09cf34138decea672236faa67336f3ed45a0e0ecf9c",
-      "bytes": 96107,
+      "sha256": "cad4c12732d4584ac3d01927c9349209746f6102fff600b29ccc6d83c4b6d704",
+      "bytes": 98153,
       "purpose": "page-shell-full-CSS-docking-and-panel-controls"
     },
     {
@@ -407,8 +407,8 @@
       "source": "content.js",
       "order": 39,
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "d91da945f546c1a0276b719741e31e5113f354c9ed429f1b68d6dab030cac5a0",
-      "bytes": 44310,
+      "sha256": "bb2766f021c2528912eece1226376e4274cf64d4b301012e90a55dd906b489cf",
+      "bytes": 51407,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -423,8 +423,8 @@
       "source": "content.js",
       "order": 43,
       "path": "src/fragments/content/043-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "2e9d4656548663c9a72b636aa0a4e3e2b70e3517fc1398b0b982ecd4244a1ed4",
-      "bytes": 7396,
+      "sha256": "6745df27f224db7ba91ce99b6a2a598140736d7e61260b58e79da1f01d0e6b4c",
+      "bytes": 7346,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -471,8 +471,8 @@
       "source": "content.js",
       "order": 51,
       "path": "src/fragments/content/051-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "b283695dbfb6282d0ad086e66df4f515a2c7968b3e10c41a48264d37e288ce4c",
-      "bytes": 3011,
+      "sha256": "c08974dfb67b757b2684982f4bcdc73aaeb169cc0c03450890f5bba0549eb392",
+      "bytes": 4125,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -599,8 +599,8 @@
       "source": "content.js",
       "order": 83,
       "path": "src/fragments/content/083-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "f8fdd085fd842df6c4098dc546b82b2f6a3704ac3d10f3bbef5481d68da04b50",
-      "bytes": 13620,
+      "sha256": "3226c75fc3c67b54fd3302dedb8f068848331c2974ffad338367c40409b8049e",
+      "bytes": 13508,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -679,8 +679,8 @@
       "source": "content.js",
       "order": 103,
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "612438d0a519aedd1d6290e06620aa3ca88e3fbc2306270a1cc71a76c1d6795d",
-      "bytes": 24735,
+      "sha256": "ec4d75638fc020b17c39eb44e9cd5b236330cfc290ecc3ad409a92a8bf9d243c",
+      "bytes": 24676,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -727,8 +727,8 @@
       "source": "content.js",
       "order": 115,
       "path": "src/fragments/content/115-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "29d42fc5aa37ad2188a6114461eb243b581024d4bb8da7aee810bf24d0584e96",
-      "bytes": 1496,
+      "sha256": "b713602dfbca921b368c653d79195424c465c76d372ea43075814b75ef12be07",
+      "bytes": 1613,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {

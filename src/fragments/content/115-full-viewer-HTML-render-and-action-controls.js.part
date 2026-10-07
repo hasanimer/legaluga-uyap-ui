@@ -28,7 +28,8 @@
         else { ilkBekliyor = true; konumYaz(); }
       } else {
         listeyiCiz(); konumYaz();
-        icerik(el('div', { class: 'msg' }, el('p', null, 'Bu dosyada evrak yok.')));
+        // UYAP kayıt verdi ama hiçbiri gösterilemiyorsa "evrak yok" denmez; teyit nedeni söyler.
+        icerik(el('div', { class: 'msg' }, el('p', null, teyitBos() || 'Bu dosyada evrak yok.')));
       }
     }
     

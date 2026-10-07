@@ -69,12 +69,15 @@
     const araTemizle = el('button', { type: 'button', class: 'chip ek-ara-temizle', hidden: true, 'aria-label': 'Evrak aramasını temizle', title: 'Aramayı temizle' }, 'Temizle');
     const aramaAlani = el('div', { class: 'ek-arama' }, ara, araTemizle);
     const filtreler = el('div', { class: 'ek-filtreler' }, gruplar);
-    const listeSayi = el('span', { class: 'ek-liste-sayi', title: 'Aramaya ve seçili gruba uyan ana evraklar ile eklerin toplamı' });
+    const listeSayi = el('span', { class: 'ek-liste-sayi', title: 'Sayılar UYAP’ın kuralıyla: evrak = UYAP listesindeki kayıt, ek = evrakın ek listesindeki girdi.' });
     const kategoriGorunum = el('button', { type: 'button', class: 'chip ek-gorunum', 'aria-label': 'Evrakları türüne göre klasörle', 'aria-pressed': 'true', title: 'Düz listeye geç' }, 'Klasörler');
     const tarihSirasi = el('button', { type: 'button', class: 'chip ek-tarih', 'aria-label': 'Tarih sırası: en yeni önce. En eski önce sıralamak için basın.', title: 'En yeni önce' }, 'Tarih ↓');
     const listeArac = el('div', { class: 'ek-liste-arac' }, kategoriGorunum, tarihSirasi, listeSayi);
     const ogeler = el('div', { class: 'ek-ogeler', role: 'tree', 'aria-label': 'Evrak türleri ve evraklar', tabindex: '0' });
     const listeDurum = el('div', { class: 'dp-muted', role: 'status' });
+    // Evrak teyidi (1.19.43): UYAP'ın verdiği liste ile ekrandaki liste yeni istek yapılmadan karşılaştırılır. Fark uyarılır,
+    // hiçbir işlem durdurulmaz; tam liste yalnız kullanıcı "Tam listeyi al"a basınca istenir.
+    const teyitSatir = el('div', { class: 'ek-teyit', role: 'status', 'aria-live': 'polite', tabindex: '-1', hidden: true });
     const zipTools = globalThis.UHD.evrakZip;
     const bulkTools = globalThis.UHDBulkDownload;
     const downloads = globalThis.UHDBulkDownloads;
@@ -140,12 +143,13 @@
       paketDurum);
     const paketAraclari = el('div', { class: 'ek-paket-araclari' }, paketAc, paketBar);
     const evrakPanel = el('div', { class: 'ek-evrak' }, el('div', { class: 'ek-liste' },
-      el('h3', { class: 'ek-liste-baslik' }, 'Evraklar'), aramaAlani, filtreler, listeArac, paketAraclari, listeDurum, ogeler), onizleme);
+      el('h3', { class: 'ek-liste-baslik' }, 'Evraklar'), aramaAlani, filtreler, teyitSatir, listeArac, paketAraclari, listeDurum, ogeler), onizleme);
 
     let kaynak = o.kaynak || null;   // { dosyaId, list }
     let ilkBekliyor = false, listeBekliyor = null, listeHata = '';   // liste isteği ve ilk evrak sekmeler arasında paylaşılır
     let tum = [], yeni = null, grup = 'tumu', gorunen = [], sira = -1, simdiki = null, simdikiOge = null, gezEpoch = 0, gecikme = null, gezAc = null;
     let kategorili = true, tarihArtan = false, evrakOdak = null, aramaImza = '';
+    let teyit = null, teyitAlim = null, teyitHata = '', teyitAcik = false, teyitDugme = null, teyitOzet = null;
     const acikKategoriler = new Set(), aramadaKapali = new Set(), kategoriDom = new Map();
     // Ana evrakın ekleri kapalı başlar; Yeni listesindeki ana evrakın ekleri açık (yeniAcilanEk: ekranda bir kez açılanlar). Açık olanlar
     // (paketAnahtar) yalnız bu ekranda tutulur, hiçbir yere yazılmaz; aramada kapatılanlar arama değişince unutulur.
@@ -177,8 +181,9 @@
       if (tebligatRead?.explicit && (tebligatRead.source !== kaynak || tebligatRead.list !== kaynak.list)) tebligatRead.ac.abort();
       if (tebligatCache && (tebligatCache.source !== kaynak || tebligatCache.list !== kaynak.list)) tebligatCache = null;
       yeni = null;
-      // Ekler ana evrakın hemen ardından gelir (1.19.4); yalnız ek listesinde olan ekin anahtarı ana evrakınkinden türer.
-      tum = ekleriYerlestir(kaynak.list.map((e, i) => ({ ...oge(evrakKey(e) || '', e.dosyaGrubu, e), i })).filter(x => x.k)
+      // Ekler ana evrakın hemen ardından gelir (1.19.4); ek satırının anahtarı ana evrakınkinden türer. Listedeki her evrak
+      // kendi satırındadır, başka evrakın eki olsa da (1.19.43, UYAP ağacı gibi).
+      tum = ekleriYerlestir(kaynak.list.map((e, i) => ({ ...oge(evrakKey(e) || '', e && e.dosyaGrubu, e), i })).filter(x => x.k)
         .sort((a, b) => onayTs(b) - onayTs(a) || a.i - b.i), onayTs)
         .map(x => x.ekIndis == null ? x : { k: `${x.ana.k}|ek|${x.ekIndis}`, dosya: x.ana.dosya, e: null, tur: x.ekTuru, onay: x.ana.onay, no: x.ana.no, gonderen: '', ana: x.ana, ekIndis: x.ekIndis,
           ekId: x.ana.e?.ekEvrakListesi?.[x.ekIndis]?.evrakId });
@@ -197,6 +202,60 @@
         // açılır; kullanıcının sonradan kapattığı ekler liste yenilense de kapalı kalır.
         for (const a of yeni.filter(x => x.ana).map(x => paketAnahtar(x.ana))) if (!yeniAcilanEk.has(a)) { yeniAcilanEk.add(a); acikEkler.add(a); }
       }
+      // Liste her kurulduğunda (ilk liste, tam liste, yenileme, kimlik tazeleme) teyit yeniden hesaplanır; önceki "Tam liste
+      // alınamadı" hatası da silinir (liste başka yoldan tamlanmış olabilir).
+      teyitHata = '';
+      teyit = evrakTeyit(kaynak.list, tum);
+      teyitCiz();
+    }
+    const teyitMesgul = () => !!zipRun || !!bankRun || !!paketSession || !!bankaOkuma || !!tebligatRead || !!tebligatList || !!listeBekliyor;
+    const teyitBos = () => (teyit ? evrakTeyitMetni(teyit).bos : '') || '';
+    function teyitDurumu() {
+      if (!teyitDugme) return;
+      teyitDugme.disabled = teyitMesgul();
+      teyitDugme.textContent = teyitAlim ? 'Tam liste alınıyor…' : 'Tam listeyi al';
+    }
+    // Teyit satırı: metin, sınıfa göre işaret, ayrıntılar ve türlere göre küçük tablo. Kilitte gösterilmez.
+    function teyitCiz() {
+      const eski = teyitSatir.querySelector('.ek-teyit-turler');
+      if (eski) teyitAcik = !!eski.open;
+      // Yeniden çizim odaktaki düğmeyi ya da özeti DOM'dan çıkarır: odak satırdaysa çizimden sonra karşılığına (pasifse satıra) döner.
+      const odak = shadowRoot.activeElement;
+      const odakta = odak && teyitSatir.contains(odak) ? (odak === teyitDugme ? 'dugme' : odak === teyitOzet ? 'ozet' : 'satir') : null;
+      teyitDugme = null; teyitOzet = null;
+      const t = teyit;
+      // Son Güncelle'nin bu dosya için bıraktığı uyarılar (yalnız kayıttaki kısa metinler).
+      const sonGuncelle = Array.isArray(rec.evrakTeyit?.uyari) ? rec.evrakTeyit.uyari.filter(u => typeof u === 'string' && u).slice(0, 5) : [];
+      // Boş listede yalnız sayfa sayısının bildirilmemesi "0 evrak eşleşti" satırını açmaz (boş liste tektir); son Güncelle uyarısı açar.
+      const goster = !!t && t.durum !== 'kilit' && !!kaynak && !kaynak.list.kilit && (t.evrak.uyap > 0 || t.ek.uyap > 0 || t.gecersiz > 0 ||
+        sonGuncelle.length > 0 || t.kapsam.nedenler.some(n => n !== 'sayfaSayisi'));
+      if (!goster) { teyitSatir.hidden = true; teyitSatir.replaceChildren(); if (odakta) ogeler.focus({ preventScroll: true }); return; }
+      const m = evrakTeyitMetni(t);
+      const ayrinti = [...m.ayrinti, ...sonGuncelle.map(u => `Son Güncelle’de: ${u}`)];
+      teyitSatir.setAttribute('class', `ek-teyit ${m.sinif}`);
+      const parca = [el('p', { class: 'ek-teyit-metin' }, el('span', { class: 'ek-teyit-isaret', 'aria-hidden': 'true' }, { ok: '✓', uyari: '⚠', bilgi: 'ⓘ' }[m.sinif] || 'ⓘ'), ' ', m.metin)];
+      if (ayrinti.length) parca.push(el('ul', { class: 'ek-teyit-ayrinti' }, ...ayrinti.map(s => el('li', null, s))));
+      if (t.kapsam.nedenler.includes('sayfa')) {
+        teyitDugme = el('button', { type: 'button', class: 'chip ek-teyit-tam', title: 'UYAP’tan bütün sayfaları ister; büyük dosyada sürebilir.' }, 'Tam listeyi al');
+        teyitDugme.addEventListener('click', () => { tamListeAl(); });
+        teyitDurumu();
+        parca.push(teyitDugme);
+      }
+      if (teyitHata) parca.push(el('p', { class: 'dp-err' }, teyitHata));
+      const tablo = (baslik, grup) => grup.turler.length ? [el('p', { class: 'ek-teyit-baslik' }, baslik), el('table', { class: 'ek-teyit-tablo' },
+        el('thead', null, el('tr', null, el('th', { scope: 'col' }, 'Tür'), el('th', { scope: 'col' }, 'UYAP'), el('th', { scope: 'col' }, 'Listede'))),
+        el('tbody', null, ...grup.turler.map(x => el('tr', { class: x.uyap !== x.listede ? 'fark' : null },
+          el('td', null, x.tur), el('td', null, fmtNum(x.uyap)), el('td', null, fmtNum(x.listede))))))] : [];
+      const tablolar = [...tablo('Evraklar', t.evrak), ...tablo('Ekler', t.ek)];
+      if (tablolar.length) {
+        teyitOzet = el('summary', null, 'Türlere göre');
+        const turler = el('details', { class: 'ek-teyit-turler' }, teyitOzet, ...tablolar);
+        turler.open = teyitAcik;
+        parca.push(turler);
+      }
+      teyitSatir.replaceChildren(...parca);
+      teyitSatir.hidden = false;
+      if (odakta) ((odakta === 'dugme' && teyitDugme && !teyitDugme.disabled ? teyitDugme : odakta === 'ozet' && teyitOzet) || teyitSatir).focus({ preventScroll: true });
     }
     // Son 20: en yeni 20 evrak ve ekleri.
     const son20 = () => { let n = 0; return tum.filter(x => (x.ana ? n <= 20 : ++n <= 20)); };
@@ -211,7 +270,8 @@
     }
     const ayni = (a, b) => !!a && !!b && a.k === b.k && (!a.dosya || !b.dosya || a.dosya === b.dosya);
     function gruplariCiz() {
-      const secenek = [yeni && ['yeni', `Yeni (${fmtNum(yeni.length)})`], ['son20', 'Son 20'], ['tumu', `Tümü (${fmtNum(tum.length)})`]].filter(Boolean);
+      // Yeni ve Tümü: gösterilen UYAP evrakı (kayıt) sayısı; ekler ayrıca sayılır (UYAP'ın kuralı).
+      const secenek = [yeni && ['yeni', `Yeni (${fmtNum(evrakSayim(yeni).evrak)})`], ['son20', 'Son 20'], ['tumu', `Tümü (${fmtNum(evrakSayim(tum).evrak)})`]].filter(Boolean);
       gruplar.replaceChildren(...secenek.map(([g, ad]) => {
         const b = el('button', { type: 'button', class: 'chip' + (g === grup ? ' on' : ''), 'aria-pressed': String(g === grup), 'data-grup': g }, ad);
         b.addEventListener('click', () => grupSec(g));
@@ -340,9 +400,9 @@
         ogeler.replaceChildren(...evrakKategorileri(gorunen).map((kat, index) => {
           const head = el('summary', { class: 'ek-kategori-baslik', id: `${kimlik}-c${index}`, role: 'treeitem', 'aria-level': '1', 'aria-expanded': 'false', tabindex: '-1', 'data-kategori': kat.key,
             'aria-owns': `${kimlik}-cg${index}`,
-            'aria-label': `${kat.title}, ${fmtNum(kat.count)} evrak ve ek`, title: `${kat.title} (${fmtNum(kat.count)} evrak ve ek)` },
+            'aria-label': `${kat.title}, ${fmtNum(kat.evrakSayisi)} evrak, ${fmtNum(kat.ekSayisi)} ek`, title: `${kat.title} (${fmtNum(kat.evrakSayisi)} evrak, ${fmtNum(kat.ekSayisi)} ek)` },
           el('span', { class: 'ek-kategori-ok', 'aria-hidden': 'true' }, '▸'), el('span', { class: 'ek-klasor', 'aria-hidden': 'true' }),
-          el('span', { class: 'ek-kategori-ad' }, `${kat.title} (${fmtNum(kat.count)})`));
+          el('span', { class: 'ek-kategori-ad' }, `${kat.title} (${fmtNum(kat.evrakSayisi)})${kat.ekSayisi ? ` · ${fmtNum(kat.ekSayisi)} ek` : ''}`));
           const rows = gorunumSirasi(kat.items).map(x => satir(x, kat.key));
           const box = el('details', { class: 'ek-kategori', role: 'none', 'data-kategori': kat.key }, head, el('div', { class: 'ek-kategori-icerik', role: 'group', id: `${kimlik}-cg${index}` }, rows));
           kategoriDom.set(kat.key, { box, head, rows });
@@ -359,9 +419,10 @@
       if (bekleyenAna && ekDom.has(bekleyenAna) && gorunen[sira]?.ana && paketAnahtar(gorunen[sira].ana) === bekleyenAna) { ekAc(bekleyenAna, true, true); bekleyenAna = null; }
       odakSync();
       listeDurum.textContent = !gorunen.length ? (ara.value.trim() ? 'Aramaya uyan evrak yok.'
-        : kaynak && kaynak.list.kilit ? 'Evrak, savcı onayından sonra görünür.' : 'Bu grupta evrak yok.') : '';
+        : kaynak && kaynak.list.kilit ? 'Evrak, savcı onayından sonra görünür.' : grup === 'tumu' && teyitBos() || 'Bu grupta evrak yok.') : '';
       listeDurum.hidden = !!gorunen.length;
-      listeSayi.textContent = `${fmtNum(gorunen.length)} evrak ve ek`;
+      const sayim = evrakSayim(gorunen);
+      listeSayi.textContent = sayim.ek ? `${fmtNum(sayim.evrak)} evrak · ${fmtNum(sayim.ek)} ek` : `${fmtNum(sayim.evrak)} evrak`;
       zipSync();
     }
     function secimiCiz(visible = false) {
@@ -391,9 +452,34 @@
       }
       return [...targets.values()];
     }
+    // Aynı belge bir kez iner (1.19.43): listede ayrıca gelen evrak, başka evrakların ek listesinde de geçebilir (UYAP gibi kendi
+    // satırında ve ek satırında görünür). Tür seçiminden SONRA, kimliği seçilmiş bir ana satırla aynı olan ek satırı atılır; ana
+    // satır seçilmediyse aynı ekin yalnız ilk kopyası kalır. Kimlikler aynı listeden geldiği için dosya grubu içinde karşılaştırılır.
+    function tekBelge(rows) {
+      const kimlik = v => v == null || v === '' ? null : String(v);
+      const anaKimlikleri = new Set(rows.filter(x => !x.ana && kimlik(x.e?.evrakId) != null).map(x => x.dosya + '\n' + kimlik(x.e.evrakId)));
+      const gorulen = new Set();
+      return rows.filter(x => {
+        if (!x.ana || kimlik(x.ekId) == null) return true;
+        const a = x.dosya + '\n' + kimlik(x.ekId);
+        if (anaKimlikleri.has(a) || gorulen.has(a)) return false;
+        gorulen.add(a);
+        return true;
+      });
+    }
+    // Duruşma paketi "Listelenenleri seç" de aynı belgeyi bir kez alır (tekBelge kuralı): pakette olan ya da listelenen ana satırla
+    // aynı kimlikteki ek kopyası, aynı ekin sonraki kopyaları ve ek kopyası pakette olan belgenin kendi satırı alınmaz. Elle
+    // işaretleme serbesttir.
+    function paketGorunenYeni() {
+      const secili = new Set(paketSecili), pakette = tum.filter(x => secili.has(paketAnahtar(x)));
+      const belge = x => { const v = x.ana ? x.ekId : x.e?.evrakId; return v == null || v === '' ? null : x.dosya + '\n' + String(v); };
+      const alinmis = new Set(pakette.map(belge).filter(Boolean));
+      return tekBelge([...pakette, ...gorunen.filter(x => paketAlinir(x) && !secili.has(paketAnahtar(x)))])
+        .filter(x => !secili.has(paketAnahtar(x)) && !alinmis.has(belge(x)));
+    }
     function zipTargets(kapsam = zipKapsam, selection = zipSelection()) {
       const rows = zipCandidates(kapsam);
-      return zipTools?.selectRows ? zipTools.selectRows(rows, selection) : rows.filter(x => selection.includeAttachments || !(x.ana || x.yetimEk));
+      return tekBelge(zipTools?.selectRows ? zipTools.selectRows(rows, selection) : rows.filter(x => selection.includeAttachments || !(x.ana || x.yetimEk)));
     }
     function zipTypesCiz() {
       const partial = !!(kaynak?.list.morePages || kaynak?.list.scopeUnknown) && !['son20', 'gorunen'].includes(zipKapsam);
@@ -485,6 +571,7 @@
       zipTekrar.disabled = !!zipRun || !!bankRun || !!paketSession || !!bankaOkuma || !!tebligatRead || !!listeBekliyor;
       zipDurdur.hidden = !zipRun;
       zipDurdur.disabled = !!zipRun?.ac.signal.aborted || (zipRun?.managed && bulkState?.status === 'paused');
+      teyitDurumu();
       bankaCiz();
     }
     function zipMessage(text, error = false) {

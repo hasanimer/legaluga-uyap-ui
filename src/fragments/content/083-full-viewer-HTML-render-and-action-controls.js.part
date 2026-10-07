@@ -34,7 +34,7 @@
       p.append(bankCard.el); bankDraw();
     }
     const bankaSatirlari = () => tum.filter(x => !x.ana && !x.yetimEk && ihbarCevabiMi(x.tur))
-      .map(x => ({ x, ekler: tum.filter(e => e.ana && e.ana.k === x.k && e.ana.dosya === x.dosya && !/dosyaBilgileri/i.test(e.tur)) }));
+      .map(x => ({ x, ekler: bankEkleri(x).filter(e => !/dosyaBilgileri/i.test(e.tur)) }));
     function bankReplyClose(restore = true) {
       const state = bankReplyPopupState;
       if (!state) return;
@@ -139,7 +139,7 @@
       const title = el('b', { 'data-bank-preview': 'title' }, `${x.tur} · ${tarihYaz(x.onay)}`);
       const download = el('a', { class: 'chip', hidden: true, 'data-bank-preview': 'download' }, 'Özgün evrakı indir');
       const content = el('div', { class: 'bank-reply-content', 'data-bank-preview': 'content' });
-      const related = [x, ...tum.filter(item => item.ana && item.ana.k === x.k && item.ana.dosya === x.dosya)];
+      const related = [x, ...bankEkleri(x)];
       const select = el('select', { 'data-bank-preview': 'document', 'aria-label': kind ? 'Evrak veya eki' : 'Cevap evrakı veya eki' }, related.map((item, i) => el('option', { value: String(i) }, `${i ? 'Ek: ' : ''}${item.tur}`)));
       select.hidden = related.length < 2;
       const sourceSelect = el('select', { 'data-bank-preview': 'source', 'aria-label': 'Paket içindeki özgün belge', hidden: true });

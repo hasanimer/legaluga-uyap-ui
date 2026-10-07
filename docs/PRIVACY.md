@@ -1,6 +1,6 @@
 # Legaluga UYAP Asistanı gizlilik politikası
 
-Son güncelleme: **6 Ekim 2026** · **1.19.38** sürümü için hazırlanmıştır. Özellikler kurulu sürüme göre farklı olabilir.
+Son güncelleme: **7 Ekim 2026** · **1.19.43** sürümü için hazırlanmıştır. Özellikler kurulu sürüme göre farklı olabilir.
 
 Legaluga UYAP Asistanı, Av. Hasan İmer Akın tarafından meslektaşlarının ücretsiz kullanımı için geliştirilmiştir. UYAP'ta erişim yetkiniz bulunan dosyaları bulma, görüntüleme ve evraklarını yönetme amacıyla çalışır. T.C. Adalet Bakanlığı, UYAP veya PTT ile resmi bir bağlantısı yoktur. İletişim: **info@legaluga.com**.
 
@@ -18,7 +18,7 @@ Genel web geçmişiniz okunmaz. Geçici iş koordinasyonu Chrome oturum alanın�
 
 ## Ne zaman resmi hizmetlere bağlanılır?
 
-- **İlk kurulum ve Güncelle:** UYAP bağlantısı kontrol edilir; seçtiğiniz kapsamın dosya, taraf ve duruşma listeleri alınır. Vekil adı boşsa hesapta görünen ad kullanılabilir. Otomatik güncelleme ve yeni evrak takibi başlangıçta kapalıdır; ayarlardan açılabilir.
+- **İlk kurulum ve Güncelle:** UYAP bağlantısı kontrol edilir; seçtiğiniz kapsamın dosya, taraf ve duruşma listeleri alınır. Vekil adı boşsa hesapta görünen ad kullanılabilir. Otomatik güncelleme ve yeni evrak takibi başlangıçta kapalıdır; ayarlardan açılabilir. Evrak takibi açıksa evrak teyidi için dosyanın evrak listesinden yalnız evrak türü adları ve sayılar yerel indekse yazılır; evrak içeriği saklanmaz ve bu bilgi cihaz dışına çıkmaz.
 - **Dosya ve evrak ekranı:** Açtığınız ekran için gerekli dosya bilgisi ve evrak listesi alınır. Bir evrakı açmak veya indirmek o belgeyi UYAP'tan getirir. Yerel arama için yeni UYAP isteği gerekmez.
 - **Safahat:** Güncel liste yalnız ilgili düğmeye basıldığında alınır. Son başarılı kayıt, alınma tarihiyle şifreli saklanır. Aynı dosyada başarılı çekimler arasında en az 60 dakika beklenir; hata önceki kaydı silmez.
 - **Banka:** Sorguyu kullanıcı başlatır. UYAP uygunluk ve ücret yanıtları kontrol edilir; ücret varsa ayrıca onay istenir. Dosya ve borçlu kapsamı doğrulanmadan sorgu sonucu kaydedilmez. Cevap başlıklarını listelemek veya bir cevabı açmak yeni ücretli banka sorgusu başlatmaz. Cevap metninden hukuki sonuç çıkarılmaz. Talep kontrolü ayrı kullanıcı işlemidir; talep göndermez ve tebliğ kanıtı oluşturmaz.

@@ -15,7 +15,7 @@
       paketSayi.textContent = n ? `Pakette ${fmtNum(n)} evrak` : 'Pakete alınacak evrakları işaretleyin';
       paketHazirla.disabled = !n || calisiyor || !!bankRun || !!zipRun || !!bankaOkuma || !!tebligatRead;
       paketSiraGor.disabled = !n || calisiyor;
-      paketGorunen.disabled = calisiyor || !gorunen.some(x => paketAlinir(x) && !paketSecili.includes(paketAnahtar(x)));
+      paketGorunen.disabled = calisiyor || !paketGorunenYeni().length;
       paketTemizle.disabled = !n || calisiyor;
       paketSiraSec.disabled = calisiyor;
       paketSiraSec.value = paketSira;

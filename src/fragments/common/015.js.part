@@ -1,17 +1,167 @@
   // Görünen evrak satırlarını UYAP tür adına göre klasörler. Ek, ana evrakın türünü kullanır; ana satır arama
   // sonucunda bulunmasa da ekin ana referansı yeterlidir. Kimlik tekilleştirilmez, satırlar ve iç sıra korunur.
+  // count klasördeki satır sayısıdır; evrakSayisi ve ekSayisi UYAP'ın "ayrı say" kuralıyla (bkz. evrakSayim).
   function evrakKategorileri(rows) {
     const ad = value => typeof value === 'string' ? value.normalize('NFC').trim().replace(/\s+/g, ' ') : '';
     const categories = new Map();
     for (const row of Array.isArray(rows) ? rows : []) {
       const title = ad(row?.ana?.tur) || ad(row?.tur) || 'Diğer evraklar';
       const key = norm(title);
-      if (!categories.has(key)) categories.set(key, { key, title, items: [], count: 0 });
+      if (!categories.has(key)) categories.set(key, { key, title, items: [], count: 0, evrakSayisi: 0, ekSayisi: 0 });
       const category = categories.get(key);
       category.items.push(row);
       category.count++;
+      if (evrakSatiri(row)) category.evrakSayisi++;
+      if (ekSatiri(row)) category.ekSayisi++;
     }
     return [...categories.values()].sort((a, b) => a.title.localeCompare(b.title, 'tr-TR', { sensitivity: 'base' }));
+  }
+
+  // Ekrandaki sayılar UYAP'ın kuralıyla (1.19.43): evrak = UYAP listesindeki kayıt, ek = bir evrakın ek listesindeki girdi.
+  // Her kayıt kendi (ana) satırındadır, kaydı listede bulunamayan ana satır da (ör. Yeni grubunda) evraktır; ana taşıyan satır
+  // evrakın ek listesindeki bir girdidir. Satır biçimi evrakTeyit'teki gibidir.
+  const evrakSatiri = x => !!x && typeof x === 'object' && !x.ana;
+  const ekSatiri = x => !!x && typeof x === 'object' && !!x.ana;
+  function evrakSayim(rows) {
+    let evrak = 0, ek = 0;
+    for (const x of Array.isArray(rows) ? rows : []) {
+      if (evrakSatiri(x)) evrak++;
+      if (ekSatiri(x)) ek++;
+    }
+    return { evrak, ek };
+  }
+
+  // Evrak teyidi (1.19.43). UYAP'tan alınan ham evrak listesi (liste) ile ekranda kurulan satırları (satirlar) karşılaştırır;
+  // ağ isteği yapmaz, saf işlevdir. Eşleme nesne kimliğiyledir (evrakId her yanıtta yeniden şifrelenir):
+  //   kayıt satırı { e } (e listedeki nesnenin kendisi, ana yok), ek satırı { ana, ekIndis, e: null } (ana.e kaydın nesnesi).
+  // Her kayıt tam bir kez kayıt satırı olmalıdır (0 → eksik, birden çok → tekrar). Başka evrakın ek listesinde de geçen kayıt
+  // ayrıca onun ek satırında görünür; bu tekrar değildir (UYAP da böyle gösterir). ana taşıyan satır kayıt satırı sayılmaz.
+  // UYAP evrakı listedeki her nesne kayıt, UYAP eki her kaydın ekEvrakListesi girdisidir. Tür adı ham addır (kırpılmış);
+  // satırın gösterim türü kullanılmaz. Listenin kapsam alanları (kilit, sayfa, kapsamNedeni; eski listede morePages,
+  // scopeUnknown) eksik olabilir. Dönüş JSON'a yazılabilir; evrak içeriği taşımaz, yalnız tür adı ve sayı.
+  const teyitTuru = value => String(value ?? '').trim() || 'Türü belirtilmemiş';
+  const TEYIT_NEDENLERI = ['sayfa', 'son20', 'grup', 'sayfaSayisi', 'kapsam'];
+  function evrakTeyit(liste, satirlar) {
+    const list = Array.isArray(liste) ? liste : [];
+    const sayfa = list.sayfa && typeof list.sayfa === 'object' ? list.sayfa : {};
+    const sayi = value => Number.isInteger(value) && value >= 0 ? value : null;
+    const nedenler = new Set(Array.isArray(list.kapsamNedeni) ? list.kapsamNedeni.filter(n => TEYIT_NEDENLERI.includes(n)) : []);
+    if (list.morePages) nedenler.add('sayfa');
+    if (list.scopeUnknown && !nedenler.has('son20') && !nedenler.has('grup')) nedenler.add('kapsam');
+    const sonuc = {
+      durum: 'eslesti', kapsam: { tam: !nedenler.size, nedenler: TEYIT_NEDENLERI.filter(n => nedenler.has(n)), okunan: sayi(sayfa.okunan), toplam: sayi(sayfa.toplam) },
+      evrak: { uyap: 0, listede: 0, turler: [] }, ek: { uyap: 0, listede: 0, turler: [] },
+      eksik: [], tekrar: 0, gecersiz: 0, acilamaz: { sayi: 0, turler: [] }, ayniKimlik: 0
+    };
+    if (list.kilit) { sonuc.durum = 'kilit'; return sonuc; }
+    // Ekranda gösterilen: kayıt nesnesi başına satır sayısı; ek girdisi (ana kayıt + sıra) başına satır sayısı.
+    const gosterilen = new Map(), ekGosterilen = new Map();
+    for (const satir of Array.isArray(satirlar) ? satirlar : []) {
+      if (!satir || typeof satir !== 'object') continue;
+      if (!satir.ana) {
+        if (satir.e && typeof satir.e === 'object') gosterilen.set(satir.e, (gosterilen.get(satir.e) || 0) + 1);
+        continue;
+      }
+      const ana = satir.ana.e, sira = satir.ekIndis;
+      if (!ana || typeof ana !== 'object' || !Number.isInteger(sira)) continue;
+      if (!ekGosterilen.has(ana)) ekGosterilen.set(ana, new Map());
+      const m = ekGosterilen.get(ana);
+      m.set(sira, (m.get(sira) || 0) + 1);
+    }
+    const evrakTur = new Map(), ekTur = new Map(), eksik = new Map(), acilamaz = new Map(), anahtarlar = new Map();
+    const say = (m, tur, alan) => { if (!m.has(tur)) m.set(tur, { tur, uyap: 0, listede: 0 }); m.get(tur)[alan]++; };
+    const eksikEkle = (tur, tip, neden) => {
+      const k = `${tip}\n${neden}\n${tur}`;
+      if (!eksik.has(k)) eksik.set(k, { tur, sayi: 0, tip, neden });
+      eksik.get(k).sayi++;
+    };
+    for (const e of list) {
+      if (!e || typeof e !== 'object' || Array.isArray(e)) { sonuc.gecersiz++; continue; }
+      const tur = teyitTuru(e.tur), n = gosterilen.get(e) || 0, k = evrakKey(e);
+      sonuc.evrak.uyap++; say(evrakTur, tur, 'uyap');
+      if (n) { sonuc.evrak.listede++; say(evrakTur, tur, 'listede'); sonuc.tekrar += n - 1; }
+      else eksikEkle(tur, 'evrak', k == null ? 'kimliksiz' : 'bilinmiyor');
+      if (k != null) { if (!anahtarlar.has(k)) anahtarlar.set(k, []); anahtarlar.get(k).push(String(e.dosyaGrubu || '')); }
+      const ekGoster = ekGosterilen.get(e);
+      (Array.isArray(e.ekEvrakListesi) ? e.ekEvrakListesi : []).forEach((ek, j) => {
+        sonuc.ek.uyap++;
+        // Okunamayan (nesne olmayan) ek girdisinin türü bilinmez; ana evrakın türüyle anılır. Ölçüt ek satırlarını kuranla aynıdır.
+        if (!ek || typeof ek !== 'object') { say(ekTur, tur, 'uyap'); eksikEkle(tur, 'ek', 'ekGecersiz'); return; }
+        const ekTuru = teyitTuru(ek.ekTuru), m = ekGoster?.get(j) || 0;
+        say(ekTur, ekTuru, 'uyap');
+        if (ek.evrakId == null || ek.evrakId === '') acilamaz.set(ekTuru, (acilamaz.get(ekTuru) || 0) + 1);
+        if (m) { sonuc.ek.listede++; say(ekTur, ekTuru, 'listede'); sonuc.tekrar += m - 1; }
+        else eksikEkle(ekTuru, 'ek', n ? 'bilinmiyor' : 'anaYok');
+      });
+    }
+    const sirala = (a, b) => b.uyap - a.uyap || a.tur.localeCompare(b.tur, 'tr-TR');
+    sonuc.evrak.turler = [...evrakTur.values()].sort(sirala);
+    sonuc.ek.turler = [...ekTur.values()].sort(sirala);
+    sonuc.eksik = [...eksik.values()].sort((a, b) => (a.tip === b.tip ? 0 : a.tip === 'evrak' ? -1 : 1) || b.sayi - a.sayi || a.tur.localeCompare(b.tur, 'tr-TR'));
+    sonuc.acilamaz.turler = [...acilamaz].map(([tur, n]) => ({ tur, sayi: n })).sort((a, b) => b.sayi - a.sayi || a.tur.localeCompare(b.tur, 'tr-TR'));
+    sonuc.acilamaz.sayi = sonuc.acilamaz.turler.reduce((t, x) => t + x.sayi, 0);
+    // Dosya grubu boş kayıt, açarken (evrakBul) ve ekranda her grupla eşleşmiş sayılır; aynı kural burada da geçerli.
+    for (const g of anahtarlar.values()) sonuc.ayniKimlik += g.filter((a, i) => g.some((b, j) => j !== i && (!a || !b || a === b))).length;
+    if (sonuc.eksik.length || sonuc.tekrar || sonuc.gecersiz) sonuc.durum = 'farkli';
+    return sonuc;
+  }
+
+  // Sayının okunuşuna göre iyelik eki, kesme işaretiyle: 3’ü, 6’sı, 9’u, 10’u, 11’i, 20’si, 47’si, 100’ü, 1.000’i (TDK).
+  // Son sıfır olmayan basamağın (ya da basamak adının: yüz, bin, milyon, milyar) okunuşu belirler; 0 → 0’ı (sıfırı).
+  function sayiIyelik(n) {
+    const v = Math.abs(Math.trunc(Number(n) || 0));
+    const birler = ['', 'i', 'si', 'ü', 'ü', 'i', 'sı', 'si', 'i', 'u'], onlar = ['', 'u', 'si', 'u', 'ı', 'si', 'ı', 'i', 'i', 'ı'];
+    const ek = v === 0 ? 'ı' : v % 10 ? birler[v % 10] : v % 100 ? onlar[Math.floor(v / 10) % 10]
+      : v % 1000 ? 'ü' : v % 1e6 ? 'i' : v % 1e9 ? 'u' : 'ı';
+    return `${fmtNum(v)}’${ek}`;
+  }
+
+  // evrakTeyit sonucunun avukata gösterilen metni (saf; DOM yok). sinif: farklı → 'uyari', kısmi → 'bilgi', aksi 'ok'.
+  // bos: UYAP kayıt verdi ama hiçbiri gösterilemiyorsa "evrak yok" yerine kullanılacak ileti.
+  const TEYIT_NEDEN_METNI = {
+    kimliksiz: 'birim evrak no ya da onay tarihi eksik', bilinmiyor: 'nedeni belirlenemedi; listeyi yenileyin',
+    ekGecersiz: 'UYAP ek bilgisini okunamaz biçimde verdi', anaYok: 'ana evrakı listede gösterilemiyor'
+  };
+  function evrakTeyitMetni(teyit) {
+    if (!teyit || typeof teyit !== 'object' || teyit.durum === 'kilit') return { sinif: 'bilgi', metin: '', ayrinti: [] };
+    const kapsam = teyit.kapsam || {}, evrak = teyit.evrak || {}, ek = teyit.ek || {}, eksik = Array.isArray(teyit.eksik) ? teyit.eksik : [];
+    const farkli = teyit.durum === 'farkli', tam = kapsam.tam !== false;
+    const cumleler = [];
+    // Okunamayan (nesne olmayan) kayıt da UYAP'ın bildirdiği kayıttır; başlık ve boş liste iletisi aynı sayıyı söyler.
+    const bildirilen = (Number(evrak.uyap) || 0) + (Number(teyit.gecersiz) || 0);
+    if (farkli) {
+      cumleler.push(`UYAP ${fmtNum(bildirilen)} evrak bildirdi, ${sayiIyelik(evrak.listede)} listede.`);
+      if (ek.uyap !== ek.listede) cumleler.push(`UYAP ${fmtNum(ek.uyap)} ek bildirdi, ${sayiIyelik(ek.listede)} listede.`);
+    } else {
+      cumleler.push(`${tam ? 'UYAP listesiyle eşleşti' : 'Okunan kısım UYAP listesiyle eşleşti'}: ${fmtNum(evrak.uyap)} evrak${ek.uyap ? `, ${fmtNum(ek.uyap)} ek` : ''}.`);
+    }
+    for (const neden of Array.isArray(kapsam.nedenler) ? kapsam.nedenler : []) {
+      if (neden === 'sayfa') cumleler.push(kapsam.okunan != null && kapsam.toplam != null
+        ? `UYAP listesinin ${fmtNum(kapsam.okunan)}/${fmtNum(kapsam.toplam)} sayfası okundu; sayılar okunan sayfalara göre.`
+        : 'UYAP listesinin tüm sayfaları okunmadı; sayılar okunan sayfalara göre.');
+      else if (neden === 'son20') cumleler.push('UYAP yalnız son 20 evrakı verdi; tam liste doğrulanamadı.');
+      else if (neden === 'grup') cumleler.push('UYAP listesinin bir bölümü okunamadı; sayılar eksik olabilir.');
+      else if (neden === 'sayfaSayisi') cumleler.push('UYAP sayfa sayısını bildirmedi; liste tek sayfa sayıldı.');
+      else if (neden === 'kapsam') cumleler.push('UYAP listesinin kapsamı doğrulanamadı; sayılar eksik olabilir.');
+    }
+    const ayrinti = eksik.map(x => `${x.tur}: ${fmtNum(x.sayi)} ${x.tip === 'ek' ? 'ek' : 'evrak'} gösterilemiyor (${TEYIT_NEDEN_METNI[x.neden] || TEYIT_NEDEN_METNI.bilinmiyor}).`);
+    if (teyit.tekrar === 1) ayrinti.push('Aynı evrak listede 2 kez geçiyor.');
+    else if (teyit.tekrar > 1) ayrinti.push(`Listede ${fmtNum(teyit.tekrar)} fazla satır var; aynı evrak birden çok kez geçiyor.`);
+    if (teyit.gecersiz) ayrinti.push(`UYAP listesinde okunamayan ${fmtNum(teyit.gecersiz)} kayıt var.`);
+    if (teyit.ayniKimlik) ayrinti.push(`Aynı bilgileri taşıyan ${fmtNum(teyit.ayniKimlik)} evrak var; açarken karışabilir.`);
+    const acilamaz = teyit.acilamaz || {};
+    if (acilamaz.sayi) ayrinti.push(`${fmtNum(acilamaz.sayi)} ek, UYAP kimlik vermediği için açılamaz` +
+      `${Array.isArray(acilamaz.turler) && acilamaz.turler.length ? ` (${acilamaz.turler.map(x => `${x.tur} ${fmtNum(x.sayi)}`).join(', ')})` : ''}.`);
+    const out = { sinif: farkli ? 'uyari' : tam ? 'ok' : 'bilgi', metin: cumleler.join(' '), ayrinti };
+    if (bildirilen && !evrak.listede) {
+      const kimliksiz = eksik.filter(x => x.tip === 'evrak' && x.neden === 'kimliksiz').reduce((t, x) => t + x.sayi, 0);
+      out.bos = `UYAP ${fmtNum(bildirilen)} evrak bildirdi ama hiçbiri gösterilemiyor` +
+        ` (${kimliksiz === bildirilen ? TEYIT_NEDEN_METNI.kimliksiz : 'ayrıntı listenin üstünde'}).`;
+    } else if (!bildirilen && (Array.isArray(kapsam.nedenler) ? kapsam.nedenler : []).some(n => n !== 'sayfaSayisi')) {
+      // Boş ama kapsamı doğrulanamayan liste "evrak yok" diye kesinlenmez (yalnız sayfa sayısı bildirilmediyse boş liste boştur).
+      out.bos = 'UYAP listesinin okunan kısmında evrak yok; listenin tamamı doğrulanamadı.';
+    }
+    return out;
   }
 
   // HTML evrakın kodlaması (1.19.3). Sıra: bayt sırası işareti, Content-Type'taki charset, belgenin ilk 1024 baytındaki
@@ -243,5 +393,5 @@
     return { root, input, toolbar, owns, focus: () => input.focus({ preventScroll: true }), destroy() { if (destroyed) return; destroyed = true; for (const off of listeners) off(); } };
   }
 
-  globalThis.UHD = { TURLER, taramaKapsami, kurulumGerekli, CBS, ILLER, BUYUKSEHIRLER, ilSirasi, adliyeOf, cbsIlleri, cbsKapsam, ilAdi, evrakKilidi, dosyaTurAdi, ORIGIN, BRAND, norm, tokens, nameKey, detectMyName, myKeys, isClient, passFilter, fileNoQuery, search, openPath, fmtNum, fmtDate, fmtTrDate, csvCell, csvDosyaNo, evrakKey, trDateTs, parseEvraklar, diffEvrak, unseenEvrak, sonEvrak, lastEvrak, personFiles, parseSafahat, checkSafahatSnapshot, checkSafahatStore, safahatState, safahatFileKey, SAFAHAT_REFRESH_MS, SAFAHAT_LEASE_MS, sonIslemOf, fmtTL, humanKey, trTitle, cleanDurum, cleanBirim, kunyeOf, toastPlan, openErrorPlan, htmlKodlamasi, ekleriYerlestir, evrakKategorileri, noteText, noteDisplay, noteEditor, evrakTakipAcik, BACKUP_APP, BACKUP_FORMAT, BACKUP_KEYS, checkBackup, todayIso, daysLeft, parseDurusma, upcomingDurusmalar, adliyeAdi, CAKISMA_DK, durusmaCakismalari, uyapDate, durusmaIcs, ihbarCevabiMi, bankaAdi, bankaUnvanAdi, bankaCevabi, bankaBelgeleri };
+  globalThis.UHD = { TURLER, taramaKapsami, kurulumGerekli, CBS, ILLER, BUYUKSEHIRLER, ilSirasi, adliyeOf, cbsIlleri, cbsKapsam, ilAdi, evrakKilidi, dosyaTurAdi, ORIGIN, BRAND, norm, tokens, nameKey, detectMyName, myKeys, isClient, passFilter, fileNoQuery, search, openPath, fmtNum, fmtDate, fmtTrDate, csvCell, csvDosyaNo, evrakKey, trDateTs, parseEvraklar, diffEvrak, unseenEvrak, sonEvrak, lastEvrak, personFiles, parseSafahat, checkSafahatSnapshot, checkSafahatStore, safahatState, safahatFileKey, SAFAHAT_REFRESH_MS, SAFAHAT_LEASE_MS, sonIslemOf, fmtTL, humanKey, trTitle, cleanDurum, cleanBirim, kunyeOf, toastPlan, openErrorPlan, htmlKodlamasi, ekleriYerlestir, evrakKategorileri, evrakSayim, evrakTeyit, evrakTeyitMetni, sayiIyelik, noteText, noteDisplay, noteEditor, evrakTakipAcik, BACKUP_APP, BACKUP_FORMAT, BACKUP_KEYS, checkBackup, todayIso, daysLeft, parseDurusma, upcomingDurusmalar, adliyeAdi, CAKISMA_DK, durusmaCakismalari, uyapDate, durusmaIcs, ihbarCevabiMi, bankaAdi, bankaUnvanAdi, bankaCevabi, bankaBelgeleri };
 })();
