@@ -41,6 +41,28 @@
     return { snapshot, waitMs, busy: busyMs > 0, busyMs };
   }
 
+  // Tahsilat/reddiyat özetindeki Kalan alanı aynen saklanır; harç veya satır tutarlarından hesaplanmaz.
+  function checkBalanceSnapshot(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value) ||
+        !Object.hasOwn(value, 'toplamKalan') || typeof value.toplamKalan !== 'number' || !Number.isFinite(value.toplamKalan) ||
+        !Object.hasOwn(value, 'fetchedAt') || !Number.isSafeInteger(value.fetchedAt) || value.fetchedAt <= 0 ||
+        !Number.isFinite(new Date(value.fetchedAt).getTime())) throw new Error('Kalan tutar kaydı geçersiz.');
+    return { toplamKalan: value.toplamKalan, fetchedAt: value.fetchedAt };
+  }
+  function checkBalanceStore(value) {
+    if (value === undefined) return { version: 1, files: {} };
+    if (!value || typeof value !== 'object' || Array.isArray(value) || value.version !== 1 || !value.files || typeof value.files !== 'object' || Array.isArray(value.files) ||
+        Object.keys(value.files).length > 10000) throw new Error('Kalan tutar deposu geçersiz.');
+    const result = { version: 1, files: {} };
+    for (const [key, snapshot] of Object.entries(value.files)) {
+      if (!safahatFileKey(key)) throw new Error('Kalan tutar dosya anahtarı geçersiz.');
+      result.files[key] = checkBalanceSnapshot(snapshot);
+    }
+    if (new TextEncoder().encode(JSON.stringify(result)).length > 8 * 1024 * 1024)
+      throw new Error('Kalan tutar deposu 8 MiB sınırını aşıyor; eski kayıt korunuyor.');
+    return result;
+  }
+
   // Kartta gösterilecek son işlem (saklanan en küçük bilgi).
   const sonIslemOf = items => (items && items[0] ? { tarih: items[0].tarih.slice(0, 10), tur: items[0].tur || items[0].aciklama } : null);
 
@@ -113,7 +135,7 @@
   const BACKUP_APP = 'legaluga-uyap-asistani';
   const BACKUP_FORMAT = 1;
   // Kaldırılan süre özelliğinin eski kayıtları yalnızca yedeklerde kayıpsız korunur.
-  const BACKUP_KEYS = ['uhdIndex', 'uhdNotes', 'uhdSureler', 'uhdEvrakGoruldu', 'uhdDurusmalar', 'uhdPrefs', 'uhdRecent', 'uhdGizli', 'uhdTurFilter', 'uhdBankChecks', 'uhdSafahat'];
+  const BACKUP_KEYS = ['uhdIndex', 'uhdNotes', 'uhdSureler', 'uhdEvrakGoruldu', 'uhdDurusmalar', 'uhdPrefs', 'uhdRecent', 'uhdGizli', 'uhdTurFilter', 'uhdBankChecks', 'uhdSafahat', 'uhdBalances'];
   function checkBackup(obj) {
     const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
     if (!object(obj) || obj.app !== BACKUP_APP) throw new Error('Bu dosya Legaluga UYAP Asistanı yedeği değil.');
@@ -190,6 +212,7 @@
       data.uhdBankChecks = globalThis.UHDBankChecks.sanitizeStore(data.uhdBankChecks);
     }
     if (Object.hasOwn(data, 'uhdSafahat')) data.uhdSafahat = checkSafahatStore(data.uhdSafahat);
+    if (Object.hasOwn(data, 'uhdBalances')) data.uhdBalances = checkBalanceStore(data.uhdBalances);
     // Başka cihazın veya eski yedeğin raporlama tercihi bu cihazda onay sayılmaz.
     data.uhdPrefs = { ...(data.uhdPrefs || {}), hataRaporu: false };
     delete data.uhdPrefs.telemetryConsentAt;

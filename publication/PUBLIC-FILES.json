@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "965366e4ed602d3dc2b7fd8d3104373013760e19faf057e770abc1b922b800be"
+      "sha256": "c1cbe72ec23344920231521f8be347ecdcfe3c7c374c4c423575158db4e591a9"
     },
     {
       "path": "SECURITY.md",
@@ -52,7 +52,7 @@
     },
     {
       "path": "docs/PRIVACY.md",
-      "sha256": "5cb44ea23d8ad128b4e945ac67941e2de49f80ab07f503dd720c4202490228ea"
+      "sha256": "dca008c12cc8cc026a61b7b85fab3dfb323841c586005957ff12b29c76d5a3c6"
     },
     {
       "path": "docs/images/01-uyap-baglantisi.png",
@@ -104,11 +104,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "ac18051c8aec41e0ed9001cc8ef31198296c5437b1298e0e9d868f5044c04ddd"
+      "sha256": "4395002ace84c8e5d472bf8073c793d7b49414ad60e9bf9f61af237d8986822b"
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "9ccdc17da57372de70e1dd53eb4ab11cbc7fecd9c63f570efb7a8700b313bb95"
+      "sha256": "8811e7790e40dff1b6416b38259d0df413dd295e60a18e06921e211595346f43"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -216,7 +216,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "923b9ebc5fb15060907d4695da718f378caee6e034009ccbf5bcdfb73feb34cb"
+      "sha256": "35ce3a74bcc815d24db385e55f8f7b8d2857788fe45a767a201e67e0f8fc8379"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -256,7 +256,7 @@
     },
     {
       "path": "src/extension/storage.js",
-      "sha256": "239b14951bd290d203e1d90b46c76ab9eab057fc5976f3ee14d07febd2ca1dd8"
+      "sha256": "558129de2e80968da25b1e07a2a11daf3702fd0b920adc0eea15b6c0864c3b45"
     },
     {
       "path": "src/extension/tabs.js",
@@ -280,7 +280,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "c3ae6d2f4d2dbcfae2e63d49efcfcc55f3e42116e71253277a71d9adb5629fcb"
+      "sha256": "e9bdeb0ca62947116fff2dcd2667c4628a5846897a356ee3175db71b2df64a59"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -524,11 +524,11 @@
     },
     {
       "path": "src/fragments/common/013.js.part",
-      "sha256": "886d7b5e8b5d938054286d14bec1f82e8832d92918d079219b07b45ae0f0124f"
+      "sha256": "afb0c5c3d8ab3e9610dab8ba3e6a182a955b3a8fab77138e30e7bb7fcdddf4e3"
     },
     {
       "path": "src/fragments/common/015.js.part",
-      "sha256": "584960a127c4ece9f4e6e0976d8d81f5f866ec2066ba7c1c3d92b86994cf16be"
+      "sha256": "88a2200ec0b1e815a42f677ae169ed07c5d18ae9a49537ada0404a0a6f248600"
     },
     {
       "path": "src/fragments/content/001-bootstrap-shared-request-safety.js.part",
@@ -576,7 +576,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "cad4c12732d4584ac3d01927c9349209746f6102fff600b29ccc6d83c4b6d704"
+      "sha256": "db0177afb8e04719653d3909dcbaabbcd16c7237ea00f18b062d5c7a12247ead"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -596,7 +596,7 @@
     },
     {
       "path": "src/fragments/content/033-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "58d77c5f0ea0e50eca09068fd40d83d461e9387edbb0d1584afa4953389e7dee"
+      "sha256": "01070b8986a30e231000710f1b5114c121e7aca8b2e0a6f078755864aafe8b4e"
     },
     {
       "path": "src/fragments/content/035-overview-safahat-notes-and-safe-document-rendering.js.part",
@@ -604,7 +604,7 @@
     },
     {
       "path": "src/fragments/content/037-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "1522e651957517f6ee8f79b85eca5f7506cc0e6b6584556ab7b566fe1cc37ee5"
+      "sha256": "dd0537ffe4b079ef7611c80ad692d5cc390fd560fda072e2181d0166ac74efb8"
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",

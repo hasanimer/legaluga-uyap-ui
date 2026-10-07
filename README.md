@@ -77,6 +77,8 @@ UDF ve TIFF önizlemesi belgeyi cihazınızda işler. UDF'nin sayfa düzeni resm
 
 **Safahat** sekmesini açmak yeni sorgu yapmaz. **Safahatı getir / Güncelle** son işlem listesini alır; son başarılı çekimin tarihi görünür. Kayıt bu Chrome profilinde şifreli saklanır. Aynı dosyada başarılı çekimden sonra **60 dakika** beklenir; hata veya iptal önceki kaydı silmez. Dosya listesini güncellemek safahatı otomatik sorgulamaz.
 
+**Dosyada kalan tutar**, mahkeme ve icra dosyalarının **Özet** ekranındaki UYAP Tahsilat/Reddiyat yanıtından alınır. **Tutarları yenile** açık dosyanın bilgisini yeniler. Son alınan tutar ve tarih Chrome profilinde şifreli saklanarak dosya kartında ve hızlı bakışta gösterilir; karttaki **Getir / Güncelle** Özet ekranını açar. Dosya taraması tutarları topluca sorgulamaz. Eklenti bakiye hesaplamaz ve alınamayan tutarı sıfır göstermez; önceki kayıt tarihiyle korunur. Kayıtlar şifreli yedeğe dahildir ve **Tüm verileri sil** ile silinir. Savcılık dosyalarında kalan tutar alanı yoktur.
+
 ![Safahat: kaydedilen işlem listesi, alınma tarihi ve yeni sorgu için kalan süre — örnek veriler](docs/images/10-kaydedilen-safahat.png)
 
 ## Banka sorgusu ve cevapları

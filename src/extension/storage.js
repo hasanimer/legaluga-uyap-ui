@@ -318,6 +318,25 @@
         if (next) await write({ [key]: stateOf(next), ...(!plan ? { [planKey]: planOf(next) } : {}) });
         return { data: next, revision };
       }
+      if (operation === 'getBalance' || operation === 'saveBalance') {
+        const key = args?.fileKey;
+        if (!globalThis.UHD.safahatFileKey(key)) throw new Error('Kalan tutar dosya anahtarı geçersiz.');
+        if (operation === 'saveBalance' && (!Object.hasOwn(args, 'epoch') || args.epoch !== null &&
+            (typeof args.epoch !== 'string' || !args.epoch || args.epoch.length > 128))) throw new Error('Kalan tutar sorgu koruması geçersiz.');
+        const saved = (await read(operation === 'getBalance' ? 'uhdBalances' : ['uhdBalances', 'uhdScanEpoch'])).data;
+        // Silme/geri yükleme ile aynı işlem kuyruğunda kontrol edilir; geç yanıt kaldırılan kaydı canlandıramaz.
+        if (operation === 'saveBalance' && (saved.uhdScanEpoch ?? null) !== args.epoch)
+          throw new Error('Kalan tutar sorgusundan sonra yerel veriler değişti; geç yanıt kaydedilmedi.');
+        const current = globalThis.UHD.checkBalanceStore(saved.uhdBalances);
+        const previous = Object.hasOwn(current.files, key) ? current.files[key] : null;
+        if (operation === 'getBalance') return { data: previous, revision };
+        const snapshot = globalThis.UHD.checkBalanceSnapshot(args.snapshot);
+        // Aynı dosyanın geç dönen isteği daha yeni başarılı çekimi değiştiremez.
+        if (previous && previous.fetchedAt >= snapshot.fetchedAt) return { data: previous, revision };
+        current.files[key] = snapshot;
+        await write({ uhdBalances: globalThis.UHD.checkBalanceStore(current) });
+        return { data: snapshot, revision };
+      }
       if (['getSafahat', 'beginSafahat', 'saveSafahat', 'cancelSafahat'].includes(operation)) {
         const key = args?.fileKey;
         if (!globalThis.UHD.safahatFileKey(key)) throw new Error('Safahat dosya anahtarı geçersiz.');
@@ -446,6 +465,8 @@
     writeScan: async (jobId, owner, values, absent = []) => (await request('writeScan', { jobId, owner, values, absent })).data,
     replaceBackup: async data => { await request('replaceBackup', data); },
     mergeBankCheck: async (fileKey, snapshot) => (await request('mergeBankCheck', { fileKey, snapshot })).data,
+    getBalance: async fileKey => (await request('getBalance', { fileKey })).data,
+    saveBalance: async (fileKey, snapshot, epoch) => (await request('saveBalance', { fileKey, snapshot, epoch })).data,
     getSafahat: async fileKey => (await request('getSafahat', { fileKey })).data,
     beginSafahat: async fileKey => (await request('beginSafahat', { fileKey })).data,
     saveSafahat: async (fileKey, token, items) => (await request('saveSafahat', { fileKey, token, items })).data,

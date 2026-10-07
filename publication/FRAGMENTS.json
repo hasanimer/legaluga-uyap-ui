@@ -55,16 +55,16 @@
       "source": "common.js",
       "order": 13,
       "path": "src/fragments/common/013.js.part",
-      "sha256": "886d7b5e8b5d938054286d14bec1f82e8832d92918d079219b07b45ae0f0124f",
-      "bytes": 16458,
+      "sha256": "afb0c5c3d8ab3e9610dab8ba3e6a182a955b3a8fab77138e30e7bb7fcdddf4e3",
+      "bytes": 18096,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
       "source": "common.js",
       "order": 15,
       "path": "src/fragments/common/015.js.part",
-      "sha256": "584960a127c4ece9f4e6e0976d8d81f5f866ec2066ba7c1c3d92b86994cf16be",
-      "bytes": 29253,
+      "sha256": "88a2200ec0b1e815a42f677ae169ed07c5d18ae9a49537ada0404a0a6f248600",
+      "bytes": 29294,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
@@ -343,8 +343,8 @@
       "source": "content.js",
       "order": 23,
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "cad4c12732d4584ac3d01927c9349209746f6102fff600b29ccc6d83c4b6d704",
-      "bytes": 98153,
+      "sha256": "db0177afb8e04719653d3909dcbaabbcd16c7237ea00f18b062d5c7a12247ead",
+      "bytes": 98807,
       "purpose": "page-shell-full-CSS-docking-and-panel-controls"
     },
     {
@@ -383,8 +383,8 @@
       "source": "content.js",
       "order": 33,
       "path": "src/fragments/content/033-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "58d77c5f0ea0e50eca09068fd40d83d461e9387edbb0d1584afa4953389e7dee",
-      "bytes": 8097,
+      "sha256": "01070b8986a30e231000710f1b5114c121e7aca8b2e0a6f078755864aafe8b4e",
+      "bytes": 8595,
       "purpose": "overview-safahat-notes-and-safe-document-rendering"
     },
     {
@@ -399,8 +399,8 @@
       "source": "content.js",
       "order": 37,
       "path": "src/fragments/content/037-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "1522e651957517f6ee8f79b85eca5f7506cc0e6b6584556ab7b566fe1cc37ee5",
-      "bytes": 13526,
+      "sha256": "dd0537ffe4b079ef7611c80ad692d5cc390fd560fda072e2181d0166ac74efb8",
+      "bytes": 15184,
       "purpose": "overview-safahat-notes-and-safe-document-rendering"
     },
     {

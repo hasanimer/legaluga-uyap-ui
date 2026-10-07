@@ -247,6 +247,10 @@
 .uhd .note-line.ro{cursor:default}
 .uhd .view.ozet{flex:none;padding:6px 10px;color:var(--accent-text);background:var(--soft)}
 .uhd .view.ozet:hover{background:var(--bg);color:var(--text)}
+.uhd .balance-line{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin:7px 0;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.uhd .balance-line strong{font-variant-numeric:tabular-nums;color:var(--accent-text)}
+.uhd .balance-line small{color:var(--muted);font-size:11px}
+.uhd .balance-line .btn{margin-left:auto}
 .uhd.options .notice,.uhd.options .settings>*{width:100%;max-width:760px;margin-inline:auto}
 .uhd.options>header{padding-inline:max(16px,calc((100% - 760px) / 2));border-bottom:1px solid var(--line)}
 .uhd.options .settings{padding:10px 24px 32px;font-size:13px}
@@ -470,6 +474,8 @@
     let progress = null;
     let stopping = false;      // Durdur'a basıldı; iş, süren istekler bitince durur
     let notes = {};
+    let balances = {};
+    let balanceRevision = 0;
     let recent = [];
     let prefs = {};
     let detected = '';
@@ -1394,6 +1400,25 @@
       return el('div', { class: 'son', title: 'Son kaydedilen safahata göre en yeni işlem; safahat elle güncellenir' }, el('span', { class: 'k' }, 'Son işlem: '), el('b', null, fmtTrDate(r.sonIslem.tarih)), r.sonIslem.tur ? ` · ${r.sonIslem.tur}` : '');
     }
 
+    // UYAP'ın toplamKalan değeri, en son bu dosyanın Özet ekranından alındığı tarihle gösterilir.
+    // Kart çizimi sorgu yapmaz; Getir/Güncelle yalnız seçilen dosyanın Özet ekranını açar.
+    function balanceLine(r, interactive = false) {
+      if (r.yargiTuru === CBS.kod) return null;
+      let snapshot = null;
+      try { if (Object.hasOwn(balances, r.key)) snapshot = globalThis.UHD.checkBalanceSnapshot(balances[r.key]); } catch { /* geçersiz tutar gösterilmez */ }
+      const refresh = interactive && opts.onDosyaPanel ? el('button', {
+        type: 'button', class: 'btn sm', 'data-focus': 'balance',
+        title: 'Bu dosyanın kalan tutarını UYAP’tan almak için Özet ekranını aç'
+      }, snapshot ? 'Güncelle' : 'Getir') : null;
+      if (refresh) refresh.addEventListener('click', e => { e.stopPropagation(); opts.onDosyaPanel(r, 'ozet'); });
+      if (!snapshot && !refresh) return null;
+      const date = snapshot ? new Date(snapshot.fetchedAt).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' }) : '';
+      return el('div', { class: 'balance-line', title: snapshot ? `UYAP Tahsilat/Reddiyat · Son alınma: ${date}` : 'Kalan tutar bu dosya için henüz alınmadı.' },
+        el('span', null, 'Dosyada kalan: '),
+        snapshot ? el('strong', null, globalThis.UHD.fmtTL(snapshot.toplamKalan)) : el('small', null, 'Henüz alınmadı'),
+        snapshot ? el('small', null, `Son alınma: ${date}`) : null, refresh);
+    }
+
     async function copyText(btn, text) {
       try {
         await navigator.clipboard.writeText(text);
@@ -1426,6 +1451,7 @@
             yeniMap.has(r.key) ? el('span', { class: 'pill new' }, 'Yeni evrak') : null,
             teyitRozeti(r))),
         el('div', { class: 'birim' }, highlight(cleanBirim(r.birimAdi), toks)),
+        balanceLine(r),
         notes[r.key] ? el('div', { class: 'note-line ro', title: 'Kişisel not (yalnız bu bilgisayarda); UYAP’taki panelden düzenlenir' }, ...globalThis.UHD.noteDisplay(notes[r.key], text => highlight(text, toks))) : null,
         extra || null,
         partyBlock(r, toks, keys),
@@ -1481,6 +1507,7 @@
             teyitRozeti(r)),
           icons),
         el('div', { class: 'birim' }, highlight(cleanBirim(r.birimAdi), toks)),
+        balanceLine(r, true),
         noteBlock(r, toks),
         durLine(r) || islemLine(r),
         extra || null,
@@ -2131,7 +2158,7 @@
         if (!records.length) return setNotice(`Dışa aktarılacak dosya yok. Önce ${guncelleYeri} basın.`, 'err');
         exportCsv();
       });
-      const btnBackup = el('button', { class: 'btn sm', title: 'Dosya listesi, notlar, duruşmalar, banka sorgusu ve talep/cevap özetleri ile ayarlar parola ile şifrelenmiş tek dosyaya yedeklenir. Hata raporlama onayı aktarılmaz.' }, 'Şifreli yedekle');
+      const btnBackup = el('button', { class: 'btn sm', title: 'Dosya listesi, notlar, duruşmalar, kalan tutar kayıtları, banka sorgusu ve talep/cevap özetleri ile ayarlar parola ile şifrelenmiş tek dosyaya yedeklenir. Hata raporlama onayı aktarılmaz.' }, 'Şifreli yedekle');
       btnBackup.addEventListener('click', exportBackup);
       const fileIn = el('input', { type: 'file', accept: '.json,application/json', hidden: true });
       fileIn.addEventListener('change', () => { if (fileIn.files[0]) importBackup(fileIn.files[0]); fileIn.value = ''; });
@@ -2338,7 +2365,8 @@
     function loadInitial() {
       const initialPrefsRevision = prefsRevision;
       const initialTurFilterRevision = turFilterRevision;
-      return chrome.storage.local.get(['uhdIndex', 'uhdProgress', 'uhdNotes', 'uhdRecent', 'uhdPrefs', 'uhdEvrakGoruldu', 'uhdJob', 'uhdDurusmalar', 'uhdGizli', 'uhdTurFilter']).then(v => {
+      const initialBalanceRevision = balanceRevision;
+      return chrome.storage.local.get(['uhdIndex', 'uhdProgress', 'uhdNotes', 'uhdRecent', 'uhdPrefs', 'uhdEvrakGoruldu', 'uhdJob', 'uhdDurusmalar', 'uhdGizli', 'uhdTurFilter', 'uhdBalances']).then(v => {
         if (loadFailed) setNotice('');
         loaded = true;
         loadFailed = false;
@@ -2357,6 +2385,9 @@
         setIndex(v.uhdIndex);
         progress = v.uhdProgress || null;
         notes = v.uhdNotes || {};
+        if (balanceRevision === initialBalanceRevision) {
+          try { balances = globalThis.UHD.checkBalanceStore(v.uhdBalances).files; } catch { balances = {}; }
+        }
         recent = v.uhdRecent || [];
         renderFilters();
         render();
@@ -2397,6 +2428,11 @@
       else if (ch.uhdEvrakGoruldu) computeYeni();
       if (ch.uhdIndex || ch.uhdEvrakGoruldu) { renderFilters(); redraw = true; }
       if (ch.uhdNotes) { notes = ch.uhdNotes.newValue || {}; redraw = true; }
+      if (ch.uhdBalances) {
+        balanceRevision++;
+        try { balances = globalThis.UHD.checkBalanceStore(ch.uhdBalances.newValue).files; } catch { balances = {}; }
+        redraw = true;
+      }
       if (ch.uhdRecent) recent = ch.uhdRecent.newValue || [];
       if (ch.uhdProgress) {
         progress = ch.uhdProgress.newValue || null;
