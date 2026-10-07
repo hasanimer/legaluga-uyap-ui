@@ -76,7 +76,7 @@
       grup = g;
       suz();
       sira = gorunen.findIndex(x => ayni(x, simdikiOge));
-      gruplariCiz(); listeyiCiz(); konumYaz();
+      gruplariCiz(); listeyiCiz(); if (sira >= 0) secimiCiz(true); konumYaz();
     }
     const aramaUygula = () => {
       araTemizle.hidden = !ara.value;
@@ -93,13 +93,14 @@
     ara.addEventListener('keydown', ev => {
       if (ev.key === 'ArrowDown' && gorunen.length) { ev.preventDefault(); ogeler.focus({ preventScroll: true }); odakSync(true); }
     });
+    evrakYenile.addEventListener('click', () => kaynak ? tamListeAl() : listeAl());
     kategoriGorunum.addEventListener('click', () => { kategorili = !kategorili; evrakOdak = null; listeyiCiz(); });
     tarihSirasi.addEventListener('click', () => { tarihArtan = !tarihArtan; listeyiCiz(); });
     ogeler.addEventListener('keydown', ev => {
       if (!gorunen.length || ev.altKey || ev.ctrlKey || ev.metaKey || ev.target.tagName === 'INPUT') return;
       // Kapalı ekler DOM'da gizli durur; gezinme onları atlar.
       const gorunur = node => !node.hidden;
-      const entries = kategorili ? [...kategoriDom.values()].flatMap(kat => [kat.head, ...(kat.box.open ? kat.rows.filter(gorunur) : [])])
+      const entries = kategorili ? kategoriGezinme()
         : [...ogeler.querySelectorAll('.ek-oge')].filter(gorunur);
       const id = ogeler.getAttribute('aria-activedescendant');
       const active = entries.find(node => node === ev.target) || entries.find(node => node.id === id) || entries[0];
@@ -128,12 +129,14 @@
       else if (kategorili && ev.key === 'ArrowRight' && folder) {
         ev.preventDefault();
         const kat = kategoriDom.get(active.dataset.kategori);
-        if (kat.box.open) focus(kat.rows[0]); else { kategoriAc(active.dataset.kategori, true); odakSync(); }
+        if (kat.box.open) focus(kat.children.length ? kategoriDom.get(kat.children[0])?.head : kat.rows.find(gorunur));
+        else { kategoriAc(active.dataset.kategori, true); odakSync(); }
       } else if (kategorili && ev.key === 'ArrowLeft') {
         ev.preventDefault();
-        const key = active.dataset.kategori;
-        if (folder) kategoriAc(key, false);
-        evrakOdak = { kat: key }; odakSync(true);
+        const key = active.dataset.kategori, kat = kategoriDom.get(key);
+        if (folder && kat?.box.open) { kategoriAc(key, false); evrakOdak = { kat: key }; }
+        else evrakOdak = { kat: folder && kat?.parent ? kat.parent : key };
+        odakSync(true);
       } else if ((ev.key === 'Enter' || ev.key === ' ') && folder) {
         ev.preventDefault(); ev.stopPropagation();
         const key = active.dataset.kategori;

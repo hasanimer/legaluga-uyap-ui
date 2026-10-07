@@ -1,8 +1,9 @@
 
 
-    // Liste hazır: grup, seçili evrak ve ilk önizleme. Evrak bir karttan açıldıysa (ilk) o gösterilir; "Evrak Görüntüle"de
-    // yeni evrak varsa ilk yeni, yoksa en yeni evrak.
+    // Liste hazır: genel açılış Son 20 ile başlar; belge yalnız evrak seçilince istenir.
+    // Karttaki belirli evrak bağlantısı ve Sırayla oku açık okuma eylemleri olarak korunur.
     function listeHazir() {
+      listeHazirlandi = true;
       listeKur();
       bankaCiz();
       // Savcı onayı yok: UYAP'ın iletisi gösterilir, "Bu dosyada evrak yok" denmez.
@@ -14,18 +15,21 @@
         return;
       }
       const ilkOge = o.ilk ? oge(evrakKey(o.ilk.e) || '', o.ilk.e.dosyaGrubu, o.ilk.e) : null;
-      grup = yeni && (!ilkOge || yeni.some(x => ayni(x, ilkOge))) ? 'yeni' : 'tumu';
+      const sirayla = !!okuma && !!yeni?.length;
+      grup = sirayla ? 'yeni' : ilkOge && !son20().some(x => ayni(x, ilkOge)) ? 'tumu' : 'son20';
+      kategorili = grup === 'tumu';
       suz();
       gruplariCiz();
       if (ilkOge) {
         sira = gorunen.findIndex(x => ayni(x, ilkOge));
         simdikiOge = gorunen[sira] || ilkOge;
-        listeyiCiz(); secimiCiz(aktif === 'evrak'); konumYaz();
+        listeyiCiz(); secimiCiz(aktif === 'evrak' || aktif === 'paket'); konumYaz();
         goster(o.ilk.e, o.ilk.doc);
       } else if (gorunen.length) {
         listeyiCiz();
-        if (aktif === 'evrak') sec(0, true, true);
-        else { ilkBekliyor = true; konumYaz(); }
+        konumYaz();
+        if (sirayla) sec(0, true, true);
+        else icerik(el('div', { class: 'msg', role: 'status' }, 'Önizlemek için listeden bir evrak seçin.'));
       } else {
         listeyiCiz(); konumYaz();
         // UYAP kayıt verdi ama hiçbiri gösterilemiyorsa "evrak yok" denmez; teyit nedeni söyler.

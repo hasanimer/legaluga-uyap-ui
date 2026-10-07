@@ -3,6 +3,7 @@
 (() => {
   'use strict';
   const APP = 'legaluga-uyap-asistani', ITERATIONS = 600000, MAX_BYTES = 48 * 1024 * 1024;
+  const BACKUP_PASSWORD_MIN_LENGTH = 6, BACKUP_PASSWORD_MAX_LENGTH = 1024;
   const enc = new TextEncoder(), dec = new TextDecoder('utf-8', { fatal: true });
   const b64 = bytes => {
     let text = '';
@@ -55,7 +56,7 @@
     return decoded;
   }
   async function derive(password, salt) {
-    if (typeof password !== 'string' || password.length < 12 || password.length > 1024) throw new Error('Yedek parolası 12–1024 karakter olmalı.');
+    if (typeof password !== 'string' || password.length < BACKUP_PASSWORD_MIN_LENGTH || password.length > BACKUP_PASSWORD_MAX_LENGTH) throw new Error(`Yedek parolası ${BACKUP_PASSWORD_MIN_LENGTH}–${BACKUP_PASSWORD_MAX_LENGTH} karakter olmalı.`);
     const bytes = enc.encode(password);
     try {
       const base = await crypto.subtle.importKey('raw', bytes, 'PBKDF2', false, ['deriveKey']);
@@ -76,7 +77,7 @@
     try { return await decrypt(key, value, backupContext(value)); }
     catch { throw new Error('Yedek açılamadı. Parola yanlış veya dosya bozulmuş; mevcut veriler değiştirilmedi.'); }
   }
-  const api = { MAX_BYTES, ITERATIONS, isEnvelope, seal, open, encryptBackup, decryptBackup };
+  const api = { MAX_BYTES, ITERATIONS, BACKUP_PASSWORD_MIN_LENGTH, BACKUP_PASSWORD_MAX_LENGTH, isEnvelope, seal, open, encryptBackup, decryptBackup };
   globalThis.UHDVaultCrypto = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })();

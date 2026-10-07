@@ -239,8 +239,8 @@ test('ilk kurulum güvenli varsayılanları gösterir ve tamamlanana kadar ayar 
   assert.equal(h.nodes().filter(node => node.attrs['data-il'] != null).length, 81);
   assert.equal(h.writes.length, 0);
   await h.next();
-  for (const key of ['evrakTakip', 'safahatTakipOptIn', 'panelSabit', 'hataRaporu']) assert.equal(h.field(key).checked, false);
-  for (const key of ['durusmaBildirim', 'cakismaBildirim', 'duyuruBildirim', 'oturumAcik']) assert.equal(h.field(key).checked, true);
+  for (const key of ['evrakTakip', 'safahatTakipOptIn', 'hataRaporu']) assert.equal(h.field(key).checked, false);
+  for (const key of ['panelSabit', 'durusmaBildirim', 'cakismaBildirim', 'duyuruBildirim', 'oturumAcik']) assert.equal(h.field(key).checked, true);
   assert.equal(h.field('tema').value, 'auto');
   assert.equal(h.field('otoGuncelle').value, 'kapali');
   assert.equal(h.field('acilisSekme').value, 'yok');
@@ -440,4 +440,21 @@ test('form gönderimi kaydetmeden ilk adımdan ilerler ve ikinci adımda yalnız
   assert.equal(h.callbacks[0].startScan, false);
   h.api.destroy();
   assert.equal(h.root.kids.length, 0);
+});
+
+
+test('sabit panel tercihi varsayılan açık gelir; kullanıcının açık ve kapalı seçimleri korunur', async () => {
+  for (const value of [undefined, false, true]) {
+    const prefs = value === undefined ? {} : { panelSabit: value };
+    const h = harness({ prefs });
+    await h.next();
+    assert.equal(h.field('panelSabit').checked, value !== false);
+    await h.button('Kurulumu tamamla').click();
+    assert.equal(h.store.panelSabit, value !== false);
+  }
+  const h = harness();
+  await h.next();
+  await h.field('panelSabit').click();
+  await h.button('Kurulumu tamamla').click();
+  assert.equal(h.store.panelSabit, false, 'varsayılan sabitleme kurulumda kapatılabilir');
 });
