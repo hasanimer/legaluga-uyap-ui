@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "c1cbe72ec23344920231521f8be347ecdcfe3c7c374c4c423575158db4e591a9"
+      "sha256": "f29bd0c9fe1d6444385b26ef7cfc06c9f32fec8bb8749f9ea371d25f2243ae8b"
     },
     {
       "path": "SECURITY.md",
@@ -104,11 +104,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "4395002ace84c8e5d472bf8073c793d7b49414ad60e9bf9f61af237d8986822b"
+      "sha256": "f41f7cbcd1b971be8c336aa0cdb1f4723d4ce3b6950427542436b028df730cfc"
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "8811e7790e40dff1b6416b38259d0df413dd295e60a18e06921e211595346f43"
+      "sha256": "49a9dca8f88d18bd97dd7d0cb7cd5ad80f8ac6c5afccb1c79542d12a627c953c"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -216,7 +216,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "35ce3a74bcc815d24db385e55f8f7b8d2857788fe45a767a201e67e0f8fc8379"
+      "sha256": "c82bd83c4eb6fe677725b9ec95a0aad2fe7ce9b060db122cad568965e639f2bc"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -536,7 +536,7 @@
     },
     {
       "path": "src/fragments/content/003-bootstrap-shared-request-safety.js.part",
-      "sha256": "e591fae6ad0d02c224aa4e3d13566fbfc06c3d54ff2f6ad0b181d10738698f64"
+      "sha256": "6d37b2695d6dd689b62af03b5176bda51bd732bb04ca1f583487d4d25e3eb20b"
     },
     {
       "path": "src/fragments/content/005-context-invalidation-and-progress-boundaries.js.part",
@@ -580,7 +580,7 @@
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
-      "sha256": "325c1f7032792bdf5473333c1f04cc8b494d485eb7be61af7f2630d5707db71b"
+      "sha256": "64b5fda88a94b0f3316a52f5a053ed751b14b08a8d19a726ac164d6815b13e42"
     },
     {
       "path": "src/fragments/content/027-document-view-command-abort-guards.js.part",

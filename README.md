@@ -129,6 +129,8 @@ Yalnız seçtiğiniz barkod ilgili resmî hizmete gönderilir. **Durdur** veya d
 
 100'den fazla evrakta parçalı indirme otomatik seçilir; küçük listelerde de açabilirsiniz. Parçalar en çok **100 evrak veya yaklaşık 32 MiB** olacak şekilde hazırlanır. Büyük bir evrak tek başına ayrı parçaya konabilir; **tek evrak 128 MiB'yi aşarsa** açıklamayla durulur. Dosyalar UYAP'tan alınan özgün biçim ve baytlarla ZIP'e yazılır.
 
+UYAP sekmeleri ortak istek kuyruğunu kullanır; aynı anda tek istek yürür. Başarılı toplu isteklerin başlangıçları arasında en az **1,2 saniye** vardır; aktarım süresi bu aralığa dahildir. Hata veya iptalden sonra en az 1,2 saniye beklenir. UYAP hız ya da hizmet sınırı bildirirse indirme durur ve sunucunun bekleme süresi, yoksa en az bir dakika uygulanır.
+
 **Parçalı indirme, dosya penceresi veya Legaluga paneli kapansa da UYAP sekmesi açıkken sürer.** **↓ İndirmeler** panelinden sıradaki işleri, kaydedilen evrakları ve mevcut parçayı izleyin; **Duraklat / Devam et** ile yönetin. İlerleme yüzdesi diske kaydı doğrulanmış evraklara dayanır; mevcut parçada alınanlar ayrıca gösterilir.
 
 UYAP sayfası yenilenirse aynı sekmede geçerli oturumla aktif indirme kaydedilmiş planına yeniden bağlanır. Devam eden Chrome ZIP kaydı kesinleşmeden aynı aralık yeniden indirilmez; henüz diske kaydedilmemiş parça yeniden alınabilir. Sekme veya tarayıcı tamamen kapanırsa tamamlanan parçalar korunur; aynı dosyada **Toplu indir → Kaldığı yerden devam et** ile sürdürün. Manuel duraklatma veya oturum/güvenlik hatası kendiliğinden yeni sorgu başlatmaz. Gerekirse **Dosyayı aç** ile duraklayan işin kaynağını yeniden bağlayın.

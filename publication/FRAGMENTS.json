@@ -263,8 +263,8 @@
       "source": "content.js",
       "order": 3,
       "path": "src/fragments/content/003-bootstrap-shared-request-safety.js.part",
-      "sha256": "e591fae6ad0d02c224aa4e3d13566fbfc06c3d54ff2f6ad0b181d10738698f64",
-      "bytes": 6511,
+      "sha256": "6d37b2695d6dd689b62af03b5176bda51bd732bb04ca1f583487d4d25e3eb20b",
+      "bytes": 6918,
       "purpose": "bootstrap-shared-request-safety"
     },
     {
@@ -351,8 +351,8 @@
       "source": "content.js",
       "order": 25,
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
-      "sha256": "325c1f7032792bdf5473333c1f04cc8b494d485eb7be61af7f2630d5707db71b",
-      "bytes": 3003,
+      "sha256": "64b5fda88a94b0f3316a52f5a053ed751b14b08a8d19a726ac164d6815b13e42",
+      "bytes": 3763,
       "purpose": "document-source-and-attachment-identity-validators"
     },
     {
