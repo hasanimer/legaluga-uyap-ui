@@ -41,8 +41,8 @@
     }
   }
 
-  // Özet: kayıttaki bilgiler (son güncellemeye göre; UYAP'a istek gitmez). İcra dosyasında altına alacak ve tahsilat
-  // UYAP'tan alınır.
+  // Özet: kayıtlı dosya ve taraf bilgileri hemen görünür. Savcılık dışındaki dosyaların
+  // tahsilat ve reddiyatı UYAP'tan alınır; icrada dosya hesabı ve takip bilgileri de korunur.
   async function loadOzet(rec, body) {
     const satir = (k, v) => (v != null && v !== '' ? el('div', { class: 'dp-summary-row' },
       el('span', { class: 'dp-k' }, k + ': '), el('span', { class: 'dp-v' }, v)) : null);
@@ -97,23 +97,29 @@
         cbs ? el('div', { class: 'dp-muted' }, 'UYAP savcılık dosyalarında taraf ve safahat bilgisi vermez.')
           : taraflar.length ? el('div', { class: 'dp-party-groups' }, [...tarafGruplari].map(tarafGrubu))
             : el('div', { class: 'dp-muted' }, 'Kaydedilmiş taraf bilgisi yok. Ayarlar → Güncelleme’den taraf bilgilerini yenileyebilirsiniz.')));
-    if (rec.yargiTuru !== '2') { body.replaceChildren(el('div', { class: 'dp-overview' }, yerel, tarafKarti)); return; }
+    if (cbs) { body.replaceChildren(el('div', { class: 'dp-overview' }, yerel, tarafKarti)); return; }
+    const icra = rec.yargiTuru === '2';
+    const baslik = icra ? 'Hesap ve tahsilat' : 'Tahsilat ve reddiyat';
     const uyap = el('div', { class: 'dp-finance' });
-    body.replaceChildren(el('div', { class: 'dp-overview dp-overview-icra' }, yerel,
+    const refresh = el('button', { type: 'button', class: 'chip dp-finance-refresh' }, 'Tutarları yenile');
+    body.replaceChildren(el('div', { class: `dp-overview ${icra ? 'dp-overview-icra' : 'dp-overview-court'}` }, yerel,
       el('div', { class: 'dp-overview-main' },
-        el('section', { class: 'dp-overview-finance', 'aria-label': 'Hesap ve tahsilat' }, el('h4', { class: 'dp-baslik' }, 'Hesap ve tahsilat'), uyap), tarafKarti)));
+        el('section', { class: 'dp-overview-finance', 'aria-label': baslik },
+          el('div', { class: 'dp-finance-heading' }, el('h4', { class: 'dp-baslik' }, baslik), refresh), uyap), tarafKarti)));
     // Yeniden deneme yalnız bu alanı yeniler; dosya ve taraf bilgileri ekranda kalır.
+    let loading = false;
     const yukle = async () => {
-      uyap.replaceChildren(el('div', { class: 'dp-finance-loading', role: 'status', 'aria-live': 'polite' }, 'Hesap ve tahsilat UYAP’tan alınıyor…'));
-      try { await loadIcraOzet(rec, uyap); } catch (err) {
+      if (loading) return;
+      loading = true; refresh.disabled = true;
+      uyap.replaceChildren(el('div', { class: 'dp-finance-loading', role: 'status', 'aria-live': 'polite' }, `${baslik} UYAP’tan alınıyor…`));
+      try { await (icra ? loadIcraOzet(rec, uyap) : loadTahsilatOzet(rec, uyap)); } catch (err) {
         globalThis.UHDReporter?.report(err, 'ozet');
         const tekrar = el('button', { type: 'button', class: 'chip dp-summary-retry' }, 'Tekrar dene');
         tekrar.addEventListener('click', yukle);
         uyap.replaceChildren(el('div', { class: 'dp-finance-error' },
-          el('div', { class: 'dp-err', role: 'status' }, `Hesap bilgileri alınamadı: ${err.message}`), tekrar));
-      }
+          el('div', { class: 'dp-err', role: 'status' }, `${baslik} bilgileri alınamadı: ${err.message}`), tekrar));
+      } finally { loading = false; refresh.disabled = false; }
     };
+    refresh.addEventListener('click', yukle);
     await yukle();
   }
-
-  async function loadIcraOzet(rec, body) {

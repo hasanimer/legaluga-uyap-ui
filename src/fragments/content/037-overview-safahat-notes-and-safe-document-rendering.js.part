@@ -19,7 +19,27 @@
             money(t, 'toplamKalan', 'Tahsilat Kalanı (dosyada kalan para)', { class: 'dp-strong', title: 'Dosyaya yatırılıp henüz reddiyatı yapılmamış tutar' })]
             : [money(ayrinti, 'yapilmisBorcTahsilati', 'Yapılmış Borç Tahsilatı'), el('div', { class: 'dp-muted' }, 'Tahsilat ve reddiyat bilgileri alınamadı.')],
             el('div', { class: 'dp-summary-notice' }, 'Tahsilat Kalanı dosyaya yatırılıp henüz reddiyatı yapılmamış tutardır. Borç bakiyesini UYAP’taki Dosya Hesap Bilgileri’nden kontrol edin.'))))),
-      el('div', { class: 'dp-summary-source' }, 'UYAP’tan şimdi alındı; saklanmaz. Resmî hesap için UYAP’taki Dosya Hesabı ekranını esas alın.'));
+      el('div', { class: 'dp-summary-source' }, `UYAP’tan alındı: ${globalThis.UHD.fmtDate(fetchedAt)}. Resmî hesap için UYAP’taki Dosya Hesabı ekranını esas alın.`));
+  }
+
+  function renderTahsilatOzet(body, tahsilat, fetchedAt) {
+    // Yalnız bilinen toplam alanları gösterilir. Kalan tutar UYAP yanıtından aynen alınır;
+    // harçlar tahsilattan düşülmez ve eksik tutar sıfır olarak yorumlanmaz.
+    const money = (key, label) => el('div', { class: 'dp-summary-row dp-money-row' },
+      el('span', { class: 'dp-k' }, label + ': '),
+      el('span', { class: Number.isFinite(tahsilat[key]) ? 'dp-v' : 'dp-v dp-muted' },
+        Number.isFinite(tahsilat[key]) ? fmtTL(tahsilat[key]) : 'UYAP’tan alınamadı'));
+    const known = Number.isFinite(tahsilat.toplamKalan);
+    body.replaceChildren(
+      el('div', { class: 'dp-card dp-finance-court' }, el('h4', null, 'Dosyada kalan tutar'),
+        el('div', { class: 'dp-summary-scroll', role: 'region', 'aria-label': 'Tahsilat ve reddiyat', tabindex: 0 },
+          el('div', { class: 'dp-balance', role: 'status', 'aria-live': 'polite' },
+            el('span', { class: 'dp-balance-label' }, 'UYAP Kalan'),
+            el('strong', { class: known ? 'dp-balance-value' : 'dp-balance-value dp-muted' },
+              known ? fmtTL(tahsilat.toplamKalan) : 'UYAP’tan alınamadı')),
+          money('toplamTahsilat', 'Toplam Tahsilat'), money('toplamreddiyat', 'Toplam Reddiyat'),
+          el('div', { class: 'dp-summary-notice' }, 'UYAP’ın Tahsilat ve Reddiyat Bilgileri ekranındaki Kalan tutarıdır. Borç bakiyesi veya iade edilebilir tutar olarak hesaplanmaz.'))),
+      el('div', { class: 'dp-summary-source' }, `UYAP’tan alındı: ${globalThis.UHD.fmtDate(fetchedAt)}. Güncel tutar için Tutarları yenile’yi kullanın.`));
   }
 
   // Dosya kartıyla ortak, yalnız bu bilgisayarda saklanan not. Ayrı bir not deposu veya UYAP isteği yoktur.
