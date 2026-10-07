@@ -26,11 +26,20 @@
     const bankMainGroup = group => !group || group === rec.dosyaNo ||
       [rec.dosyaTur, dosyaTurAdi(rec)].filter(Boolean).some(type => norm(group) === norm(`${rec.dosyaNo}(${type})`));
     const bankOwn = x => !x.ana && !x.yetimEk && bankMainGroup(x.dosya);
+    // anaEvrakId taşıyan evrak 1.19.43'ten beri kendi satırında kalır (yetimEk: ataç). Banka akışı onu yine aynı gruptaki
+    // ana evrakının eki sayar; yalnız ana evrakı listede tek olarak bulunamayan kayıt yetimdir (kapsamı bozar).
+    const bankAnaEvrak = x => { const id = x && x.yetimEk && x.e ? String(x.e.anaEvrakId) : null;
+      const ana = id == null ? [] : tum.filter(y => !y.ana && y !== x && y.e && y.dosya === x.dosya && String(y.e.evrakId) === id);
+      return ana.length === 1 ? ana[0] : null; };
+    // Cevabın ya da talebin ekleri: ek listesindeki ekler ve anaEvrakId ile ona bağlı ayrı kayıtlar (ek listesinde de geçen bir kez).
+    const bankEkleri = x => { const ekler = tum.filter(y => y.ana && y.ana.k === x.k && y.ana.dosya === x.dosya), ekIdleri = new Set(ekler.map(y => String(y.ekId)));
+      return [...ekler, ...tum.filter(y => y.yetimEk && y.dosya === x.dosya && !ekIdleri.has(String(y.e.evrakId)) && bankAnaEvrak(y)?.k === x.k)]; };
     const bankCandidates = () => tum.filter(x => bankOwn(x) && !ihbarCevabiMi(x.tur) && /talep|haciz|m[üu]zekkere|ihbar/i.test(x.tur));
-    const bankBusy = () => !!bankRun || !!bankaOkuma || !!zipRun || !!paketSession || !!paketRun || !!tebligatRead;
+    // "Tam listeyi al" sürerken (teyitAlim) banka listesi ikinci kez istenmez.
+    const bankBusy = () => !!bankRun || !!bankaOkuma || !!zipRun || !!paketSession || !!paketRun || !!tebligatRead || !!teyitAlim;
     const bankFullList = () => !!kaynak && !kaynak.list.kilit && !kaynak.list.morePages && !kaynak.list.scopeUnknown &&
       (kaynak.list.groups ? kaynak.list.groups.some(bankMainGroup) : kaynak.list.some(e => bankMainGroup(e.dosyaGrubu)));
     const bankInvalid = () => Math.min(500, (kaynak?.list || []).filter(e => !evrakKey(e)).length +
-      tum.filter(x => bankMainGroup(x.dosya) && x.yetimEk).length);
+      tum.filter(x => bankMainGroup(x.dosya) && x.yetimEk && !bankAnaEvrak(x)).length);
     const bankLive = () => bankBorrowers.find(b => b.key === bankSelected);
     

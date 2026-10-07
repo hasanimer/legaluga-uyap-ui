@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "d0226b05bd74b6fa8b6db61bf9b68892dfb6ed9233cc995dbfe8ae7949fa1acd"
+      "sha256": "965366e4ed602d3dc2b7fd8d3104373013760e19faf057e770abc1b922b800be"
     },
     {
       "path": "SECURITY.md",
@@ -52,7 +52,7 @@
     },
     {
       "path": "docs/PRIVACY.md",
-      "sha256": "2848f6d0fc3e1cafad82699fe514197feca3f74b82348d64ed3965cc07b07668"
+      "sha256": "5cb44ea23d8ad128b4e945ac67941e2de49f80ab07f503dd720c4202490228ea"
     },
     {
       "path": "docs/images/01-uyap-baglantisi.png",
@@ -104,11 +104,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "14ba206f70ae0082b7c989232719bdaa2ce5f99dd4b441f9f20928f806b46f73"
+      "sha256": "ac18051c8aec41e0ed9001cc8ef31198296c5437b1298e0e9d868f5044c04ddd"
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "63160b3727ffbdd2c48ff5de14444ecb59617642dccd170f938fae3f5cab9da5"
+      "sha256": "9ccdc17da57372de70e1dd53eb4ab11cbc7fecd9c63f570efb7a8700b313bb95"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -216,7 +216,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "f870e19a6772271fcbc66d7a75cef0c2f9475aaffa059d9a6027bff9a32c6654"
+      "sha256": "923b9ebc5fb15060907d4695da718f378caee6e034009ccbf5bcdfb73feb34cb"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -280,7 +280,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "0ae4f1ce3effbffbb0528e8a162e93b9aa26330ed771ba5e4cda04b363f3bd65"
+      "sha256": "c3ae6d2f4d2dbcfae2e63d49efcfcc55f3e42116e71253277a71d9adb5629fcb"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -528,11 +528,11 @@
     },
     {
       "path": "src/fragments/common/015.js.part",
-      "sha256": "24f09cd137507cfe32351c421beb04d0a26ec15933c595563f187a7a33086caf"
+      "sha256": "584960a127c4ece9f4e6e0976d8d81f5f866ec2066ba7c1c3d92b86994cf16be"
     },
     {
       "path": "src/fragments/content/001-bootstrap-shared-request-safety.js.part",
-      "sha256": "89b74c03f009bda350e1ed4c60aad30e0b392b473c44b73f9d14ed0e8792f3e4"
+      "sha256": "a13388eefff0c755ba77b58f9d233c8f730ae0b46e96a0a6a76bb6068f8b26d1"
     },
     {
       "path": "src/fragments/content/003-bootstrap-shared-request-safety.js.part",
@@ -576,7 +576,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "f54faeab28fec6b923b6e09cf34138decea672236faa67336f3ed45a0e0ecf9c"
+      "sha256": "cad4c12732d4584ac3d01927c9349209746f6102fff600b29ccc6d83c4b6d704"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -608,7 +608,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "d91da945f546c1a0276b719741e31e5113f354c9ed429f1b68d6dab030cac5a0"
+      "sha256": "bb2766f021c2528912eece1226376e4274cf64d4b301012e90a55dd906b489cf"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -616,7 +616,7 @@
     },
     {
       "path": "src/fragments/content/043-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "2e9d4656548663c9a72b636aa0a4e3e2b70e3517fc1398b0b982ecd4244a1ed4"
+      "sha256": "6745df27f224db7ba91ce99b6a2a598140736d7e61260b58e79da1f01d0e6b4c"
     },
     {
       "path": "src/fragments/content/044-original-document-download-action-and-link-render.js.part",
@@ -640,7 +640,7 @@
     },
     {
       "path": "src/fragments/content/051-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "b283695dbfb6282d0ad086e66df4f515a2c7968b3e10c41a48264d37e288ce4c"
+      "sha256": "c08974dfb67b757b2684982f4bcdc73aaeb169cc0c03450890f5bba0549eb392"
     },
     {
       "path": "src/fragments/content/053-full-viewer-HTML-render-and-action-controls.js.part",
@@ -704,7 +704,7 @@
     },
     {
       "path": "src/fragments/content/083-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "f8fdd085fd842df6c4098dc546b82b2f6a3704ac3d10f3bbef5481d68da04b50"
+      "sha256": "3226c75fc3c67b54fd3302dedb8f068848331c2974ffad338367c40409b8049e"
     },
     {
       "path": "src/fragments/content/085-full-viewer-HTML-render-and-action-controls.js.part",
@@ -744,7 +744,7 @@
     },
     {
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "612438d0a519aedd1d6290e06620aa3ca88e3fbc2306270a1cc71a76c1d6795d"
+      "sha256": "ec4d75638fc020b17c39eb44e9cd5b236330cfc290ecc3ad409a92a8bf9d243c"
     },
     {
       "path": "src/fragments/content/105-viewer-navigation-abort-epoch-boundary.js.part",
@@ -768,7 +768,7 @@
     },
     {
       "path": "src/fragments/content/115-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "29d42fc5aa37ad2188a6114461eb243b581024d4bb8da7aee810bf24d0584e96"
+      "sha256": "b713602dfbca921b368c653d79195424c465c76d372ea43075814b75ef12be07"
     },
     {
       "path": "src/fragments/content/116-viewer-list-loading-retry-and-error-controls.js.part",

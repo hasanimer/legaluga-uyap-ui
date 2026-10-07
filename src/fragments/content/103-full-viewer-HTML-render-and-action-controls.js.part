@@ -52,7 +52,7 @@
     paketSiraGor.addEventListener('click', () => paketSiraGoster());
     paketGorunen.addEventListener('click', () => {
       const yer = PAKET_MAX - paketSecili.length;
-      const yeniler = gorunen.filter(x => paketAlinir(x) && !paketSecili.includes(paketAnahtar(x)));
+      const yeniler = paketGorunenYeni();
       paketSecili.push(...yeniler.slice(0, Math.max(0, yer)).map(paketAnahtar));
       if (yeniler.length > yer) paketDurum.textContent = `Pakete en çok ${PAKET_MAX} evrak alınır; listelenenlerden ilk ${Math.max(0, yer)} evrak eklendi.`;
       listeyiCiz();

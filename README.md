@@ -7,7 +7,7 @@ Eklenti, **Av. Hasan İmer Akın** tarafından meslektaşlarının ücretsiz kul
 
 Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lisansıyla** sunar. UYAP işlem motoru özel kaynaklıdır; tam eklenti mağazadan kurulur.
 
-> Bu rehber, **1.19.38** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+> Bu rehber, **1.19.43** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
 
 Görseller gerçek arayüz bileşenlerinden **örnek verilerle** hazırlanmıştır; gerçek kişi, dava veya UYAP oturumu içermez.
 
@@ -67,9 +67,9 @@ Masaüstünde **Özet** ana pencereye sığacak şekilde düzenlenir; uzun hesap
 
 ![Dosya özeti: dosya bilgileri, son hareketler ve sıfata göre gruplandırılmış taraflar — örnek veriler](docs/images/05-dosya-ozeti.png)
 
-Evrak ekranında arama üstte tam genişlikte, grup ve tarih kontrolleri ayrı satırlardadır. **Temizle** aramayı kaldırır; listede aramaya uyan evrak ve eklerin toplamı görünür. Seçili evrak vurgulanır; belge başlığı uzun olduğunda satıra yayılır. Dar pencerede liste ile önizleme alt alta yerleşir.
+Evrak ekranında arama üstte tam genişlikte, grup ve tarih kontrolleri ayrı satırlardadır. **Temizle** aramayı kaldırır; listede aramaya uyan evrak ve ek sayısı ayrı ayrı görünür. Seçili evrak vurgulanır; belge başlığı uzun olduğunda satıra yayılır. Dar pencerede liste ile önizleme alt alta yerleşir.
 
-**Evrak** klasöründeki sayı ana evrak ve eklerin toplamıdır. Ekler ana evrakın klasöründe kalır ve kapalı başlar (kartın yeni evrakının ekleri açık gelir). Ekli ana evrak küçük **▸** işareti taşır. Kapalı ana evrak satırına tıklayınca evrak yanda görüntülenir ve ekleri açılır; açık satıra yeniden tıklayınca yalnız ekleri kapanır, görüntülenen evrak değişmez. **Enter** veya **Boşluk** aynı işlemi yapar; paket modunda Boşluk evrakı işaretler. Arama, ana evrakıyla birlikte eşleşen ekleri açar; aramayı temizleyince önceki açık/kapalı durum geri gelir, aramada eki seçilen ana evrakın ekleri ise açık kalır. **← →** ile kapalı bir eke gelince ana evrakın ekleri açılır. **Son 20** düz listeyi, **Tümü** evrak türüne göre klasörleri açar. Klasörler evrak türüne göre alfabetik sıralanır; **Tarih ↓ / ↑** klasör içindeki ve düz listedeki tarih sırasını değiştirir, ekler ana evrakının altında kalır. Klavyede **↑ ↓** ile gezin, **→ / ←** ile klasörü ya da ana evrakın eklerini açıp kapatın (ekteyken **←** ana evraka döner). Yalnız sağ/sol oklarla ekleri açıp kapatmak evrak istemez. Kapalı ekler, **Listelenenleri seç** ve toplu indirmedeki **Evrak sekmesinde listelenenler** kapsamında kalır.
+**Evrak** klasöründeki sayı UYAP'ın kuralıyla evrak sayısıdır (evrak = UYAP listesindeki kayıt, ek = evrakın ek listesindeki girdi); ek varsa "· 3 ek" diye ayrıca yazılır. Listede ayrıca gelen evrak, başka evrakın eki olsa da kendi satırında görünür (UYAP gibi); ekin kopyası ana evrakın altında da durur. Grup düğmelerinin altındaki teyit satırı UYAP'ın verdiği listeyi ekrandaki listeyle karşılaştırır; fark varsa türü ve nedeniyle uyarır, işlemleri durdurmaz. Ekler ana evrakın klasöründe kalır ve kapalı başlar (kartın yeni evrakının ekleri açık gelir). Ekli ana evrak küçük **▸** işareti taşır. Kapalı ana evrak satırına tıklayınca evrak yanda görüntülenir ve ekleri açılır; açık satıra yeniden tıklayınca yalnız ekleri kapanır, görüntülenen evrak değişmez. **Enter** veya **Boşluk** aynı işlemi yapar; paket modunda Boşluk evrakı işaretler. Arama, ana evrakıyla birlikte eşleşen ekleri açar; aramayı temizleyince önceki açık/kapalı durum geri gelir, aramada eki seçilen ana evrakın ekleri ise açık kalır. **← →** ile kapalı bir eke gelince ana evrakın ekleri açılır. **Son 20** düz listeyi, **Tümü** evrak türüne göre klasörleri açar. Klasörler evrak türüne göre alfabetik sıralanır; **Tarih ↓ / ↑** klasör içindeki ve düz listedeki tarih sırasını değiştirir, ekler ana evrakının altında kalır. Klavyede **↑ ↓** ile gezin, **→ / ←** ile klasörü ya da ana evrakın eklerini açıp kapatın (ekteyken **←** ana evraka döner). Yalnız sağ/sol oklarla ekleri açıp kapatmak evrak istemez. Kapalı ekler, **Listelenenleri seç** ve toplu indirmedeki **Evrak sekmesinde listelenenler** kapsamında kalır.
 
 UDF ve TIFF önizlemesi belgeyi cihazınızda işler. UDF'nin sayfa düzeni resmî editörden farklı olabilir; e-imza doğrulaması yapılmaz. Okunamayan veya desteklenmeyen belgede özgün dosyayı indirip uygun araçla açın. Dosya ekranındaki özet ve önizlemeyi resmî belgeyi kontrol ederek kullanın.
 
@@ -121,7 +121,7 @@ Yalnız seçtiğiniz barkod ilgili resmî hizmete gönderilir. **Durdur** veya d
 
 **Toplu indir** içinde tüm evrakları, son 20'yi, yeni evrakları veya Evrak sekmesinde listelenenleri seçin. **Evrak türleri** filtresinde **Tüm türler**, **Yalnız seçtiklerim** veya **Seçtiklerimi hariç tut** seçeneklerini kullanın. Filtre UYAP belge türüne göre çalışır; PDF/UDF dosya biçimi filtresi değildir.
 
-**Ekleri de indir** açıksa seçilen ana evrakın ekleri de alınır. Ana evrak dışlanırsa bağlı ekleri de çıkar; bir ekin türünü ayrıca dışlayabilirsiniz. Bu seçeneği kapatırsanız hiçbir ek alınmaz. Başlatmadan önce ana evrak, ek ve toplam sayısını kontrol edin.
+**Ekleri de indir** açıksa seçilen ana evrakın ekleri de alınır. Ana evrak dışlanırsa bağlı ekleri de çıkar; bir ekin türünü ayrıca dışlayabilirsiniz. Aynı belge hem kendi satırında hem bir evrakın eki olarak seçilirse yalnız bir kez indirilir. Bu seçeneği kapatırsanız hiçbir ek alınmaz. Başlatmadan önce ana evrak, ek ve toplam sayısını kontrol edin.
 
 ![Toplu indir: yalnız seçili evrak türleri, ekler ve indirme öncesi toplam — örnek veriler](docs/images/07-evrak-turu-secimi.png)
 

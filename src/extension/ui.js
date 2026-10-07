@@ -128,6 +128,7 @@
 .uhd .pill.st.paused{background:var(--blue-bg);color:var(--blue)}
 .uhd .pill.tur{background:var(--tur-bg);color:var(--tur-tx)}
 .uhd .pill.cak{background:var(--amber-bg);color:var(--amber)}
+.uhd .pill.teyit{background:var(--warn-bg);color:var(--warn-tx)}
 .uhd .cakline{margin-top:2px;font-size:12px;color:var(--warn-tx)}
 .uhd .icons{flex:none;display:flex;gap:0}
 .uhd .ifoot{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:4px}
@@ -1364,6 +1365,15 @@
       return { label, tarih: d.tarih, cls };
     }
 
+    // Evrak teyidi (1.19.43): son Güncelle bu dosyanın evrak listesinde uyarı bıraktıysa (kesilen liste, kimliksiz evrak,
+    // azalan tür, ileti) kartta küçük bir rozet; metinler title ve erişilebilir adda. Yalnız kayıttaki kısa metinler okunur.
+    function teyitRozeti(r) {
+      const uyari = Array.isArray(r.evrakTeyit?.uyari) ? r.evrakTeyit.uyari.filter(u => typeof u === 'string' && u.trim()).slice(0, 5) : [];
+      if (!uyari.length) return null;
+      const metin = uyari.join(' ');
+      return el('span', { class: 'pill teyit', title: metin, 'aria-label': `Evrak teyidi: ${metin}` }, 'Evrak teyidi');
+    }
+
     // Asıl dosyanın yanında yürüyen dosyalar kartta ayrıca belirtilir: talimat ya da değişik iş dosyası olduğu dosya ekranı açılmadan görünsün.
     const TUR_ETIKET = [[/talimat|istinabe/, 'Talimat'], [/degisik is|^d(\. ?| )is\b/, 'Değişik İş']];
     function turEtiket(r) {
@@ -1413,7 +1423,8 @@
             el('span', { class: 'file-number' }, highlight(r.dosyaNo, toks)),
             el('span', { class: 'pill st ' + st.cls, title: st.tarih ? `${st.label} · ${fmtTrDate(st.tarih)}` : st.label }, st.label),
             turEtiket(r),
-            yeniMap.has(r.key) ? el('span', { class: 'pill new' }, 'Yeni evrak') : null)),
+            yeniMap.has(r.key) ? el('span', { class: 'pill new' }, 'Yeni evrak') : null,
+            teyitRozeti(r))),
         el('div', { class: 'birim' }, highlight(cleanBirim(r.birimAdi), toks)),
         notes[r.key] ? el('div', { class: 'note-line ro', title: 'Kişisel not (yalnız bu bilgisayarda); UYAP’taki panelden düzenlenir' }, ...globalThis.UHD.noteDisplay(notes[r.key], text => highlight(text, toks))) : null,
         extra || null,
@@ -1466,7 +1477,8 @@
             el('span', { class: 'file-number' }, highlight(r.dosyaNo, toks)),
             el('span', { class: 'pill st ' + st.cls, title: st.tarih ? `${st.label} · ${fmtTrDate(st.tarih)}` : st.label }, st.label),
             turEtiket(r),
-            hasYeni ? el('span', { class: 'pill new' }, 'Yeni evrak') : null),
+            hasYeni ? el('span', { class: 'pill new' }, 'Yeni evrak') : null,
+            teyitRozeti(r)),
           icons),
         el('div', { class: 'birim' }, highlight(cleanBirim(r.birimAdi), toks)),
         noteBlock(r, toks),
