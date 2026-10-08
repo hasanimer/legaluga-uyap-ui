@@ -33,6 +33,7 @@
     const yuklenen = new Set();
     function sekmeAc(k) {
       if (k === aktif || closed) return;
+      atif?.sakla?.();   // portal atıf paneli klavyeyle sekme değişince de eski evrakın üstünde kalmaz
       aktif = k;
       for (const b of sekmeDugmeleri) {
         const on = b.dataset.sekme === k;
@@ -125,7 +126,7 @@
     const onKey = ev => {
       // Yerel yedek parola penceresi açıkken Escape ve Tab onun doğal davranışını izler.
       if (shadowRoot.querySelector('.backup-password')?.open || bankReplyPopup?.open) return;
-      // Atıf menüsü ya da "Kararı bul" düğmesi açıkken Esc önce onu kapatır; ekran açık kalır.
+      // Atıf menüsü, seçim bağlantısı veya paneli açıkken Esc önce onu kapatır; ekran açık kalır.
       if (ev.key === 'Escape' && atif?.kapat()) {
         ev.preventDefault();
         ev.stopImmediatePropagation();
