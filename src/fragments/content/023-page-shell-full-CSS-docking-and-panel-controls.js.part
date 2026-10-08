@@ -502,7 +502,7 @@
 .viewer .docview:focus-visible{outline:3px solid var(--shell-focus);outline-offset:-3px}
 .viewer .docyer{padding:28px;color:var(--shell-muted)}
 .viewer .box:focus{outline:none}
-${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff && globalThis.UHD.tiff.CSS) || ''}
+${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff && globalThis.UHD.tiff.CSS) || ''}${globalThis.UHDAtifPaneli?.CSS || ''}
 [hidden]{display:none!important}
 `;
   let panel, ui, launch, introTip, pinButton, shadowRoot, focusBeforePanel, announcementEl, notificationArea, liveRegion, alertRegion, welcomeHost, welcomeShadow;

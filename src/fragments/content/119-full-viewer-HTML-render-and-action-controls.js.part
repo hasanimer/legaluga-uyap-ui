@@ -125,6 +125,12 @@
     const onKey = ev => {
       // Yerel yedek parola penceresi açıkken Escape ve Tab onun doğal davranışını izler.
       if (shadowRoot.querySelector('.backup-password')?.open || bankReplyPopup?.open) return;
+      // Atıf menüsü ya da "Kararı bul" düğmesi açıkken Esc önce onu kapatır; ekran açık kalır.
+      if (ev.key === 'Escape' && atif?.kapat()) {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        return;
+      }
       // Sayfa kutusunda Esc yazılanı geri alır (ekranı kapatmaz); kutu gösterilen sayfayı yazıyorsa Esc ekranı kapatır.
       const sn = shadowRoot.activeElement;
       // Not yazarken Escape önce taslağı bırakır; düzenleyicinin kendi tuş işleyicisi çalışır.
@@ -148,7 +154,7 @@
         const kap = box.querySelector('.docview');
         const yazi = odak && (odak.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(odak.tagName));
         const kaydir = kap && odak && kap.contains(odak) && kap.scrollWidth > kap.clientWidth + 1;
-        const yerinde = odak && (sekmeCubugu.contains(odak) || ogeler.contains(odak));
+        const yerinde = odak && (sekmeCubugu.contains(odak) || ogeler.contains(odak) || !!atif?.icerir(odak));
         if (!yazi && !kaydir && !yerinde && gorunen.length > 1) {
           ev.preventDefault();
           ev.stopPropagation();
