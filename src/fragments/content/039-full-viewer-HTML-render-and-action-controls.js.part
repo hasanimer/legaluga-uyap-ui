@@ -42,6 +42,7 @@
     const evrakAdi = el('b', { class: 'ek-evrakad' });
     const yeniSekme = el('a', { target: '_blank', rel: 'noopener', hidden: true }, 'Yeni sekmede aç');
     const indir = el('a', { hidden: true, 'data-belge-indir': 'asil', title: 'Belgeyi özgün biçimiyle indir' }, 'Aslını indir');
+    const udfIndir = el('a', { hidden: true, 'data-belge-indir': 'udf', title: 'Özgün UDF dosyasını indir' }, 'UDF olarak indir');
     const pdfIndir = el('a', { hidden: true, 'data-belge-indir': 'pdf', title: 'Belgenin PDF kopyasını indir' }, 'PDF indir');
     const pdfDurum = el('span', { class: 'ek-pdf-durum', role: 'status', hidden: true });
     // Görüldü say: Yeni listesinin sonundaki (en eski) evrak gösterilince (ya da gösterilemeyince) çıkar; yalnız ekranın
@@ -58,7 +59,7 @@
     const onbar = el('div', { class: 'ek-onbar' },
       el('div', { class: 'ek-onbar-eylemler' },
         el('span', { class: 'gezinme', role: 'group', 'aria-label': 'Evraklar arasında gezinme' }, onceki, konum, sonraki), evrakAdi,
-        el('div', { class: 'ek-belge-eylemler', role: 'group', 'aria-label': 'Evrak işlemleri' }, yeniSekme, indir, pdfIndir, goruldu)), pdfDurum);
+        el('div', { class: 'ek-belge-eylemler', role: 'group', 'aria-label': 'Evrak işlemleri' }, yeniSekme, indir, udfIndir, pdfIndir, goruldu)), pdfDurum);
     // Atıflar: düğme onbar'da, liste box içinde belge alanını daraltmayan açılır paneldedir. Ayar kapalıysa tarama ve arayüz yoktur;
     // modül yoksa (ör. ekran testleri) atif null kalır ve görüntüleyici eskisi gibi çalışır. PDF metnini görünmez paket motoru okur:
     // köprüyü başka bir belge işi kullanıyorsa (bankBusy, aşağıda tanımlı) tarama başlamaz, o işi kesmez.

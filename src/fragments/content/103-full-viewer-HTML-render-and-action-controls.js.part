@@ -174,6 +174,9 @@
       pdfDurum.hidden = true;
       pdfDurum.textContent = '';
       indir.hidden = true;
+      udfIndir.hidden = true;
+      udfIndir.removeAttribute('href');
+      udfIndir.removeAttribute('download');
       if (!simdiki) return;
       const s = simdiki;
       simdiki = null;
@@ -186,7 +189,7 @@
       if (s.disarida) setTimeout(birakUrl, 60000);
       else birakUrl();
     };
-    for (const a of [yeniSekme, indir]) a.addEventListener('click', () => { if (simdiki) simdiki.disarida = true; });
+    for (const a of [yeniSekme, indir, udfIndir]) a.addEventListener('click', () => { if (simdiki) simdiki.disarida = true; });
 
     async function belgePdfIndir(ev) {
       const s = simdiki;
@@ -369,7 +372,12 @@
       if (yeni && yeni.length && ayni(yeni[yeni.length - 1], x)) gorulduGoster();
       indir.href = indirUrl;
       indir.download = name;
-      indir.hidden = ext === 'pdf';
+      indir.hidden = ext === 'pdf' || ext === 'udf';
+      udfIndir.hidden = ext !== 'udf';
+      if (ext === 'udf') {
+        udfIndir.href = indirUrl;
+        udfIndir.download = zipTools.documentName(rec, x, 'udf');
+      }
       if (ext === 'pdf') {
         pdfIndir.href = indirUrl;
         pdfIndir.download = name;
@@ -530,6 +538,7 @@
       baslikYaz(hedef);
       yeniSekme.hidden = true;
       indir.hidden = true;
+      udfIndir.hidden = true;
       indir.removeAttribute('href');
       icerik(el('div', { class: 'msg', role: 'status' }, 'Evrak UYAP’tan getiriliyor…'));
       clearTimeout(gecikme);
