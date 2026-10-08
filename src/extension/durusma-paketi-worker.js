@@ -1,4 +1,14 @@
 /* Yerel uzantı worker'ı. Evrak baytları yalnız INIT ile gelir; ağdan dava verisi istemez. */
+// Yerel pdf.js mesaj/akış işleyicileri Promise.try kullanır. Eski worker çalışma ortamlarında
+// geri dönüş vendor yüklenmeden kurulur; yerleşik API varsa korunur. Çağrı hemen yapılır, hata reddedilir.
+if (typeof Promise.try !== 'function') Object.defineProperty(Promise, 'try', {
+  configurable: true, writable: true,
+  value: function (callback, ...args) {
+    return new this((resolve, reject) => {
+      try { resolve(callback(...args)); } catch (error) { reject(error); }
+    });
+  }
+});
 importScripts('vendor/pdf-lib.min.js', 'vendor/fontkit.umd.js', 'vendor/pdfjs-reader.js', 'durusma-paketi-pdf.js');
 
 let session = null;

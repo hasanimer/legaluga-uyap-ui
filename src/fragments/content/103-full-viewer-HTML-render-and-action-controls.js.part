@@ -314,18 +314,28 @@
       // HTML yeni sekmede açılmaz: orada UYAP'ın kökeninde, korumasız çalışırdı. İndir özgün dosyayı verir.
       if (ext === 'html') {
         icerik(el('div', { class: 'docyer', role: 'status' }, 'Evrak hazırlanıyor…'));
-        htmlBelgesi(doc.blob, atif?.htmlIsaretci()).then(html => {
-          if (simdiki !== s || closed) return;
-          icerik(el('iframe', { srcdoc: html, title: label, sandbox: '', class: 'htmldoc', referrerpolicy: 'no-referrer' }));
-          atif?.belge('html', { doc, signal: s.ac.signal, gecerli });
-          log('Evrak gösterildi (html).');
-        }).catch(err => {
-          if (simdiki !== s || closed) return;
-          log('HTML evrak gösterilemedi:', (err && (err.kod || err.name)) || 'hata');
-          if (!err || !err.kod) globalThis.UHDReporter?.report(err, 'html');
-          icerik(unsupportedDoc(rec, e, ext, indirUrl, name, doc.type, err && err.kod === 'buyuk' ? 'Evrak görüntüleyici için çok büyük (10 MB üstü); indirin ya da UYAP’ta açın.'
-            : err && err.kod === 'bos' ? 'Evrakta gösterilebilecek içerik yok; indirin ya da UYAP’ta açın.' : 'Evrak okunurken beklenmeyen bir hata oluştu.'));
-        });
+        let cerceve = null, htmlNo = 0;
+        // Sandbox çerçevesinin DOM'una erişilmez. Ayar değişince eldeki Blob yeniden temizlenip aynı çerçeveye yazılır.
+        s.atifHtmlYenile = () => {
+          const benim = ++htmlNo;
+          htmlBelgesi(doc.blob, atif?.htmlIsaretci()).then(html => {
+            if (simdiki !== s || closed || benim !== htmlNo) return;
+            if (cerceve) cerceve.setAttribute('srcdoc', html);
+            else {
+              cerceve = el('iframe', { srcdoc: html, title: label, sandbox: '', class: 'htmldoc', referrerpolicy: 'no-referrer' });
+              icerik(cerceve);
+            }
+            atif?.belge('html', { doc, signal: s.ac.signal, gecerli });
+            log('Evrak gösterildi (html).');
+          }).catch(err => {
+            if (simdiki !== s || closed || benim !== htmlNo) return;
+            log('HTML evrak gösterilemedi:', (err && (err.kod || err.name)) || 'hata');
+            if (!err || !err.kod) globalThis.UHDReporter?.report(err, 'html');
+            icerik(unsupportedDoc(rec, e, ext, indirUrl, name, doc.type, err && err.kod === 'buyuk' ? 'Evrak görüntüleyici için çok büyük (10 MB üstü); indirin ya da UYAP’ta açın.'
+              : err && err.kod === 'bos' ? 'Evrakta gösterilebilecek içerik yok; indirin ya da UYAP’ta açın.' : 'Evrak okunurken beklenmeyen bir hata oluştu.'));
+          });
+        };
+        s.atifHtmlYenile();
         return;
       }
       if (img) {

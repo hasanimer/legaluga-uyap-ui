@@ -192,11 +192,13 @@
     // acik: bölüm açık mı (null: henüz karar verilmedi; dar ekranda kapalı başlar). no: evrak sayacı, eski işi durdurur.
     // tekrar: "Yeniden dene"nin işi; motor: süren PDF motoru oturumu ({ kapat }).
     let acik = null, no = 0, tur = null, kunyeler = [], satirlar = [], etkin = 0;
-    let cizimKok = null, kapDugum = null, menu = null, secimDugme = null, tekrar = null, motor = null, isNo = 0;
+    let cizimKok = null, kapDugum = null, menu = null, secimDugme = null, tekrar = null, motor = null, isNo = 0, sonBelge = null, secimBirak = null;
+    const isaretliParcalar = new Set();
     const zamanlayicilar = new Set();
     const sonra = (fn, ms) => { const t = setTimeout(() => { zamanlayicilar.delete(t); fn(); }, ms); zamanlayicilar.add(t); return t; };
     const vazgec = t => { clearTimeout(t); zamanlayicilar.delete(t); };
     const ayarAcik = () => { try { return acikMi() !== false; } catch { return false; } };
+    let sonAyar = ayarAcik();
     // Sorulamazsa meşgul sayılır: başka işin köprüsü kapatılmaz.
     const mesgul = () => { try { return !!mesgulMu(); } catch { return true; } };
     const dar = () => { const w = kutu?.clientWidth; return typeof w === 'number' && w > 0 && w <= 760; };
@@ -209,6 +211,7 @@
     }
     // yeniden (isteğe bağlı): durum iletisinin altında "Yeniden dene" düğmesiyle çalışacak iş.
     function goster(metin, sayac = '', yenidenIs = null) {
+      if (!ayarAcik()) return;
       if (acik === null) acik = !dar();
       durumYazi.textContent = metin;
       durumYazi.hidden = !metin;
@@ -356,6 +359,7 @@
 
     // Alt çizginin menüsü: Tam metni aç, Künyeyi kopyala, Listede göster. Esc, dışarı tıklama ve evrak değişimi kapatır.
     function menuAc(i, hedef, ev) {
+      if (!ayarAcik()) return;
       menuKapat(false);
       secimKapat();
       const k = kunyeler[i];
@@ -407,6 +411,7 @@
       }
       const sirali = [...isler.keys()].sort((a, b) => a - b);
       for (let j = 0; j < sirali.length; j++) {
+        if (!surer()) return;
         if (j && j % SINIR.dilim === 0) { await bekle(); if (!surer()) return; }
         const araliklar = isler.get(sirali[j]);
         let bas = 0;
@@ -414,7 +419,10 @@
           const yazi = c.textContent, son = bas + yazi.length;
           const yerel = c.getAttribute('class') ? [] : araliklar.filter(r => r.son > bas && r.bas < son)
             .map(r => ({ bas: Math.max(r.bas, bas) - bas, son: Math.min(r.son, son) - bas, atif: r.atif }));
-          if (yerel.length) c.replaceChildren(...bol(yazi, yerel).map(x => typeof x === 'string' ? x : cizgi(x)));
+          if (yerel.length) {
+            isaretliParcalar.add(c);
+            c.replaceChildren(...bol(yazi, yerel).map(x => typeof x === 'string' ? x : cizgi(x)));
+          }
           bas = son;
         }
       }
@@ -428,9 +436,9 @@
     // Seçimden bul (UDF): seçim 300 karakteri aşmıyor ve içinde künye varsa seçimin yanında "Kararı bul" bağlantısı çıkar.
     // Seçilen metin yalnız burada ayıklanır; bağlantıya yalnız künye alanları girer.
     function secimBak(benim) {
-      secimKapat();
       const K = globalThis.UHDKunye;
       if (benim !== no || !kapDugum || !K || !ayarAcik()) return;
+      secimKapat();
       const secim = (typeof kok?.getSelection === 'function' ? kok.getSelection() : null) || globalThis.document?.getSelection?.();
       if (!secim || secim.isCollapsed || !secim.rangeCount) return;
       const aralik = secim.getRangeAt(0);
@@ -449,10 +457,20 @@
     function secimDinle(kap, benim) {
       kapDugum = kap;
       const bak = () => sonra(() => secimBak(benim), 0);
+      const tus = ev => { if (ev.key !== 'Escape') bak(); };
+      const basla = () => secimKapat();
+      const kaydir = () => { secimKapat(); menuKapat(false); };
       kap.addEventListener('mouseup', bak);
-      kap.addEventListener('keyup', ev => { if (ev.key !== 'Escape') bak(); });
-      kap.addEventListener('mousedown', () => secimKapat());
-      kap.addEventListener('scroll', () => { secimKapat(); menuKapat(false); }, { passive: true });
+      kap.addEventListener('keyup', tus);
+      kap.addEventListener('mousedown', basla);
+      kap.addEventListener('scroll', kaydir, { passive: true });
+      // Tercih yeniden açıldığında aynı UDF kabı kullanılır; eski dinleyiciler birikmesin.
+      secimBirak = () => {
+        kap.removeEventListener?.('mouseup', bak);
+        kap.removeEventListener?.('keyup', tus);
+        kap.removeEventListener?.('mousedown', basla);
+        kap.removeEventListener?.('scroll', kaydir);
+      };
     }
 
     async function tara(t, b, surer) {
@@ -539,7 +557,8 @@
         } catch { kapat('hata'); return; }
         const yokla = () => {
           if (bitti) return;
-          if (oturum?.closed) kapat('durdu');
+          if (!surer()) kapat('iptal');
+          else if (oturum?.closed) kapat('durdu');
           else zamanlar[2] = sonra(yokla, SINIR.pdfYokla);
         };
         zamanlar.push(sonra(() => { if (!hazir) kapat('hata'); }, SINIR.pdfHazir), sonra(() => kapat('hata'), SINIR.pdfSure), sonra(yokla, SINIR.pdfYokla));
@@ -606,11 +625,13 @@
     // gösteremediği; ext ile). b: { doc, model, gorunum, kap, cerceve (PDF çerçevesi), ext, signal, gecerli }. Ayar kapalıysa
     // hiçbir şey yapılmaz.
     function belge(t, b = {}) {
-      temizle();
-      if (!globalThis.UHDKunye || !ayarAcik()) return;
+      temizle(false);
+      sonBelge = { t, b };
+      sonAyar = ayarAcik();
+      if (!globalThis.UHDKunye || !sonAyar) return;
       const benim = no;
       tur = t === 'tiff' || t === 'resim' || (t === 'diger' && RESIM.has(b.ext)) ? 'resim' : t;
-      const surer = () => benim === no && !b.signal?.aborted && (typeof b.gecerli !== 'function' || b.gecerli());
+      const surer = () => benim === no && ayarAcik() && !b.signal?.aborted && (typeof b.gecerli !== 'function' || b.gecerli());
       if (tur === 'resim') return goster(ILETI.resim);
       if (!['udf', 'html', 'txt', 'pdf', 'diger'].includes(tur)) return goster(ILETI.desteklenmiyor);
       goster(ILETI.taraniyor, '…');
@@ -624,13 +645,19 @@
       });
     }
     // Evrak değişti ya da ekran kapanıyor: liste, menü, seçim düğmesi ve süren iş (PDF motoru dahil) bırakılır.
-    function temizle() {
+    function temizle(belgeyiBirak = true) {
       no++;
+      if (belgeyiBirak) sonBelge = null;
       motor?.kapat('iptal');
+      secimBirak?.();
+      secimBirak = null;
       menuKapat(false);
       secimKapat();
       for (const t of zamanlayicilar) clearTimeout(t);
       zamanlayicilar.clear();
+      // Ayar kapanırken evrak DOM'u yerinde kalır: yalnız bizim eklediğimiz UDF alt çizgilerini kaldır.
+      for (const parca of isaretliParcalar) parca.replaceChildren(parca.textContent);
+      isaretliParcalar.clear();
       tur = null; kunyeler = []; satirlar = []; etkin = 0; cizimKok = null; kapDugum = null; tekrar = null;
       liste.replaceChildren();
       liste.hidden = true;
@@ -642,11 +669,22 @@
       bolum.hidden = true;
     }
 
+    // applyPagePrefs çağırır: süren işi hemen durdurur; yeniden açılınca eldeki evrakta taramayı başlatır.
+    function ayarDegisti() {
+      const acik = ayarAcik();
+      if (acik === sonAyar) return false;
+      sonAyar = acik;
+      temizle(false);
+      if (acik && sonBelge) belge(sonBelge.t, sonBelge.b);
+      return true;
+    }
+
     return Object.freeze({
       belge,
       temizle,
+      ayarDegisti,
       // HTML evrakta htmlBelgesi()'ne verilen işaretleyici; ayar kapalıysa null.
-      htmlIsaretci: () => (globalThis.UHDKunye && ayarAcik() ? htmlIsaretle : null),
+      htmlIsaretci: () => (globalThis.UHDKunye && ayarAcik() ? d => { if (ayarAcik()) htmlIsaretle(d); } : null),
       // Odak Atıflar bölümünde, menüde ya da "Kararı bul" düğmesinde mi (← → orada evrak değiştirmez)?
       icerir: dugum => !!dugum && (bolum.contains(dugum) || !!menu?.contains(dugum) || !!secimDugme?.contains(dugum)),
       // Esc: açık menü ya da "Kararı bul" düğmesi varsa kapatır ve true döner.

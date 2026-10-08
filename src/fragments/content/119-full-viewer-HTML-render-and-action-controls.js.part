@@ -174,7 +174,9 @@
     });
     document.addEventListener('keydown', onKey, true);
     if (!beside) hidePanel();
-    dosyaEkrani = { viewer, box, close: done, focus: () => close.focus() };
+    dosyaEkrani = { viewer, box, close: done, focus: () => close.focus(), atifAyariniUygula: () => {
+      if (atif?.ayarDegisti()) simdiki?.atifHtmlYenile?.();
+    } };
     shadowRoot.append(viewer);
     syncOverlays();
     const ilkSekme = SEKMELER.some(t => t[0] === o.sekme) ? o.sekme : 'ozet';
