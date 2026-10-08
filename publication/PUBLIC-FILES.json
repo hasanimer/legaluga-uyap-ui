@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "7e7b720e9a5140738abfa2d2cf3f97188a0d290476fd356491b6b7e8c335ffd1"
+      "sha256": "9f100324b89e8f5e7cc31e32a7fbe9d44dc7e49a6e8227a25e77d6f181b2c231"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -588,7 +588,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "fd53be85bb2c963c0d222693bdb2b20c4924ab5c001afb698b66b67bac10fe93"
+      "sha256": "292f61bc28c17e84a01e2aa79105fc2e0152b37c6b334e110da2454134c64480"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -756,7 +756,7 @@
     },
     {
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "10663cb214c5128fab09745fdac1bb0da8ba3caaa1605e2a6e05c3e61e1b02c1"
+      "sha256": "f0aae312908b6f112acf57d04aa095099594a11a66c258ea20bf453576a48be3"
     },
     {
       "path": "src/fragments/content/105-viewer-navigation-abort-epoch-boundary.js.part",

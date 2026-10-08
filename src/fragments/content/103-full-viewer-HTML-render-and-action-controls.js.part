@@ -389,11 +389,11 @@
         indir.download = zipTools.documentName(rec, x, 'eyp');
         indir.hidden = false;
         indir.title = 'Özgün EYP paketini indir';
-        const secim = el('select', { 'aria-label': 'EYP üst yazısı veya eki', style: 'min-width:0;max-width:100%;flex:1' },
+        const secim = el('select', { class: 'eyp-picker', 'aria-label': 'EYP üst yazısı veya eki' },
           el('option', { value: '-1' }, 'Üst yazı veya ek seçin'),
           ...paket.belgeler.map((b, i) => el('option', { value: String(i) }, `${b.ustYazi ? 'Üst yazı: ' : 'Belge: '}${b.ad}`)));
         secim.value = String(paket.secili ?? -1);
-        s.eypBar = el('div', { class: 'docbar', style: 'flex-wrap:wrap' }, el('span', null, 'EYP'), secim,
+        s.eypBar = el('div', { class: 'docbar' }, el('span', null, 'EYP'), secim,
           el('span', { class: 'dp-muted' }, 'E-imza doğrulanmaz.'));
         secim.addEventListener('change', async () => {
           const i = Number(secim.value);
