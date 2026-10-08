@@ -494,6 +494,8 @@
 .viewer .docbar .docbilgi{flex:1;min-width:0;color:var(--shell-muted)}
 .viewer .docbar button{min-height:28px;border:1px solid var(--shell-line);border-radius:6px;background:var(--shell-bg);color:var(--shell-text);padding:3px 9px;font:inherit;cursor:pointer}
 .viewer .docbar button:hover{background:var(--shell-soft)}
+.viewer .docbar .eyp-picker{flex:1;min-width:0;max-width:100%;min-height:32px;padding:5px 9px;border:1px solid var(--shell-line);border-radius:6px;background:var(--shell-bg);color:var(--shell-text);font:inherit}
+.viewer .docbar .eyp-picker:focus-visible{outline:2px solid var(--shell-focus);outline-offset:2px}
 .viewer .docbar .zoom{display:inline-flex;align-items:center;gap:4px}
 .viewer .docbar .sayfa-git{display:inline-flex;align-items:center;gap:4px;color:var(--shell-muted);white-space:nowrap}
 .viewer .docbar .sayfa-no{min-width:4ch;min-height:26px;box-sizing:content-box;border:1px solid var(--shell-line);border-radius:6px;background:var(--shell-bg);color:var(--shell-text);font:inherit;text-align:center;padding:1px 4px}

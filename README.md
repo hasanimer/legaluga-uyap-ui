@@ -7,7 +7,9 @@ Eklenti, **Av. Hasan İmer Akın** tarafından meslektaşlarının ücretsiz kul
 
 Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lisansıyla** sunar. UYAP işlem motoru özel kaynaklıdır; tam eklenti mağazadan kurulur.
 
-> Bu rehber, **1.19.52** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+> Bu rehber, **1.19.54** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+
+**1.19.54:** UYAP, HTTP `200` yanıtında `PRTL_GNL_1-1` güvenlik engeli bildirdiğinde tarama ve otomatik oturum yoklaması durur. Kontrol noktası bu Chrome profilinde şifreli saklanır; kısıtlama kalktığında **Sürdür** ile devam edebilirsiniz. Aynı sekme ve oturumda başarıyla alınmış mahkeme liste kapsamları ve sayfaları atlanır. Yeni sekme, sayfa yenilemesi veya yeni oturumda dosya kimliklerini tazelemek için listeler yeniden alınır; güvenlik nedeniyle duraklamış iş kendiliğinden başlamaz.
 
 Görseller gerçek arayüz bileşenlerinden **örnek verilerle** hazırlanmıştır; gerçek kişi, dava veya UYAP oturumu içermez.
 
@@ -87,6 +89,8 @@ Dar panelde sekme metni ve sayaçlar sıkışmaz. Satıra sığmayan sekmelere y
 ![Safahat: kaydedilen işlem listesi, alınma tarihi ve yeni sorgu için kalan süre — örnek veriler](docs/images/10-kaydedilen-safahat.png)
 
 ## Evraktaki karar atıfları
+
+**1.19.53:** `.eyp` paketindeki üst yazı otomatik açılır; üst yazı veya ek seçicisinden diğer belgeler görüntülenir. Birden fazla üst yazı varsa seçim istenir. **Aslını indir** özgün EYP paketini, **PDF indir** seçili belgeyi verir. UDF evraklarında **UDF olarak indir** özgün `.udf` dosyasını indirir; EYP içinden açılan UDF için de kullanılabilir. Paketteki PDF, UDF, TIFF, resim, HTML ve düz metin mevcut güvenli okuyucularda açılır; diğer biçimler indirilebilir. E-imza doğrulanmaz. Açılmış paket en fazla 64 MiB ve 200 girdi olabilir; bozuk, şifreli veya sınırı aşan pakette özgün indirme bağlantısı korunur. Paket cihazda açılır; belge içeriği sunucuya gönderilmez.
 
 **1.19.52:** Yalnız **idare mahkemesi ve bölge idare mahkemesi dosyalarında**, tanınan Danıştay atıflarında **Danıştay’da ara** görünür. Mevcut **Tam metni aç** bağlantısının yanındadır. Resmî Danıştay sayfasını yeni sekmede açar; daire ile esas ve varsa karar numarası alanlarını hazırlar. **Ara** düğmesine siz basarsınız; istenirse sitenin doğrulamasını tamamlarsınız. Yalnız esas numaralı atıflarda karar numarası uydurulmaz. Belge, alıntı veya UYAP oturumu aktarılmaz. Form değişmişse ya da yazılmış ölçütlerle çelişiyorsa açıklama gösterilir; mevcut arama alanlarının üstüne yazılmaz. Bu özellik için yalnız `karararama.danistay.gov.tr` adresine erişim eklenmiştir.
 

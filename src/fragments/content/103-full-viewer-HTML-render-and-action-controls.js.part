@@ -151,7 +151,7 @@
       const odak = shadowRoot.activeElement;
       const tasi = !!odak && (odak === box || (onizleme.contains(odak) && !onbar.contains(odak)));
       while (onbar.nextSibling) onbar.nextSibling.remove();
-      onizleme.append(...parcalar.filter(Boolean));
+      onizleme.append(...[simdiki?.eypBar, ...parcalar].filter(Boolean));
       const simdi = shadowRoot.activeElement;
       if (tasi && (!simdi || simdi === box || simdi === onizleme || !onizleme.contains(simdi))) (onizleme.querySelector('.docview') || onizleme).focus({ preventScroll: true });
     };
@@ -174,6 +174,9 @@
       pdfDurum.hidden = true;
       pdfDurum.textContent = '';
       indir.hidden = true;
+      udfIndir.hidden = true;
+      udfIndir.removeAttribute('href');
+      udfIndir.removeAttribute('download');
       if (!simdiki) return;
       const s = simdiki;
       simdiki = null;
@@ -182,11 +185,11 @@
       s.ac.abort();
       if (s.gozlem) s.gozlem.disconnect();
       if (s.gorunum) s.gorunum.birak();
-      const birakUrl = () => { URL.revokeObjectURL(s.url); URL.revokeObjectURL(s.indirUrl); if (s.pdfUrl) URL.revokeObjectURL(s.pdfUrl); };
+      const birakUrl = () => { URL.revokeObjectURL(s.url); URL.revokeObjectURL(s.indirUrl); if (s.pdfUrl) URL.revokeObjectURL(s.pdfUrl); if (s.eypUrl) URL.revokeObjectURL(s.eypUrl); };
       if (s.disarida) setTimeout(birakUrl, 60000);
       else birakUrl();
     };
-    for (const a of [yeniSekme, indir]) a.addEventListener('click', () => { if (simdiki) simdiki.disarida = true; });
+    for (const a of [yeniSekme, indir, udfIndir]) a.addEventListener('click', () => { if (simdiki) simdiki.disarida = true; });
 
     async function belgePdfIndir(ev) {
       const s = simdiki;
@@ -344,7 +347,7 @@
       ];
     }
 
-    function goster(e, doc) {
+    function goster(e, doc, eypPaket = null) {
       birak();
       const ext = documentExtension(doc);
       const url = URL.createObjectURL(documentPreviewBlob(doc, ext));
@@ -369,7 +372,12 @@
       if (yeni && yeni.length && ayni(yeni[yeni.length - 1], x)) gorulduGoster();
       indir.href = indirUrl;
       indir.download = name;
-      indir.hidden = ext === 'pdf';
+      indir.hidden = ext === 'pdf' || ext === 'udf';
+      udfIndir.hidden = ext !== 'udf';
+      if (ext === 'udf') {
+        udfIndir.href = indirUrl;
+        udfIndir.download = zipTools.documentName(rec, x, 'udf');
+      }
       if (ext === 'pdf') {
         pdfIndir.href = indirUrl;
         pdfIndir.download = name;
@@ -383,6 +391,53 @@
       }
       yeniSekme.href = url;
       yeniSekme.hidden = !(framed || img);
+      const eypKur = paket => {
+        s.eypUrl = URL.createObjectURL(new Blob([paket.doc.blob], { type: 'application/octet-stream' }));
+        indir.href = s.eypUrl;
+        indir.download = zipTools.documentName(rec, x, 'eyp');
+        indir.hidden = false;
+        indir.title = 'Özgün EYP paketini indir';
+        const secim = el('select', { class: 'eyp-picker', 'aria-label': 'EYP üst yazısı veya eki' },
+          el('option', { value: '-1' }, 'Üst yazı veya ek seçin'),
+          ...paket.belgeler.map((b, i) => el('option', { value: String(i) }, `${b.ustYazi ? 'Üst yazı: ' : 'Belge: '}${b.ad}`)));
+        secim.value = String(paket.secili ?? -1);
+        s.eypBar = el('div', { class: 'docbar' }, el('span', null, 'EYP'), secim,
+          el('span', { class: 'dp-muted' }, 'E-imza doğrulanmaz.'));
+        secim.addEventListener('change', async () => {
+          const i = Number(secim.value);
+          if (i < 0 || !gecerli()) return;
+          secim.disabled = true;
+          try {
+            const leaf = await paket.oku(i, { signal: s.ac.signal });
+            if (gecerli()) goster(e, leaf, { ...paket, secili: i });
+          } catch (err) {
+            if (gecerli()) icerik(unsupportedDoc(rec, e, 'eyp', s.eypUrl, indir.download, '', 'Paket belgesi açılamadı; başka bir belge seçin veya özgün paketi indirin.'));
+          } finally { if (gecerli()) secim.disabled = false; }
+        });
+      };
+      indir.title = 'Özgün evrakı indir';
+      if (eypPaket) eypKur(eypPaket);
+      if (ext === 'eyp' && !eypPaket) {
+        icerik(el('div', { class: 'docyer', role: 'status' }, 'EYP üst yazısı ve ekleri hazırlanıyor…'));
+        (async () => {
+          const paket = await globalThis.DurusmaPaketiZip.eyp(doc.blob, { signal: s.ac.signal });
+          if (!gecerli()) return;
+          paket.doc = doc;
+          eypKur(paket);
+          if (paket.ilk >= 0) {
+            const leaf = await paket.oku(paket.ilk, { signal: s.ac.signal });
+            if (gecerli()) goster(e, leaf, { ...paket, secili: paket.ilk });
+          } else {
+            icerik(el('div', { class: 'msg' }, 'Paket birden fazla belge içeriyor. Yukarıdan görüntülenecek üst yazıyı veya eki seçin.'));
+            atif?.belge('diger', { ext: 'eyp' });
+          }
+        })().catch(err => {
+          if (!gecerli()) return;
+          icerik(unsupportedDoc(rec, e, ext, indirUrl, name, doc.type, err?.code === 'zip' ? err.message : 'EYP paketi açılamadı; özgün paketi indirin.'));
+          atif?.belge('diger', { ext: 'eyp' });
+        });
+        return;
+      }
       if (framed) {
         // PDF sabit application/pdf Blob'uyla yerleşik Chrome görüntüleyicisine verilir. Doğrulanmamış bir sandbox
         // izni yerleşik PDF görüntüleyicisini engelleyebileceği için PDF'e eklenmez; özgün/HTML MIME buraya gelemez.
@@ -483,6 +538,7 @@
       baslikYaz(hedef);
       yeniSekme.hidden = true;
       indir.hidden = true;
+      udfIndir.hidden = true;
       indir.removeAttribute('href');
       icerik(el('div', { class: 'msg', role: 'status' }, 'Evrak UYAP’tan getiriliyor…'));
       clearTimeout(gecikme);

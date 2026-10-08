@@ -1,6 +1,7 @@
   const YOKLAMA_MS = 2 * 60000;
   let sessionPingController = null, sessionDisposed = false;
   let sessionRevision = 0, sessionLoginState = null;
+  let sessionScanBlocked = false, sessionScanStateRevision = 0;
   const keepAliveOn = () => pagePrefs.oturumAcik !== false;
   function isLoginPage() {
     if (/^\/(giris|cikis|edevletlogin|testlogin|autologin)(\/|$)|^\/(web1|login)\.uyap(\/|$)/i.test(location.pathname)) return true;
@@ -17,7 +18,7 @@
   };
   const sessionGone = error => error.status === 401 || ['PRTL_GNL_100026', 'giris-sayfasi', 'baska-oturum'].includes(error.code);
   function canProtect() {
-    if (!keepAliveOn() || !inSession() || contextGone || sessionDisposed || navigator.onLine === false) return false;
+    if (!keepAliveOn() || !inSession() || contextGone || sessionDisposed || sessionScanBlocked || navigator.onLine === false) return false;
     try { return !!chrome.runtime?.id; } catch { return false; }
   }
   function abortSessionPing() { sessionPingController?.abort(); }

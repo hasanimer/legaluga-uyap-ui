@@ -190,7 +190,7 @@
   const DOC_EXT = {
     'text/html': 'html', 'application/xhtml+xml': 'html', 'application/pdf': 'pdf', 'image/tiff': 'tif', 'text/udf': 'udf', 'text/usf': 'usf', 'image/jpeg': 'jpg', 'image/png': 'png',
     'image/gif': 'gif', 'image/bmp': 'bmp', 'text/plain': 'txt', 'application/msword': 'doc', 'application/rtf': 'rtf',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx'
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx', 'application/eyp': 'eyp', 'text/eyp': 'eyp'
   };
 
   // Eklentinin kendi okuyucusuyla gösterilecek biçim. UDF, USF, TIFF ve türü bilinmeyen evrakta önce içeriğin ilk

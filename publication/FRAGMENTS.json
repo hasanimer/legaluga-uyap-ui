@@ -343,8 +343,8 @@
       "source": "content.js",
       "order": 23,
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "fd53be85bb2c963c0d222693bdb2b20c4924ab5c001afb698b66b67bac10fe93",
-      "bytes": 104170,
+      "sha256": "292f61bc28c17e84a01e2aa79105fc2e0152b37c6b334e110da2454134c64480",
+      "bytes": 104480,
       "purpose": "page-shell-full-CSS-docking-and-panel-controls"
     },
     {
@@ -399,16 +399,16 @@
       "source": "content.js",
       "order": 37,
       "path": "src/fragments/content/037-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "d874fc6a32d89465567f04a4cd0bdcbbcf1ac687c93912fe968eaa07d35cea75",
-      "bytes": 16972,
+      "sha256": "dbc8ebc53ff7f48fa54aa0e1f58fac200b37cc6241d3fa47e16cd3ee60ecfcc7",
+      "bytes": 17016,
       "purpose": "overview-safahat-notes-and-safe-document-rendering"
     },
     {
       "source": "content.js",
       "order": 39,
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "363e7121382c36be2096eed7999505eafea9c6fd1444a105ab26edb2d367e289",
-      "bytes": 54799,
+      "sha256": "9ca96a6963244ca93051e0168b757c1bc4c1f2bbe35503ea418384707238d058",
+      "bytes": 54944,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -679,8 +679,8 @@
       "source": "content.js",
       "order": 103,
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "7cb230579892d0bf7ac8286699ead20f5116f5c0a75276169bf62d23856d6440",
-      "bytes": 30777,
+      "sha256": "69592730ff0299594024c7afc9549dd997bd4e2c453ce48a52efa1634e27305b",
+      "bytes": 33807,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -783,8 +783,8 @@
       "source": "content.js",
       "order": 127,
       "path": "src/fragments/content/127-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "fdacc0701921e81f973858b80b384d62ecbc2b7d68247cc894f6ff33d113b39f",
-      "bytes": 1562,
+      "sha256": "5cb33aeb0ece255e771dbdb38cd1e7cc5ccad2d7cb5e6fda8d2454cf2929ee2c",
+      "bytes": 1648,
       "purpose": "session-protection-lifecycle-and-visible-safety-gates"
     },
     {
