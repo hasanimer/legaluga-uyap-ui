@@ -1,9 +1,11 @@
   function showEkran(rec, o = {}) {
+    const nativeDocument = o.nativeDocument || null;
+    let nativeCitations = !!nativeDocument?.showCitations;
     closeDosyaEkrani(false);
     const previous = (o.sira && o.sira.previous) || shadowRoot.activeElement || document.activeElement;
     const { udf, tiff } = globalThis.UHD;
     const cbs = rec.yargiTuru === CBS.kod;   // UYAP savcılık dosyalarında safahat vermez
-    const SEKMELER = [['ozet', 'Özet'], ['evrak', 'Evrak'], rec.yargiTuru === '2' && ['banka', 'Banka sorgusu'], ['tebligat', 'Tebligat sorgusu'], !cbs && ['safahat', 'Safahat'], ['notlar', 'Notlar'], ['indir', 'Toplu İndir'], ['paket', 'Duruşma paketi hazırla']].filter(Boolean);
+    const SEKMELER = nativeDocument ? [['evrak', 'Evrak']] : [['ozet', 'Özet'], ['evrak', 'Evrak'], rec.yargiTuru === '2' && ['banka', 'Banka sorgusu'], ['tebligat', 'Tebligat sorgusu'], !cbs && ['safahat', 'Safahat'], ['notlar', 'Notlar'], ['indir', 'Toplu İndir'], ['paket', 'Duruşma paketi hazırla']].filter(Boolean);
     const kimlik = `ek${++ekranSayac}`;
     let tebligatUi = null;
     const beside = besideDock();
@@ -12,7 +14,7 @@
     const sekmeBar = el('div', { class: 'ek-sekmebar' }, sekmeCubugu);
     const govde = el('div', { class: 'ek-govde' });
     // Sırayla okumada başlıkta dosyalar arası geçiş: "‹ Önceki dosya · Dosya 2 / 5 · Sonraki dosya ›".
-    const okuma = o.sira && Array.isArray(o.sira.kuyruk) && o.sira.kuyruk.length > 1 ? o.sira : null;
+    const okuma = !nativeDocument && o.sira && Array.isArray(o.sira.kuyruk) && o.sira.kuyruk.length > 1 ? o.sira : null;
     const dosyaGec = d => { if (okuma) siraylaOku(okuma.kuyruk, okuma.i + d, okuma.previous, d); };
     const siraBar = okuma ? el('span', { class: 'gezinme ek-sira', role: 'group', 'aria-label': 'Sırayla okunan dosyalar' },
       el('button', { type: 'button', class: 'nav', disabled: okuma.i <= 0, title: 'Önceki yeni evraklı dosya', 'aria-label': 'Önceki dosya' }, '‹ Önceki dosya'),
@@ -23,7 +25,7 @@
       geri.addEventListener('click', () => dosyaGec(-1));
       ileri.addEventListener('click', () => dosyaGec(1));
     }
-    const dosyaBasligi = [cleanBirim(rec.birimAdi), rec.dosyaNo].filter(Boolean).join(' ');
+    const dosyaBasligi = nativeDocument ? String(nativeDocument.e.tur || 'UYAP evrakı').slice(0, 256) : [cleanBirim(rec.birimAdi), rec.dosyaNo].filter(Boolean).join(' ');
     const box = el('div', { class: 'box ekran', role: 'dialog', 'aria-modal': String(!beside), 'aria-label': `Dosya ekranı ${dosyaBasligi}`, tabindex: '-1' },
       el('div', { class: 'bar' }, el('b', { title: dosyaBasligi }, dosyaBasligi), siraBar, close), sekmeBar, govde);
     const viewer = el('div', { lang: 'tr', class: 'viewer' }, box);
@@ -58,13 +60,14 @@
     };
     const onbar = el('div', { class: 'ek-onbar' },
       el('div', { class: 'ek-onbar-eylemler' },
-        el('span', { class: 'gezinme', role: 'group', 'aria-label': 'Evraklar arasında gezinme' }, onceki, konum, sonraki), evrakAdi,
+        el('span', { class: 'gezinme', role: 'group', 'aria-label': 'Evraklar arasında gezinme', hidden: !!nativeDocument }, onceki, konum, sonraki), evrakAdi,
         el('div', { class: 'ek-belge-eylemler', role: 'group', 'aria-label': 'Evrak işlemleri' }, yeniSekme, indir, udfIndir, pdfIndir, goruldu)), pdfDurum);
     // Atıflar: düğme onbar'da, liste box içinde belge alanını daraltmayan açılır paneldedir. Ayar kapalıysa tarama ve arayüz yoktur;
     // modül yoksa (ör. ekran testleri) atif null kalır ve görüntüleyici eskisi gibi çalışır. PDF metnini görünmez paket motoru okur:
     // köprüyü başka bir belge işi kullanıyorsa (bankBusy, aşağıda tanımlı) tarama başlamaz, o işi kesmez.
     const atif = globalThis.UHDAtifPaneli?.olustur({ el, onbar, eylemler: onbar.querySelector('.ek-belge-eylemler'), kutu: box, kok: shadowRoot, kimlik,
-      duyur: announce, acikMi: () => typeof pagePrefs === 'undefined' || pagePrefs.atifIsaretle !== false,
+      // “Atıfları bul” yalnız açık belge için ayarı aşar; sonraki belge ve kayıtlı tercih etkilenmez.
+      duyur: announce, acikMi: () => nativeDocument?.showCitations === true || typeof pagePrefs === 'undefined' || pagePrefs.atifIsaretle !== false,
       resmiAramaMi: () => globalThis.UHDAtifPaneli.idareDosyasi(rec),
       motorKabi: viewer, kopru: () => globalThis.UHD.durusmaPaketiBridge, mesgulMu: () => bankBusy() }) || null;
     goruldu.addEventListener('click', () => {
@@ -156,7 +159,7 @@
     const evrakListe = el('div', { class: 'ek-liste' },
       el('div', { class: 'ek-liste-baslik-satir' }, el('h3', { class: 'ek-liste-baslik' }, 'Evraklar'), evrakYenile),
       aramaAlani, filtreler, teyitSatir, listeArac, paketAraclari, listeDurum, ogeler);
-    const evrakPanel = el('div', { class: 'ek-evrak' }, evrakListe, onizleme);
+    const evrakPanel = el('div', { class: nativeDocument ? 'ek-evrak ek-native-document' : 'ek-evrak' }, nativeDocument ? null : evrakListe, onizleme);
     // İki sekme aynı sabit paneli paylaşır. PDF/HTML çerçevesi DOM’da taşınmaz; sayfa ve kaydırma korunur.
     function evrakSekmesi(k) {
       evrakPanel.setAttribute('aria-labelledby', `${kimlik}-t-${k}`);
@@ -164,7 +167,7 @@
       paketModu(k === 'paket');
     }
 
-    let kaynak = o.kaynak || null;   // { dosyaId, list }
+    let kaynak = nativeDocument ? null : o.kaynak || null;   // { dosyaId, list }
     let listeHazirlandi = false, listeBekliyor = null, listeHata = '';   // evrak listesi bütün sekmeler arasında paylaşılır
     let tum = [], yeni = null, grup = 'son20', gorunen = [], sira = -1, simdiki = null, simdikiOge = null, gezEpoch = 0, gecikme = null, gezAc = null;
     let kategorili = false, tarihArtan = false, evrakOdak = null, aramaImza = '';
