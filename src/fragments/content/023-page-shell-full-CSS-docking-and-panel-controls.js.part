@@ -1135,6 +1135,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     const oncekiCakismaAcik = pagePrefs.cakismaTarama === true;
     pagePrefs = { ...(prefs || {}), panelSabit: prefs?.panelSabit === undefined ? true : prefs.panelSabit };
     if (typeof sessionRequestHooks !== 'undefined') sessionRequestHooks?.preferencesChanged();
+    if (typeof dosyaEkrani !== 'undefined') dosyaEkrani?.atifAyariniUygula?.();
     if (pagePrefs.durusmaBildirim === false || (oncekiCakismaAcik && (pagePrefs.cakismaTarama !== true || pagePrefs.cakismaBildirim === false))) closeToast('durusma');
     const theme = pagePrefs.tema || 'auto';
     if (shadowRoot) {

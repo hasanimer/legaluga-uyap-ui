@@ -28,10 +28,12 @@
         "temizle",
         "htmlIsaretci",
         "icerir",
-        "kapat"
+        "kapat",
+        "ayarDegisti"
       ],
       "pdf": "text via the hidden hearing-package frame: EXTRACT_PDF_TEXT {jobId,bytes,sayfaSiniri} -> PDF_TEXT_RESULT {jobId,sayfalar,toplamSayfa,bosSayfa,hataSayfa,kesildi,code?}; CANCEL_TEXT {jobId}; never starts while mesgulMu() and stops when another feature takes the bridge",
-      "privacy": "document text is scanned locally; no network, storage or logging; reports carry only error type and extension frames"
+      "privacy": "document text is scanned locally; no network, storage or logging; reports carry only error type and extension frames",
+      "preferences": "applyPagePrefs calls viewer.atifAyariniUygula -> ayarDegisti; disabling immediately cancels PDF, clears citations and UDF marks, refreshes HTML from the already-loaded blob; enabling rescans the current document"
     }
   },
   "authorization": [

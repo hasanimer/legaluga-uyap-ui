@@ -48,7 +48,7 @@
     },
     {
       "path": "docs/DEVELOPMENT.md",
-      "sha256": "354e41916a770dbbb6690eaf70e569768f79d24abc0a6ed72e993e9b2585825d"
+      "sha256": "b6516d3142784550deb1b844474953f980a5f050e93710db126620edfa05a5b6"
     },
     {
       "path": "docs/PRIVACY.md",
@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "f0cf22e629ad8a5d8390ed5772ba08c4d6a5c43655b4a22c28a065ecab3f6a37"
+      "sha256": "32b583e47e9c8466b0301425c0b4a9d8591548b8fa137e782a8c07b3105a25aa"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/contracts.json",
-      "sha256": "71375dc5d265e886da19fc31b34af2a14b12bd87a408cbdcd331df3b6b4a8ad5"
+      "sha256": "819eb8470b50d1c34bd5f5ea4dff2052ab860e16c89afa21a6953eedf97b075a"
     },
     {
       "path": "scripts/build-hearing-vendor.mjs",
@@ -144,7 +144,7 @@
     },
     {
       "path": "src/extension/atif-paneli.js",
-      "sha256": "5517775b703d8434ba49d3a12b05d8d28c6d55f0b080232a523a3f42fc08009f"
+      "sha256": "d1b6990c943d92c3aa6019abcab2364c6ebeb0f3ccc263615350a7912b3bf9b8"
     },
     {
       "path": "src/extension/durusma-paketi-bootstrap.js",
@@ -180,7 +180,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-worker.js",
-      "sha256": "bbcead48e3b09e5a2eca40a0a146e0afc4b170e5af5453a89b3de6af073bcac9"
+      "sha256": "626ffe8387b84fecbfbf94730b80f5c5fb6108ca07d5557977fe6d5da91df0bc"
     },
     {
       "path": "src/extension/durusma-paketi-zip.js",
@@ -584,7 +584,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "f2a7047eb61a46a500dd49613adfabba65026c42f5bae2a04408e36be1a0d4a3"
+      "sha256": "d375313ce0371ca9959f9e58d022f0e124a21ab066337e3d985c23270d0efcdc"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -752,7 +752,7 @@
     },
     {
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "15ce9465a84da7769bbcf78b190e2234be59422cf873e4bfeb89b7fafd72e589"
+      "sha256": "94cf0d306a96e0423bc7cfbd3126365e27516d75efc6023a17d7b31276ce2d0b"
     },
     {
       "path": "src/fragments/content/105-viewer-navigation-abort-epoch-boundary.js.part",
@@ -788,7 +788,7 @@
     },
     {
       "path": "src/fragments/content/119-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "f1704f180f331a65236c26eabf4ae73eeb0016d58d127b415af7bc42348421f1"
+      "sha256": "f0ff81c38eb98718b2a61887be0d210642031a43671debf7d90bd8cd00284cf5"
     },
     {
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",
