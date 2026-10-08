@@ -7,7 +7,7 @@ Eklenti, **Av. Hasan İmer Akın** tarafından meslektaşlarının ücretsiz kul
 
 Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lisansıyla** sunar. UYAP işlem motoru özel kaynaklıdır; tam eklenti mağazadan kurulur.
 
-> Bu rehber, **1.19.43** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+> Bu rehber, **1.19.47** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
 
 Görseller gerçek arayüz bileşenlerinden **örnek verilerle** hazırlanmıştır; gerçek kişi, dava veya UYAP oturumu içermez.
 
@@ -38,7 +38,7 @@ Seçimleri daha sonra **Ayarlar** içinden değiştirebilir veya **Kurulum seçi
 
 ## Günlük kullanım
 
-UYAP sekmesinde Legaluga simgesi veya **Alt+Shift+D** paneli açar. Paneli sabitleyebilir, genişliğini değiştirebilir ve açık/koyu temayı seçebilirsiniz. Başka bir sitedeyken simge hızlı arama penceresini açar; dosya açma işlemi UYAP sekmesinde yürür.
+UYAP sekmesinde Legaluga simgesi veya **Alt+Shift+D** paneli açar. Panel yeni kurulumda sabittir; önceki sabitleme tercihiniz korunur. Sayfa yakınlaştırılırken panel ekran boyutunu korur. Paneli sabitleyebilir, genişliğini değiştirebilir ve açık/koyu temayı seçebilirsiniz. Başka bir sitedeyken simge hızlı arama penceresini açar; dosya açma işlemi UYAP sekmesinde yürür.
 
 - **Güncelle:** Seçili kapsamın dosya listesini mevcut UYAP oturumunuzla yerel indekse alın.
 - **Ara:** Ad, dosya numarası, mahkeme veya kendi notunuzu yazın. Türkçe karakter varyantları normalleştirilir; `2031/123` gibi dosya numaralarıyla da arayabilirsiniz.
@@ -57,19 +57,20 @@ Müvekkil etiketi, ayarlardaki vekil adıyla dosyanın taraf/vekil kaydının e�
 | Sekme | Ne gösterir? |
 |---|---|
 | **Özet** | Dosya bilgileri, son hareketler ve taraflar; icra dosyalarında UYAP'ın hesap ve tahsilat başlıkları ile tutarları. |
-| **Evrak** | Gerçek UYAP evrak türlerine göre klasörler, ana evraklar ve ekleri; PDF, UDF ve TIFF görüntüleme. |
+| **Evrak** | İlk açılışta en yeni 20 evrak; Tüm evraklar içinde dosya ve tür klasörleri; PDF, UDF ve TIFF görüntüleme. |
 | **Banka sorgusu** | İcra dosyasında borçlu seçimi, banka sorgusu, talep kontrolü ve banka cevapları. |
 | **Tebligat sorgusu** | Seçilebilir tebligat zarfları, içerik ve barkod, eşleşen mazbatanın olayları ve isteğe bağlı resmî hizmet sorgusu. |
 | **Safahat** | Son kaydedilmiş işlem listesi ve kullanıcı düğmeyle başlattığında güncel UYAP kaydı. |
 | **Notlar / Toplu indir** | Dosyaya ait notlar ve seçtiğiniz evrakların özgün biçimleriyle indirilmesi. |
+| **Duruşma paketi hazırla** | Evrak sekmesindeki liste ve önizlemeyle belge seçimi, sıra düzenleme ve PDF paketi hazırlama. |
 
 Masaüstünde **Özet** ana pencereye sığacak şekilde düzenlenir; uzun hesap veya taraf listeleri kendi bölümlerinde kaydırılır. Taraflar Davacı, Davalı, Sanık, Müşteki gibi UYAP sıfatlarına göre ayrı gruplarda gösterilir; vekiller ilgili tarafın satırında kalır. Dar ekranda bölümler alt alta yerleşir. Tutarlar UYAP'tan geldiği gibi gösterilir; eklenti dosya borcu hesaplamaz.
 
 ![Dosya özeti: dosya bilgileri, son hareketler ve sıfata göre gruplandırılmış taraflar — örnek veriler](docs/images/05-dosya-ozeti.png)
 
-Evrak ekranında arama üstte tam genişlikte, grup ve tarih kontrolleri ayrı satırlardadır. **Temizle** aramayı kaldırır; listede aramaya uyan evrak ve ek sayısı ayrı ayrı görünür. Seçili evrak vurgulanır; belge başlığı uzun olduğunda satıra yayılır. Dar pencerede liste ile önizleme alt alta yerleşir.
+Evrak ilk açılışta belgeyi otomatik istemez; listeden seçince önizleme açılır. Belirli evrakı açma ve Sırayla oku doğrudan ilgili belgeyi açar. **Evraklar** başlığındaki **Yenile** listeyi tekrar alır. Pencere başlığındaki **Tam ekran** kullanılabilir alanı sağ panele kadar doldurur; panel kapalıysa ekranın tamamına yayılır. Sağdaki Legaluga simgesi açık belgeyi kapatmadan paneli yeniden açar. Evrak ekranında arama üstte tam genişlikte, grup ve tarih kontrolleri ayrı satırlardadır. **Temizle** aramayı kaldırır; listede aramaya uyan evrak ve ek sayısı ayrı ayrı görünür. Seçili evrak vurgulanır; belge başlığı uzun olduğunda satıra yayılır. Dar pencerede liste ile önizleme alt alta yerleşir.
 
-**Evrak** klasöründeki sayı UYAP'ın kuralıyla evrak sayısıdır (evrak = UYAP listesindeki kayıt, ek = evrakın ek listesindeki girdi); ek varsa "· 3 ek" diye ayrıca yazılır. Listede ayrıca gelen evrak, başka evrakın eki olsa da kendi satırında görünür (UYAP gibi); ekin kopyası ana evrakın altında da durur. Grup düğmelerinin altındaki teyit satırı UYAP'ın verdiği listeyi ekrandaki listeyle karşılaştırır; fark varsa türü ve nedeniyle uyarır, işlemleri durdurmaz. Ekler ana evrakın klasöründe kalır ve kapalı başlar (kartın yeni evrakının ekleri açık gelir). Ekli ana evrak küçük **▸** işareti taşır. Kapalı ana evrak satırına tıklayınca evrak yanda görüntülenir ve ekleri açılır; açık satıra yeniden tıklayınca yalnız ekleri kapanır, görüntülenen evrak değişmez. **Enter** veya **Boşluk** aynı işlemi yapar; paket modunda Boşluk evrakı işaretler. Arama, ana evrakıyla birlikte eşleşen ekleri açar; aramayı temizleyince önceki açık/kapalı durum geri gelir, aramada eki seçilen ana evrakın ekleri ise açık kalır. **← →** ile kapalı bir eke gelince ana evrakın ekleri açılır. **Son 20** düz listeyi, **Tümü** evrak türüne göre klasörleri açar. Klasörler evrak türüne göre alfabetik sıralanır; **Tarih ↓ / ↑** klasör içindeki ve düz listedeki tarih sırasını değiştirir, ekler ana evrakının altında kalır. Klavyede **↑ ↓** ile gezin, **→ / ←** ile klasörü ya da ana evrakın eklerini açıp kapatın (ekteyken **←** ana evraka döner). Yalnız sağ/sol oklarla ekleri açıp kapatmak evrak istemez. Kapalı ekler, **Listelenenleri seç** ve toplu indirmedeki **Evrak sekmesinde listelenenler** kapsamında kalır.
+**Evrak** klasöründeki sayı UYAP'ın kuralıyla evrak sayısıdır (evrak = UYAP listesindeki kayıt, ek = evrakın ek listesindeki girdi); ek varsa "· 3 ek" diye ayrıca yazılır. Listede ayrıca gelen evrak, başka evrakın eki olsa da kendi satırında görünür (UYAP gibi); ekin kopyası ana evrakın altında da durur. UYAP listesinin teyidi normal eşleşmede görünmez; eksik veya doğrulanamayan liste uyarısı işlemleri durdurmaz. Ekler ana evrakın klasöründe kalır ve kapalı başlar (kartın yeni evrakının ekleri açık gelir). Ekli ana evrak küçük **▸** işareti taşır. Kapalı ana evrak satırına tıklayınca evrak yanda görüntülenir ve ekleri açılır; açık satıra yeniden tıklayınca yalnız ekleri kapanır, görüntülenen evrak değişmez. **Enter** veya **Boşluk** aynı işlemi yapar; paket modunda Boşluk evrakı işaretler. Arama, ana evrakıyla birlikte eşleşen ekleri açar; aramayı temizleyince önceki açık/kapalı durum geri gelir, aramada eki seçilen ana evrakın ekleri ise açık kalır. **← →** ile kapalı bir eke gelince ana evrakın ekleri açılır. **Son 20 evrak** en yeni 20 evrakı dosya ayrımı olmadan düz listeler; **Tüm evraklar** önce dosya, talimat ve diğer esas gruplarını, sonra evrak türüne göre klasörleri açar. **Liste** düğmesi düz liste görünümüne geçer. Klasörler evrak türüne göre alfabetik sıralanır; **Tarih ↓ / ↑** klasör içindeki ve düz listedeki tarih sırasını değiştirir, ekler ana evrakının altında kalır. Klavyede **↑ ↓** ile gezin, **→ / ←** ile klasörü ya da ana evrakın eklerini açıp kapatın (ekteyken **←** ana evraka döner). Yalnız sağ/sol oklarla ekleri açıp kapatmak evrak istemez. Kapalı ekler, **Listelenenleri seç** ve toplu indirmedeki **Evrak sekmesinde listelenenler** kapsamında kalır.
 
 UDF ve TIFF önizlemesi belgeyi cihazınızda işler. UDF'nin sayfa düzeni resmî editörden farklı olabilir; e-imza doğrulaması yapılmaz. Okunamayan veya desteklenmeyen belgede özgün dosyayı indirip uygun araçla açın. Dosya ekranındaki özet ve önizlemeyi resmî belgeyi kontrol ederek kullanın.
 
@@ -80,6 +81,26 @@ UDF ve TIFF önizlemesi belgeyi cihazınızda işler. UDF'nin sayfa düzeni resm
 **Dosyada kalan tutar**, mahkeme ve icra dosyalarının **Özet** ekranındaki UYAP Tahsilat/Reddiyat yanıtından alınır. **Tutarları yenile** açık dosyanın bilgisini yeniler. Son alınan tutar ve tarih Chrome profilinde şifreli saklanarak dosya kartında ve hızlı bakışta gösterilir; karttaki **Getir / Güncelle** Özet ekranını açar. Dosya taraması tutarları topluca sorgulamaz. Eklenti bakiye hesaplamaz ve alınamayan tutarı sıfır göstermez; önceki kayıt tarihiyle korunur. Kayıtlar şifreli yedeğe dahildir ve **Tüm verileri sil** ile silinir. Savcılık dosyalarında kalan tutar alanı yoktur.
 
 ![Safahat: kaydedilen işlem listesi, alınma tarihi ve yeni sorgu için kalan süre — örnek veriler](docs/images/10-kaydedilen-safahat.png)
+
+## Evraktaki karar atıfları
+
+**1.19.47** sürümünde açtığınız evrakın okunabilir metnindeki karar künyeleri cihazınızda taranır. Önizleme çubuğundaki **Atıflar** düğmesi listeyi açıp kapatır; aynı künye tek satırda, tekrar sayısıyla gösterilir. Yargıtay, Danıştay, Anayasa Mahkemesi ve tanınabilen bölge adliye mahkemesi künyeleri aranır. Bulunan künye, kararın gerçekten var olduğunu veya alıntının doğru olduğunu doğrulamaz; kaynak kararı kontrol edin.
+
+| Evrak biçimi | Atıflar görünümü |
+|---|---|
+| **UDF** | Görüntüleyicinin okuyabildiği gövde metni listelenir; ekrandaki metinle birebir eşleşen künyelerin altı çizilir. Fareyi çizginin üstüne getirince vurgu görünür; tıklayınca **Tam metni aç**, **Künyeyi kopyala** ve **Listede göster** menüsü açılır. Listedeki satıra tıklamak evraktaki ilk işaretli geçişe kaydırır. |
+| **HTML** | Güvenli önizlemede künyeler görsel olarak altı çizili gösterilir ve Atıflar listesine eklenir. Belge çerçevesindeki çizgiler tıklanmaz; işlemleri listeden yapın. |
+| **TXT / XML** | Okunabilir metinden Atıflar listesi hazırlanır; evrakta alt çizgi veya atfın yerine kaydırma yoktur. |
+| **Metin katmanlı PDF** | Sayfa metni paket içindeki yerel PDF işçisiyle okunur ve listelenir. PDF görünümüne alt çizgi eklenmez; satırdan kaynak sayfaya gidilmez. |
+| **Taranmış PDF / TIFF / resim** | OCR yapılmaz. PDF'in metin katmanı olmayan sayfaları taranamaz; karma PDF'te okunabilen sayfaların sonuçları korunur ve atlanan sayfa sayısı gösterilir. TIFF ve resimde tarama yapılamadığı açıklanır. |
+
+UDF'de **300 karakteri aşmayan** bir künye seçtiğinizde seçimin yanında **Kararı bul** çıkar; bağlantıyı tıklayınca arama sayfası açılır. Listede **↑ ↓**, **Home / End** ile gezin, satır odaktayken **Enter** ile tam metin bağlantısını açın. **Tab** satırın düğmelerine geçer. **Esc** açık atıf menüsünü veya seçim bağlantısını kapatır; Atıflar alanında **← →** evrakı değiştirmez.
+
+HTML, TXT ve XML taramasında dosya sınırı **10 MB**, metin sınırı **2 MB**'tır; UDF'de yalnız görüntüleyicinin okuyabildiği bölüm taranır. PDF taramasında dosya sınırı **64 MB**, tarama sınırı ilk **300 sayfa** ve en çok **2 MB metin**'dir. Sınır nedeniyle eksik tarama açıkça belirtilir. Kısmen okunabilen PDF'te metin katmanı bulunmayan sayfalar ile metni okunamayan sayfalar ayrı uyarılır; okunamayan PDF, taranmış belge olarak sunulmaz. Evrak değişince veya ekran kapanınca tarama iptal edilir ve önceki evrakın sonuçları bırakılır. Duruşma paketi veya başka bir belge işlemi PDF okuyucusunu kullanıyorsa **Yeniden dene** gösterilir; diğer işlem bitince düğmeye basın.
+
+**Ayarlar → Evrak görüntüleyici → Evraktaki karar atıflarını işaretle** ile taramayı ve Atıflar arayüzünü kapatabilirsiniz. Seçenek başlangıçta açıktır.
+
+**Tam metni aç** ve **Kararı bul**, yalnız siz tıklayınca [Legaluga karar arama sayfasını](https://mcp.legaluga.com/karar-bul) normal bir yeni sekmede açar. Bağlantının `#k=` bölümünde yalnız mahkeme/daire, varsa il, esas veya başvuru numarası, karar numarası, varsa tarih ve künye uyarısı taşınır; seçilen künye önce gelir, listeden en çok 10 künye aktarılır. Belge, belge metni, seçimin ham metni, taraf/dosya bilgisi ve UYAP oturumu aktarılmaz. `#k=` sayfanın istemci kodu tarafından okunabilir; Base64URL kodlaması şifreleme değildir. Belge yükleme veya otomatik dış sorgu yapılmaz.
 
 ## Banka sorgusu ve cevapları
 
@@ -141,11 +162,11 @@ Devam edilen iş başlangıçta kaydedilen planı kullanır; sonradan değiştir
 
 ## Verileriniz ve şifreleme
 
-Dosya indeksi, notlar, tercihler, safahat ve banka takip özetleri bu Chrome profilinde yerel olarak saklanır. Oturum ve dosya belgeleri geliştiricinin sunucusuna aktarılmaz. Belge okuma UYAP'a, canlı tebligat sorgusu ilgili resmî hizmete bağlanır.
+Dosya indeksi, notlar, tercihler, safahat ve banka takip özetleri bu Chrome profilinde yerel olarak saklanır. Oturum ve dosya belgeleri geliştiricinin sunucusuna aktarılmaz. **Tam metni aç / Kararı bul** bağlantısını tıklarsanız yalnız karar künyesi alanları Legaluga karar arama sayfasına aktarılır; belge yüklenmez. Belge okuma UYAP'a, canlı tebligat sorgusu ilgili resmî hizmete bağlanır.
 
 Yerel kayıtlar **AES-256-GCM** ile şifrelenir. Dışa aktarılamayan anahtar uzantının bu profildeki IndexedDB alanında tutulur. Şifreleme kodunun açık olması kullanıcı anahtarını veya belgelerini kaynak deposuna açmaz; ele geçirilmiş bir tarayıcı profilinden tam koruma garantisi de vermez.
 
-**Şifreli yedekle** için kullanıcı parolası belirlenir; parola gönderilmez veya saklanmaz. Unutulan parola kurtarılamaz. Yanlış parola ya da bozuk yedek mevcut kayıtları değiştirmez. CSV dışa aktarımı şifresizdir; dosya bilgisi içeren çıktıları uygun yerde saklayın.
+**Şifreli yedekle** için en az 6 karakterli kullanıcı parolası belirlenir; parola gönderilmez veya saklanmaz. Unutulan parola kurtarılamaz. Notlar ekranında Kaydet ve Vazgeç altında notların internete gönderilmediği, cihazda şifreli saklandığı ve başka cihazda yedek olmadan cihaz kaybında geri getirilemeyeceği açıklanır. Yanlış parola ya da bozuk yedek mevcut kayıtları değiştirmez. CSV dışa aktarımı şifresizdir; dosya bilgisi içeren çıktıları uygun yerde saklayın.
 
 Teknik hata raporlama başlangıçta kapalıdır. Açarsanız izin verilen teknik hata ve sürüm bilgileri Sentry'ye gönderilir; kişi/dosya bilgileri, belgeler, ham UYAP yanıtı, çerez ve oturum bilgileri rapora eklenmez. Ağ bağlantısı alıcıya IP adresini gösterir. Veri akışı ve silme sınırları [Gizlilik politikası](docs/PRIVACY.md), güvenlik bildirim yolu [SECURITY.md](SECURITY.md) içindedir.
 

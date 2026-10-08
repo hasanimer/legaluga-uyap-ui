@@ -1,7 +1,7 @@
 // Ham hata metni, UYAP yanıtı ve sayfa adresi bu sınırdan dışarı çıkmaz.
 (() => {
   if (globalThis.UHDReporter) return;
-  const FILES = new Set(['background.js', 'common.js', 'content.js', 'popup.js', 'options.js', 'onboarding.js', 'tabs.js', 'ui.js', 'udf.js', 'tiff.js']);
+  const FILES = new Set(['background.js', 'common.js', 'content.js', 'popup.js', 'options.js', 'onboarding.js', 'tabs.js', 'ui.js', 'udf.js', 'tiff.js', 'kunye-ayikla.js', 'atif-paneli.js']);
   const TYPES = new Set(['Error', 'TypeError', 'ReferenceError', 'SyntaxError', 'RangeError', 'DOMException', 'Fatal', 'UdfHatasi', 'TiffHatasi']);
   const CODES = new Set(['PRTL_GNL_100026', 'PRTL_GNL_100063', 'giris-sayfasi', 'baska-oturum', 'safahat-art-arda']);
   const OPERATIONS = Object.freeze({
@@ -9,7 +9,7 @@
     update: 'Güncelleme hatası', 'file-open': 'Dosya açma hatası', 'evrak-open': 'Evrak açma hatası',
     safahat: 'Safahat görüntüleme hatası', ozet: 'Dosya özeti hatası',
     udf: 'UDF görüntüleme hatası', tiff: 'TIFF görüntüleme hatası', html: 'HTML evrak görüntüleme hatası', storage: 'Yerel depolama hatası',
-    session: 'Oturum denetimi hatası', test: 'Legaluga Sentry kurulum testi'
+    session: 'Oturum denetimi hatası', atif: 'Atıf tarama hatası', test: 'Legaluga Sentry kurulum testi'
   });
   const SOURCES = new Set(['background', 'popup', 'content']);
   const source = typeof document === 'undefined' ? 'background' : location.protocol === 'chrome-extension:' ? 'popup' : 'content';

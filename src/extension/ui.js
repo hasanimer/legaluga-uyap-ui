@@ -1885,14 +1885,15 @@
     function backupPassword(repeat) {
       return new Promise(resolve => {
         const id = `uhd-backup-${crypto.randomUUID()}`;
+        const { BACKUP_PASSWORD_MIN_LENGTH: minLength, BACKUP_PASSWORD_MAX_LENGTH: maxLength } = UHDVaultCrypto;
         const dialog = el('dialog', { class: 'backup-password', 'aria-labelledby': id });
-        const password = el('input', { type: 'password', autocomplete: repeat ? 'new-password' : 'current-password', minlength: '12', maxlength: '1024', required: true, 'data-backup-password': 'main' });
-        const again = repeat ? el('input', { type: 'password', autocomplete: 'new-password', minlength: '12', maxlength: '1024', required: true, 'data-backup-password': 'again' }) : null;
+        const password = el('input', { type: 'password', autocomplete: repeat ? 'new-password' : 'current-password', minlength: String(minLength), maxlength: String(maxLength), required: true, 'data-backup-password': 'main' });
+        const again = repeat ? el('input', { type: 'password', autocomplete: 'new-password', minlength: String(minLength), maxlength: String(maxLength), required: true, 'data-backup-password': 'again' }) : null;
         const error = el('p', { class: 'backup-error', role: 'alert' });
         const cancel = el('button', { type: 'button', class: 'btn' }, 'Vazgeç');
         const form = el('form', null,
           el('h3', { id }, repeat ? 'Yedek parolası belirleyin' : 'Yedeğin parolasını girin'),
-          el('p', null, repeat ? 'Yedek bu parolayla şifrelenir. En az 12 karakter kullanın ve parolayı güvenli bir yerde saklayın; unutulursa yedek açılamaz.' : 'Parola yalnız bu cihazda yedeği açmak için kullanılır. Mevcut veriler, yedek doğrulanmadan değiştirilmez.'),
+          el('p', null, repeat ? `Yedek bu parolayla şifrelenir. En az ${minLength} karakter kullanın ve parolayı güvenli bir yerde saklayın; unutulursa yedek açılamaz.` : 'Parola yalnız bu cihazda yedeği açmak için kullanılır. Mevcut veriler, yedek doğrulanmadan değiştirilmez.'),
           el('label', null, 'Parola', password), again ? el('label', null, 'Parola tekrar', again) : null, error,
           el('div', { class: 'backup-actions' }, cancel, el('button', { type: 'submit', class: 'btn primary' }, repeat ? 'Şifreli yedekle' : 'Yedeği aç')));
         dialog.append(form); root.append(dialog);
@@ -1908,7 +1909,7 @@
         dialog.addEventListener('close', () => done(null));
         form.addEventListener('submit', event => {
           event.preventDefault();
-          if (password.value.length < 12 || password.value.length > 1024) { error.textContent = 'Parola en az 12 karakter olmalı.'; return; }
+          if (password.value.length < minLength || password.value.length > maxLength) { error.textContent = `Parola ${minLength}–${maxLength} karakter olmalı.`; return; }
           if (again && password.value !== again.value) { error.textContent = 'Parolalar aynı değil.'; return; }
           done(password.value);
         });
@@ -2226,7 +2227,7 @@
 
         el('h3', null, 'UYAP paneli'),
         el('div', { class: 'box' },
-          check('panelSabit', false, 'Paneli sabit tut', 'Panel UYAP’ın yanına yerleşir, UYAP kalan alana sığar; panel yalnız siz kapatınca kapanır. Kapalıyken panel UYAP’ı küçültmeden üstte açılır, UYAP’a tıklayınca kapanır. Paneldeki raptiye de bu ayarı değiştirir.'),
+          check('panelSabit', true, 'Paneli sabit tut', 'Panel UYAP’ın yanına yerleşir, UYAP kalan alana sığar; panel yalnız siz kapatınca kapanır. Kapalıyken panel UYAP’ı küçültmeden üstte açılır, UYAP’a tıklayınca kapanır. Paneldeki raptiye de bu ayarı değiştirir.'),
           el('div', { class: 'field' }, kisayolSatiri, kisayolDegistir),
           el('div', { class: 'hint' }, 'Araç çubuğundaki Legaluga simgesi ve kısayol UYAP sekmesinde paneli açıp kapatır; başka sitelerde hızlı aramayı açar.')),
 
@@ -2234,6 +2235,10 @@
         el('div', { class: 'box' },
           select('acilisSekme', 'yok', 'Dosya açılınca geçilecek sekme', [['yok', 'Hiçbiri'], ['evrak', 'Evrak'], ['taraf', 'Taraf bilgileri']]),
           el('div', { class: 'hint' }, 'Sekme o dosyada yoksa (ör. Yargıtay dosyaları) hiçbir şeye basılmaz.')),
+
+        el('h3', null, 'Evrak görüntüleyici'),
+        el('div', { class: 'box' },
+          check('atifIsaretle', true, 'Evraktaki karar atıflarını işaretle', 'Açılan evrakın metni yalnız bu cihazda taranır; bulunan Yargıtay, Danıştay, AYM ve bölge adliye künyeleri Atıflar listesinde gösterilir. “Tam metni aç”a tıkladığınızda yalnız künye bilgisi mcp.legaluga.com’da açılan yeni sekmenin adresine eklenir; evrak metni gönderilmez.')),
 
         el('h3', null, 'Güncelleme'),
         el('div', { class: 'box' },

@@ -4,7 +4,7 @@
 
     // ------------------------------------------------ Sekmeler
     const sekmeDugmeleri = SEKMELER.map(([k, ad]) => {
-      const b = el('button', { type: 'button', role: 'tab', id: `${kimlik}-t-${k}`, 'aria-controls': `${kimlik}-p-${k}`, 'data-sekme': k }, ad);
+      const b = el('button', { type: 'button', role: 'tab', id: `${kimlik}-t-${k}`, 'aria-controls': `${kimlik}-p-${k === 'paket' ? 'evrak' : k}`, 'data-sekme': k }, ad);
       b.addEventListener('click', () => sekmeAc(k));
       return b;
     });
@@ -22,6 +22,7 @@
     // Sekme panelleri baştan kurulur ve yerinde kalır, yalnız gizlenip gösterilir: açık PDF yeniden yüklenmez, kaydırma ve
     // yakınlık korunur, aria-controls hep var olan panele işaret eder. İçerik sekme ilk açıldığında yüklenir.
     for (const [k] of SEKMELER) {
+      if (k === 'paket') { paneller[k] = evrakPanel; continue; }
       const p = paneller[k] = k === 'evrak' ? evrakPanel : k === 'indir' ? indirPanel : el('div', { class: k === 'banka' ? 'dp-body ek-banka-panel' : 'dp-body', tabindex: '0' });
       p.id = `${kimlik}-p-${k}`;
       p.setAttribute('role', 'tabpanel');
@@ -39,11 +40,12 @@
         b.tabIndex = on ? 0 : -1;
         b.classList.toggle('on', on);
       }
-      for (const [key, p] of Object.entries(paneller)) p.hidden = key !== k;
+      for (const [key, p] of Object.entries(paneller)) p.hidden = p === evrakPanel ? k !== 'evrak' && k !== 'paket' : key !== k;
+      if (k === 'evrak' || k === 'paket') evrakSekmesi(k);
       if (!yuklenen.has(k)) {
         yuklenen.add(k);
         const p = paneller[k];
-        if (k === 'evrak') { if (kaynak) listeHazir(); else listeAl(); }
+        if (k === 'evrak' || k === 'paket') { if (kaynak) { if (!listeHazirlandi) listeHazir(); } else listeAl(); }
         else if (k === 'indir') { if (!kaynak) listeAl(); bulkLoad(); zipSync(); }
         else if (k === 'banka') { bankaKartiEkle(p); }
         else {
@@ -82,7 +84,7 @@
             p.replaceChildren(el('div', { class: 'dp-err' }, `Alınamadı: ${err.message}`));
           });
         }
-      } else if (k === 'evrak' && ilkBekliyor) { ilkBekliyor = false; sec(0, true, true); }
+      }
       if (k === 'tebligat') tebligatUi?.sync();
     }
 
@@ -123,6 +125,12 @@
     const onKey = ev => {
       // Yerel yedek parola penceresi açıkken Escape ve Tab onun doğal davranışını izler.
       if (shadowRoot.querySelector('.backup-password')?.open || bankReplyPopup?.open) return;
+      // Atıf menüsü ya da "Kararı bul" düğmesi açıkken Esc önce onu kapatır; ekran açık kalır.
+      if (ev.key === 'Escape' && atif?.kapat()) {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        return;
+      }
       // Sayfa kutusunda Esc yazılanı geri alır (ekranı kapatmaz); kutu gösterilen sayfayı yazıyorsa Esc ekranı kapatır.
       const sn = shadowRoot.activeElement;
       // Not yazarken Escape önce taslağı bırakır; düzenleyicinin kendi tuş işleyicisi çalışır.
@@ -141,12 +149,12 @@
         ara.dispatchEvent(new Event('input'));
         return;
       }
-      if (aktif === 'evrak' && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') && !ev.altKey && !ev.ctrlKey && !ev.metaKey && !ev.shiftKey && !panelKeys(box)) {
+      if ((aktif === 'evrak' || aktif === 'paket') && (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') && !ev.altKey && !ev.ctrlKey && !ev.metaKey && !ev.shiftKey && !panelKeys(box)) {
         const odak = shadowRoot.activeElement;
         const kap = box.querySelector('.docview');
         const yazi = odak && (odak.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(odak.tagName));
         const kaydir = kap && odak && kap.contains(odak) && kap.scrollWidth > kap.clientWidth + 1;
-        const yerinde = odak && (sekmeCubugu.contains(odak) || ogeler.contains(odak));
+        const yerinde = odak && (sekmeCubugu.contains(odak) || ogeler.contains(odak) || !!atif?.icerir(odak));
         if (!yazi && !kaydir && !yerinde && gorunen.length > 1) {
           ev.preventDefault();
           ev.stopPropagation();
@@ -168,8 +176,9 @@
     if (!beside) hidePanel();
     dosyaEkrani = { viewer, box, close: done, focus: () => close.focus() };
     shadowRoot.append(viewer);
+    syncOverlays();
     const ilkSekme = SEKMELER.some(t => t[0] === o.sekme) ? o.sekme : 'ozet';
-    if (kaynak && ilkSekme !== 'evrak') { listeKur(); suz(); }
+    if (kaynak && ilkSekme !== 'evrak' && ilkSekme !== 'paket') { listeKur(); suz(); }
     if (downloads) bulkOff = downloads.subscribe(bulkWatch);
     zipSync();
     sekmeAc(ilkSekme);

@@ -183,7 +183,8 @@
       if (operation === 'togglePref') {
         if (!/^[A-Za-z][A-Za-z0-9]*$/.test(args)) throw new Error('Tercih adı geçersiz.');
         const prefs = (await read('uhdPrefs')).data.uhdPrefs || {};
-        const next = { ...prefs, [args]: !prefs[args] };
+        const current = prefs[args] === undefined && args === 'panelSabit' ? true : prefs[args];
+        const next = { ...prefs, [args]: !current };
         await write({ uhdPrefs: next }); return { data: next, revision };
       }
       if (operation === 'writeScan') {

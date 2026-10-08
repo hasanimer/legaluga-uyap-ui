@@ -305,7 +305,7 @@
           texts.flatMap(x => (x.sources || []).map(s => s.bytes).filter(b => b instanceof ArrayBuffer)));
       }
     };
-    textJob = { finish: bitir };
+    textJob = { jobId, finish: bitir };
     zaman = setTimeout(() => bitir(null, 'Metin çıkarma süresi doldu; işlem durduruldu.'), 120000);
     try { w = new Worker(chrome.runtime.getURL('durusma-paketi-worker.js')); }
     catch { bitir(null, 'Metin işçisi başlatılamadı.'); return; }
@@ -315,6 +315,43 @@
     try { w.postMessage({ type: 'TEXT', runId: jobId, items, ...(message.sourcesOnly === true ? { sourcesOnly: true } : {}) }, items.map(x => x.bytes)); }
     catch { bitir(null, 'Metin işçisine evrak aktarılamadı.'); }
   }
+  // Atıflar (1.19.47): dosya ekranında açık tek PDF'in sayfa metinleri. Her iş kendi işçisinde ve süreyle sınırlıdır; yeni bir
+  // metin işi, CANCEL_TEXT ya da panelin kapanması işçiyi durdurur (CANCEL_TEXT yanıt beklemez). Baytlar geri gönderilmez.
+  function pdfMetinIsi(message) {
+    const jobId = String(message.jobId || '');
+    const bytes = message.bytes;
+    textJob?.finish([], 'Önceki metin okuma işlemi durduruldu.');
+    const bos = code => ({ sayfalar: [], toplamSayfa: 0, bosSayfa: 0, kesildi: false, code });
+    if (!jobId || !(bytes instanceof ArrayBuffer) || !bytes.byteLength || bytes.byteLength > 64 * 1024 * 1024) {
+      send('PDF_TEXT_RESULT', { jobId, ...bos('pdf-invalid') }); return;
+    }
+    const sayfaSiniri = Number.isSafeInteger(message.sayfaSiniri) && message.sayfaSiniri > 0 && message.sayfaSiniri <= 300 ? message.sayfaSiniri : 300;
+    let w, zaman, finished = false;
+    const bitir = (sonuc, notify = true) => {
+      if (finished) return;
+      finished = true; clearTimeout(zaman);
+      if (textJob === is) textJob = null;
+      if (w) { w.onmessage = null; w.onerror = null; w.onmessageerror = null; try { w.terminate(); } catch {} }
+      if (notify) send('PDF_TEXT_RESULT', { jobId, ...sonuc });
+    };
+    const is = { jobId, finish: (_texts, _hata, notify = true) => bitir(bos('text-stopped'), notify) };
+    textJob = is;
+    zaman = setTimeout(() => bitir(bos('text-timeout')), 120000);
+    try { w = new Worker(chrome.runtime.getURL('durusma-paketi-worker.js')); }
+    catch { bitir(bos('text-worker')); return; }
+    w.onmessage = e => {
+      const d = e.data;
+      if (d?.type !== 'PDF_TEXT_READY' || d.runId !== jobId) return;
+      bitir({ sayfalar: Array.isArray(d.sayfalar) ? d.sayfalar : [], toplamSayfa: Number(d.toplamSayfa) || 0,
+        bosSayfa: Number(d.bosSayfa) || 0, kesildi: d.kesildi === true,
+        ...(Number.isSafeInteger(d.hataSayfa) && d.hataSayfa > 0 ? { hataSayfa: d.hataSayfa } : {}),
+        ...(d.code ? { code: String(d.code) } : {}) });
+    };
+    w.onerror = () => bitir(bos('text-worker'));
+    w.onmessageerror = () => bitir(bos('text-worker'));
+    try { w.postMessage({ type: 'PDF_TEXT', runId: jobId, bytes, sayfaSiniri }, [bytes]); }
+    catch { bitir(bos('text-worker')); }
+  }
   function receive(message) {
     if (!message || message.sessionId !== sessionId) return;
     if (message.type === 'LIST') { dispatch({ type: 'LIST', ...message }); $('baglanti').hidden = true; return; }
@@ -323,6 +360,13 @@
     if (message.type === 'DOCUMENTS') { startWorker(message); return; }
     // Banka cevapları: dosya ekranının aldığı evrakların metni ayrı bir işçide çıkarılır ve geri gönderilir.
     if (message.type === 'EXTRACT_TEXT') { metinIsi(message); return; }
+    // Atıflar: dosya ekranında açık PDF'in sayfa metni; CANCEL_TEXT süren metin işini yanıtsız durdurur.
+    if (message.type === 'EXTRACT_PDF_TEXT') { pdfMetinIsi(message); return; }
+    if (message.type === 'CANCEL_TEXT') {
+      const jobId = String(message.jobId || '');
+      if (jobId && textJob?.jobId === jobId) textJob.finish([], '', false);
+      return;
+    }
     // Dosya ekranında işaretlenen evraklar bu sırayla seçilir ve paket hemen hazırlanır.
     if (message.type === 'SELECT_AND_START') {
       dispatch({ type: 'SELECT_SET', ids: message.orderedIds });

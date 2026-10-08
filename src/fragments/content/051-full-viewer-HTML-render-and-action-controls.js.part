@@ -1,5 +1,4 @@
 
-    paketAc.addEventListener('click', () => paketModu(!paketMod));
 
     // ------------------------------------------------ İcra Banka sorgusu sekmesi: sorgu, talep kontrolü ve banka cevapları
     // Banka (gönderen), özgün başlık ve tarih yalnız evrak listesinden gelir. Cevaplar yorumlanmaz;

@@ -3,7 +3,7 @@
     if (dosyaEkrani) dosyaEkrani.close(restore);
   }
   // Sabit panel yanda açıkken görüntüleyici paneli gizlemez: yanında açılır, kutu kipsiz olur ve Tab panele de geçer.
-  // Alt yuvada (dar pencere) yer kalmadığı için görüntüleyici eskisi gibi paneli gizleyip tam ekran açılır.
+  // Alt yuvada ve çekmece kipinde görüntüleyici önce paneli gizler; sağ sekme aynı evrak açıkken geri açabilir.
   const besideDock = () => panelMode === 'dock' && !!panel && !panel.hidden && shadowRoot.host.dataset.dock === 'side';
   // Odak yandaki paneldeyse tuşlar panelindir (not düzenleme, arama, tutamak); görüntüleyici karışmaz.
   const panelKeys = box => box.getAttribute('aria-modal') !== 'true' && !!panel && panel.contains(shadowRoot.activeElement);
@@ -16,11 +16,11 @@
       done();
     } else if (ev.key === 'Tab') {
       const scope = box.getAttribute('aria-modal') === 'true' ? [box] : [panel, box];
-      const targets = scope.flatMap(s => [...s.querySelectorAll(FOCUSABLE)]).filter(x => visible(x) && x.tabIndex >= 0);
+      const targets = [launch, ...scope.flatMap(s => [...s.querySelectorAll(FOCUSABLE)])].filter(x => x && visible(x) && x.tabIndex >= 0);
       if (!targets.length) return;
       const active = shadowRoot.activeElement;
       const next = ev.shiftKey ? targets[targets.length - 1] : targets[0];
-      if (!scope.some(s => s.contains(active)) || (ev.shiftKey ? active === targets[0] : active === targets[targets.length - 1])) {
+      if (!(active === launch || scope.some(s => s.contains(active))) || (ev.shiftKey ? active === targets[0] : active === targets[targets.length - 1])) {
         ev.preventDefault();
         next.focus();
       }

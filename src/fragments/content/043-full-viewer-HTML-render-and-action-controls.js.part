@@ -33,12 +33,11 @@
       listeyiCiz();
     }
     function paketModu(on) {
-      if (on === paketMod || (on && (zipRun || !kaynak || kaynak.list.kilit))) return;
-      if (!on && paketSession) paketKapat();
+      if (on === paketMod) return;
       paketMod = on;
       if (on && !paketDurum.textContent) paketDurum.textContent = 'Evrakları açıp inceleyin; pakete almak istediklerinizi işaretleyin (listedeyken Boşluk tuşu da işaretler).';
       listeyiCiz();
-      if (on) ogeler.focus({ preventScroll: true });
+      // Sekme değişimi açık paketi iptal etmez; seçim ve hazırlama oturumu korunur.
     }
     // Önizleme alanında paket sırası: Yukarı/Aşağı, sürükleme (tutamak) ve Alt+↑/↓; değişiklik "Elle sıraladığım" olur.
     function paketSiraGoster(odakK, odakEylem) {

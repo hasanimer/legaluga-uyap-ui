@@ -26,7 +26,7 @@
 /* UYAP'ın erişilebilirlik aracı !important stillerle host'a yazı tipi/aralık geçirebilir; panel ve pencereler etkilenmez. */
 :host(#uhd-host){font:initial!important;letter-spacing:normal!important;word-spacing:normal!important;text-transform:none!important;text-indent:0!important;text-shadow:none!important}
 .launch{position:fixed;right:0;top:clamp(116px,calc(50% - 112px),calc(100dvh - 76px));transform:translateY(-50%);writing-mode:vertical-rl;writing-mode:sideways-lr;background:${BRAND.primary};color:#fff;border:0;
-  border-radius:12px 0 0 12px;padding:16px 10px;min-width:40px;min-height:104px;font:600 12px "Segoe UI",system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 16px rgba(16,75,73,.24);z-index:1;transition:background .15s,box-shadow .15s}
+  border-radius:12px 0 0 12px;padding:16px 10px;min-width:40px;min-height:104px;font:600 12px "Segoe UI",system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 16px rgba(16,75,73,.24);z-index:6;transition:background .15s,box-shadow .15s}
 .launch:hover{background:${BRAND.primaryDark};box-shadow:0 6px 20px rgba(16,75,73,.32)}
 .launch[aria-expanded=true]{visibility:hidden}
 .launch-tip{position:fixed;right:52px;top:clamp(116px,calc(50% - 112px),calc(100dvh - 76px));transform:translateY(-50%);z-index:3;width:min(270px,calc(100vw - 68px));box-sizing:border-box;padding:12px 14px;border:1px solid var(--shell-line);border-radius:12px;background:var(--shell-bg);color:var(--shell-text);box-shadow:0 8px 28px #0003;font:12px/1.45 "Segoe UI",system-ui,sans-serif}
@@ -34,8 +34,8 @@
 .launch-tip strong{display:block;font-size:13px;color:var(--shell-accent)}
 .launch-tip p{margin:5px 0 9px}.launch-tip button{border:0;border-radius:7px;background:${BRAND.primary};color:#fff;padding:6px 10px;font:inherit;font-weight:600;cursor:pointer}
 .launch-tip button:focus-visible{outline:3px solid var(--shell-focus);outline-offset:2px}
-.panel{position:fixed;top:0;right:0;height:100vh;height:100dvh;width:var(--dock-width,min(480px,100vw));box-shadow:-8px 0 36px rgba(0,0,0,.2);z-index:2;overscroll-behavior:contain}
-:host([data-dock=drawer]) .panel{top:var(--drawer-top,0px);height:calc(100dvh - var(--drawer-top,0px));border-top-left-radius:12px;overflow:hidden;box-shadow:-10px 0 40px rgba(0,0,0,.28)}
+.panel{position:fixed;top:0;right:0;zoom:var(--panel-scale,1);height:var(--panel-height,100dvh);width:var(--panel-width,min(480px,100vw));box-shadow:-8px 0 36px rgba(0,0,0,.2);z-index:2;overscroll-behavior:contain}
+:host([data-dock=drawer]) .panel{top:var(--drawer-top,0px);border-top-left-radius:12px;overflow:hidden;box-shadow:-10px 0 40px rgba(0,0,0,.28)}
 .panel .grip{position:absolute;left:-5px;top:0;bottom:0;width:10px;cursor:ew-resize;z-index:1;touch-action:none}
 .panel .grip::after{content:"";position:absolute;left:4px;top:50%;width:3px;height:44px;margin-top:-22px;border-radius:2px;background:var(--shell-muted);opacity:0;transition:opacity .15s}
 .panel .grip:hover::after,.panel .grip:focus-visible::after,.panel .grip.drag::after{opacity:.7}
@@ -67,7 +67,7 @@
 .sr{position:fixed;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .panel:not([hidden]) ~ .notifications{right:calc(var(--dock-width,480px) + 44px);max-width:min(440px,calc(100vw - var(--dock-width,480px) - 60px))}
 @media(max-width:800px){:host(:not([data-dock=drawer])) .panel:not([hidden]) ~ .notifications{right:56px;bottom:80px;max-width:calc(100vw - 68px)}.notifications{right:56px;bottom:12px;max-width:calc(100vw - 68px)}}
-:host([data-dock=bottom]) .panel{top:auto;bottom:0;width:100vw;height:var(--dock-height);box-shadow:0 -8px 36px rgba(0,0,0,.2)}
+:host([data-dock=bottom]) .panel{top:auto;bottom:0;box-shadow:0 -8px 36px rgba(0,0,0,.2)}
 :host([data-dock=bottom]) .panel:not([hidden]) ~ .notifications{right:56px;bottom:calc(var(--dock-height) + 12px);max-width:calc(100vw - 68px)}
 .announcement{width:360px;max-height:60vh;max-height:60dvh;overflow:auto;overscroll-behavior:contain;pointer-events:auto;padding:10px 12px;border:1px solid var(--shell-line);border-left:3px solid var(--shell-accent);border-radius:12px;background:var(--shell-bg);color:var(--shell-text);box-shadow:0 6px 24px #0002;font:12px/1.45 "Segoe UI",system-ui,sans-serif}
 .announcement[hidden]{display:none}.announcement.scrollable{pointer-events:auto}
@@ -86,8 +86,10 @@
 .announcement-body :is(td,th){border:1px solid var(--shell-line);padding:6px}
 @media(prefers-reduced-motion:reduce){.launch{transition:none}.toast.busy .txt::before{animation:none}}
 .viewer{position:fixed;inset:0;background:rgba(16,24,40,.55);z-index:4;display:flex;align-items:center;justify-content:center}
-:host([data-dock=side]) .panel:not([hidden]) ~ .viewer{right:var(--dock-width)}
-.viewer .box{background:var(--shell-bg);width:min(1000px,calc(100% - 24px));height:min(92dvh,calc(100% - 16px));border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.35);font:13px/1.4 "Segoe UI",system-ui,sans-serif;color:var(--shell-text)}
+:host(:is([data-dock=side],[data-dock=drawer])) .panel:not([hidden]) ~ .viewer{right:var(--dock-width)}
+:host([data-dock=bottom]) .panel:not([hidden]) ~ .viewer{bottom:var(--dock-height)}
+.viewer .box{background:var(--shell-bg);width:calc(100% - 32px);height:calc(100% - 32px);border-radius:16px;display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.35);font:13px/1.4 "Segoe UI",system-ui,sans-serif;color:var(--shell-text)}
+.viewer .box.expanded{width:100%;height:100%;border-radius:0}
 .viewer .bar{display:flex;gap:10px;align-items:center;padding:10px 12px;background:${BRAND.primary};color:#fff;flex-wrap:wrap}
 .viewer .bar b{flex:1;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .viewer .bar a,.viewer .bar button{color:#fff;border:1px solid rgba(255,255,255,.6);background:none;border-radius:6px;padding:8px 10px;font:inherit;cursor:pointer;text-decoration:none}
@@ -240,7 +242,7 @@
 .viewer .dp-more{margin-top:10px;font-size:12px}
 .viewer .gezinme{display:inline-flex;align-items:center;gap:6px}
 .viewer .konum{min-width:56px;text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
-.viewer .box.ekran{width:min(1280px,calc(100% - 24px));container:ekran/inline-size}
+.viewer .box.ekran{container:ekran/inline-size}
 .viewer .ek-banka table{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
 .viewer .ek-banka-grup{border:1px solid var(--shell-line);border-radius:8px;margin-top:8px;overflow:hidden}
 .viewer .ek-banka-grup summary{padding:10px 12px;cursor:pointer;font-weight:600}
@@ -348,7 +350,9 @@
 .viewer .ek-notlar{max-width:960px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:16px}
 .viewer .ek-not-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .viewer .ek-not-heading h3{margin:0;font-size:18px}
-.viewer .ek-not-local{font-size:12px;color:var(--shell-muted)}
+.viewer .ek-not-disclosure{margin:0;color:var(--shell-muted);font-size:12px;line-height:1.65;overflow-wrap:anywhere}
+.viewer .ek-not-disclosure p{margin:0 0 6px}
+.viewer .ek-not-disclosure p:last-child{margin-bottom:0}
 .viewer .ek-not-editor{border:1px solid var(--shell-line);border-radius:12px;background:var(--shell-bg);overflow:hidden;box-shadow:0 2px 8px #00000005}
 .viewer .ek-not-editor:focus-within{border-color:var(--shell-focus);box-shadow:0 0 0 2px color-mix(in srgb,var(--shell-focus) 18%,transparent)}
 .viewer .note-input{box-sizing:border-box;display:block;width:100%;min-height:clamp(240px,42vh,440px);resize:vertical;overflow:auto;border:0;background:transparent;color:var(--shell-text);padding:22px;font:inherit;font-size:14px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}
@@ -417,6 +421,7 @@
 :host([data-theme=dark]) .viewer .ek-evrak{--evrak-surface:#141e28;--evrak-paper:#0f1720}
 .viewer .ek-liste>:not(.ek-ogeler){flex:none}
 .viewer .ek-liste-baslik{margin:0 2px 2px;font-size:15px;font-weight:600;line-height:1.5}
+.viewer .ek-liste-baslik-satir{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none}
 .viewer .ek-arama{position:relative;display:flex;align-items:center;gap:4px;min-height:40px;border:1px solid var(--shell-line);border-radius:9px;background:var(--shell-bg)}
 .viewer .ek-arama::before{content:'';position:absolute;left:13px;top:12px;width:10px;height:10px;border:1.5px solid var(--shell-muted);border-radius:50%;pointer-events:none}
 .viewer .ek-arama::after{content:'';position:absolute;left:23px;top:24px;width:6px;height:1.5px;background:var(--shell-muted);transform:rotate(45deg);transform-origin:left;pointer-events:none}
@@ -462,6 +467,7 @@
 .viewer .ek-liste:has(>.ek-teyit:not([hidden]))>.ek-ogeler{min-height:120px}
 .viewer .ek-onbar-bilgi{min-width:0}
 .viewer .ek-onbar-eylemler{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.viewer .ek-onbar-eylemler>.ek-evrakad{flex:1;min-width:120px}
 .viewer .ek-belge-eylemler{display:flex;align-items:center;flex-wrap:wrap;gap:6px;min-width:0}
 .viewer .ek-onbar .gezinme{gap:6px;flex-wrap:wrap}
 .viewer .ek-onbar .konum{color:var(--shell-muted);min-width:46px;text-align:center;font-variant-numeric:tabular-nums}
@@ -496,7 +502,7 @@
 .viewer .docview:focus-visible{outline:3px solid var(--shell-focus);outline-offset:-3px}
 .viewer .docyer{padding:28px;color:var(--shell-muted)}
 .viewer .box:focus{outline:none}
-${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff && globalThis.UHD.tiff.CSS) || ''}
+${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff && globalThis.UHD.tiff.CSS) || ''}${globalThis.UHDAtifPaneli?.CSS || ''}
 [hidden]{display:none!important}
 `;
   let panel, ui, launch, introTip, pinButton, shadowRoot, focusBeforePanel, announcementEl, notificationArea, liveRegion, alertRegion, welcomeHost, welcomeShadow;
@@ -607,6 +613,8 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
   // konum (satır içi transform) yazılır (bkz. releaseDockedModals).
   let dockStyle, dockObserver, dockFrame = 0, dockTimer = 0, dockOverlay = null;
   const dockFixed = new Map();
+  const dockCandidates = new Set(), dockCandidateRoots = new Set();
+  let dockCandidatesReady = false;
   let dockFixedIds = 0;
   const DOCK_FIXED_ATTR = 'data-legaluga-dock-fixed';
 
@@ -620,6 +628,27 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
       if (node.isConnected) continue;
       restoreDockFixed(node, original);
       dockFixed.delete(node);
+    }
+  }
+
+  // UYAP satır ve sekme değişimlerinde bütün belgeyi yeniden taramak pahalıdır. İlk açılışta sabit öğeler
+  // bulunur; sonraki ölçümlerde yalnız yeni alt ağaçlar ve kendi stili değişen öğeler keşfedilir.
+  function collectDockCandidates() {
+    if (!dockCandidatesReady) {
+      dockCandidateRoots.add(document.body);
+      dockCandidatesReady = true;
+    }
+    const roots = [...dockCandidateRoots].filter(node => node?.isConnected);
+    dockCandidateRoots.clear();
+    for (const root of roots) {
+      if (roots.some(other => other !== root && other.contains?.(root))) continue;
+      for (const node of [root, ...root.querySelectorAll('*')]) {
+        if (node.classList.contains('dx-overlay-wrapper')) continue;
+        if (getComputedStyle(node).position === 'fixed') dockCandidates.add(node);
+      }
+    }
+    for (const node of dockCandidates) {
+      if (!node.isConnected || getComputedStyle(node).position !== 'fixed') dockCandidates.delete(node);
     }
   }
 
@@ -643,6 +672,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     dockFrame = 0;
     if (!panel || panel.hidden || !document.body) return;
     pruneDockFixed();
+    collectDockCandidates();
     if (!dockMeasureStyle) {
       dockMeasureStyle = document.createElement('style');
       dockMeasureStyle.textContent = `[${DOCK_FIXED_ATTR}]{transition:none!important}`;
@@ -653,13 +683,14 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
       if (dockStyle) dockStyle.remove();
       const width = window.innerWidth, height = window.innerHeight;
       const viewportWidth = document.documentElement.clientWidth || width;
-      const stacked = width < 800;
-      const panelWidth = stacked ? width : dockWidthFor(width, pagePrefs.panelGenislik);
+      const stacked = width * pageZoom < 800;
+      const panelWidth = stacked ? width : dockWidthFor(width * pageZoom, pagePrefs.panelGenislik) / pageZoom;
       if (grip) {
-        grip.setAttribute('aria-valuenow', String(panelWidth));
-        grip.setAttribute('aria-valuemax', String(dockMax(width)));
+        grip.setAttribute('aria-valuenow', String(Math.round(panelWidth * pageZoom)));
+        grip.setAttribute('aria-valuemax', String(dockMax(width * pageZoom)));
       }
-      const panelHeight = stacked ? Math.min(Math.round(height * .60), Math.max(240, height - 160)) : height;
+      const physicalHeight = height * pageZoom;
+      const panelHeight = stacked ? Math.min(Math.round(physicalHeight * .60), Math.max(240, physicalHeight - 160)) / pageZoom : height;
       const availableWidth = stacked ? width : width - panelWidth;
       const availableHeight = stacked ? height - panelHeight : height;
       const ratio = availableWidth / width;
@@ -667,8 +698,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
       const zoom = (Number.parseFloat(bodyCss.zoom) || 1) * ratio;
       const host = shadowRoot.host;
       host.dataset.dock = stacked ? 'bottom' : 'side';
-      host.style.setProperty('--dock-width', panelWidth + 'px');
-      host.style.setProperty('--dock-height', panelHeight + 'px');
+      setPanelGeometry(panelWidth * pageZoom, panelHeight * pageZoom);
       const rules = [
         `html{overflow-x:hidden!important;${stacked ? 'overflow-y:hidden!important;' : ''}}`,
         `body{zoom:${zoom}!important;width:${bodyCss.width}!important;max-width:none!important;min-width:0!important;` +
@@ -706,7 +736,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
       // ölçüleri sabitlenir. Sol yarıdaki öğeler (UYAP'ın sol menüsü) serbest kalır; kilitlenirse menü açılıp
       // kapanınca eski genişliğinde donar. Alt yerleşimde oran 1 olduğu için yatay kilide gerek yoktur.
       const free = [];
-      for (const node of document.body.querySelectorAll('*')) {
+      for (const node of dockCandidates) {
         if (node.classList.contains('dx-overlay-wrapper') || !viewportFixed(node)) continue;
         const css = getComputedStyle(node);
         const bottom = stacked && css.bottom !== 'auto' ? `bottom:calc(${css.bottom} + ${panelHeight / zoom}px)!important;` : '';
@@ -731,7 +761,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
       for (const node of dockFixed.keys()) if (node.isConnected) getComputedStyle(node).width;
       dockMeasureStyle.remove();
     }
-    if (overlayOpen() && !besideDock()) queueMicrotask(syncOverlays);
+    if (overlayOpen()) queueMicrotask(syncOverlays);
   }
 
   // Ters zoom'lu katmanda DevExtreme modal pencereyi tüm görünüm alanına göre ortalar; pencere panelin altına taşar.
@@ -859,6 +889,29 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
   const DOCK_MIN = 320;
   const dockMax = width => Math.max(DOCK_MIN, Math.min(720, Math.round(width * .5)));
   const dockWidthFor = (width, pref) => Math.min(dockMax(width), Math.max(DOCK_MIN, Math.round(Number(pref) || Math.min(480, width * .30))));
+  let pageZoom = 1, pageZoomRevision = 0;
+  function setPanelGeometry(width, height, top = 0) {
+    const style = shadowRoot.host.style;
+    style.setProperty('--panel-scale', String(1 / pageZoom));
+    style.setProperty('--panel-width', width + 'px');
+    style.setProperty('--panel-height', height + 'px');
+    style.setProperty('--dock-width', width / pageZoom + 'px');
+    style.setProperty('--dock-height', height / pageZoom + 'px');
+    style.setProperty('--drawer-top', top * pageZoom + 'px');
+  }
+  function applyPageZoom(value) {
+    const zoom = Number(value);
+    if (!Number.isFinite(zoom) || zoom < .25 || zoom > 5 || zoom === pageZoom) return;
+    pageZoom = zoom;
+    if (panelMode === 'dock') schedulePanelFit();
+    else if (panelMode === 'drawer') fitDrawer();
+  }
+  function readPageZoom() {
+    const revision = pageZoomRevision;
+    chrome.runtime.sendMessage({ type: 'uhd-page-zoom' }).then(result => {
+      if (revision === pageZoomRevision) applyPageZoom(result?.zoom);
+    }).catch(() => {});
+  }
 
   // Dosya açılırken UYAP ekranı sürekli değişir; yerleşim açma bitince bir kez yeniden ölçülür.
   function schedulePanelFit() {
@@ -866,9 +919,22 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     dockFrame = requestAnimationFrame(fitPageBesidePanel);
   }
 
+  function resizePanelDock() {
+    // Bir medya sorgusu position:fixed'i DOM degismeden acip kapatabilir.
+    dockCandidateRoots.add(document.body);
+    schedulePanelFit();
+  }
+
   // DevExtreme fare ve odak durumunu sınıfla değiştirir; bunlar sayfanın yerleşimini değiştirmez.
   // Diğer sınıflar, stiller ve yeni/kaldırılan öğeler eskisi gibi tam ölçümü tetikler.
   function dockLayoutRecord(record) {
+    // Modal boyutu ayrı, dar kapsamlı ölçümle güncellenir. Satırların yüklenmesi ya da DevExtreme'in
+    // animasyon stilleri gövdenin zoom'unu kaldırıp yeniden uygulamayı gerektirmez.
+    if (record.target?.closest?.('.dx-overlay-wrapper')) return false;
+    if (record.type === 'childList') {
+      const changed = [...record.addedNodes, ...record.removedNodes];
+      if (changed.length && changed.every(node => node.nodeType !== 1 || node.classList?.contains('dx-overlay-wrapper'))) return false;
+    }
     if (record.type !== 'attributes' || record.attributeName !== 'class') return true;
     const layoutClasses = value => (value || '').split(/\s+/)
       .filter(name => name && name !== 'dx-state-hover' && name !== 'dx-state-focused').sort().join(' ');
@@ -877,12 +943,18 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
 
   function startPanelDock() {
     fitPageBesidePanel();
-    window.addEventListener('resize', schedulePanelFit);
+    window.addEventListener('resize', resizePanelDock);
     for (const type of DOCK_MOVE_EVENTS) window.addEventListener(type, trackDockedModalMove, { capture: true, passive: true });
     if (!dockObserver) dockObserver = new MutationObserver(records => {
+      if (dockOverlay && records.some(overlayRecord)) fitDockedModals();
       records = records.filter(dockLayoutRecord);
       if (!records.length) return;
-      if (dockOverlay && records.some(overlayRecord)) fitDockedModals();
+      for (const record of records) {
+        if (record.type === 'childList') {
+          for (const node of record.addedNodes) if (node.nodeType === 1) dockCandidateRoots.add(node);
+        } else if (record.target === document.documentElement) dockCandidateRoots.add(document.body);
+        else if (record.attributeName !== 'hidden' && record.target?.nodeType === 1) dockCandidateRoots.add(record.target);
+      }
       clearTimeout(dockTimer);
       // SweetAlert2 kabı görünüm alanı genişliğinde (panelin altında, ortada) açılır; 120 ms beklenmeden bir sonraki karede
       // yatay kilide alınır. Gecikmeli ölçüm yine de yapılır.
@@ -895,7 +967,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
   }
 
   function stopPanelDock() {
-    window.removeEventListener('resize', schedulePanelFit);
+    window.removeEventListener('resize', resizePanelDock);
     if (dockObserver) dockObserver.disconnect();
     clearTimeout(dockTimer);
     if (dockFrame) cancelAnimationFrame(dockFrame);
@@ -908,10 +980,14 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
       restoreDockFixed(node, original);
     }
     dockFixed.clear();
+    dockCandidates.clear();
+    dockCandidateRoots.clear();
+    dockCandidatesReady = false;
     if (shadowRoot) {
       delete shadowRoot.host.dataset.dock;
       shadowRoot.host.style.removeProperty('--dock-width');
       shadowRoot.host.style.removeProperty('--dock-height');
+      clearPanelGeometry();
     }
   }
 
@@ -919,7 +995,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
   // kapanır. Sabit olmayan panel UYAP'ı küçültmeyen bir çekmecedir: UYAP'ın üst çubuğunun altından başlar, dışarı
   // tıklanınca ya da dosya açılınca kapanır. Kısa bir arama için UYAP iki kez yeniden dizilmez.
   let panelMode = null;   // 'dock' | 'drawer' | null (panel kapalı)
-  const drawerWidth = () => Math.min(window.innerWidth, Math.max(DOCK_MIN, Math.min(480, Math.round(window.innerWidth * .30))));
+  const drawerWidth = () => Math.min(window.innerWidth * pageZoom, Math.max(DOCK_MIN, Math.min(480, Math.round(window.innerWidth * pageZoom * .30))));
   // UYAP'ın üst çubuğu: sayfanın en üstünde duran, genişliğin çoğunu kaplayan sabit (ya da yapışkan) öğe.
   function uyapTopBar() {
     const w = window.innerWidth;
@@ -938,9 +1014,11 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
   }
   function fitDrawer() {
     if (panelMode !== 'drawer' || !panel || panel.hidden) return;
-    const host = shadowRoot.host;
-    host.style.setProperty('--dock-width', drawerWidth() + 'px');
-    host.style.setProperty('--drawer-top', uyapTopBar() + 'px');
+    const top = uyapTopBar();
+    setPanelGeometry(drawerWidth(), (window.innerHeight - top) * pageZoom, top);
+  }
+  function clearPanelGeometry() {
+    for (const name of ['--panel-scale', '--panel-width', '--panel-height', '--drawer-top']) shadowRoot.host.style.removeProperty(name);
   }
   function stopDrawer() {
     window.removeEventListener('resize', fitDrawer);
@@ -948,6 +1026,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     delete shadowRoot.host.dataset.dock;
     shadowRoot.host.style.removeProperty('--dock-width');
     shadowRoot.host.style.removeProperty('--drawer-top');
+    clearPanelGeometry();
   }
   function applyPanelMode() {
     if (!panel || panel.hidden) return;
@@ -969,17 +1048,28 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     else if (panelMode === 'drawer') stopDrawer();
     panelMode = null;
   }
-  // Görüntüleyici ya da dosya paneli açıkken panel sabitlemesi kalkar, panel kapanır ya da yuva alta geçerse görüntüleyici
-  // artık panelin yanında değildir: panel geçici gizlenir (kapanınca geri gelir), görüntüleyici tam ekran ve kipli olur.
+  // Sekmeden panel yeniden açılabilir; görüntüleyici kendi evrakını ve okuma konumunu korur. Panel açıkken
+  // görüntüleyici kalan alanı kullanır ve Tab iki pencere arasında geçer.
   function syncOverlays() {
     if (!overlayOpen()) return;
-    if (panel && !panel.hidden && !besideDock()) return hidePanel();
-    const beside = besideDock();
+    const beside = !!panel && !panel.hidden;
     for (const o of [dosyaEkrani]) {
       if (!o) continue;
       o.box.setAttribute('aria-modal', String(!beside));
       if (!beside && !o.box.contains(shadowRoot.activeElement)) o.focus();
     }
+  }
+
+  function mountViewerExpand(box, close) {
+    const expand = el('button', { type: 'button', class: 'viewer-expand', 'aria-pressed': 'false', title: 'Görüntüleyiciyi kullanılabilir alana genişlet' }, 'Tam ekran');
+    close.parentElement.insertBefore(expand, close);
+    expand.addEventListener('click', () => {
+      const full = box.classList.toggle('expanded');
+      expand.setAttribute('aria-pressed', String(full));
+      expand.textContent = full ? 'Küçült' : 'Tam ekran';
+      expand.title = full ? 'Görüntüleyiciyi pencere boyutuna döndür' : 'Görüntüleyiciyi kullanılabilir alana genişlet';
+    });
+    return expand;
   }
 
   // Sabit panelin sol kenarı sürüklenerek (ya da odaktayken ← → ile) genişletilir. Sürüklerken yalnız panel genişler;
@@ -990,9 +1080,9 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
       'aria-label': 'Panel genişliği', 'aria-valuemin': String(DOCK_MIN), title: 'Sürükleyerek ya da ← → ile panel genişliğini değiştirin' });
     panel.append(grip);
     let start = 0;
-    const current = () => Number.parseFloat(shadowRoot.host.style.getPropertyValue('--dock-width')) || drawerWidth();
+    const current = () => Number.parseFloat(shadowRoot.host.style.getPropertyValue('--panel-width')) || drawerWidth();
     const setWidth = w => {
-      shadowRoot.host.style.setProperty('--dock-width', w + 'px');
+      setPanelGeometry(w, window.innerHeight * pageZoom);
       grip.setAttribute('aria-valuenow', String(w));
     };
     grip.addEventListener('pointerdown', e => {
@@ -1004,7 +1094,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     });
     grip.addEventListener('pointermove', e => {
       if (gripDrag === null) return;
-      gripDrag = dockWidthFor(window.innerWidth, panel.getBoundingClientRect().right - e.clientX);
+      gripDrag = dockWidthFor(window.innerWidth * pageZoom, (panel.getBoundingClientRect().right - e.clientX) * pageZoom);
       setWidth(gripDrag);
     });
     const end = () => {
@@ -1021,7 +1111,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
       e.preventDefault();
       e.stopPropagation();
       if (panelMode !== 'dock' || shadowRoot.host.dataset.dock !== 'side') return;
-      const w = dockWidthFor(window.innerWidth, current() + (e.key === 'ArrowLeft' ? 24 : -24));
+      const w = dockWidthFor(window.innerWidth * pageZoom, current() + (e.key === 'ArrowLeft' ? 24 : -24));
       setWidth(w);
       clearTimeout(gripKeyTimer);
       gripKeyTimer = setTimeout(() => saveDockWidth(w), 250);
@@ -1043,7 +1133,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
   function applyPagePrefs(prefs) {
     const oncekiGenislik = pagePrefs.panelGenislik;
     const oncekiCakismaAcik = pagePrefs.cakismaTarama === true;
-    pagePrefs = prefs || {};
+    pagePrefs = { ...(prefs || {}), panelSabit: prefs?.panelSabit === undefined ? true : prefs.panelSabit };
     if (typeof sessionRequestHooks !== 'undefined') sessionRequestHooks?.preferencesChanged();
     if (pagePrefs.durusmaBildirim === false || (oncekiCakismaAcik && (pagePrefs.cakismaTarama !== true || pagePrefs.cakismaBildirim === false))) closeToast('durusma');
     const theme = pagePrefs.tema || 'auto';
@@ -1093,6 +1183,13 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     alertRegion = el('div', { lang: 'tr', class: 'sr', role: 'alert', 'aria-live': 'assertive', 'aria-atomic': 'true' });
     shadow.append(el('style', null, PAGE_CSS), launch, introTip, panel, notificationArea, liveRegion, alertRegion);
     shadowRoot = shadow;
+    chrome.runtime.onMessage.addListener((message, sender) => {
+      if (sender.id !== chrome.runtime.id || message?.type !== 'uhd-page-zoom') return;
+      pageZoomRevision++;
+      applyPageZoom(message.zoom);
+    });
+    readPageZoom();
+    window.addEventListener('resize', readPageZoom, { passive: true });
     ui = mountUI(panel, {
       mode: 'page',
       downloads: downloadManager,
@@ -1135,7 +1232,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
         if (globalThis.UHDStorage) { applyPagePrefs(await UHDStorage.togglePref('panelSabit')); return; }
         const { uhdPrefs } = await chrome.storage.local.get('uhdPrefs');
         // Depodaki son değeri değiştir; başka bir pencerenin güncellediği tercihi tersine çevirme.
-        const next = { ...(uhdPrefs || {}), panelSabit: !(uhdPrefs && uhdPrefs.panelSabit) };
+        const next = { ...(uhdPrefs || {}), panelSabit: uhdPrefs?.panelSabit === false };
         await chrome.storage.local.set({ uhdPrefs: next });
         applyPagePrefs(next);
       } catch (error) {
