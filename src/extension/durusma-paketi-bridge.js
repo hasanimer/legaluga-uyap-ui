@@ -27,7 +27,9 @@
       reset(); reply({ ok: false });
     }
   });
-  function create(iframe, onMessage) {
+  function create(iframe, onMessage, { exclusive = false } = {}) {
+    if (exclusive && expected && !expected.closed)
+      throw Object.assign(new Error('Başka bir belge işlemi sürüyor.'), { code: 'document-busy' });
     if (expected) expected.close();
     const sessionId = crypto.randomUUID();
     const current = {

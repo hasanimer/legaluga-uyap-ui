@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Legaluga UYAP Asistanı",
   "short_name": "Legaluga UYAP",
-  "version": "1.19.49",
+  "version": "1.19.50",
   "description": "UYAP dosyalarını bulun, evrakı okuyun. Karar künyeleri tıklamanızla Legaluga’ya; isteğe bağlı teknik hata raporları Sentry’ye gider.",
   "homepage_url": "https://legaluga.com",
   "icons": {
@@ -75,6 +75,7 @@
         "evrak-indirme-motoru.js",
         "indirme-panel.js",
         "durusma-paketi-bridge.js",
+        "belge-pdf.js",
         "ui.js",
         "onboarding.js",
         "content.js"

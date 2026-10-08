@@ -44,14 +44,13 @@
 .uhd .sbtn:hover{background:var(--grey-bg);color:var(--text)}
 .uhd .sbtn.clear{right:52px}
 .uhd .sbtn.help{right:18px}
-.uhd .views{display:flex;gap:4px;padding:0 14px 8px;background:var(--card);border-bottom:1px solid var(--line)}
-.uhd .view{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:6px;border:0;border-radius:8px;color:var(--muted);background:none;font-weight:600;cursor:pointer;font-size:12px}
+.uhd .views{display:flex;flex-shrink:0;min-width:0;max-width:100%;gap:4px;padding:4px 14px 8px;background:var(--card);border-bottom:1px solid var(--line);overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;scroll-padding-inline:14px}
+.uhd .view{flex:1 0 auto;min-width:max-content;display:flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:6px;border:0;border-radius:8px;color:var(--muted);background:none;font-weight:600;cursor:pointer;font-size:12px;white-space:nowrap}
 .uhd .view:hover{background:var(--bg);color:var(--text)}
-.uhd .view{min-width:0}
 .uhd .view.ftoggle{flex:none;min-width:40px;padding:6px 8px;gap:4px}
 .uhd .view.ftoggle[aria-expanded=true]{background:var(--bg);color:var(--text)}
 .uhd .view.on{background:var(--soft);color:var(--accent-text)}
-.uhd .view small{font-size:11px;padding:0 5px;border-radius:5px;background:var(--bg);color:var(--muted)}
+.uhd .view small{flex:none;font-size:11px;padding:0 5px;border-radius:5px;background:var(--bg);color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 .uhd .filters{display:flex;flex-direction:column;gap:8px;padding:8px 14px 0}
 .uhd .filters:empty{display:none}
 .uhd .filter-top{display:flex;gap:8px;align-items:center;justify-content:space-between}
@@ -285,7 +284,7 @@
 .uhd button,.uhd input,.uhd select,.uhd textarea{-webkit-tap-highlight-color:transparent}
 @media(prefers-reduced-motion:reduce){.uhd *{transition:none!important;scroll-behavior:auto!important}}
 @container (max-width:400px){.uhd .results{padding:8px}.uhd .view{font-size:11px}.uhd .ib{width:28px}.uhd header strong{font-size:13px}.uhd .settings-toggle{padding:5px 7px}}
-@container (max-width:360px){.uhd .settings-toggle{font-size:0;gap:0}.uhd .view{gap:3px;padding:6px 4px}.uhd .view:not(.on):not(.ftoggle) small{display:none}}
+@container (max-width:360px){.uhd .settings-toggle{font-size:0;gap:0}.uhd .view{gap:3px;padding:6px 4px}}
 `;
 
   // Basit çizgi simgeleri (24×24, stroke).

@@ -32,7 +32,7 @@ function kind(item) {
 }
 const unsupported = (item, message) => Object.assign(new Error(`${item.title || item.id}: ${message}`), { code: 'format-unsupported', id: item.id });
 // PNG/JPEG başlığı çözülmeden okunur: sıkıştırılmış küçük dosya dev bir RGBA tamponuna dönüşmesin.
-function imageSize(item, detected) {
+function imageSize(item, detected, limits = session?.limits || {}) {
   const b = new Uint8Array(item.bytes), dv = new DataView(item.bytes);
   const bad = () => { throw Object.assign(new Error(`${item.title || item.id}: resim başlığı geçersiz`), { code: 'image-load', id: item.id }); };
   let width = 0, height = 0;
@@ -67,7 +67,6 @@ function imageSize(item, detected) {
     }
   }
   if (!width || !height) bad();
-  const limits = session?.limits || {};
   const positive = (n, fallback) => Number.isSafeInteger(n) && n > 0 ? Math.min(n, fallback) : fallback;
   const pixels = width * height;
   if (width > 32768 || height > 32768 || pixels > positive(limits.maxImagePixels, 16 * 1024 * 1024) ||
@@ -76,8 +75,8 @@ function imageSize(item, detected) {
   return { width, height };
 }
 // JPEG ve PNG resim tek sayfaya, kenar boşluğuyla ve oranı korunarak yerleştirilir (yatay resim yatay sayfa).
-async function imagePdf(item, detected) {
-  const size = imageSize(item, detected);
+async function imagePdf(item, detected, limits) {
+  const size = imageSize(item, detected, limits);
   const PDF = globalThis.PDFLib;
   const pdf = await PDF.PDFDocument.create();
   let image;
@@ -103,7 +102,7 @@ async function hash(bytes) {
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
 }
-async function prepare(item, fonts, signal, onPage) {
+async function prepare(item, fonts, signal, onPage, limits = session?.limits || {}) {
   const detected = kind(item);
   const declared = String(item.format || '').toLowerCase();
   const name = globalThis.DurusmaPaketiMetin?.AD || {};
@@ -114,15 +113,17 @@ async function prepare(item, fonts, signal, onPage) {
   const originalSha256 = await hash(item.bytes);
   if (detected === 'pdf') return { ...item, format: 'pdf', originalSha256, sourceFormat: 'pdf' };
   if (detected === 'jpg' || detected === 'png') {
-    return { ...item, bytes: await imagePdf(item, detected), format: 'pdf', sourceFormat: detected, originalSha256, sourcePages: 1, warnings: [] };
+    return { ...item, bytes: await imagePdf(item, detected, limits), format: 'pdf', sourceFormat: detected, originalSha256, sourcePages: 1, warnings: [] };
   }
   if (detected === 'html' || detected === 'xml' || detected === 'text') {
     // Metin evrakı okunur sayfalara çevrilir (UDF paragraf çizicisiyle); görünüm özgün evraktan farklıdır.
     let made;
     try {
       const { model, uyarilar } = globalThis.DurusmaPaketiMetin.model(item.bytes, { mime: item.mime, tur: detected });
+      if (limits.completeText && uyarilar.some(x => /sonu aktarılmadı/.test(x)))
+        throw Object.assign(new Error('Evrak metni eksiksiz okunamadı'), { code: 'text-limit' });
       if (!globalThis.DurusmaPaketiUDF) importScripts('durusma-paketi-udf.js');
-      made = await globalThis.DurusmaPaketiUDF.convert({ model, diagnostics: { complete: true }, signal, limits: session.limits, fonts, esnek: true, uyarilar });
+      made = await globalThis.DurusmaPaketiUDF.convert({ model, diagnostics: { complete: true }, signal, limits, fonts, esnek: true, uyarilar });
     } catch (error) {
       if (signal.aborted || error?.code === 'cancelled') throw error;
       throw Object.assign(new Error(`${item.title || item.id}: ${error?.code === 'metin-bos' ? error.message : `${name[detected]} evrak PDF’e çevrilemedi`}`),
@@ -133,7 +134,7 @@ async function prepare(item, fonts, signal, onPage) {
   }
   if (detected === 'tiff') {
     if (!globalThis.DurusmaPaketiTIFF) importScripts('durusma-paketi-tiff.js');
-    const made = await globalThis.DurusmaPaketiTIFF.convert({ bytes: item.bytes, signal, limits: session.limits, onPage });
+    const made = await globalThis.DurusmaPaketiTIFF.convert({ bytes: item.bytes, signal, limits, onPage });
     if (made.diagnostics?.complete !== true) throw Object.assign(new Error('TIFF sayfaları eksiksiz dönüştürülemedi'),
       { code: 'tiff-incomplete', id: item.id });
     return { ...item, bytes: made.bytes, format: 'pdf', sourceFormat: 'tiff', originalSha256,
@@ -154,11 +155,57 @@ async function prepare(item, fonts, signal, onPage) {
     fonts[face] = await fontFile(face === 'boldItalic' ? 'LiberationSerif-BoldItalic.ttf' : 'LiberationSerif-Italic.ttf');
   }
   const made = await globalThis.DurusmaPaketiUDF.convert({ bytes: item.bytes, model: item.udfModel,
-    diagnostics: item.udfDiagnostics, signal, limits: session.limits, fonts });
+    diagnostics: item.udfDiagnostics, signal, limits, fonts });
   if (made.diagnostics?.complete !== true) throw Object.assign(new Error('UDF eksiksiz dönüştürülemedi'),
     { code: 'udf-incomplete', id: item.id });
   return { ...item, bytes: made.bytes, format: 'pdf', sourceFormat: 'udf', originalSha256,
     sourcePages: made.sourcePages, warnings: made.warnings || [] };
+}
+// Tek belge: mevcut biçim dönüştürücüleri kullanılır; paket kapağı, içindekiler ve sayfa numarası eklenmez.
+const SINGLE_FORMATS = new Set(['udf', 'tiff', 'tif', 'jpg', 'jpeg', 'png', 'html', 'htm', 'xml', 'txt', 'text']);
+const SINGLE_LIMITS = Object.freeze({ pages: 300, maxPages: 300, maxImagePixels: 16 * 1024 * 1024,
+  maxWorkingBytes: 256 * 1024 * 1024, outputBytes: 128 * 1024 * 1024, completeText: true });
+let singlePdfJob = null;
+async function singlePdf(data) {
+  const runId = data.runId;
+  if (singlePdfJob || controller || textBusy) { post({ type: 'SINGLE_PDF_READY', runId, code: 'document-busy' }); return; }
+  const job = { runId, controller: new AbortController() };
+  singlePdfJob = job;
+  const signal = job.controller.signal;
+  try {
+    const item = data.item;
+    if (!item || typeof item.id !== 'string' || !item.id || !(item.bytes instanceof ArrayBuffer) || !item.bytes.byteLength)
+      throw Object.assign(new Error('Belge girişi geçersiz'), { code: 'document-invalid' });
+    if (item.bytes.byteLength > 64 * 1024 * 1024)
+      throw Object.assign(new Error('Belge kaynak sınırını aşıyor'), { code: 'source-limit' });
+    if (!SINGLE_FORMATS.has(String(item.format || '').toLowerCase())) throw unsupported(item, 'PDF dönüşümü desteklenmiyor');
+    const detected = kind(item);
+    if (detected === 'pdf' || (detected === 'zip' && String(item.format).toLowerCase() !== 'udf'))
+      throw unsupported(item, 'Özgün evrakı indirin');
+    if (detected === 'zip' && (!item.udfModel || item.udfDiagnostics?.complete !== true))
+      throw Object.assign(new Error('UDF eksik çözüldü'), { code: 'udf-incomplete' });
+    const fonts = ['zip', 'html', 'xml', 'text'].includes(detected)
+      ? { regular: await fontFile('LiberationSerif-Regular.ttf'), bold: await fontFile('LiberationSerif-Bold.ttf') } : {};
+    signal.throwIfAborted();
+    const made = await prepare(item, fonts, signal, (page, total) => {
+      if (!signal.aborted && singlePdfJob === job) post({ type: 'SINGLE_PDF_PROGRESS', runId, page, total });
+    }, SINGLE_LIMITS);
+    signal.throwIfAborted();
+    if (singlePdfJob !== job) return;
+    const bytes = made.bytes instanceof ArrayBuffer ? new Uint8Array(made.bytes) : made.bytes;
+    if (!(bytes instanceof Uint8Array) || bytes.byteLength < 5 || bytes.byteLength > SINGLE_LIMITS.outputBytes ||
+      bytes[0] !== 0x25 || bytes[1] !== 0x50 || bytes[2] !== 0x44 || bytes[3] !== 0x46 || bytes[4] !== 0x2d)
+      throw Object.assign(new Error('PDF çıktısı geçersiz veya çok büyük'), { code: 'output-limit' });
+    if (!Number.isSafeInteger(made.sourcePages) || made.sourcePages < 1 || made.sourcePages > SINGLE_LIMITS.pages)
+      throw Object.assign(new Error('PDF sayfa sınırı geçersiz'), { code: 'page-limit' });
+    const warnings = (made.warnings || []).filter(x => typeof x === 'string').slice(0, 20).map(x => x.slice(0, 500));
+    if (['html', 'xml', 'text'].includes(detected)) warnings.unshift('Evrak okunur metin olarak PDF’e çevrildi; özgün sayfa düzeni korunmaz.');
+    const output = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    post({ type: 'SINGLE_PDF_READY', runId, bytes: output, warnings }, [output]);
+  } catch (error) {
+    if (singlePdfJob === job) post({ type: 'SINGLE_PDF_READY', runId,
+      code: signal.aborted ? 'cancelled' : /^[a-z][a-z0-9-]{0,40}$/.test(error?.code || '') ? error.code : 'document-convert' });
+  } finally { if (singlePdfJob === job) singlePdfJob = null; }
 }
 async function start(message) {
   const { runId } = message;
@@ -430,6 +477,8 @@ async function pdfSayfalari(data) {
 }
 self.onmessage = ({ data }) => {
   if (!data || typeof data.runId !== 'string') return;
+  if (data.type === 'SINGLE_PDF') { void singlePdf(data); return; }
+  if (data.type === 'CANCEL_SINGLE_PDF') { if (singlePdfJob?.runId === data.runId) singlePdfJob.controller.abort(); return; }
   if (data.type === 'TEXT') { void metinler(data); return; }
   if (data.type === 'PDF_TEXT') { void pdfSayfalari(data); return; }
   if (data.type === 'INIT') {

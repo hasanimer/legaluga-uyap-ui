@@ -4,6 +4,8 @@
   const $ = id => document.getElementById(id);
   let state = M.initial(), transport = null, sessionId = '', nextRun = 0, pdfUrl = null, worker = null, preparse = null, workerTimer = null;
   let textJob = null;
+  let documentPdfJob = null;
+  function stopDocumentPdfJob(notify = false) { documentPdfJob?.finish({ code: 'document-stopped' }, notify); }
   function stopTextJob() { textJob?.finish([], '', false); }
   function stopWorker() {
     clearTimeout(workerTimer); workerTimer = null;
@@ -189,6 +191,7 @@
   async function startWorker(message) {
     if (message.runId !== state.runId || state.phase !== 'running' || !Array.isArray(message.items) ||
         !Array.isArray(message.orderedIds) || worker) return;
+    stopDocumentPdfJob(true);
     const runId = message.runId;
     const items = message.items;
     preparse = new AbortController();
@@ -284,6 +287,7 @@
     }
   }
   function metinIsi(message) {
+    stopDocumentPdfJob(true);
     const jobId = String(message.jobId || '');
     const items = message.items;
     textJob?.finish([], 'Önceki metin okuma işlemi durduruldu.');
@@ -318,6 +322,7 @@
   // Atıflar (1.19.47): dosya ekranında açık tek PDF'in sayfa metinleri. Her iş kendi işçisinde ve süreyle sınırlıdır; yeni bir
   // metin işi, CANCEL_TEXT ya da panelin kapanması işçiyi durdurur (CANCEL_TEXT yanıt beklemez). Baytlar geri gönderilmez.
   function pdfMetinIsi(message) {
+    stopDocumentPdfJob(true);
     const jobId = String(message.jobId || '');
     const bytes = message.bytes;
     textJob?.finish([], 'Önceki metin okuma işlemi durduruldu.');
@@ -352,12 +357,75 @@
     try { w.postMessage({ type: 'PDF_TEXT', runId: jobId, bytes, sayfaSiniri }, [bytes]); }
     catch { bitir(bos('text-worker')); }
   }
+  // Tek belge dönüşümü kendi işçisinde çalışır. UDF, sınırlı önizleme modelinden değil özgün baytlardan paket profiliyle okunur.
+  function documentPdf(message) {
+    const jobId = typeof message.jobId === 'string' ? message.jobId : '';
+    const source = message.item;
+    if (documentPdfJob?.jobId === jobId && jobId) return;
+    if (documentPdfJob || textJob || worker || preparse || ['running', 'cancelling'].includes(state.phase)) {
+      send('DOCUMENT_PDF_RESULT', { jobId, code: 'document-busy' }); return;
+    }
+    const formats = new Set(['udf', 'tiff', 'tif', 'jpg', 'jpeg', 'png', 'html', 'htm', 'xml', 'txt', 'text']);
+    if (!jobId || jobId.length > 120 || !source || !(source.bytes instanceof ArrayBuffer) || !source.bytes.byteLength ||
+      source.bytes.byteLength > 64 * 1024 * 1024 || !formats.has(source.format)) {
+      send('DOCUMENT_PDF_RESULT', { jobId, code: 'document-invalid' }); return;
+    }
+    const parse = new AbortController();
+    let w = null, timer = null, finished = false;
+    const finish = (result, notify = true) => {
+      if (finished) return;
+      finished = true; clearTimeout(timer); parse.abort();
+      if (documentPdfJob === job) documentPdfJob = null;
+      if (w) { w.onmessage = null; w.onerror = null; w.onmessageerror = null; try { w.terminate(); } catch {} }
+      if (notify) send('DOCUMENT_PDF_RESULT', { jobId, ...result }, result.bytes ? [result.bytes] : []);
+    };
+    const job = { jobId, finish };
+    documentPdfJob = job;
+    timer = setTimeout(() => finish({ code: 'document-timeout' }), 120000);
+    const item = { id: 'document', title: typeof source.title === 'string' ? source.title.slice(0, 200) : 'Evrak',
+      format: source.format, mime: typeof source.mime === 'string' ? source.mime.slice(0, 200) : '', bytes: source.bytes };
+    (async () => {
+      if (item.format === 'udf') {
+        const model = await globalThis.UHD.udf.oku(new Blob([item.bytes], { type: 'application/octet-stream' }), { signal: parse.signal, paket: true });
+        if (finished || parse.signal.aborted || documentPdfJob !== job) return;
+        const c = model.sayac || {};
+        const complete = model.paketTani?.complete === true && !model.kesildi && !c.resimReddi && !c.ofsetSorunu && !c.bilinmeyen;
+        if (!complete) { finish({ code: 'udf-incomplete' }); return; }
+        item.udfModel = model;
+        item.udfDiagnostics = { complete, kesildi: null, resimReddi: 0, ofsetSorunu: 0, bilinmeyen: 0,
+          issues: model.paketTani?.issues || [], referenceVerified: false };
+      }
+      if (finished || parse.signal.aborted || documentPdfJob !== job) return;
+      try { w = new Worker(chrome.runtime.getURL('durusma-paketi-worker.js')); }
+      catch { finish({ code: 'document-worker' }); return; }
+      w.onmessage = ({ data }) => {
+        if (finished || documentPdfJob !== job || data?.type !== 'SINGLE_PDF_READY' || data.runId !== jobId) return;
+        if (data.code) { finish({ code: /^[a-z][a-z0-9-]{0,40}$/.test(data.code) ? data.code : 'document-convert' }); return; }
+        const bytes = data.bytes, prefix = bytes instanceof ArrayBuffer && bytes.byteLength >= 5 ? new Uint8Array(bytes, 0, 5) : null;
+        if (!prefix || bytes.byteLength > 128 * 1024 * 1024 || ![37, 80, 68, 70, 45].every((n, i) => prefix[i] === n)) {
+          finish({ code: 'output-limit' }); return;
+        }
+        finish({ bytes, warnings: (Array.isArray(data.warnings) ? data.warnings : []).filter(x => typeof x === 'string').slice(0, 20).map(x => x.slice(0, 500)) });
+      };
+      w.onerror = w.onmessageerror = () => finish({ code: 'document-worker' });
+      try { w.postMessage({ type: 'SINGLE_PDF', runId: jobId, item }, [item.bytes]); }
+      catch { finish({ code: 'document-worker' }); }
+    })().catch(error => {
+      if (finished) return;
+      finish({ code: item.format === 'udf' ? 'udf-incomplete' : /^[a-z][a-z0-9-]{0,40}$/.test(error?.code || '') ? error.code : 'document-convert' });
+    });
+  }
   function receive(message) {
     if (!message || message.sessionId !== sessionId) return;
     if (message.type === 'LIST') { dispatch({ type: 'LIST', ...message }); $('baglanti').hidden = true; return; }
     if (message.type === 'LIST_ERROR') { $('baglanti').hidden = false; $('baglanti').textContent = `Evrak listesi alınamadı: ${message.message || 'Bilinmeyen hata'}`; return; }
     if (message.type === 'ORIGINAL_ERROR') { announce(`Özgün evrak indirilemedi: ${message.message || 'Bilinmeyen hata'}`); return; }
     if (message.type === 'DOCUMENTS') { startWorker(message); return; }
+    if (message.type === 'CONVERT_DOCUMENT') { documentPdf(message); return; }
+    if (message.type === 'CANCEL_DOCUMENT') {
+      if (message.jobId && documentPdfJob?.jobId === message.jobId) stopDocumentPdfJob();
+      return;
+    }
     // Banka cevapları: dosya ekranının aldığı evrakların metni ayrı bir işçide çıkarılır ve geri gönderilir.
     if (message.type === 'EXTRACT_TEXT') { metinIsi(message); return; }
     // Atıflar: dosya ekranında açık PDF'in sayfa metni; CANCEL_TEXT süren metin işini yanıtsız durdurur.
@@ -406,7 +474,7 @@
   $('ekleri-sec').addEventListener('click', () => dispatch({ type: 'SELECT_ATTACHMENTS' }));
   $('tam-liste').addEventListener('click', () => send('LIST_ALL'));
   $('hazirla').addEventListener('click', start); $('durdur').addEventListener('click', cancel);
-  $('kapat').addEventListener('click', () => { if (state.phase === 'running') cancel(); stopTextJob(); stopWorker(); revoke(); send('CLOSE'); transport?.close?.(); });
+  $('kapat').addEventListener('click', () => { if (state.phase === 'running') cancel(); stopDocumentPdfJob(); stopTextJob(); stopWorker(); revoke(); send('CLOSE'); transport?.close?.(); });
   let pointerDrag = null;
   const rows = () => [...$('sira-listesi').children];
   const clearPointerDrag = () => {
@@ -450,9 +518,9 @@
   document.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return;
     if (pointerDrag) { if (pointerDrag.moved) restoreOrder(); clearPointerDrag(); announce('Sürükleme iptal edildi.'); return; }
-    if (transport) { if (state.phase === 'running') cancel(); stopTextJob(); stopWorker(); revoke(); send('CLOSE'); transport.close?.(); }
+    if (transport) { if (state.phase === 'running') cancel(); stopDocumentPdfJob(); stopTextJob(); stopWorker(); revoke(); send('CLOSE'); transport.close?.(); }
   });
-  window.addEventListener('pagehide', () => { stopTextJob(); stopWorker(); revoke(); transport?.close?.(); });
+  window.addEventListener('pagehide', () => { stopDocumentPdfJob(); stopTextJob(); stopWorker(); revoke(); transport?.close?.(); });
   const darkMq = window.matchMedia?.('(prefers-color-scheme: dark)');
   let tema = 'auto';
   const applyTheme = () => { document.documentElement.dataset.theme = tema === 'dark' || tema === 'light' ? tema : (darkMq?.matches ? 'dark' : 'light'); };
