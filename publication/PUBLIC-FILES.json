@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "6b6818d4283df32b84d8b10d2b2cdba3bcd3e22a4205f8df921eadb94ef1d00f"
+      "sha256": "b893db3e857622bafdcb278412a6c4579ced15cea0446c67c53f7b6418984362"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -280,7 +280,7 @@
     },
     {
       "path": "src/extension/tiff.js",
-      "sha256": "21dc5b71855af307f20c08bd318139ec0a199cbfe53e05dd983f79384861a214"
+      "sha256": "017dea1aa83672836a0c5bf9f6f8fecd1518dc2e476b5693eaa7bb9fd19c01f9"
     },
     {
       "path": "src/extension/udf.js",
@@ -712,7 +712,7 @@
     },
     {
       "path": "src/fragments/content/083-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "3226c75fc3c67b54fd3302dedb8f068848331c2974ffad338367c40409b8049e"
+      "sha256": "e590d1ad7ffe12c82440eecf19c3fb320d23214d6d1e6731a687da62afd0ec49"
     },
     {
       "path": "src/fragments/content/085-full-viewer-HTML-render-and-action-controls.js.part",

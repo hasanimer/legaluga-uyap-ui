@@ -105,6 +105,15 @@
     if (!Array.isArray(s.ofs) || !Array.isArray(s.say) || s.ofs.length !== count || s.say.length !== count ||
         s.ofs.some((v, i) => !tamSayi(v) || !tamSayi(v + s.say[i])) || s.say.some(v => !tamSayi(v) || v < 1))
       throw hata('bozuk', 'döşeme/şerit uzunluğu');
+    // Aynı kaynak aralığı tekrar kullanılabilir: her şeridin byte-count'u ayrı çözüm işi
+    // yaratır. Dosya boyutu tek başına bu toplamı sınırlamaz; bütün sıkıştırmalarda sayılır.
+    let sourceWorkBytes = 0;
+    for (const length of s.say) {
+      if (s.c === 1 && length > segmentBytes) throw hata('bozuk', 'ham döşeme/şerit uzunluğu');
+      // Son şerit tam rps kadar padding içerebilir; yine de tam şerit kapasitesini aşamaz.
+      sourceWorkBytes = guvenliTopla(sourceWorkBytes, length);
+      if (sourceWorkBytes > SINIR.paket) throw hata('boyut', 'kaynak çözüm işi');
+    }
     const deflate = s.c === 8 || s.c === 32946;
     const retainedBytes = deflate ? decodedCapacity : 0;
     const aggregateBytes = deflate ? Math.max(1, decodedCapacity) : 0;
@@ -114,7 +123,7 @@
       ? guvenliCarp(guvenliTopla(s.dosemeli ? s.tw : s.g, 64), 32) : 0;
     const peakBytes = guvenliTopla(rawBytes, scratchBytes, retainedBytes, aggregateBytes, codecBytes);
     if (peakBytes > SINIR.cozumBellek) throw hata('boyut', 'çözüm tepe belleği');
-    return Object.freeze({ rawBytes, segmentBytes, decodedCapacity, scratchBytes, retainedBytes, aggregateBytes, codecBytes, peakBytes });
+    return Object.freeze({ rawBytes, segmentBytes, decodedCapacity, sourceWorkBytes, scratchBytes, retainedBytes, aggregateBytes, codecBytes, peakBytes });
   }
 
   // UTIF çözerken tanı iletilerini console.log'a yazar; UYAP sekmesinin konsolu kirlenmesin diye susturulur.
