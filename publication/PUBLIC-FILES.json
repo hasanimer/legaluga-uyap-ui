@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "e17685b786c93c1cf0b1563afdb71b7390ef65c77931917bf7f00830014c9027"
+      "sha256": "612f4db3a8fd353b875ddd71dabed27853b3cd6762f5fd4486a03dfdeb256731"
     },
     {
       "path": "SECURITY.md",
@@ -104,11 +104,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "1f2be4ddc2b0baee039efc17a1c9a66978c7d4c98be824f876f585d57dd197a9"
+      "sha256": "4f55c1811e9974a698c1920fe81816322735ccb667bb7d36562541499d2d57a5"
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "b35cf115f2b763b715bf72c66f3cd4981dc831f84255e23b177c54fc7646d6b4"
+      "sha256": "d176351dcad84b0ec12958218644b2bce1b6449045745c24c9481be43056de5f"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -144,7 +144,7 @@
     },
     {
       "path": "src/extension/atif-paneli.js",
-      "sha256": "c82c6560e32e4ab61e9c6506675ba25667d6fdac38cebc94e39ac641adda19e6"
+      "sha256": "42fa35dc80b87d56c870284afdcdf06d6bb4a119ecd393ecd2ad05f5966d5495"
     },
     {
       "path": "src/extension/belge-pdf.js",
@@ -228,7 +228,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "19b0de37724c25c249b4a4585a46a1830531e886cf39b02cc41ef15da2ff460e"
+      "sha256": "5b54059b2821307acc5c3c60d65c5f96310c86cf8e82b9198a329cb3701387ba"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -620,7 +620,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "505b56e61be787a229d59b53a0de5260dc059c60743bff429def3fa9d50c8862"
+      "sha256": "c1829bc748ac95b2a2ca067a7a17042323e62c9927b00ad28fa7bfe089bb5be1"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -792,7 +792,7 @@
     },
     {
       "path": "src/fragments/content/119-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "f0ff81c38eb98718b2a61887be0d210642031a43671debf7d90bd8cd00284cf5"
+      "sha256": "da7101a44e488224fc2b7dc349cb844eeaa18b3a2b0c496a2802b8dd23a394fd"
     },
     {
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",

@@ -7,7 +7,7 @@ Eklenti, **Av. Hasan İmer Akın** tarafından meslektaşlarının ücretsiz kul
 
 Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lisansıyla** sunar. UYAP işlem motoru özel kaynaklıdır; tam eklenti mağazadan kurulur.
 
-> Bu rehber, **1.19.50** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+> Bu rehber, **1.19.51** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
 
 Görseller gerçek arayüz bileşenlerinden **örnek verilerle** hazırlanmıştır; gerçek kişi, dava veya UYAP oturumu içermez.
 
@@ -92,15 +92,17 @@ Dar panelde sekme metni ve sayaçlar sıkışmaz. Satıra sığmayan sekmelere y
 
 **1.19.49** sürümünde açık Yargıtay, Danıştay veya şehir ve dairesi belirtilen BAM atıfları yalnız esas numarasıyla verilse de listelenir. Karar numarası yazılmamışsa **Karar numarası belirtilmemiş** açıklaması gösterilir ve künye kopyalanabilir; eksik numara veya tarih tamamlanmaz. Karar arama sayfası bu eksik künyeleri henüz kabul etmediği için tam metin bağlantısı gösterilmez; tam künyelerin bağlantıları korunur. Mahkemesiz dosya numaraları ve dilekçenin gönderildiği yere ait başlıklar atıf sayılmaz.
 
+**1.19.51:** **Atıflar** başlangıçta kapalıdır; düğmeye basınca belge alanının yüksekliğini değiştirmeyen bir panel açılır. Mahkeme veya numara ile listede arayın. Liste kendi içinde kayar; **×**, dışarı tıklama veya **Esc** ile kapanır. Her atıfta **Alıntıyı kopyala**, evraktaki ilk geçişin bulunduğu bölümü karar künyesiyle birlikte panoya kopyalar. Kısa önizleme bu bölümü gösterir; uzun bölümlerin kesilen uçları **…** ile belirtilir. Alıntı görüntüleyicinin okuduğu metinden alınır ve cihazınızda kalır; kararın özgün metniyle karşılaştırılmalıdır.
+
 | Evrak biçimi | Atıflar görünümü |
 |---|---|
-| **UDF** | Görüntüleyicinin okuyabildiği gövde metni listelenir; ekrandaki metinle birebir eşleşen künyelerin altı çizilir. Fareyi çizginin üstüne getirince vurgu görünür; tıklayınca **Tam metni aç**, **Künyeyi kopyala** ve **Listede göster** menüsü açılır. Listedeki satıra tıklamak evraktaki ilk işaretli geçişe kaydırır. |
+| **UDF** | Görüntüleyicinin okuyabildiği gövde metni listelenir; ekrandaki metinle birebir eşleşen künyelerin altı çizilir. Fareyi çizginin üstüne getirince vurgu görünür; tıklayınca **Tam metni aç**, **Künyeyi kopyala**, **Alıntıyı kopyala** ve **Listede göster** menüsü açılır. Listedeki satıra tıklamak evraktaki ilk işaretli geçişe kaydırır. |
 | **HTML** | Güvenli önizlemede künyeler görsel olarak altı çizili gösterilir ve Atıflar listesine eklenir. Belge çerçevesindeki çizgiler tıklanmaz; işlemleri listeden yapın. |
 | **TXT / XML** | Okunabilir metinden Atıflar listesi hazırlanır; evrakta alt çizgi veya atfın yerine kaydırma yoktur. |
 | **Metin katmanlı PDF** | Sayfa metni paket içindeki yerel PDF işçisiyle okunur ve listelenir. PDF görünümüne alt çizgi eklenmez; satırdan kaynak sayfaya gidilmez. |
 | **Taranmış PDF / TIFF / resim** | OCR yapılmaz. PDF'in metin katmanı olmayan sayfaları taranamaz; karma PDF'te okunabilen sayfaların sonuçları korunur ve atlanan sayfa sayısı gösterilir. TIFF ve resimde tarama yapılamadığı açıklanır. |
 
-UDF'de **300 karakteri aşmayan** bir künye seçtiğinizde seçimin yanında **Kararı bul** çıkar; bağlantıyı tıklayınca arama sayfası açılır. Listede **↑ ↓**, **Home / End** ile gezin, satır odaktayken **Enter** ile tam metin bağlantısını açın. **Tab** satırın düğmelerine geçer. **Esc** açık atıf menüsünü veya seçim bağlantısını kapatır; Atıflar alanında **← →** evrakı değiştirmez.
+UDF'de **300 karakteri aşmayan** bir künye seçtiğinizde seçimin yanında **Kararı bul** çıkar; bağlantıyı tıklayınca arama sayfası açılır. Listede **↑ ↓**, **Home / End** ile görünen atıflar arasında gezin, satır odaktayken **Enter** ile tam metin bağlantısını açın. **Tab** satırın düğmelerine geçer. **Esc** önce açık atıf menüsünü, seçim bağlantısını veya atıf panelini kapatır; Atıflar alanında **← →** evrakı değiştirmez.
 
 HTML, TXT ve XML taramasında dosya sınırı **10 MB**, metin sınırı **2 MB**'tır; UDF'de yalnız görüntüleyicinin okuyabildiği bölüm taranır. PDF taramasında dosya sınırı **64 MB**, tarama sınırı ilk **300 sayfa** ve en çok **2 MB metin**'dir. Sınır nedeniyle eksik tarama açıkça belirtilir. Kısmen okunabilen PDF'te metin katmanı bulunmayan sayfalar ile metni okunamayan sayfalar ayrı uyarılır; okunamayan PDF, taranmış belge olarak sunulmaz. Evrak değişince veya ekran kapanınca tarama iptal edilir ve önceki evrakın sonuçları bırakılır. Duruşma paketi veya başka bir belge işlemi PDF okuyucusunu kullanıyorsa **Yeniden dene** gösterilir; diğer işlem bitince düğmeye basın.
 

@@ -59,7 +59,7 @@
       el('div', { class: 'ek-onbar-eylemler' },
         el('span', { class: 'gezinme', role: 'group', 'aria-label': 'Evraklar arasında gezinme' }, onceki, konum, sonraki), evrakAdi,
         el('div', { class: 'ek-belge-eylemler', role: 'group', 'aria-label': 'Evrak işlemleri' }, yeniSekme, indir, pdfIndir, goruldu)), pdfDurum);
-    // Atıflar (1.19.47): evraktaki karar künyeleri onbar'da listelenir (icerik() onbar'ı korur). Ayar kapalıysa tarama ve arayüz yoktur;
+    // Atıflar: düğme onbar'da, liste box içinde belge alanını daraltmayan açılır paneldedir. Ayar kapalıysa tarama ve arayüz yoktur;
     // modül yoksa (ör. ekran testleri) atif null kalır ve görüntüleyici eskisi gibi çalışır. PDF metnini görünmez paket motoru okur:
     // köprüyü başka bir belge işi kullanıyorsa (bankBusy, aşağıda tanımlı) tarama başlamaz, o işi kesmez.
     const atif = globalThis.UHDAtifPaneli?.olustur({ el, onbar, eylemler: onbar.querySelector('.ek-belge-eylemler'), kutu: box, kok: shadowRoot, kimlik,
