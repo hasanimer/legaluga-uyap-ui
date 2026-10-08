@@ -19,7 +19,7 @@ export function validate(root) {
       if (item.isDirectory()) {walk(path.join(dir,item.name),name+'/');continue;}
       if (!expected.has(name)) throw Error('Envanter dışı dosya: '+name);
       if (/\.(har|pdf|xlsx|pem|key|p12|pfx|zip|map)$/i.test(name) || /(^|\/)(\.env(?:\..*)?|core|private|\.private)(\/|$)/i.test(name)) throw Error('Özel veri/çıktı yolu: '+name);
-      if (/^(content|background|common|banka-api|banka-takip|tebligat-barkod|tebligat-ptt|ptt-content|evrak-indirme|evrak-indirme-motoru)\.js$/.test(path.posix.basename(name)) && name!=='demo/common.js') throw Error('Tam motor dosyası açık depoya eklenemez: '+name);
+      if (/^(content|background|common|banka-api|banka-takip|tebligat-barkod|tebligat-ptt|ptt-content|danistay-content|evrak-indirme|evrak-indirme-motoru)\.js$/.test(path.posix.basename(name)) && name!=='demo/common.js') throw Error('Tam motor dosyası açık depoya eklenemez: '+name);
       const bytes = fs.readFileSync(path.join(dir,item.name));
       if (expected.get(name) && sha(bytes)!==expected.get(name)) throw Error('Envanter hash uyuşmazlığı: '+name);
       if (/\.(js|mjs|part)$/.test(name) && !name.startsWith('src/extension/vendor/')) {

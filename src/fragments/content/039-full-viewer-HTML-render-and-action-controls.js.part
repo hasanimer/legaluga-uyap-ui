@@ -64,6 +64,7 @@
     // köprüyü başka bir belge işi kullanıyorsa (bankBusy, aşağıda tanımlı) tarama başlamaz, o işi kesmez.
     const atif = globalThis.UHDAtifPaneli?.olustur({ el, onbar, eylemler: onbar.querySelector('.ek-belge-eylemler'), kutu: box, kok: shadowRoot, kimlik,
       duyur: announce, acikMi: () => typeof pagePrefs === 'undefined' || pagePrefs.atifIsaretle !== false,
+      resmiAramaMi: () => globalThis.UHDAtifPaneli.idareDosyasi(rec),
       motorKabi: viewer, kopru: () => globalThis.UHD.durusmaPaketiBridge, mesgulMu: () => bankBusy() }) || null;
     goruldu.addEventListener('click', () => {
       if (ui && typeof ui.markSeen === 'function') ui.markSeen([rec.key], o.baglam && o.baglam.kadar);
