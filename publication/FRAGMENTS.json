@@ -399,8 +399,8 @@
       "source": "content.js",
       "order": 37,
       "path": "src/fragments/content/037-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "ca920ae507c675459813f39cf394df3e87152cd49813403529c752b0d4e5cd43",
-      "bytes": 15992,
+      "sha256": "d874fc6a32d89465567f04a4cd0bdcbbcf1ac687c93912fe968eaa07d35cea75",
+      "bytes": 16972,
       "purpose": "overview-safahat-notes-and-safe-document-rendering"
     },
     {
@@ -599,8 +599,8 @@
       "source": "content.js",
       "order": 83,
       "path": "src/fragments/content/083-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "3226c75fc3c67b54fd3302dedb8f068848331c2974ffad338367c40409b8049e",
-      "bytes": 13508,
+      "sha256": "e590d1ad7ffe12c82440eecf19c3fb320d23214d6d1e6731a687da62afd0ec49",
+      "bytes": 13632,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -679,8 +679,8 @@
       "source": "content.js",
       "order": 103,
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "94cf0d306a96e0423bc7cfbd3126365e27516d75efc6023a17d7b31276ce2d0b",
-      "bytes": 26480,
+      "sha256": "9e5de1bfe8570df9c9f533f9670eb36d73d98eb25d60cf2e7e96a3fd123b60c4",
+      "bytes": 26885,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {

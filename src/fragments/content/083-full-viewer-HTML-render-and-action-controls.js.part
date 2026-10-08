@@ -92,14 +92,15 @@
           if (!valid()) return;
           state.content.replaceChildren(el('iframe', { srcdoc: html, title: label, sandbox: '', class: 'htmldoc', referrerpolicy: 'no-referrer' }));
         } else if (ext === 'pdf') {
-          const url = URL.createObjectURL(new Blob([doc.blob], { type: 'application/pdf' })); state.urls.add(url);
+          const url = URL.createObjectURL(documentPreviewBlob(doc, ext)); state.urls.add(url);
           state.content.replaceChildren(el('iframe', { src: url, title: label }));
         } else if (ext === 'txt') {
           const text = await doc.blob.text();
           if (!valid()) return;
           state.content.replaceChildren(el('pre', { class: 'bank-reply-text' }, text));
         } else if (['jpg', 'png', 'gif', 'bmp'].includes(ext)) {
-          const url = URL.createObjectURL(doc.blob); state.urls.add(url);
+          // Resim adresi bağlam menüsünden yeni sekmede de açılabilir; özgün SVG/HTML MIME türü adresine taşınmaz.
+          const url = URL.createObjectURL(documentPreviewBlob(doc, ext)); state.urls.add(url);
           state.content.replaceChildren(el('div', { class: 'imgdoc' }, el('img', { src: url, alt: label })));
         } else {
           const tur = okuyucuTuru(doc, ext), reader = tur === 'udf' ? udf : tur === 'tiff' ? tiff : null;

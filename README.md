@@ -7,7 +7,7 @@ Eklenti, **Av. Hasan İmer Akın** tarafından meslektaşlarının ücretsiz kul
 
 Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lisansıyla** sunar. UYAP işlem motoru özel kaynaklıdır; tam eklenti mağazadan kurulur.
 
-> Bu rehber, **1.19.47** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+> Bu rehber, **1.19.48** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
 
 Görseller gerçek arayüz bileşenlerinden **örnek verilerle** hazırlanmıştır; gerçek kişi, dava veya UYAP oturumu içermez.
 
@@ -72,7 +72,7 @@ Evrak ilk açılışta belgeyi otomatik istemez; listeden seçince önizleme aç
 
 **Evrak** klasöründeki sayı UYAP'ın kuralıyla evrak sayısıdır (evrak = UYAP listesindeki kayıt, ek = evrakın ek listesindeki girdi); ek varsa "· 3 ek" diye ayrıca yazılır. Listede ayrıca gelen evrak, başka evrakın eki olsa da kendi satırında görünür (UYAP gibi); ekin kopyası ana evrakın altında da durur. UYAP listesinin teyidi normal eşleşmede görünmez; eksik veya doğrulanamayan liste uyarısı işlemleri durdurmaz. Ekler ana evrakın klasöründe kalır ve kapalı başlar (kartın yeni evrakının ekleri açık gelir). Ekli ana evrak küçük **▸** işareti taşır. Kapalı ana evrak satırına tıklayınca evrak yanda görüntülenir ve ekleri açılır; açık satıra yeniden tıklayınca yalnız ekleri kapanır, görüntülenen evrak değişmez. **Enter** veya **Boşluk** aynı işlemi yapar; paket modunda Boşluk evrakı işaretler. Arama, ana evrakıyla birlikte eşleşen ekleri açar; aramayı temizleyince önceki açık/kapalı durum geri gelir, aramada eki seçilen ana evrakın ekleri ise açık kalır. **← →** ile kapalı bir eke gelince ana evrakın ekleri açılır. **Son 20 evrak** en yeni 20 evrakı dosya ayrımı olmadan düz listeler; **Tüm evraklar** önce dosya, talimat ve diğer esas gruplarını, sonra evrak türüne göre klasörleri açar. **Liste** düğmesi düz liste görünümüne geçer. Klasörler evrak türüne göre alfabetik sıralanır; **Tarih ↓ / ↑** klasör içindeki ve düz listedeki tarih sırasını değiştirir, ekler ana evrakının altında kalır. Klavyede **↑ ↓** ile gezin, **→ / ←** ile klasörü ya da ana evrakın eklerini açıp kapatın (ekteyken **←** ana evraka döner). Yalnız sağ/sol oklarla ekleri açıp kapatmak evrak istemez. Kapalı ekler, **Listelenenleri seç** ve toplu indirmedeki **Evrak sekmesinde listelenenler** kapsamında kalır.
 
-UDF ve TIFF önizlemesi belgeyi cihazınızda işler. UDF'nin sayfa düzeni resmî editörden farklı olabilir; e-imza doğrulaması yapılmaz. Okunamayan veya desteklenmeyen belgede özgün dosyayı indirip uygun araçla açın. Dosya ekranındaki özet ve önizlemeyi resmî belgeyi kontrol ederek kullanın.
+UDF ve TIFF önizlemesi belgeyi cihazınızda işler. Kaynak kullanım sınırını aşan evrak önizlenmez; özgün dosya indirme seçeneği korunur. UDF'nin sayfa düzeni resmî editörden farklı olabilir; e-imza doğrulaması yapılmaz. Okunamayan veya desteklenmeyen belgede özgün dosyayı indirip uygun araçla açın. Dosya ekranındaki özet ve önizlemeyi resmî belgeyi kontrol ederek kullanın.
 
 ![Evrak: türlere göre klasörler, adetler ve ana evrakın ekleri — örnek veriler](docs/images/06-evrak-klasorleri.png)
 

@@ -280,14 +280,14 @@
 
     function goster(e, doc) {
       birak();
-      const url = URL.createObjectURL(doc.blob);
+      const ext = documentExtension(doc);
+      const url = URL.createObjectURL(documentPreviewBlob(doc, ext));
       // İndir her evrakta nötr türde ayrı bir adres kullanır: HTML ya da SVG gibi türler bağlam menüsünden yeni sekmede
       // açılsa bile UYAP'ın kökeninde belge olarak çalışmaz, yalnız iner (1.19.3).
       const indirUrl = URL.createObjectURL(new Blob([doc.blob], { type: 'application/octet-stream' }));
       const s = simdiki = { url, indirUrl, doc, e, ac: new AbortController(), gorunum: null, gozlem: null, kap: null, yuzde: null, disarida: false };
       // Atıf taraması bu evrağa bağlıdır: evrak değişince (birak) sinyal iptal olur, her beklemeden sonra geçerlilik yeniden sorulur.
       const gecerli = () => simdiki === s && !closed;
-      const ext = documentExtension(doc);
       const framed = ext === 'pdf' || ext === 'txt';   // tarayıcı çerçevede gösterir
       const img = ['jpg', 'png', 'gif', 'bmp'].includes(ext);
       // Gösterilen evrakın satırı: ek bilgisi (hangi evrakın eki) listedeki satırda durur.
@@ -307,7 +307,10 @@
       yeniSekme.href = url;
       yeniSekme.hidden = !(framed || img);
       if (framed) {
-        const cerceve = el('iframe', { src: url, title: label });
+        // PDF sabit application/pdf Blob'uyla yerleşik Chrome görüntüleyicisine verilir. Doğrulanmamış bir sandbox
+        // izni yerleşik PDF görüntüleyicisini engelleyebileceği için PDF'e eklenmez; özgün/HTML MIME buraya gelemez.
+        // Düz metin yerleşik eklenti gerektirmez ve kökensiz, betiksiz çerçevede gösterilir.
+        const cerceve = el('iframe', { src: url, title: label, ...(ext === 'txt' ? { sandbox: '' } : {}) });
         icerik(cerceve);
         return atif?.belge(ext, { doc, cerceve, signal: s.ac.signal, gecerli });
       }
