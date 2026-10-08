@@ -399,8 +399,8 @@
       "source": "content.js",
       "order": 37,
       "path": "src/fragments/content/037-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "d874fc6a32d89465567f04a4cd0bdcbbcf1ac687c93912fe968eaa07d35cea75",
-      "bytes": 16972,
+      "sha256": "dbc8ebc53ff7f48fa54aa0e1f58fac200b37cc6241d3fa47e16cd3ee60ecfcc7",
+      "bytes": 17016,
       "purpose": "overview-safahat-notes-and-safe-document-rendering"
     },
     {
@@ -679,8 +679,8 @@
       "source": "content.js",
       "order": 103,
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "7cb230579892d0bf7ac8286699ead20f5116f5c0a75276169bf62d23856d6440",
-      "bytes": 30777,
+      "sha256": "10663cb214c5128fab09745fdac1bb0da8ba3caaa1605e2a6e05c3e61e1b02c1",
+      "bytes": 33512,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {

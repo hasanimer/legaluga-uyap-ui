@@ -96,7 +96,46 @@
     if (crc32(sonuc) !== g.crc) throw hata('ZIP girdisinin bütünlük denetimi başarısız');
     return sonuc;
   }
-  const api = { girdiler, ac, SINIR };
+  // EYP'nin üst yazısı ve ekleri yerel paket içinden açılır. İmza/üstveri dosyaları belge yerine gösterilmez.
+  async function eyp(blob, { signal } = {}) {
+    signal?.throwIfAborted();
+    if (!blob?.size || blob.size > SINIR.boyut) throw hata('EYP paketi 64 MiB görüntüleme sınırını aşıyor.');
+    const zip = girdiler(await blob.arrayBuffer());
+    signal?.throwIfAborted();
+    const sade = ad => ad.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/ı/g, 'i').toLowerCase();
+    const adlar = new Set();
+    let toplam = 0;
+    const belgeler = [];
+    for (const girdi of zip.liste) {
+      const ad = girdi.ad.replace(/\\/g, '/');
+      // eslint-disable-next-line no-control-regex
+      if (ad.length > 4096 || ad.startsWith('/') || ad.split('/').some(x => x === '..' || x === '.') || /[\u0000-\u001f]/u.test(ad) || ad.includes(':')) throw hata('EYP dosya yolu geçersiz.');
+      if (adlar.has(ad)) throw hata('EYP paketinde yinelenen dosya adı var.');
+      adlar.add(ad);
+      toplam += girdi.acik;
+      if (toplam > SINIR.boyut) throw hata('EYP paketinin açılmış boyutu 64 MiB sınırını aşıyor.');
+      if (ad.endsWith('/')) continue;
+      const yol = sade(ad);
+      const ustYazi = /(^|\/)ustyazi\//.test(yol) || /(^|\/)ustyazi\.[a-z0-9]+$/.test(yol);
+      const ek = /(^|\/)ekler\//.test(yol);
+      const belge = /\.(pdf|udf|usf|html?|txt|jpe?g|png|gif|bmp|tiff?|docx?|odt|rtf|xlsx?|pptx?)$/i.test(ad);
+      if (belge || (ustYazi || ek) && /\.xml$/i.test(ad)) belgeler.push({ ad, ustYazi, girdi });
+    }
+    if (!belgeler.length) throw hata('EYP paketinde görüntülenebilir üst yazı veya ek bulunamadı; özgün paketi indirin.');
+    belgeler.sort((a, b) => Number(b.ustYazi) - Number(a.ustYazi));
+    const ust = belgeler.filter(x => x.ustYazi);
+    const ilk = ust.length === 1 ? belgeler.indexOf(ust[0]) : belgeler.length === 1 ? 0 : -1;
+    return { belgeler, ilk, async oku(indis, { signal: okumaSignal } = {}) {
+      if (!Number.isSafeInteger(indis) || !belgeler[indis]) throw hata('EYP belge seçimi geçersiz.');
+      okumaSignal?.throwIfAborted();
+      const b = await ac(zip, belgeler[indis].girdi, { maxBytes: SINIR.boyut, signal: okumaSignal });
+      okumaSignal?.throwIfAborted();
+      const filename = belgeler[indis].ad.split('/').at(-1);
+      // Görüntüleyici içerik imzasını ve özgün uzantıyı ayrıca denetler; paketteki MIME beyanı kullanılmaz.
+      return { filename, type: 'application/octet-stream', blob: new Blob([b]), bas: Array.from(b.subarray(0, 8)) };
+    } };
+  }
+  const api = { girdiler, ac, eyp, SINIR };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else globalThis.DurusmaPaketiZip = api;
 })();

@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "9b4f617d22206562be1c504726234269bdbf560df5af1d42375f38d2a4fb2b9c"
+      "sha256": "d60b5ec17e46ef9c77c42e5eba7d5832b85f992cf73d48d13f5108e784a319dd"
     },
     {
       "path": "SECURITY.md",
@@ -52,7 +52,7 @@
     },
     {
       "path": "docs/PRIVACY.md",
-      "sha256": "497f2840d5ca3f99cb3373d635f84e2c9660a6c5b7115b4ee64016a02895177f"
+      "sha256": "90a7a3d23783a465718aeeb383493f0c95c7c802ded5b870449f7496c4c40095"
     },
     {
       "path": "docs/images/01-uyap-baglantisi.png",
@@ -104,11 +104,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "9ed08ddcb7141546df1a46fa64e52404bc1b62d05d598e74c7692b5c6a4d94e1"
+      "sha256": "f4ed33a3948356c9e58e6dc7fc4886cc946096023639af84e83ab165df3f2f28"
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "dd85f245304076691fe4f65acc6cf96d461934714cedcdea31c09400fbaaf4b9"
+      "sha256": "7e7b720e9a5140738abfa2d2cf3f97188a0d290476fd356491b6b7e8c335ffd1"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -188,7 +188,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-zip.js",
-      "sha256": "0041fb9a1f44545e1bb0875b80f4de14c3892651d984a94de9298bf60bf8e32a"
+      "sha256": "e0336c07f5204987d7fa85ac8299a02d321adadc2a881f3e268f4c99fbd023ff"
     },
     {
       "path": "src/extension/durusma-paketi.css",
@@ -228,7 +228,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "f9d667e6f2079ed2ede9632da328dcc2123e5e188b696340dc5e7b5bf7f6cf68"
+      "sha256": "0e3806237f676eece101139bed7cbe29f1390ece3ba341a3d70f6db98a4f6cc8"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -616,7 +616,7 @@
     },
     {
       "path": "src/fragments/content/037-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "d874fc6a32d89465567f04a4cd0bdcbbcf1ac687c93912fe968eaa07d35cea75"
+      "sha256": "dbc8ebc53ff7f48fa54aa0e1f58fac200b37cc6241d3fa47e16cd3ee60ecfcc7"
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
@@ -756,7 +756,7 @@
     },
     {
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "7cb230579892d0bf7ac8286699ead20f5116f5c0a75276169bf62d23856d6440"
+      "sha256": "10663cb214c5128fab09745fdac1bb0da8ba3caaa1605e2a6e05c3e61e1b02c1"
     },
     {
       "path": "src/fragments/content/105-viewer-navigation-abort-epoch-boundary.js.part",
@@ -853,6 +853,14 @@
     {
       "path": "tests/ui-downloads.test.js",
       "sha256": "d3d9079ddb30c3ba557ee1b97f637d34bb066cb781d6c44399f951decf358d8e"
+    },
+    {
+      "path": "tests/eyp-paketi.test.js",
+      "sha256": "e42cf0ac888946d13db6987b2e18468ae7518abe305161552425413988e29dfd"
+    },
+    {
+      "path": "tests/zip-yardimci.js",
+      "sha256": "0ed52faa36a48583b8afe9625e9d0acc7839ebd2cb60024f4bd0d9ecdceddd4c"
     }
   ]
 }
