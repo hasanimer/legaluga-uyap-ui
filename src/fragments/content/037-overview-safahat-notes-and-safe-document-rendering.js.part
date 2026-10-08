@@ -205,7 +205,20 @@
     return ext === 'udf' ? 'udf' : ['tif', 'tiff'].includes(ext) ? 'tiff' : null;
   }
 
+  // Gezinilebilir Blob adresleri yalnız sabit, eylemsiz türlerle oluşturulur. UYAP'ın bildirdiği MIME türü
+  // önizlemeye/yeni sekmeye taşınmaz; bilinmeyen biçim nötr kalır. İndirme ayrıca özgün baytları nötr türde sunar.
+  const DOC_PREVIEW_MIME = {
+    pdf: 'application/pdf', txt: 'text/plain', jpg: 'image/jpeg', png: 'image/png', gif: 'image/gif', bmp: 'image/bmp'
+  };
+  function documentPreviewBlob(doc, ext) {
+    const type = Object.hasOwn(DOC_PREVIEW_MIME, ext) ? DOC_PREVIEW_MIME[ext] : 'application/octet-stream';
+    return new Blob([doc.blob], { type });
+  }
+
   function documentExtension(doc) {
+    const mime = type => String(type || '').split(';', 1)[0].trim().toLowerCase();
+    // HTML/XHTML her zaman temizlenmiş, kökensiz çerçeveye gider. Dosya adı veya %PDF- öneki bu sınırı değiştiremez.
+    if ([doc.type, doc.blob?.type].some(type => ['text/html', 'application/xhtml+xml'].includes(mime(type)))) return 'html';
     const named = /\.([a-z0-9]{1,8})$/i.exec(doc.filename || '');
     const original = named ? named[1].toLowerCase() : '';
     const b = doc.bas || [];
@@ -213,5 +226,6 @@
     if ((b[0] === 0x49 && b[1] === 0x49 && (b[2] === 0x2a || b[2] === 0x2b)) || (b[0] === 0x4d && b[1] === 0x4d && (b[3] === 0x2a || b[3] === 0x2b))) return original === 'tiff' ? 'tiff' : 'tif';
     // UYAP MIME türünü yanlış bildirebilir; UDF ve DOCX gibi ZIP tabanlı türlerde özgün ad yol gösterir.
     if (original) return original;
-    return DOC_EXT[doc.type] || (doc.type.includes('pdf') ? 'pdf' : doc.type.includes('tif') ? 'tif' : 'bin');
+    const type = mime(doc.type);
+    return Object.hasOwn(DOC_EXT, type) ? DOC_EXT[type] : type.includes('pdf') ? 'pdf' : type.includes('tif') ? 'tif' : 'bin';
   }

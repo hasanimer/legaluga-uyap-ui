@@ -17,6 +17,7 @@
     piksel1bit: 72e6,         // siyah-beyaz sayfa (A4, 1000 dpi'ya dek)
     piksel: 30e6,             // gri ya da renkli sayfa
     cozulmusBayt: 128 * MiB,  // UTIF'in ayırdığı ham sayfa belleği
+    cozumBellek: 256 * MiB,   // şerit kopyaları ve UTIF döşeme belleği dahil çözüm tepe belleği
     serit: 100000,            // sayfa başına şerit ya da döşeme
     doseme: 4096,             // döşeme kenarı
     jpegTablo: 64 * 1024,
@@ -54,6 +55,67 @@
   const iptalDenetle = signal => { if (iptalMi(signal)) throw new DOMException('Evrak okuma iptal edildi.', 'AbortError'); };
   const bekle = () => new Promise(r => setTimeout(r, 0));
   const kistir = (v, a, b) => Math.min(b, Math.max(a, v));
+  const tamSayi = n => Number.isSafeInteger(n) && n >= 0;
+  const guvenliTopla = (...values) => {
+    let total = 0;
+    for (const value of values) {
+      if (!tamSayi(value) || !tamSayi(total + value)) throw hata('boyut', 'bellek hesabı');
+      total += value;
+    }
+    return total;
+  };
+  const guvenliCarp = (...values) => {
+    let total = 1;
+    for (const value of values) {
+      if (!tamSayi(value) || !tamSayi(total * value)) throw hata('boyut', 'bellek hesabı');
+      total *= value;
+    }
+    return total;
+  };
+
+  // Kenardaki döşemeler de tam tw × th çözülür. Küçük görünen bir sayfa, çok büyük döşeme
+  // tamponları isteyebilir; bütün sıkıştırmalar için bu kapasite çözümden önce denetlenir.
+  // Deflate'in kısa sonuçlarının subarray'leri de beklenen boyuttaki backing buffer'ı tutar.
+  // Tahmin planlı çözücü tamponlarını sayar; tarayıcının toplam JS/native heap garantisi değildir.
+  function allocationEstimate(s) {
+    for (const value of [s.g, s.y, s.bps, s.spp, s.rps])
+      if (!tamSayi(value) || value < 1) throw hata('bozuk', 'sayfa boyutu');
+    if (s.g > SINIR.kenar || s.y > SINIR.kenar) throw hata('boyut', 'sayfa boyutu');
+    const samples = s.c === 7 ? 3 : s.spp; // UTIF, 8 bit JPEG'i RGB örneklerine çözer.
+    const bits = guvenliCarp(s.bps, samples);
+    const rawBytes = guvenliCarp(s.y, Math.ceil(guvenliCarp(s.g, bits) / 8));
+    let segmentBytes, decodedCapacity, count, scratchBytes;
+    if (s.dosemeli) {
+      if (![s.tw, s.th].every(v => tamSayi(v) && v >= 16 && v <= SINIR.doseme && v % 16 === 0))
+        throw hata('bozuk', 'döşeme boyutu');
+      count = guvenliCarp(Math.ceil(s.g / s.tw), Math.ceil(s.y / s.th));
+      segmentBytes = guvenliCarp(Math.ceil(guvenliCarp(s.tw, bits) / 8), s.th);
+      decodedCapacity = guvenliCarp(count, segmentBytes);
+      scratchBytes = segmentBytes; // UTIF.decodeImage: tam sayfa + yeniden kullanılan tbuff.
+    } else {
+      const planes = s.pc === 2 ? s.spp : 1;
+      const rowBytes = Math.ceil(guvenliCarp(s.g, s.bps, s.pc === 2 ? 1 : samples) / 8);
+      count = guvenliCarp(Math.ceil(s.y / s.rps), planes);
+      segmentBytes = guvenliCarp(Math.min(s.rps, s.y), rowBytes);
+      decodedCapacity = guvenliCarp(s.y, rowBytes, planes);
+      scratchBytes = s.pc === 2 ? segmentBytes : 0;
+    }
+    if (count > SINIR.serit || rawBytes > SINIR.cozulmusBayt || decodedCapacity > SINIR.cozulmusBayt)
+      throw hata('boyut', 'döşeme/şerit kapasitesi');
+    if (!Array.isArray(s.ofs) || !Array.isArray(s.say) || s.ofs.length !== count || s.say.length !== count ||
+        s.ofs.some((v, i) => !tamSayi(v) || !tamSayi(v + s.say[i])) || s.say.some(v => !tamSayi(v) || v < 1))
+      throw hata('bozuk', 'döşeme/şerit uzunluğu');
+    const deflate = s.c === 8 || s.c === 32946;
+    const retainedBytes = deflate ? decodedCapacity : 0;
+    const aggregateBytes = deflate ? Math.max(1, decodedCapacity) : 0;
+    // LZW'nin üç sabit sözlük tamponu 16 KiB; CCITT'nin sınırlı satır/değişim dizileri
+    // için dört sayısal dizi kapasitesi ayrılır. Bunlar sayfa/döşeme tamponuna eklenir.
+    const codecBytes = s.c === 5 ? 16384 : s.c === 3 || s.c === 4
+      ? guvenliCarp(guvenliTopla(s.dosemeli ? s.tw : s.g, 64), 32) : 0;
+    const peakBytes = guvenliTopla(rawBytes, scratchBytes, retainedBytes, aggregateBytes, codecBytes);
+    if (peakBytes > SINIR.cozumBellek) throw hata('boyut', 'çözüm tepe belleği');
+    return Object.freeze({ rawBytes, segmentBytes, decodedCapacity, scratchBytes, retainedBytes, aggregateBytes, codecBytes, peakBytes });
+  }
 
   // UTIF çözerken tanı iletilerini console.log'a yazar; UYAP sekmesinin konsolu kirlenmesin diye susturulur.
   function sessiz(fn) {
@@ -193,16 +255,19 @@
     const tek = t => { const v = degerler(dv, le, A.get(t), 1); return v ? v[0] : undefined; };
     const g = tek(256), y = tek(257);
     const sorun = kod => ({ sorun: kod, g, y, yon: 1, oran: 1.4142, taban: 794 });
-    if (!(g >= 1 && y >= 1)) return sorun('bozuk');
+    if (!tamSayi(g) || !tamSayi(y) || g < 1 || y < 1) return sorun('bozuk');
     if (g > SINIR.kenar || y > SINIR.kenar) return sorun('boyut');
+    for (const tag of [277, 259, 284, 262, 317, 322, 323, 278])
+      if (A.has(tag) && tek(tag) === undefined) return sorun('bozuk');
     const spp = tek(277) ?? 1;
-    const bpsDizi = degerler(dv, le, A.get(258), 8) || [1];
+    const bpsDizi = A.has(258) ? degerler(dv, le, A.get(258), 8) : [1];
+    if (!bpsDizi) return sorun('bozuk');
     const bps = bpsDizi[0];
     const c = tek(259) ?? 1;
     const pc = tek(284) ?? 1;
     let p = tek(262);
     if (p === undefined) p = bps === 1 ? 0 : spp >= 3 ? 2 : 1;
-    if (!(spp >= 1 && spp <= 5) || bpsDizi.some(v => v !== bps) || !SIKISTIRMA.has(c)) return sorun('desteklenmiyor');
+    if (!tamSayi(spp) || !(spp >= 1 && spp <= 5) || bpsDizi.some(v => v !== bps) || !SIKISTIRMA.has(c)) return sorun('desteklenmiyor');
     // UTIF'in doğru çevirdiği birleşimler.
     const uygun = p === 0 ? spp === 1 && [1, 4, 8, 16].includes(bps)
       : p === 1 ? (spp === 1 && [1, 2, 8, 16].includes(bps)) || (spp === 2 && bps === 8)
@@ -227,7 +292,7 @@
       if (!harita || harita.length !== 3 * (1 << bps)) return sorun('bozuk');
     }
     const tw = tek(322), th = tek(323);
-    const dosemeli = tw !== undefined || th !== undefined || A.has(324);
+    const dosemeli = A.has(322) || A.has(323) || A.has(324);
     let ofs, say, rps = y;
     if (dosemeli) {
       if (pc === 2) return sorun('desteklenmiyor');
@@ -238,20 +303,29 @@
       say = degerler(dv, le, A.get(325), n);
       if (!ofs || !say || ofs.length !== n || say.length !== n) return sorun('bozuk');
     } else {
-      rps = Math.max(1, Math.min(tek(278) ?? y, y));
+      const rows = A.has(278) ? tek(278) : y;
+      if (!tamSayi(rows) || rows < 1) return sorun('bozuk');
+      rps = Math.min(rows, y);
       ofs = degerler(dv, le, A.get(273), SINIR.serit);
       say = degerler(dv, le, A.get(279), SINIR.serit);
       if (!ofs) return sorun('bozuk');
-      if (!say && c === 1 && ofs.length === 1) say = [y * Math.ceil(g * bps * spp / 8)];
+      if (!A.has(279) && c === 1 && ofs.length === 1) say = [y * Math.ceil(g * bps * spp / 8)];
       if (!say || say.length !== ofs.length) return sorun('bozuk');
     }
     let truncatedStrip = false;
     for (let i = 0; i < ofs.length; i++) {
+      if (!tamSayi(ofs[i]) || !tamSayi(say[i]) || say[i] < 1 || !tamSayi(ofs[i] + say[i])) return sorun('bozuk');
       if (ofs[i] >= boy) return sorun('bozuk');   // şerit dosya dışında
       if (ofs[i] + say[i] > boy) { truncatedStrip = true; say[i] = boy - ofs[i]; }
     }
     if (c === 1 && !dosemeli && say.reduce((sum, n) => sum + n, 0) < y * Math.ceil(g * bps * spp / 8))
       truncatedStrip = true;
+    let allocation;
+    try { allocation = allocationEstimate({ g, y, bps, spp, c, pc, dosemeli, tw, th, rps, ofs, say }); }
+    catch (error) {
+      if (error instanceof TiffHatasi) return sorun(error.kod);
+      throw error;
+    }
     let jpegTablo = null;
     if (c === 7 && A.has(347)) {
       const a = A.get(347);
@@ -293,7 +367,7 @@
     };
     return {
       g, y, bps, spp, c, p, pc, birBit, dosemeli, tw, th, rps, ofs, say, yon, rawYon, rawDx, rawDy, birim,
-      truncatedStrip, oran: boyu / en, taban: tabanEn, tanim,
+      truncatedStrip, allocation, oran: boyu / en, taban: tabanEn, tanim,
       satirBayt: Math.ceil(g * bps * (pc === 2 ? 1 : spp) / 8)
     };
   }
@@ -335,6 +409,7 @@
   // Deflate şeritleri önce tarayıcının kendi açıcısıyla, beklenen boyutta kesilerek açılır (sıkıştırma bombası);
   // UTIF'e sıkıştırılmamış sayfa olarak verilir.
   async function deflateAc(u8, s, signal) {
+    const allocation = allocationEstimate(s); // Hiçbir stream/tampon kurulmadan tam kapasite denetlenir.
     const parcalar = [];
     let toplam = 0;
     const serit = i => {
@@ -346,6 +421,7 @@
     for (let i = 0; i < s.ofs.length; i++) {
       iptalDenetle(signal);
       const beklenen = serit(i);
+      if (!tamSayi(beklenen) || beklenen > allocation.segmentBytes) throw hata('bozuk', 'şerit boyutu');
       const ham = u8.subarray(s.ofs[i], s.ofs[i] + s.say[i]);
       const zlib = ham.length > 2 && (ham[0] & 0x0f) === 8 && ((ham[0] << 8) | ham[1]) % 31 === 0;
       const okuyucu = new Blob([ham]).stream().pipeThrough(new DecompressionStream(zlib ? 'deflate' : 'deflate-raw')).getReader();
@@ -365,7 +441,8 @@
         throw new Error('deflate', { cause: e });
       }
       parcalar.push(cikti.subarray(0, n));
-      toplam += n;
+      toplam = guvenliTopla(toplam, n);
+      if (toplam > allocation.decodedCapacity) throw hata('boyut', 'şerit toplamı');
     }
     const buffer = new ArrayBuffer(Math.max(1, toplam));
     const hepsi = new Uint8Array(buffer);
@@ -438,6 +515,7 @@
   // Sayfayı UTIF ile tam çözünürlükte çözer; ham örnekler dönen UTIF sayfa nesnesinin data alanındadır.
   async function sayfaCoz(belge, s, signal) {
     const UTIF = globalThis.UTIF;
+    allocationEstimate(s); // Sıkıştırmasız, LZW, CCITT ve JPEG dahil bütün çözüm yolları.
     let buffer = belge.buffer;
     const img = s.tanim();
     if (s.c === 8 || s.c === 32946) {
@@ -639,5 +717,5 @@
 .viewer .tiff-not{max-width:600px;padding:10px 12px;border-radius:8px;background:var(--shell-warn-bg);color:var(--shell-warn-text);font:12px/1.45 "Segoe UI",system-ui,sans-serif}
 `;
 
-  globalThis.UHD.tiff = { ac, ciz, sayfaBitmap, sayfaCoz, rgba8, yonDonusumu, TiffHatasi, SINIR, CSS, ILETI };
+  globalThis.UHD.tiff = { ac, ciz, sayfaBitmap, sayfaCoz, rgba8, allocationEstimate, yonDonusumu, TiffHatasi, SINIR, CSS, ILETI };
 })();

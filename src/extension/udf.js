@@ -14,6 +14,15 @@
     derinlik: 32,             // tablo → hücre → tablo iç içeliği
     blok: 30000,              // paragraf + tablo + resim
     parca: 200000,
+    metin: 2 * MiB,           // ham metin havuzu değil, modeldeki bütün genişletilmiş metin
+    paragrafMetin: 128 * 1024,
+    paragrafParca: 4096,
+    bolum: 300,
+    gorunumMetin: 4 * MiB,    // yinelenen üst/alt bilgi dahil
+    gorunumDugum: 100000,
+    gorunumResim: 500,
+    gorunumResimPiksel: 100e6,
+    gorunumTuvalPiksel: 32e6,
     hucre: 50000,
     gezinti: 1000000,         // XML'de dolaşılan öğe (bilinmeyenler dahil)
     veriSatiri: 5000,         // şablon belgede çoğaltılan satır
@@ -169,9 +178,25 @@
   // DTD ve varlık tanımı meşru UDF'de yoktur; tarayıcının XML çözücüsü iç varlıkları açtığı için önsözde görülen
   // tanım baştan reddedilir. Yalnız önsöze bakılır: metin havuzunda "<!DOCTYPE" yazan belge reddedilmez.
   function xmlCozumle(metin) {
-    const kokBas = metin.search(/<[A-Za-z_]/);
-    const onsoz = kokBas < 0 ? metin : metin.slice(0, kokBas);
-    if (/<!DOCTYPE|<!ENTITY/i.test(onsoz)) throw hata('dtd');
+    // Yorum/işlem talimatındaki "<x" kök başlangıcı değildir. Kökten sonraki
+    // CDATA ve belge metni taranmaz; önsözdeki gerçek bildirimler çözülmeden reddedilir.
+    let i = metin.charCodeAt(0) === 0xfeff ? 1 : 0;
+    for (;;) {
+      while (i < metin.length && /[\x20\t\r\n]/.test(metin[i])) i++;
+      if (metin.startsWith('<!--', i)) {
+        const son = metin.indexOf('-->', i + 4);
+        if (son < 0 || metin.slice(i + 4, son).includes('--')) throw hata('xml', 'önsöz yorumu');
+        i = son + 3; continue;
+      }
+      if (metin.startsWith('<?', i)) {
+        const son = metin.indexOf('?>', i + 2);
+        if (son < 0) throw hata('xml', 'önsöz işlem talimatı');
+        i = son + 2; continue;
+      }
+      if (metin.startsWith('<!', i)) throw hata('dtd');
+      if (metin[i] !== '<' || !/[A-Za-z_\u0080-\uffff]/.test(metin[i + 1] || '')) throw hata('xml', 'kök yok');
+      break;
+    }
     const doc = new DOMParser().parseFromString(metin, 'application/xml');
     if (doc.getElementsByTagNameNS('*', 'parsererror').length) throw hata('xml', 'parsererror');
     return doc;
@@ -486,16 +511,24 @@
       });
       return bulunan;
     }
-    function coz(kapsam, alan, grup) {
+    function coz(kapsam, alan, grup, enCok = SINIR.paragrafMetin) {
+      const birlestir = degerler => {
+        let uzunluk = Math.max(0, degerler.length - 1);
+        for (const deger of degerler) {
+          uzunluk += deger.length;
+          if (uzunluk > enCok) throw hata('boyut', 'alan metni');
+        }
+        return degerler.join('\n');
+      };
       for (let k = kapsam; k; k = k.ust) {
         if (grup) {
           const g = gruplar(k.dugumler, grup);
           if (!g.length) continue;
           const d = alan ? yapraklar(g.flatMap(x => [...x.children]), alan) : [];
-          return { grupVar: true, grupDolu: g.some(x => x.textContent.trim()), deger: d.length ? d.join('\n') : undefined };
+          return { grupVar: true, grupDolu: g.some(x => x.textContent.trim()), deger: d.length ? birlestir(d) : undefined };
         }
         const d = yapraklar(k.dugumler, alan);
-        if (d.length) return { deger: d.join('\n') };
+        if (d.length) return { deger: birlestir(d) };
       }
       return { grupVar: false };
     }
@@ -561,7 +594,7 @@
     const { zincir, taban } = stilCozucu(cocuk(kok, 'styles'));
     const s = {
       kokAdi: ad(kok), paragraf: 0, tablo: 0, resimSayisi: 0, resimBayt: 0, resimPiksel: 0, resimReddi: 0, sayfaSonu: 0,
-      blok: 0, parca: 0, hucre: 0, gezinti: 0, veriSatiri: 0, veriGezinti: 0, ofsetSorunu: 0, bilinmeyen: 0, kesildi: null
+      blok: 0, parca: 0, metin: 0, hucre: 0, gezinti: 0, veriSatiri: 0, veriGezinti: 0, ofsetSorunu: 0, bilinmeyen: 0, kesildi: null
     };
     const bag = veri ? veriBaglayici(s) : null;
     const kokKapsam = veri ? { dugumler: [...veri.children], ust: null } : null;
@@ -576,21 +609,25 @@
 
     const dilim = el => {
       const a = tamsayi(oz(el, 'startOffset')), u = tamsayi(oz(el, 'length'));
-      if (!Number.isInteger(a) || !Number.isInteger(u) || a < 0 || u <= 0 || a >= havuz.length) { s.ofsetSorunu++; return ''; }
+      if (!Number.isInteger(a) || !Number.isInteger(u) || a < 0 || u <= 0 || a >= havuz.length) { s.ofsetSorunu++; return { bas: 0, son: 0 }; }
       if (a + u > havuz.length) s.ofsetSorunu++;
-      return havuz.slice(a, Math.min(a + u, havuz.length));
+      return { bas: a, son: Math.min(a + u, havuz.length) };
     };
 
     // Şablon belgede parçanın metni: alan ise veriden, gruba bağlı düz metinse grup doluysa. Yer tutucu adı hiç gösterilmez.
-    function parcaMetni(c, kapsam) {
-      const ham = dilim(c);
-      if (!kapsam) return ham;
+    function parcaMetni(c, kapsam, enCok) {
+      const aralik = dilim(c);
+      const ham = () => {
+        if (aralik.son - aralik.bas > enCok) throw hata('boyut', 'genişletilmiş metin');
+        return havuz.slice(aralik.bas, aralik.son);
+      };
+      if (!kapsam) return ham();
       const alan = String(oz(c, 'fieldName') || '').toLowerCase();
       const grup = String(oz(c, 'fieldGroupName') || '').toLowerCase();
-      const sonSatir = ham.endsWith('\n') ? '\n' : '';
+      const sonSatir = aralik.son > aralik.bas && havuz[aralik.son - 1] === '\n' ? '\n' : '';
       if (!alan) {
-        if (!grup) return ham;
-        return bag.coz(kapsam, '', grup).grupDolu ? ham : sonSatir;
+        if (!grup) return ham();
+        return bag.coz(kapsam, '', grup).grupDolu ? ham() : sonSatir;
       }
       if (alan === 'auto') return sonSatir;
       if (alan === 'eol') return (!grup || bag.coz(kapsam, 'eol', grup).grupVar ? '\n' : '') + sonSatir;
@@ -598,7 +635,7 @@
         const r = grup ? bag.coz(kapsam, 'ceol', grup) : {};
         return (String(r.deger || '').trim().toLowerCase() === 'true' ? '\n' : '') + sonSatir;
       }
-      const r = bag.coz(kapsam, alan, grup);
+      const r = bag.coz(kapsam, alan, grup, enCok - sonSatir.length);
       return (r.deger === undefined ? '' : htmlsiz(r.deger)) + sonSatir;
     }
 
@@ -648,26 +685,36 @@
         duraklar, liste, stil: pTaban, parcalar: []
       };
       const icTablolar = [];
+      let paragrafMetin = 0, paragrafParca = 0;
+      const ekle = parca => {
+        const uzunluk = parca.t === 'metin' ? parca.yazi.length : parca.t === 'sekme' ? 1 : 0;
+        if (paragrafMetin + uzunluk > SINIR.paragrafMetin || s.metin + uzunluk > SINIR.metin)
+          throw hata('boyut', 'genişletilmiş metin');
+        paragrafMetin += uzunluk; s.metin += uzunluk;
+        model.parcalar.push(parca);
+      };
       for (const c of p.children) {
         if (++s.gezinti > SINIR.gezinti) { s.kesildi = s.kesildi || 'oge'; break; }
         zamanDenetle();
+        if (s.kesildi === 'sure') break;
+        if (++paragrafParca > SINIR.paragrafParca) throw hata('boyut', 'paragraf parçası');
         if (++s.parca > SINIR.parca) { s.kesildi = s.kesildi || 'oge'; break; }
         const a = ad(c);
         if (a === 'table') { icTablolar.push(c); continue; }
-        if (a === 'tab') { model.parcalar.push({ t: 'sekme', stil: stilIcin(c, pTaban) }); continue; }
-        if (a === 'space') { model.parcalar.push({ t: 'metin', yazi: ' ', stil: stilIcin(c, pTaban) }); continue; }
-        if (a === 'br' || a === 'linebreak' || a === 'newline') { model.parcalar.push({ t: 'metin', yazi: '\n', stil: pTaban }); continue; }
+        if (a === 'tab') { ekle({ t: 'sekme', stil: stilIcin(c, pTaban) }); continue; }
+        if (a === 'space') { ekle({ t: 'metin', yazi: ' ', stil: stilIcin(c, pTaban) }); continue; }
+        if (a === 'br' || a === 'linebreak' || a === 'newline') { ekle({ t: 'metin', yazi: '\n', stil: pTaban }); continue; }
         if (a === 'image') {
           const r = resimBilgi(oz(c, 'imageData') || oz(c, 'data'), s);
           if (r.red) s.resimReddi++;
-          model.parcalar.push({ t: 'resim', r, ...resimOlcu(c, r, metinEn, metinBoy) });
+          ekle({ t: 'resim', r, ...resimOlcu(c, r, metinEn, metinBoy) });
           continue;
         }
         // content, field ve adı bilinmeyen ama havuzu gösteren öğeler metindir; böylece metin kaybolmaz.
         if (a === 'content' || a === 'field' || oz(c, 'startOffset') != null) {
           if (a !== 'content' && a !== 'field') s.bilinmeyen++;
-          const yazi = parcaMetni(c, kapsam);
-          if (yazi) model.parcalar.push({ t: 'metin', yazi, stil: stilIcin(c, pTaban) });
+          const yazi = parcaMetni(c, kapsam, Math.min(SINIR.metin - s.metin, SINIR.paragrafMetin - paragrafMetin));
+          if (yazi) ekle({ t: 'metin', yazi, stil: stilIcin(c, pTaban) });
         } else s.bilinmeyen++;
       }
       // Paragrafın son parçası paragraf sonu "\n"ini de kapsar; o satır sonu gösterilmez.
@@ -723,7 +770,10 @@
     // Blok listesi. Açık sayfa sonları yalnız en üst düzeyde bölüm ayırır (bolumler verildiğinde).
     function bloklar(el, d, kapsam, bolumler) {
       const out = [];
-      if (bolumler) bolumler.push(out);
+      if (bolumler) {
+        if (bolumler.length >= SINIR.bolum) throw hata('boyut', 'bölüm');
+        bolumler.push(out);
+      }
       if (d > SINIR.derinlik) { s.kesildi = s.kesildi || 'derinlik'; return out; }
       let hedef = out;
       for (const c of el.children) {
@@ -733,7 +783,10 @@
         const a = ad(c);
         if (a === 'page-break' || a === 'pagebreak') {
           s.sayfaSonu++;
-          if (bolumler) { hedef = []; bolumler.push(hedef); }
+          if (bolumler) {
+            if (bolumler.length >= SINIR.bolum) throw hata('boyut', 'bölüm');
+            hedef = []; bolumler.push(hedef);
+          }
           continue;
         }
         if (a === 'header' || a === 'footer') {
@@ -817,7 +870,74 @@
   const pt = v => `${Math.round(v * 100) / 100}pt`;
   const beyazMi = c => c && c[0] === 255 && c[1] === 255 && c[2] === 255;
 
+  // Çizim modeli tekrar kullanır: üst/alt bilgi her bölümde yeni DOM ve tuval
+  // üretir. Bu çarpanlar ilk sayfa kabuğu bile ayrılmadan hesaba katılır.
+  function gorunumDenetle(model, signal) {
+    if (!Array.isArray(model.bolumler) || model.bolumler.length > SINIR.bolum) throw hata('boyut', 'bölüm');
+    const toplam = { metin: 0, dugum: 0, resim: 0, resimPiksel: 0, tuvalPiksel: 0 };
+    const ust = { metin: SINIR.gorunumMetin, dugum: SINIR.gorunumDugum, resim: SINIR.gorunumResim,
+      resimPiksel: SINIR.gorunumResimPiksel, tuvalPiksel: SINIR.gorunumTuvalPiksel };
+    let ziyaret = 0;
+    const ekle = (tur, n, tekrar = 1) => {
+      const maliyet = n * tekrar;
+      if (!Number.isSafeInteger(maliyet) || maliyet < 0 || toplam[tur] + maliyet > ust[tur])
+        throw hata('boyut', 'görünüm ' + tur);
+      toplam[tur] += maliyet;
+    };
+    const resim = (r, en, boy, tekrar) => {
+      ekle('dugum', r.red ? 1 : 2, tekrar);
+      if (r.red) { ekle('metin', 40, tekrar); return; }
+      const g = Math.max(1, Math.round(en / 0.75 * 2)), y = Math.max(1, Math.round(boy / 0.75 * 2));
+      ekle('resim', 1, tekrar);
+      ekle('resimPiksel', r.g * r.y, tekrar);
+      ekle('tuvalPiksel', Math.min(g * y, SINIR.tuvalPiksel), tekrar);
+    };
+    function bloklar(liste, tekrar, derinlik = 0) {
+      if (!Array.isArray(liste) || derinlik > SINIR.derinlik) throw hata('boyut', 'görünüm yapı');
+      for (const b of liste) {
+        if ((++ziyaret & 255) === 0) iptalDenetle(signal);
+        if (b.t === 'p') {
+          ekle('dugum', 2, tekrar); // paragraf ve olası boş satır
+          if (!Array.isArray(b.parcalar) || b.parcalar.length > SINIR.paragrafParca) throw hata('boyut', 'paragraf parçası');
+          if (b.liste) { ekle('dugum', 1, tekrar); ekle('metin', String(b.liste.isaret).length + 1, tekrar); }
+          let uzunluk = 0;
+          for (const c of b.parcalar) {
+            if (c.t === 'resim') { resim(c.r, c.en, c.boy, tekrar); continue; }
+            const n = c.t === 'sekme' ? 1 : typeof c.yazi === 'string' ? c.yazi.length : NaN;
+            uzunluk += n;
+            if (!Number.isSafeInteger(uzunluk) || uzunluk > SINIR.paragrafMetin) throw hata('boyut', 'paragraf metni');
+            ekle('dugum', 1, tekrar); ekle('metin', n, tekrar);
+          }
+        } else if (b.t === 'tablo') {
+          ekle('dugum', 3 + b.sutun, tekrar);
+          for (const satir of b.satirlar) {
+            ekle('dugum', 1, tekrar);
+            for (const hucre of satir) { ekle('dugum', 1, tekrar); bloklar(hucre.bloklar, tekrar, derinlik + 1); }
+          }
+        } else if (b.t === 'resim') {
+          ekle('dugum', 1, tekrar); resim(b.r, b.en, b.boy, tekrar);
+        } else throw hata('xml', 'görünüm öğesi');
+      }
+    }
+    iptalDenetle(signal);
+    const n = model.bolumler.length;
+    ekle('dugum', 1 + n);
+    for (const bolum of model.bolumler) {
+      ekle('dugum', Math.ceil(bolum.length / 200)); bloklar(bolum, 1);
+    }
+    for (const bilgi of [model.ust, model.alt]) if (bilgi) { ekle('dugum', 1, n); bloklar(bilgi, n); }
+    if (model.filigran) {
+      const p = model.sayfa;
+      const g = Math.max(1, Math.round((p.en - p.sol - p.sag) / 0.75));
+      const y = Math.max(1, Math.round((p.boy - p.ust - p.alt) / 0.75));
+      ekle('dugum', 1, n); ekle('resim', 1, n); ekle('tuvalPiksel', g * y, n);
+      ekle('resimPiksel', model.filigran.g * model.filigran.y); // bitmap ortak, tuval sayfa başına
+    }
+    return toplam;
+  }
+
   function ciz(model, { signal, kaydirma } = {}) {
+    gorunumDenetle(model, signal);
     const E = (etiket, sinif) => { const e = document.createElement(etiket); if (sinif) e.className = sinif; return e; };
     const { sayfa, taban } = model;
     const tabanAile = aileListesi(taban.aile);
@@ -891,7 +1011,7 @@
       } finally { if (bmp) bmp.close(); }
     }
 
-    let filigranBmp = null;
+    let filigranBmp = null, filigranIs = null;
     function filigranCiz(tuval) {
       const r = model.filigran;
       const g = tuval.width = Math.max(1, Math.round((sayfa.en - sayfa.sol - sayfa.sag) / 0.75));
@@ -902,12 +1022,11 @@
         tuval.getContext('2d').drawImage(bmp, (g - w) / 2, (y - h) / 2, w, h);
       };
       if (filigranBmp) return yaz(filigranBmp);
-      createImageBitmap(new Blob([r.bayt], { type: r.tur })).then(bmp => {
-        if (bitti === 'birakildi') { bmp.close(); return; }
-        filigranBmp = bmp;
-        bitmapler.add(bmp);
-        yaz(bmp);
-      }).catch(() => {});
+      if (!filigranIs) filigranIs = createImageBitmap(new Blob([r.bayt], { type: r.tur })).then(bmp => {
+        if (bitti === 'birakildi') { bmp.close(); return null; }
+        filigranBmp = bmp; bitmapler.add(bmp); return bmp;
+      });
+      filigranIs.then(bmp => { if (bmp && bitti !== 'birakildi') yaz(bmp); }).catch(() => {});
     }
 
     function paragrafCiz(p) {

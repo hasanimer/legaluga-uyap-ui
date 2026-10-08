@@ -17,12 +17,36 @@
     return false;
   }
   const styleOf = (piece, block, model) => ({ ...(model.taban || {}), ...(block.stil || {}), ...(piece?.stil || {}) });
+  // Worker modeli dışarıdan gelir; kaynak okuyucunun sayaçlarına güvenilmez.
+  // Uzunluk/öğe denetimi karakter taraması ve font/token dizileri kurulmadan yapılır.
+  function validateBudget(model) {
+    if (!Array.isArray(model?.bolumler) || model.bolumler.length > 300)
+      reject('udf-budget', 'UDF bölüm sınırı aşıldı');
+    let characters = 0, nodes = 0;
+    for (const section of model.bolumler) {
+      if (!Array.isArray(section)) reject('udf-model', 'UDF bölüm listesi geçersiz');
+      if ((nodes += 1 + section.length) > 100000) reject('udf-budget', 'UDF öğe sınırı aşıldı');
+      for (const block of section) {
+        if (!Array.isArray(block?.parcalar)) reject('udf-profile', 'UDF paragraf modeli geçersiz');
+        if (block.parcalar.length > 4096 || (nodes += block.parcalar.length) > 100000)
+          reject('udf-budget', 'UDF paragraf veya öğe sınırı aşıldı');
+        let paragraphCharacters = 0;
+        for (const piece of block.parcalar) {
+          if (typeof piece?.yazi !== 'string') reject('udf-profile', 'UDF paragrafında doğrulanmamış öğe var');
+          paragraphCharacters += piece.yazi.length; characters += piece.yazi.length;
+          if (paragraphCharacters > 128 * 1024 || characters > 2 * 1024 * 1024)
+            reject('udf-budget', 'UDF genişletilmiş metin sınırı aşıldı');
+        }
+      }
+    }
+  }
   function validateStyle(s) {
     if (!Number.isFinite(s.punto) || s.punto < 4 || s.punto > 96 ||
       !['times new roman', 'liberation serif', 'serif'].includes(String(s.aile || 'Times New Roman').toLowerCase()) ||
       !validColor(s.renk) || s.zemin) reject('udf-profile', 'UDF yazı tipi, zemin rengi veya stili doğrulanmadı');
   }
   function validate(model, diagnostics) {
+    validateBudget(model);
     if (!model || diagnostics?.complete !== true || model.paketTani?.complete === false ||
       model.kesildi || model.sayac?.resimReddi || model.sayac?.ofsetSorunu || model.sayac?.bilinmeyen)
       reject('udf-incomplete', 'UDF öğeleri veya içeriği eksik çözüldü');

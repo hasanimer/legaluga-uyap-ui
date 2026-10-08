@@ -10,7 +10,24 @@
   function fail(message, code = 'tiff-incomplete') {
     const error = new Error(message); error.code = code; throw error;
   }
+  function checkedBytes(...values) {
+    let total = 0;
+    for (const value of values) {
+      if (!Number.isSafeInteger(value) || value < 0 || !Number.isSafeInteger(total + value))
+        fail('TIFF bellek hesabı geçersiz.', 'tiff-memory');
+      total += value;
+    }
+    return total;
+  }
+  function boundedLimit(limits, name, maximum, code) {
+    const value = limits[name];
+    if (value === undefined) return maximum;
+    if (!Number.isSafeInteger(value) || value < 0) fail('TIFF sınırı geçersiz.', code);
+    return Math.min(maximum, value);
+  }
   function physicalSize(page) {
+    if (![page.g, page.y].every(n => Number.isSafeInteger(n) && n > 0))
+      fail('TIFF piksel ölçüsü geçersiz.', 'tiff-size');
     const valid = n => Number.isFinite(n) && n >= 20 && n <= 10000;
     let dx = page.rawDx, dy = page.rawDy;
     const warnings = [];
@@ -27,7 +44,7 @@
     return { width, height, warnings, dpiX: dx, dpiY: dy };
   }
   function verifyDocument(document, limits = {}) {
-    const maxPages = Math.min(300, Number.isInteger(limits.maxPages) ? limits.maxPages : 300);
+    const maxPages = boundedLimit(limits, 'maxPages', 300, 'tiff-limit');
     if (!document?.complete || document.kesik || document.dongu || document.limitReached ||
         document.toplam !== document.sayfalar?.length || !document.toplam)
       fail('TIFF IFD zinciri eksik, döngülü veya sayfa sınırında kesildi.');
@@ -52,12 +69,14 @@
   // Özgün faks akışı yalnız tek şeritli, döşemesiz G4 sayfada tam görüntüdür: her şerit kendi başvuru satırıyla
   // başladığı için çok şeritli sayfanın akışları art arda eklenemez; o sayfalar çözülür.
   const faxStream = page => page.c === 4 && page.birBit && !page.dosemeli && page.ofs.length === 1;
-  // Sayfa başına çalışma belleği: çözülmüş örnekler, gri/renkli sayfada RGBA ve PDF'e yazılacak kopya.
-  function workingBytes(page) {
-    if (faxStream(page)) return page.say[0] * 2;
-    const raw = page.y * Math.ceil(page.g * page.bps * page.spp / 8);
-    const pixels = page.g * page.y;
-    return page.birBit ? raw * 3 : raw * 2 + pixels * 4 + pixels * 3 * 2;
+  // Çözücünün denetlenmiş tepe kapasitesine döşeme padding'i, Deflate parça backing
+  // buffer'ları ve birleşik kopya dahildir; PDF RGBA/örnek/çıktı kopyaları ayrıca sayılır.
+  function workingBytes(tiff, page) {
+    if (faxStream(page)) return checkedBytes(page.say[0], page.say[0]);
+    const allocation = tiff.allocationEstimate(page);
+    const raw = allocation.rawBytes, pixels = page.g * page.y;
+    return page.birBit ? checkedBytes(allocation.peakBytes, raw, raw)
+      : checkedBytes(allocation.peakBytes, raw, pixels * 4, pixels * 3, pixels * 3);
   }
   async function pageImage(tiff, document, page, index, signal) {
     if (faxStream(page)) {
@@ -128,18 +147,18 @@
     const pdf = await PDF.PDFDocument.create();
     const warnings = [];
     let output = 0;
-    const memoryCap = Math.min(256 * MiB, Number.isFinite(limits.maxWorkingBytes) ? limits.maxWorkingBytes : 256 * MiB);
+    const memoryCap = boundedLimit(limits, 'maxWorkingBytes', 256 * MiB, 'tiff-memory');
     for (let index = 0; index < document.sayfalar.length; index++) {
       if (signal?.aborted) throw new DOMException('Durduruldu.', 'AbortError');
       const page = document.sayfalar[index];
       const physical = physicalSize(page);
       warnings.push(...physical.warnings.map(w => `Sayfa ${index + 1}: ${w}`));
-      if (source.byteLength + output + workingBytes(page) > memoryCap)
+      if (checkedBytes(source.byteLength, output, workingBytes(tiff, page)) > memoryCap)
         fail(`TIFF ${index + 1}. sayfa çalışma belleği sınırını aşıyor; paketi bölün.`, 'tiff-memory');
       try {
         const image = await pageImage(tiff, document, page, index, signal);
-        output += image.data.byteLength;
-        if (output > OUTPUT_CAP || source.byteLength + output > memoryCap)
+        output = checkedBytes(output, image.data.byteLength);
+        if (output > OUTPUT_CAP || checkedBytes(source.byteLength, output) > memoryCap)
           fail('TIFF görüntüleri çıktı/bellek sınırını aşıyor; paketi bölün.', 'tiff-memory');
         const ref = pdf.context.register(pdf.context.stream(image.data,
           { Type: 'XObject', Subtype: 'Image', Width: page.g, Height: page.y, ...image.dict }));
