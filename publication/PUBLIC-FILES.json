@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "273c692be2f818fb4ffbe806e60be7eeb78e87d4c32a37e6bea374a06144890f"
+      "sha256": "f8b092544c2b8e648ec373b969be6d4a782819a826283452fa5dd245206cd701"
     },
     {
       "path": "SECURITY.md",
@@ -104,7 +104,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "5e2f04b832a3f0ca062e1e000ae75543ab680ec2616409c0b3f6c0a8322e49d8"
+      "sha256": "5b52d31b8177b3a8a2975987091f2801c5045e42cf54fc1baf8594287c7d3ddc"
     },
     {
       "path": "publication/FRAGMENTS.json",
@@ -144,7 +144,7 @@
     },
     {
       "path": "src/extension/atif-paneli.js",
-      "sha256": "d1b6990c943d92c3aa6019abcab2364c6ebeb0f3ccc263615350a7912b3bf9b8"
+      "sha256": "c82c6560e32e4ab61e9c6506675ba25667d6fdac38cebc94e39ac641adda19e6"
     },
     {
       "path": "src/extension/durusma-paketi-bootstrap.js",
@@ -220,11 +220,11 @@
     },
     {
       "path": "src/extension/kunye-ayikla.js",
-      "sha256": "b25490f5fb4c68b89eff1804faf9fe7ae4fdc70812dff35e103e27d6018e1ce6"
+      "sha256": "e458ffb0184ac0afa6251dfa69e261924a14c372e77e08ab23537045c7de1df0"
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "71ed603f99de2851e8e5997383c398ecbc3b8122756d3ce1bac04458c6cbf26f"
+      "sha256": "2675f0033000190c7fbbe0f1408d4c655193584baa36c9a74447031a89ad0d6a"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -288,7 +288,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "841d4a7b299144d2b1f84f86c3f190749e7b25eecb54564007c405a61f2ae259"
+      "sha256": "e7e4b6fe76ca3315a56f89f30ff8bc20704cb5c9a330b72f9f64a5c64a9b4ca8"
     },
     {
       "path": "src/extension/vault-crypto.js",

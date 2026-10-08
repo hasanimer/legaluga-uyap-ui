@@ -117,9 +117,15 @@
   const K_ON = '(?:karar(?: (?:no(?:su)?|numarasi|sayisi))?|k\\.?(?: ?no)?)\\.? ?:? ?';
   const E_SON = ` ?(?:esas|e)${S}\\.?`, K_SON = ` ?(?:karar|k)${S}\\.?`;
   const ARA = ' ?(?:[,;-] ?)?(?:(?:ve|ile) )?';
-  // 1-2: "2010/119 E., 2010/478 K." · 3-4: "E. 2010/119 K. 2010/478" · 5-6: AYM bireysel başvuru numarası
+  // Tam E./K. çifti önce denenir. 1-2: etiket sonda · 3-4: etiket önde · 5-6: AYM başvurusu · 7-8: yalnız esas.
   const GRUP_RE = new RegExp(`(?<![a-z0-9])(?:${NUM}${E_SON}${ARA}${NUM}${K_SON}|${E_ON}${NUM}${ARA}${K_ON}${NUM}|` +
-    `(?:b\\.? ?no|basvuru (?:no|numarasi))\\.? ?:? ?${NUM}|${NUM} (?:basvuru numarali|numarali basvuru|sayili basvuru))`, 'g');
+    `(?:b\\.? ?no|basvuru (?:no|numarasi))\\.? ?:? ?${NUM}|${NUM} (?:basvuru numarali|numarali basvuru|sayili basvuru)|` +
+    `${NUM}${E_SON}|${E_ON}${NUM}(?![a-z0-9/-]))`, 'g');
+  // Bozuk veya sınırda kesilmiş karar numarası, tek esaslı bir atfa indirgenmez. Bakış sınırlıdır; başka atfın K.'sine uzanmaz.
+  const EKSIK_KARAR = new RegExp(`^${ARA}(?:${K_ON}(?![a-z])|[0-9]{4} ?/ ?[^,;()\\n]{1,30}${K_SON})`);
+  // "E. sayılı dosyası", "esas sırasına kayıtlı" görülen dosyayı anlatır; karar atfı değildir.
+  const DOSYA_ESASI = /^[ )"'.,:;-]{0,8}(?:(?:sayili|numarali|nolu|no'?lu|esas(?: (?:numarasi|sayisi|no))?|ile|olarak) ){0,3}(?:dava )?(?:dosya[a-z]*|dava[a-z]*|sira[a-z]*|kayd[a-z]*|kayit[a-z]*|derdest[a-z]*|gorulmekte)(?![a-z])/;
+  const DOSYA_ON = /(?:^| )dosya(?: (?:no|numarasi))? ?[:.]? ?$/;
   const TARIH = '(?<![0-9])(?<![0-9][./])(\\d{1,2})[./](\\d{1,2})[./](\\d{4})(?![0-9])';
   const TARIH_RE = new RegExp(TARIH, 'g');
   const SONRA_TARIH_RE = new RegExp(`^(?:[ ,;:()-]{0,4}(?:sayili|ve|ile|tarihli|tarihinde|tarihi|tarih|karar tarihi|kararlari|karari|ilami|k\\.? ?t|t)(?![a-z])\\.?){0,3}[ ,;:()-]{0,4}${TARIH}`);
@@ -268,13 +274,16 @@
       const zincir = !!onceki && onceki.anma === a;
       const bas = zincir ? onceki.s : a?.s;
       const bireysel = g[5] || g[6];
+      const tekEsas = g[7] || g[8];
       onceki = null;
       if (!a || a.engel || gb - bas > (zincir ? ZINCIR : PENCERE) || cumleSonu(duz, konum, metin, bas, gb)) continue;
       if (bireysel && a.mahkeme !== 'AYM') continue;
+      if (tekEsas && (a.mahkeme === 'AYM' || (a.ciplak && a.mahkeme === 'YARGITAY') ||
+        EKSIK_KARAR.test(duz.slice(gs, gs + 80)) || DOSYA_ESASI.test(duz.slice(gs, gs + 80)) || DOSYA_ON.test(duz.slice(bas, gb)))) continue;
       const alan = { mahkeme: a.mahkeme, daire: a.daire, il: a.il };
       if (a.mahkeme === 'AYM') alan.daire = bireysel ? 'Bireysel başvuru' : 'Norm denetimi';
-      alan.esasNo = numara(bireysel || g[1] || g[3]);
-      alan.kararNo = bireysel ? null : numara(g[2] || g[4]);
+      alan.esasNo = numara(bireysel || g[1] || g[3] || tekEsas);
+      alan.kararNo = bireysel || tekEsas ? null : numara(g[2] || g[4]);
       let tarih = oncekiTarih(duz, Math.max(bas, tuketilen), gb), bitis = gs;
       const once = !!tarih;
       if (!tarih) { tarih = sonrakiTarih(duz, gs); if (tarih) bitis = tarih.s; }
@@ -346,7 +355,8 @@
   function kisaYazim(k) {
     if (!k || !MAHKEMELER.has(k.mahkeme)) return '';
     const parcalar = [kisaDaire(k)];
-    if (bireyselMi(k)) parcalar.push(`B. No: ${k.esasNo}`); else parcalar.push(`E. ${k.esasNo}`, `K. ${k.kararNo}`);
+    if (bireyselMi(k)) parcalar.push(`B. No: ${k.esasNo}`);
+    else { parcalar.push(`E. ${k.esasNo}`); if (k.kararNo != null) parcalar.push(`K. ${k.kararNo}`); }
     const t = trTarih(k.tarih);
     if (t) parcalar.push(t);
     return parcalar.join(' · ');
@@ -356,7 +366,8 @@
     const ad = k.mahkeme === 'YARGITAY' ? `Yargıtay ${k.daire}` : k.mahkeme === 'DANISTAY' ? `Danıştay ${k.daire}`
       : k.mahkeme === 'BAM' ? `${k.il} Bölge Adliye Mahkemesi ${k.daire}` : bireyselMi(k) ? 'Anayasa Mahkemesi' : 'Anayasa Mahkemesi (Norm denetimi)';
     const parcalar = [ad];
-    if (bireyselMi(k)) parcalar.push(`B. No: ${k.esasNo}`); else parcalar.push(`E. ${k.esasNo}`, `K. ${k.kararNo}`);
+    if (bireyselMi(k)) parcalar.push(`B. No: ${k.esasNo}`);
+    else { parcalar.push(`E. ${k.esasNo}`); if (k.kararNo != null) parcalar.push(`K. ${k.kararNo}`); }
     const t = trTarih(k.tarih);
     if (t) parcalar.push(`T. ${t}`);
     return parcalar.join(', ');
@@ -416,8 +427,10 @@
     if (typeof taban !== 'string' || !taban || !Array.isArray(kunyeler) || !kunyeler.length) return null;
     let i = typeof secili === 'number' ? secili : kunyeler.indexOf(secili);
     if (!Number.isInteger(i) || i < 0 || i >= kunyeler.length) i = 0;
-    if (!disaAktar(kunyeler[i])) return null;
-    const liste = [kunyeler[i], ...kunyeler.filter((k, j) => j !== i && disaAktar(k))].slice(0, SINIR.adres);
+    // Karar arama alıcısı null kararNo'yu yalnız AYM bireysel başvurusunda kabul eder; tek esas yerel listede kalır.
+    const uygun = k => disaAktar(k) && (typeof k.kararNo === 'string' || (bireyselMi(k) && k.daire === 'Bireysel başvuru'));
+    if (!uygun(kunyeler[i])) return null;
+    const liste = [kunyeler[i], ...kunyeler.filter((k, j) => j !== i && uygun(k))].slice(0, SINIR.adres);
     let deger = kodla(liste);
     while (deger.length > ADRES_UZUNLUK && liste.length > 1) { liste.pop(); deger = kodla(liste); }
     return deger.length > ADRES_UZUNLUK ? null : `${taban}#k=${deger}`;

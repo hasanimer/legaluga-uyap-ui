@@ -43,7 +43,7 @@ UYAP sekmesinde Legaluga simgesi veya **Alt+Shift+D** paneli açar. Panel yeni k
 - **Güncelle:** Seçili kapsamın dosya listesini mevcut UYAP oturumunuzla yerel indekse alın.
 - **Ara:** Ad, dosya numarası, mahkeme veya kendi notunuzu yazın. Türkçe karakter varyantları normalleştirilir; `2031/123` gibi dosya numaralarıyla da arayabilirsiniz.
 - **Daralt:** Yargı türü, dosya durumu, müvekkil ve yeni evrak filtrelerini kullanın; sonuçları uygunluğa, açılış tarihine veya dosya numarasına göre sıralayın.
-- **Aç:** **Dosya Görüntüle** dosya ekranını, **Evrak Görüntüle** doğrudan evrakları açar. Kişi adına tıklayarak aynı adın geçtiği dosyaları görebilirsiniz.
+- **Aç:** **UYAP’tan aç** dosya ekranını, **Legaluga ile aç** doğrudan evrakları açar. Kişi adına tıklayarak aynı adın geçtiği dosyaları görebilirsiniz.
 - **Takip et:** **Duruşmalarım** ve **Yeni evrak** görünümlerini kullanın. Yeni evrak takibini ayarlardan açın; ilk tarama başlangıç listesi oluşturur.
 
 Arama kutusunda **↑ ↓** ile sonuç seçin, **Enter** ile açın, **Esc** ile geri dönün. Arama ve filtreler kayıtlı yerel veriler üzerinde çalışır. Güncelleme ve yeni belge okuma için UYAP bağlantısı gerekir.
@@ -78,13 +78,15 @@ UDF ve TIFF önizlemesi belgeyi cihazınızda işler. Kaynak kullanım sınırı
 
 **Safahat** sekmesini açmak yeni sorgu yapmaz. **Safahatı getir / Güncelle** son işlem listesini alır; son başarılı çekimin tarihi görünür. Kayıt bu Chrome profilinde şifreli saklanır. Aynı dosyada başarılı çekimden sonra **60 dakika** beklenir; hata veya iptal önceki kaydı silmez. Dosya listesini güncellemek safahatı otomatik sorgulamaz.
 
-**Dosyada kalan tutar**, mahkeme ve icra dosyalarının **Özet** ekranındaki UYAP Tahsilat/Reddiyat yanıtından alınır. **Tutarları yenile** açık dosyanın bilgisini yeniler. Son alınan tutar ve tarih Chrome profilinde şifreli saklanarak dosya kartında ve hızlı bakışta gösterilir; karttaki **Getir / Güncelle** Özet ekranını açar. Dosya taraması tutarları topluca sorgulamaz. Eklenti bakiye hesaplamaz ve alınamayan tutarı sıfır göstermez; önceki kayıt tarihiyle korunur. Kayıtlar şifreli yedeğe dahildir ve **Tüm verileri sil** ile silinir. Savcılık dosyalarında kalan tutar alanı yoktur.
+**Dosyada kalan tutar**, mahkeme ve icra dosyalarının **Özet** ekranındaki UYAP Tahsilat/Reddiyat yanıtından alınır. **Tutarları yenile** açık dosyanın bilgisini yeniler. Kalan tutar yalnız **Özet** ekranında gösterilir. Son alınan tutar ve tarih Chrome profilinde şifreli saklanır. Dosya taraması tutarları topluca sorgulamaz. Eklenti bakiye hesaplamaz ve alınamayan tutarı sıfır göstermez; önceki kayıt tarihiyle korunur. Kayıtlar şifreli yedeğe dahildir ve **Tüm verileri sil** ile silinir. Savcılık dosyalarında kalan tutar alanı yoktur.
 
 ![Safahat: kaydedilen işlem listesi, alınma tarihi ve yeni sorgu için kalan süre — örnek veriler](docs/images/10-kaydedilen-safahat.png)
 
 ## Evraktaki karar atıfları
 
 **1.19.47** sürümünde açtığınız evrakın okunabilir metnindeki karar künyeleri cihazınızda taranır. Önizleme çubuğundaki **Atıflar** düğmesi listeyi açıp kapatır; aynı künye tek satırda, tekrar sayısıyla gösterilir. Yargıtay, Danıştay, Anayasa Mahkemesi ve tanınabilen bölge adliye mahkemesi künyeleri aranır. Bulunan künye, kararın gerçekten var olduğunu veya alıntının doğru olduğunu doğrulamaz; kaynak kararı kontrol edin.
+
+**1.19.49** sürümünde açık Yargıtay, Danıştay veya şehir ve dairesi belirtilen BAM atıfları yalnız esas numarasıyla verilse de listelenir. Karar numarası yazılmamışsa **Karar numarası belirtilmemiş** açıklaması gösterilir ve künye kopyalanabilir; eksik numara veya tarih tamamlanmaz. Karar arama sayfası bu eksik künyeleri henüz kabul etmediği için tam metin bağlantısı gösterilmez; tam künyelerin bağlantıları korunur. Mahkemesiz dosya numaraları ve dilekçenin gönderildiği yere ait başlıklar atıf sayılmaz.
 
 | Evrak biçimi | Atıflar görünümü |
 |---|---|
