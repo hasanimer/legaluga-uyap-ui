@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "34a50473ceb215cf5c071dbb31e683dea1b6a7834c9b8b5133ac44e284b39f19"
+      "sha256": "f29bd0c9fe1d6444385b26ef7cfc06c9f32fec8bb8749f9ea371d25f2243ae8b"
     },
     {
       "path": "SECURITY.md",
@@ -104,11 +104,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "6e8c67c8e06d31d34ecbd6d79ac4d95ca30bdecd092d52c95bef968d31e2bd84"
+      "sha256": "f41f7cbcd1b971be8c336aa0cdb1f4723d4ce3b6950427542436b028df730cfc"
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "f0cf22e629ad8a5d8390ed5772ba08c4d6a5c43655b4a22c28a065ecab3f6a37"
+      "sha256": "49a9dca8f88d18bd97dd7d0cb7cd5ad80f8ac6c5afccb1c79542d12a627c953c"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -224,7 +224,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "d7cae60cc8e0bea0da3d18f4ad2e98d23fae152fd8a5dd81ff57e936fb4ba226"
+      "sha256": "c82bd83c4eb6fe677725b9ec95a0aad2fe7ce9b060db122cad568965e639f2bc"
     },
     {
       "path": "src/extension/onboarding.js",
