@@ -44,14 +44,13 @@
 .uhd .sbtn:hover{background:var(--grey-bg);color:var(--text)}
 .uhd .sbtn.clear{right:52px}
 .uhd .sbtn.help{right:18px}
-.uhd .views{display:flex;gap:4px;padding:0 14px 8px;background:var(--card);border-bottom:1px solid var(--line)}
-.uhd .view{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:6px;border:0;border-radius:8px;color:var(--muted);background:none;font-weight:600;cursor:pointer;font-size:12px}
+.uhd .views{display:flex;flex-shrink:0;min-width:0;max-width:100%;gap:4px;padding:4px 14px 8px;background:var(--card);border-bottom:1px solid var(--line);overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;scroll-padding-inline:14px}
+.uhd .view{flex:1 0 auto;min-width:max-content;display:flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:6px;border:0;border-radius:8px;color:var(--muted);background:none;font-weight:600;cursor:pointer;font-size:12px;white-space:nowrap}
 .uhd .view:hover{background:var(--bg);color:var(--text)}
-.uhd .view{min-width:0}
 .uhd .view.ftoggle{flex:none;min-width:40px;padding:6px 8px;gap:4px}
 .uhd .view.ftoggle[aria-expanded=true]{background:var(--bg);color:var(--text)}
 .uhd .view.on{background:var(--soft);color:var(--accent-text)}
-.uhd .view small{font-size:11px;padding:0 5px;border-radius:5px;background:var(--bg);color:var(--muted)}
+.uhd .view small{flex:none;font-size:11px;padding:0 5px;border-radius:5px;background:var(--bg);color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 .uhd .filters{display:flex;flex-direction:column;gap:8px;padding:8px 14px 0}
 .uhd .filters:empty{display:none}
 .uhd .filter-top{display:flex;gap:8px;align-items:center;justify-content:space-between}
@@ -98,6 +97,10 @@
 .uhd .btn.primary:hover{background:var(--navy2)}
 .uhd .btn.danger{border-color:#e5b3ae;color:var(--red)}
 .uhd .btn.sm{padding:5px 9px;min-height:30px;font-size:12px;border-radius:7px}
+.uhd .btn.legaluga-open{background:var(--soft);border-color:${BRAND.border};color:var(--accent-text);font-weight:600}
+.uhd .btn.legaluga-open.primary{background:${BRAND.primary};border-color:${BRAND.primary};color:#fff}
+.uhd .btn.legaluga-open.primary:hover{background:${BRAND.primaryDark};border-color:${BRAND.primaryDark}}
+.uhd .btn.legaluga-open .brand-mark{width:18px;height:18px}
 .uhd .backup-password{width:min(420px,90vw);border:1px solid var(--line2);border-radius:12px;padding:20px;background:var(--card);color:var(--text);font:inherit}
 .uhd .backup-password::backdrop{background:#0007}
 .uhd .backup-password h3{margin:0 0 10px}
@@ -247,10 +250,6 @@
 .uhd .note-line.ro{cursor:default}
 .uhd .view.ozet{flex:none;padding:6px 10px;color:var(--accent-text);background:var(--soft)}
 .uhd .view.ozet:hover{background:var(--bg);color:var(--text)}
-.uhd .balance-line{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin:7px 0;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
-.uhd .balance-line strong{font-variant-numeric:tabular-nums;color:var(--accent-text)}
-.uhd .balance-line small{color:var(--muted);font-size:11px}
-.uhd .balance-line .btn{margin-left:auto}
 .uhd.options .notice,.uhd.options .settings>*{width:100%;max-width:760px;margin-inline:auto}
 .uhd.options>header{padding-inline:max(16px,calc((100% - 760px) / 2));border-bottom:1px solid var(--line)}
 .uhd.options .settings{padding:10px 24px 32px;font-size:13px}
@@ -285,7 +284,7 @@
 .uhd button,.uhd input,.uhd select,.uhd textarea{-webkit-tap-highlight-color:transparent}
 @media(prefers-reduced-motion:reduce){.uhd *{transition:none!important;scroll-behavior:auto!important}}
 @container (max-width:400px){.uhd .results{padding:8px}.uhd .view{font-size:11px}.uhd .ib{width:28px}.uhd header strong{font-size:13px}.uhd .settings-toggle{padding:5px 7px}}
-@container (max-width:360px){.uhd .settings-toggle{font-size:0;gap:0}.uhd .view{gap:3px;padding:6px 4px}.uhd .view:not(.on):not(.ftoggle) small{display:none}}
+@container (max-width:360px){.uhd .settings-toggle{font-size:0;gap:0}.uhd .view{gap:3px;padding:6px 4px}}
 `;
 
   // Basit çizgi simgeleri (24×24, stroke).
@@ -474,8 +473,6 @@
     let progress = null;
     let stopping = false;      // Durdur'a basıldı; iş, süren istekler bitince durur
     let notes = {};
-    let balances = {};
-    let balanceRevision = 0;
     let recent = [];
     let prefs = {};
     let detected = '';
@@ -1400,25 +1397,6 @@
       return el('div', { class: 'son', title: 'Son kaydedilen safahata göre en yeni işlem; safahat elle güncellenir' }, el('span', { class: 'k' }, 'Son işlem: '), el('b', null, fmtTrDate(r.sonIslem.tarih)), r.sonIslem.tur ? ` · ${r.sonIslem.tur}` : '');
     }
 
-    // UYAP'ın toplamKalan değeri, en son bu dosyanın Özet ekranından alındığı tarihle gösterilir.
-    // Kart çizimi sorgu yapmaz; Getir/Güncelle yalnız seçilen dosyanın Özet ekranını açar.
-    function balanceLine(r, interactive = false) {
-      if (r.yargiTuru === CBS.kod) return null;
-      let snapshot = null;
-      try { if (Object.hasOwn(balances, r.key)) snapshot = globalThis.UHD.checkBalanceSnapshot(balances[r.key]); } catch { /* geçersiz tutar gösterilmez */ }
-      const refresh = interactive && opts.onDosyaPanel ? el('button', {
-        type: 'button', class: 'btn sm', 'data-focus': 'balance',
-        title: 'Bu dosyanın kalan tutarını UYAP’tan almak için Özet ekranını aç'
-      }, snapshot ? 'Güncelle' : 'Getir') : null;
-      if (refresh) refresh.addEventListener('click', e => { e.stopPropagation(); opts.onDosyaPanel(r, 'ozet'); });
-      if (!snapshot && !refresh) return null;
-      const date = snapshot ? new Date(snapshot.fetchedAt).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' }) : '';
-      return el('div', { class: 'balance-line', title: snapshot ? `UYAP Tahsilat/Reddiyat · Son alınma: ${date}` : 'Kalan tutar bu dosya için henüz alınmadı.' },
-        el('span', null, 'Dosyada kalan: '),
-        snapshot ? el('strong', null, globalThis.UHD.fmtTL(snapshot.toplamKalan)) : el('small', null, 'Henüz alınmadı'),
-        snapshot ? el('small', null, `Son alınma: ${date}`) : null, refresh);
-    }
-
     async function copyText(btn, text) {
       try {
         await navigator.clipboard.writeText(text);
@@ -1431,15 +1409,15 @@
     }
 
     // Kart: 1) dosya no, durum ve tür etiketleri, simge düğmeleri 2) mahkeme 3) not 4) yakın duruşma ya da son işlem
-    // 5) taraflar (tek satır) 6) yeni evrak ya da son evrak (tek satır) 7) Evrak Görüntüle ve Dosya Görüntüle. Karta tıklamak kartı
-    // seçer; dosya yalnız "Dosya Görüntüle" ya da Enter ile açılır (açma ağır ve geri alınamaz bir işlemdir). Dolu birincil
+    // 5) taraflar (tek satır) 6) yeni evrak ya da son evrak (tek satır) 7) Legaluga ile aç ve UYAP’tan aç. Karta tıklamak kartı
+    // seçer; dosya yalnız "UYAP’tan aç" ya da Enter ile açılır (açma ağır ve geri alınamaz bir işlemdir). Dolu birincil
     // düğmeler yalnız seçili kartta durur.
-    // Hızlı bakış kartı: numara ve etiketler, mahkeme, not (salt okunur), taraflar, Dosya Görüntüle. Evrak, Safahat, not
+    // Hızlı bakış kartı: numara ve etiketler, mahkeme, not (salt okunur), taraflar, UYAP’tan aç. Evrak, Safahat, not
     // düzenleme ve gizleme UYAP'taki paneldedir.
     function quickItem(r, i, toks, keys, extra) {
       const st = stateOf(r);
       const open = el('button', { class: 'btn sm open' + (i === sel ? ' primary' : ''), 'data-focus': 'open', title: 'Dosyayı UYAP’ta Pencere Görünümü ile aç (Enter)' },
-        icon('eye'), el('span', null, 'Dosya Görüntüle'));
+        icon('eye'), el('span', null, 'UYAP’tan aç'));
       open.addEventListener('click', e => { e.stopPropagation(); openRecord(r); });
       const row = el('article', { class: 'item quick' + (st.cls ? ' ' + st.cls : '') + (i === sel ? ' sel' : ''), 'data-key': r.key, 'data-idx': String(i),
         'aria-current': i === sel ? 'true' : null, 'aria-label': `${r.dosyaNo} ${cleanBirim(r.birimAdi)}` },
@@ -1451,7 +1429,6 @@
             yeniMap.has(r.key) ? el('span', { class: 'pill new' }, 'Yeni evrak') : null,
             teyitRozeti(r))),
         el('div', { class: 'birim' }, highlight(cleanBirim(r.birimAdi), toks)),
-        balanceLine(r),
         notes[r.key] ? el('div', { class: 'note-line ro', title: 'Kişisel not (yalnız bu bilgisayarda); UYAP’taki panelden düzenlenir' }, ...globalThis.UHD.noteDisplay(notes[r.key], text => highlight(text, toks))) : null,
         extra || null,
         partyBlock(r, toks, keys),
@@ -1479,20 +1456,20 @@
         ib('copy', `Künyeyi kopyala: ${kunye}`, b => copyText(b, kunye), '', 'copy'),
         ib('note', notes[r.key] ? 'Notu düzenle (yalnız bu bilgisayarda)' : 'Not ekle (yalnız bu bilgisayarda)', () => { editing = r.key; sel = i; render(); }, notes[r.key] ? 'on' : '', 'note'),
         ib('hide', 'Bu dosyayı aramalarda gösterme (Ayarlar’dan yeniden gösterilebilir)', () => hideFile(r), '', 'hide'));
-      // Evrak Görüntüle her zaman Evrak sekmesini açar; görülmemiş yeni evraklar önce gelir.
+      // Legaluga ile aç her zaman Evrak sekmesini açar; görülmemiş yeni evraklar önce gelir.
       const u = unseenEvrak(r, goruldu);
-      const ekranBtn = opts.onDosyaPanel ? el('button', { class: 'btn sm' + (i === sel ? ' primary' : ''), 'data-focus': 'ekran',
+      const ekranBtn = opts.onDosyaPanel ? el('button', { class: 'btn sm legaluga-open' + (i === sel ? ' primary' : ''), 'data-focus': 'ekran',
         title: (u.length ? 'Yeni evrakla açılır. ' : 'Evrak sekmesiyle açılır. ') + (r.yargiTuru === CBS.kod
           ? 'Dosyanın özeti ve evrakı tek ekranda' + (r.incelemeIzni === false ? '; evrak, savcı onayından sonra görünür' : '')
           : 'Dosyanın özeti, evrakı ve Safahat tek ekranda') },
-      icon('doc'), el('span', null, 'Evrak Görüntüle' + (u.length ? ` · ${fmtNum(u.length)} yeni` : ''))) : null;
+      brandLogo(), el('span', null, 'Legaluga ile aç' + (u.length ? ` · ${fmtNum(u.length)} yeni` : ''))) : null;
       if (ekranBtn) ekranBtn.addEventListener('click', e => {
         e.stopPropagation();
         opts.onDosyaPanel(r, 'evrak', yeniBaglam(r));
       });
       const busyText = busy.get(r.key);
       const open = el('button', { class: 'btn sm open' + (i === sel ? ' primary' : ''), 'data-focus': 'open', 'aria-busy': busyText ? 'true' : null,
-        title: 'Dosyayı UYAP’ta Pencere Görünümü ile aç (Enter)' }, icon('eye'), el('span', null, busyText || 'Dosya Görüntüle'));
+        title: 'Dosyayı UYAP’ta Pencere Görünümü ile aç (Enter)' }, icon('eye'), el('span', null, busyText || 'UYAP’tan aç'));
       open.addEventListener('click', e => { e.stopPropagation(); openRecord(r); });
       const hasYeni = yeniMap.has(r.key);
       const son = !hasYeni && !filter.onlyDurusma ? sonLine(r) : null;
@@ -1507,7 +1484,6 @@
             teyitRozeti(r)),
           icons),
         el('div', { class: 'birim' }, highlight(cleanBirim(r.birimAdi), toks)),
-        balanceLine(r, true),
         noteBlock(r, toks),
         durLine(r) || islemLine(r),
         extra || null,
@@ -1529,7 +1505,7 @@
     function kartIpucu() {
       if (pref('kartIpucu', false)) return;
       setPref('kartIpucu', true).catch(() => {});
-      setNotice('Kart seçildi. Dosyayı açmak için “Dosya Görüntüle”ye ya da Enter’a basın.', '', { label: 'Tamam', fn: () => setNotice('') });
+      setNotice('Kart seçildi. Dosyayı açmak için “UYAP’tan aç” düğmesine ya da Enter’a basın.', '', { label: 'Tamam', fn: () => setNotice('') });
     }
 
     // Seçim odaktan ayrı çizilir. Fare imleci seçimi değiştirmez; ↑ ↓ ile seçilince ekran okuyucuya kısa özet okunur.
@@ -1555,7 +1531,7 @@
         if (card.dataset.key !== key) continue;
         const b = card.querySelector('.ifoot .open');
         if (!b) continue;
-        b.lastChild.textContent = text || 'Dosya Görüntüle';
+        b.lastChild.textContent = text || 'UYAP’tan aç';
         if (text) b.setAttribute('aria-busy', 'true'); else b.removeAttribute('aria-busy');
       }
     }
@@ -1609,7 +1585,7 @@
           el('ol', null,
             el('li', null, 'UYAP Avukat Portalı’na e-imza ile giriş yapın.'),
             el('li', null, '“Şimdi güncelle”ye basın. Vekili olduğunuz dosyaların listesi, taraf adları, vekilleri ve duruşmalarınız UYAP’tan alınıp bu Chrome profilinde şifreli saklanır. Bu bilgiler başka bir sunucuya gönderilmez. Evrak ve banka cevabı araçları, seçtiğiniz belgeleri tarayıcınızda işler. Banka sorgusu ayrıca siz başlatınca, UYAP’ın uygunluk ve ücret kontrolünden sonra çalışır; ücrete ayrıca onay sorulur. İlk güncelleme birkaç dakika sürebilir.'),
-            el('li', null, 'Ad, soyad, dosya no veya mahkeme yazın; “Dosya Görüntüle” ile dosya UYAP’ta açılır.')),
+            el('li', null, 'Ad, soyad, dosya no veya mahkeme yazın; “UYAP’tan aç” ile dosya UYAP’ta açılır.')),
           go,
           el('p', { style: 'margin:12px 0 0;font-size:12px;color:var(--muted)' }, 'Ayrıntılar: ', el('a', { href: 'https://github.com/hasanimer/legaluga-uyap-ui/blob/main/docs/PRIVACY.md', target: '_blank', rel: 'noopener' }, 'gizlilik politikası'), '.')));
         return;
@@ -2370,8 +2346,7 @@
     function loadInitial() {
       const initialPrefsRevision = prefsRevision;
       const initialTurFilterRevision = turFilterRevision;
-      const initialBalanceRevision = balanceRevision;
-      return chrome.storage.local.get(['uhdIndex', 'uhdProgress', 'uhdNotes', 'uhdRecent', 'uhdPrefs', 'uhdEvrakGoruldu', 'uhdJob', 'uhdDurusmalar', 'uhdGizli', 'uhdTurFilter', 'uhdBalances']).then(v => {
+      return chrome.storage.local.get(['uhdIndex', 'uhdProgress', 'uhdNotes', 'uhdRecent', 'uhdPrefs', 'uhdEvrakGoruldu', 'uhdJob', 'uhdDurusmalar', 'uhdGizli', 'uhdTurFilter']).then(v => {
         if (loadFailed) setNotice('');
         loaded = true;
         loadFailed = false;
@@ -2390,9 +2365,6 @@
         setIndex(v.uhdIndex);
         progress = v.uhdProgress || null;
         notes = v.uhdNotes || {};
-        if (balanceRevision === initialBalanceRevision) {
-          try { balances = globalThis.UHD.checkBalanceStore(v.uhdBalances).files; } catch { balances = {}; }
-        }
         recent = v.uhdRecent || [];
         renderFilters();
         render();
@@ -2433,11 +2405,6 @@
       else if (ch.uhdEvrakGoruldu) computeYeni();
       if (ch.uhdIndex || ch.uhdEvrakGoruldu) { renderFilters(); redraw = true; }
       if (ch.uhdNotes) { notes = ch.uhdNotes.newValue || {}; redraw = true; }
-      if (ch.uhdBalances) {
-        balanceRevision++;
-        try { balances = globalThis.UHD.checkBalanceStore(ch.uhdBalances.newValue).files; } catch { balances = {}; }
-        redraw = true;
-      }
       if (ch.uhdRecent) recent = ch.uhdRecent.newValue || [];
       if (ch.uhdProgress) {
         progress = ch.uhdProgress.newValue || null;

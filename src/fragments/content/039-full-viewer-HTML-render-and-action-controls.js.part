@@ -41,7 +41,9 @@
     const sonraki = el('button', { type: 'button', class: 'nav', disabled: true, title: 'Daha eski evrak (→)', 'aria-label': 'Daha eski evrak' }, 'Daha eski ›');
     const evrakAdi = el('b', { class: 'ek-evrakad' });
     const yeniSekme = el('a', { target: '_blank', rel: 'noopener', hidden: true }, 'Yeni sekmede aç');
-    const indir = el('a', { hidden: true }, 'İndir');
+    const indir = el('a', { hidden: true, 'data-belge-indir': 'asil', title: 'Belgeyi özgün biçimiyle indir' }, 'Aslını indir');
+    const pdfIndir = el('a', { hidden: true, 'data-belge-indir': 'pdf', title: 'Belgenin PDF kopyasını indir' }, 'PDF indir');
+    const pdfDurum = el('span', { class: 'ek-pdf-durum', role: 'status', hidden: true });
     // Görüldü say: Yeni listesinin sonundaki (en eski) evrak gösterilince (ya da gösterilemeyince) çıkar; yalnız ekranın
     // kurulduğu andaki yeni evrakı işaretler. Sırayla okumada işaretlenen dosyaya dönülünce işaretli görünür.
     const isaretli = !!(okuma && okuma.kuyruk[okuma.i].goruldu);
@@ -56,7 +58,7 @@
     const onbar = el('div', { class: 'ek-onbar' },
       el('div', { class: 'ek-onbar-eylemler' },
         el('span', { class: 'gezinme', role: 'group', 'aria-label': 'Evraklar arasında gezinme' }, onceki, konum, sonraki), evrakAdi,
-        el('div', { class: 'ek-belge-eylemler', role: 'group', 'aria-label': 'Evrak işlemleri' }, yeniSekme, indir, goruldu)));
+        el('div', { class: 'ek-belge-eylemler', role: 'group', 'aria-label': 'Evrak işlemleri' }, yeniSekme, indir, pdfIndir, goruldu)), pdfDurum);
     // Atıflar (1.19.47): evraktaki karar künyeleri onbar'da listelenir (icerik() onbar'ı korur). Ayar kapalıysa tarama ve arayüz yoktur;
     // modül yoksa (ör. ekran testleri) atif null kalır ve görüntüleyici eskisi gibi çalışır. PDF metnini görünmez paket motoru okur:
     // köprüyü başka bir belge işi kullanıyorsa (bankBusy, aşağıda tanımlı) tarama başlamaz, o işi kesmez.
@@ -175,7 +177,7 @@
     let zipRun = null, zipState = null, zipUrl = null;
     let bulkJob = null, bulkRead = null, bulkLoaded = false, bulkChoice = false, bulkIssue = '';
     let bulkState = null, bulkOff = null, bulkFinished = '';
-    let paketSession = null, paketRun = null;
+    let paketSession = null, paketRun = null, belgePdfRun = null;
     let paketMod = false, paketSecili = [], paketSira = 'eski', paketSonucUrl = null, paketOzgunAc = null;
     const PAKET_MAX = 100;
     const paketAnahtar = x => x.k + '\n' + x.dosya;
@@ -595,7 +597,7 @@
       const count = zipTargets().length;
       if (bulkTools && !bulkChoice) zipParts.checked = count > bulkTools.PART_ENTRIES;
       const needsFullList = !!(kaynak?.list.morePages || kaynak?.list.scopeUnknown) && !['son20', 'gorunen'].includes(zipKapsam);
-      const busy = !!zipRun || !!bankRun || !!paketSession || !!bankaOkuma || !!tebligatRead || !!listeBekliyor;
+      const busy = !!zipRun || !!bankRun || !!paketSession || !!bankaOkuma || !!tebligatRead || !!listeBekliyor || !!belgePdfRun;
       const savedPlan = bulkState ? bulkState.saved < bulkState.total : !!bulkJob && bulkJob.cursor < bulkJob.targets.length;
       zipIndir.disabled = busy || !!bulkRead || !zipTools || !!kaynak?.list.kilit || (!!kaynak && !count && !needsFullList) || (!!zipParts.checked && (!!bulkJob || !!bulkState));
       const action = zipParts.checked ? 'Parçalı indir' : 'ZIP olarak indir';

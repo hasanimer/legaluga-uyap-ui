@@ -267,10 +267,11 @@
       d.textContent = ok ? 'Kopyalandı' : 'Kopyalanamadı';
       sonra(() => { d.textContent = 'Künyeyi kopyala'; }, 1800);
     }
-    // "Tam metni aç": kullanıcının tıkladığı bağlantı; künye yalnız adresin # parçasındadır (sunucuya ve Referer'a gitmez).
+    function kararNoEksik(k) { return k?.mahkeme !== 'AYM' && k?.kararNo === null; }
+    // Kullanıcının tıkladığı bağlantı; künye yalnız adresin # parçasındadır (sunucuya ve Referer'a gitmez).
     function tamMetin(i, sinif) {
       const a = el('a', { class: sinif, target: '_blank', rel: 'noopener noreferrer', referrerpolicy: 'no-referrer' }, 'Tam metni aç');
-      const href = globalThis.UHDKunye?.adres(kunyeler, i);
+      const href = kararNoEksik(kunyeler[i]) ? null : globalThis.UHDKunye?.adres(kunyeler, i);
       if (href) a.setAttribute('href', href); else a.hidden = true;
       return a;
     }
@@ -310,9 +311,11 @@
       const ac = tamMetin(i, 'chip ek-atif-git');
       const kopyala = el('button', { type: 'button', class: 'chip ek-atif-kopyala' }, 'Künyeyi kopyala');
       const uyari = k.hatali === 'olmayan_daire' ? 'olmayan daire' : k.hatali === 'gecersiz_tarih' ? 'geçersiz tarih' : '';
+      const eksik = kararNoEksik(k) ? 'Karar numarası belirtilmemiş' : '';
       const s = el('li', { class: 'ek-atif', tabindex: '-1', 'data-sira': String(i),
-        'aria-label': [K.tamYazim(k), k.sayi > 1 ? `${k.sayi} geçiş` : '', uyari && `uyarı: ${uyari}`].filter(Boolean).join(', ') },
+        'aria-label': [K.tamYazim(k), k.sayi > 1 ? `${k.sayi} geçiş` : '', eksik, uyari && `uyarı: ${uyari}`].filter(Boolean).join(', ') },
       el('span', { class: 'ek-atif-kunye' }, el('b', { class: 'ek-atif-kisa' }, K.kisaYazim(k)), k.sayi > 1 ? el('small', null, ` · ${k.sayi} geçiş`) : null,
+        eksik ? el('small', { class: 'ek-atif-eksik' }, eksik) : null,
         uyari ? el('span', { class: 'ek-atif-uyari' }, uyari) : null),
       el('span', { class: 'ek-atif-eylem' }, ac, kopyala));
       // Satıra tıklamak evraktaki ilk geçişe kaydırır; düğmeler kendi işini yapar (tıklama satıra yayılmaz).
@@ -368,7 +371,9 @@
       const kopyala = el('button', { type: 'button', class: 'chip' }, 'Künyeyi kopyala');
       const listede = el('button', { type: 'button', class: 'chip' }, 'Listede göster');
       menu = el('div', { class: 'ek-atif-menu', role: 'dialog', 'aria-label': 'Atıf işlemleri' },
-        el('b', { class: 'ek-atif-kisa' }, globalThis.UHDKunye.kisaYazim(k)), el('div', { class: 'ek-atif-menu-eylem' }, ac, kopyala, listede));
+        el('b', { class: 'ek-atif-kisa' }, globalThis.UHDKunye.kisaYazim(k)),
+        kararNoEksik(k) ? el('small', { class: 'ek-atif-eksik' }, 'Karar numarası belirtilmemiş') : null,
+        el('div', { class: 'ek-atif-menu-eylem' }, ac, kopyala, listede));
       ac.addEventListener('click', () => sonra(() => menuKapat(false), 0));
       kopyala.addEventListener('click', () => kopya(k, kopyala));
       listede.addEventListener('click', () => { menuKapat(false); listedeGoster(i); });
@@ -446,11 +451,19 @@
       const yazi = String(secim).trim();
       if (!yazi || yazi.length > K.SINIR.secim) return;
       const bulunan = K.ayikla(yazi);
-      const href = bulunan.length ? K.adres(bulunan, 0) : null;
-      if (!href) return;
-      secimDugme = el('a', { class: 'dp-go ek-atif-bul', href, target: '_blank', rel: 'noopener noreferrer', referrerpolicy: 'no-referrer',
-        title: K.kisaYazim(bulunan[0]) }, 'Kararı bul');
-      secimDugme.addEventListener('click', () => sonra(secimKapat, 0));
+      if (!bulunan.length) return;
+      if (kararNoEksik(bulunan[0])) {
+        const kopyala = el('button', { type: 'button', class: 'chip' }, 'Künyeyi kopyala');
+        kopyala.addEventListener('click', () => kopya(bulunan[0], kopyala));
+        secimDugme = el('div', { class: 'ek-atif-bul ek-atif-secim', role: 'group', 'aria-label': 'Atıf işlemleri' },
+          el('small', { class: 'ek-atif-eksik' }, 'Karar numarası belirtilmemiş'), kopyala);
+      } else {
+        const href = K.adres(bulunan, 0);
+        if (!href) return;
+        secimDugme = el('a', { class: 'dp-go ek-atif-bul', href, target: '_blank', rel: 'noopener noreferrer', referrerpolicy: 'no-referrer',
+          title: K.kisaYazim(bulunan[0]) }, 'Kararı bul');
+        secimDugme.addEventListener('click', () => sonra(secimKapat, 0));
+      }
       kutu.append(secimDugme);
       konumla(secimDugme, aralik.getBoundingClientRect?.());
     }
@@ -706,6 +719,7 @@
 .viewer .ek-atif:focus-visible{outline:2px solid var(--shell-focus);outline-offset:1px}
 .viewer .ek-atif-kunye{min-width:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .viewer .ek-atif-kunye small{color:var(--shell-muted);font-size:inherit}
+.viewer .ek-atif-kunye .ek-atif-eksik{display:block;margin-top:2px;font-size:11px}
 .viewer .ek-atif-uyari{display:inline-block;margin-left:6px;padding:0 6px;border-radius:6px;background:var(--shell-error-bg);color:var(--shell-error);font-size:11px;font-weight:600}
 .viewer .ek-atif-eylem{display:flex;flex-wrap:wrap;gap:6px}
 .viewer .ek-onbar .ek-atiflar :is(a,button){min-height:28px;padding:3px 9px;font-size:12px}
@@ -717,6 +731,7 @@
 .viewer .ek-atif-menu-eylem{display:flex;flex-wrap:wrap;gap:6px}
 .viewer .ek-atif-menu a.chip{display:inline-flex;align-items:center;text-decoration:none}
 .viewer .ek-atif-bul{position:absolute;z-index:3;padding:5px 10px;box-shadow:0 6px 18px rgba(16,24,40,.25)}
+.viewer .ek-atif-secim{display:flex;flex-direction:column;gap:6px;border:1px solid var(--shell-line);border-radius:8px;background:var(--shell-bg);color:var(--shell-text);font-size:12px}
 :host([data-theme=dark]) .viewer :is(.ek-atif-menu,.ek-atif-bul){box-shadow:0 10px 28px rgba(0,0,0,.55)}
 @container ekran (max-width:760px){.viewer .ek-atiflar{max-height:200px}}
 @container ekran (max-width:460px){.viewer .ek-atif-eylem{width:100%}.viewer .ek-atif-eylem :is(a,button){flex:1}}

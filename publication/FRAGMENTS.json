@@ -343,8 +343,8 @@
       "source": "content.js",
       "order": 23,
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "d375313ce0371ca9959f9e58d022f0e124a21ab066337e3d985c23270d0efcdc",
-      "bytes": 103990,
+      "sha256": "fd53be85bb2c963c0d222693bdb2b20c4924ab5c001afb698b66b67bac10fe93",
+      "bytes": 104170,
       "purpose": "page-shell-full-CSS-docking-and-panel-controls"
     },
     {
@@ -407,8 +407,8 @@
       "source": "content.js",
       "order": 39,
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "1ec05a158d3fa3863f0b734ed4ffb9700fe46806c8c9ab69b61c288d26b48832",
-      "bytes": 54378,
+      "sha256": "505b56e61be787a229d59b53a0de5260dc059c60743bff429def3fa9d50c8862",
+      "bytes": 54729,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -423,8 +423,8 @@
       "source": "content.js",
       "order": 43,
       "path": "src/fragments/content/043-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "8867c915d44e6497d91cc929cf85a729b448c857eb1c08a5e13eb962ac2a9675",
-      "bytes": 7286,
+      "sha256": "453ea5ddaa94d51115284acb7fec02b75333e0692040121166f7bf0dae44097a",
+      "bytes": 7296,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -447,16 +447,16 @@
       "source": "content.js",
       "order": 47,
       "path": "src/fragments/content/047-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "e2872ba2536f8e2a4a1ea2651990d074d3cce4d92fe8adf5a481fc50463fad8b",
-      "bytes": 2611,
+      "sha256": "f11162d12e18a6d8f270c97540daa90b72a8ddb9af1aac0f534c098ee2f99cd5",
+      "bytes": 2613,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
       "source": "content.js",
       "order": 48,
       "path": "src/fragments/content/048-package-frame-and-start-action-controls.js.part",
-      "sha256": "1e376e682e6d7bdfd3bc2469538c4e9011b0e81318ebc750f790de91013909e4",
-      "bytes": 395,
+      "sha256": "8dcb7acda2a33cc301a8363014ab7cace3eeccbb34f4d152e6cf27bbb81206f3",
+      "bytes": 409,
       "purpose": "package-frame-and-start-action-controls"
     },
     {
@@ -471,8 +471,8 @@
       "source": "content.js",
       "order": 51,
       "path": "src/fragments/content/051-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "cf564020ca114342522ef68031522db83b1e3c2eba3c5980fda4e48aa9f908e3",
-      "bytes": 4057,
+      "sha256": "eb42efc3d40b2b08b685ab957d6581b1eaffd525579f55f44ad24e10315db452",
+      "bytes": 4073,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -679,8 +679,8 @@
       "source": "content.js",
       "order": 103,
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "9e5de1bfe8570df9c9f533f9670eb36d73d98eb25d60cf2e7e96a3fd123b60c4",
-      "bytes": 26885,
+      "sha256": "7cb230579892d0bf7ac8286699ead20f5116f5c0a75276169bf62d23856d6440",
+      "bytes": 30777,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {

@@ -164,18 +164,84 @@
     const birak = () => {
       if (!tebligatRead?.explicit) tebligatRead?.ac.abort();
       atif?.temizle();   // eski evrakın atıfları, menüsü ve seçim düğmesi bir sonrakinde görünmez
+      pdfIndir.hidden = true;
+      pdfIndir.removeAttribute('href');
+      pdfIndir.removeAttribute('download');
+      pdfIndir.removeAttribute('role');
+      pdfIndir.removeAttribute('tabindex');
+      pdfIndir.removeAttribute('aria-disabled');
+      pdfIndir.textContent = 'PDF indir';
+      pdfDurum.hidden = true;
+      pdfDurum.textContent = '';
+      indir.hidden = true;
       if (!simdiki) return;
       const s = simdiki;
       simdiki = null;
+      if (belgePdfRun === s) { belgePdfRun = null; zipSync(); bankaCiz(); }
       tebligatUi?.sync();
       s.ac.abort();
       if (s.gozlem) s.gozlem.disconnect();
       if (s.gorunum) s.gorunum.birak();
-      const birakUrl = () => { URL.revokeObjectURL(s.url); URL.revokeObjectURL(s.indirUrl); };
+      const birakUrl = () => { URL.revokeObjectURL(s.url); URL.revokeObjectURL(s.indirUrl); if (s.pdfUrl) URL.revokeObjectURL(s.pdfUrl); };
       if (s.disarida) setTimeout(birakUrl, 60000);
       else birakUrl();
     };
     for (const a of [yeniSekme, indir]) a.addEventListener('click', () => { if (simdiki) simdiki.disarida = true; });
+
+    async function belgePdfIndir(ev) {
+      const s = simdiki;
+      if (closed || pdfIndir.hidden) { ev.preventDefault(); return; }
+      // Hazır PDF ve daha önce dönüştürülen belge doğrudan indirilir; paket önizlemesinde simdiki yoktur.
+      if (pdfIndir.getAttribute('href')) { if (s) s.disarida = true; return; }
+      ev.preventDefault();
+      if (!s || !s.pdfFormat || belgePdfRun) return;
+      const motor = globalThis.UHD.belgePdf;
+      if (!motor?.donustur) return;
+      if (bankBusy()) {
+        pdfDurum.hidden = false;
+        pdfDurum.textContent = 'Devam eden belge işi tamamlanınca PDF indirmeyi tekrar deneyin.';
+        return;
+      }
+      belgePdfRun = s;
+      pdfIndir.textContent = 'PDF hazırlanıyor…';
+      pdfIndir.setAttribute('aria-disabled', 'true');
+      pdfDurum.hidden = true;
+      pdfDurum.textContent = '';
+      zipSync(); bankaCiz();
+      try {
+        const sonuc = await motor.donustur({ blob: s.doc.blob, ext: s.pdfFormat, title: s.title, container: viewer, signal: s.ac.signal });
+        if (simdiki !== s || closed || s.ac.signal.aborted) return;
+        const bytes = sonuc?.bytes;
+        const boyut = bytes?.byteLength;
+        if (!Number.isSafeInteger(boyut) || boyut < 5 || boyut > 128 * 1024 * 1024) throw new Error('PDF çıktısı geçersiz veya çok büyük.');
+        s.pdfUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
+        pdfIndir.href = s.pdfUrl;
+        pdfIndir.download = s.pdfName;
+        pdfIndir.removeAttribute('role');
+        pdfIndir.removeAttribute('tabindex');
+        const uyarilar = Array.isArray(sonuc.warnings) ? sonuc.warnings.filter(v => typeof v === 'string').slice(0, 8) : [];
+        pdfDurum.textContent = uyarilar.length ? uyarilar.join(' · ').slice(0, 1200) : '';
+        pdfDurum.hidden = !uyarilar.length;
+        s.disarida = true;
+        const a = el('a', { href: s.pdfUrl, download: s.pdfName });
+        box.append(a); a.click(); a.remove();
+      } catch (err) {
+        if (simdiki !== s || closed || s.ac.signal.aborted || err?.name === 'AbortError') return;
+        pdfDurum.hidden = false;
+        pdfDurum.textContent = `PDF oluşturulamadı: ${String(err?.message || 'Biraz sonra tekrar deneyin.').slice(0, 500)} Aslını indirebilirsiniz.`;
+      } finally {
+        if (belgePdfRun === s) belgePdfRun = null;
+        if (simdiki === s && !closed) {
+          pdfIndir.textContent = 'PDF indir';
+          pdfIndir.removeAttribute('aria-disabled');
+          zipSync(); bankaCiz();
+        }
+      }
+    }
+    pdfIndir.addEventListener('click', belgePdfIndir);
+    pdfIndir.addEventListener('keydown', ev => {
+      if (!pdfIndir.getAttribute('href') && (ev.key === 'Enter' || ev.key === ' ')) belgePdfIndir(ev);
+    });
 
     function olcekUygula(s) {
       if (!s.gorunum) return;
@@ -303,7 +369,18 @@
       if (yeni && yeni.length && ayni(yeni[yeni.length - 1], x)) gorulduGoster();
       indir.href = indirUrl;
       indir.download = name;
-      indir.hidden = false;
+      indir.hidden = ext === 'pdf';
+      if (ext === 'pdf') {
+        pdfIndir.href = indirUrl;
+        pdfIndir.download = name;
+        pdfIndir.hidden = false;
+      } else {
+        const tur = okuyucuTuru(doc, ext);
+        s.pdfFormat = tur === 'udf' ? 'udf' : tur === 'tiff' ? 'tiff' : ext === 'jpeg' ? 'jpg' : ['jpg', 'png', 'html', 'xml', 'txt'].includes(ext) ? ext : null;
+        s.pdfName = zipTools.documentName(rec, x, 'pdf');
+        pdfIndir.hidden = !s.pdfFormat || !globalThis.UHD.belgePdf?.donustur;
+        if (!pdfIndir.hidden) { pdfIndir.setAttribute('role', 'button'); pdfIndir.setAttribute('tabindex', '0'); }
+      }
       yeniSekme.href = url;
       yeniSekme.hidden = !(framed || img);
       if (framed) {

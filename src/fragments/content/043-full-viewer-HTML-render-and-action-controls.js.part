@@ -13,7 +13,7 @@
     function paketYaz() {
       const n = paketSirasi().length, calisiyor = !!paketSession;
       paketSayi.textContent = n ? `Pakette ${fmtNum(n)} evrak` : 'Pakete alınacak evrakları işaretleyin';
-      paketHazirla.disabled = !n || calisiyor || !!bankRun || !!zipRun || !!bankaOkuma || !!tebligatRead;
+      paketHazirla.disabled = !n || calisiyor || !!bankRun || !!zipRun || !!bankaOkuma || !!tebligatRead || !!belgePdfRun;
       paketSiraGor.disabled = !n || calisiyor;
       paketGorunen.disabled = calisiyor || !paketGorunenYeni().length;
       paketTemizle.disabled = !n || calisiyor;
@@ -111,4 +111,3 @@
       const u = paketSonucUrl; paketSonucUrl = null;
       setTimeout(() => URL.revokeObjectURL(u), 60000);
     }
-    

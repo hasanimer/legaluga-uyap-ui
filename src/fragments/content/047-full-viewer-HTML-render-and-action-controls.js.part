@@ -10,7 +10,7 @@
         baslikYaz(null);
         evrakAdi.textContent = `Duruşma paketi · ${fmtNum(adet)} evrak`;
         evrakAdi.title = evrakAdi.textContent;
-        indir.href = url; indir.download = ad; indir.hidden = false;
+        pdfIndir.href = url; pdfIndir.download = ad; pdfIndir.hidden = false;
         yeniSekme.href = url; yeniSekme.hidden = false;
         icerik(el('iframe', { src: url, title: 'Duruşma paketi' }));
       };
@@ -43,4 +43,3 @@
       }
       if (faz === 'cancelled') { paketKapat(); paketDurum.textContent = 'Durduruldu; PDF oluşturulmadı.'; }
     }
-    

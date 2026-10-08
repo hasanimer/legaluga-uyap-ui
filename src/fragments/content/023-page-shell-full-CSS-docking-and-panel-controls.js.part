@@ -418,6 +418,8 @@
 .viewer .ek-onbar :is(a,button){display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;border:1px solid var(--shell-line);border-radius:7px;background:var(--shell-bg);color:var(--shell-text);padding:7px 10px;font:inherit;cursor:pointer;text-decoration:none;min-height:34px}
 .viewer .ek-onbar :is(a,button):hover{background:var(--shell-soft)}
 .viewer .ek-onbar button:disabled{opacity:.45;cursor:default}
+.viewer .ek-onbar a[aria-disabled=true]{opacity:.45;cursor:wait}
+.viewer .ek-pdf-durum{display:block;color:var(--shell-muted);font-size:12px;line-height:1.5;overflow-wrap:anywhere}
 :host([data-theme=dark]) .viewer .ek-evrak{--evrak-surface:#141e28;--evrak-paper:#0f1720}
 .viewer .ek-liste>:not(.ek-ogeler){flex:none}
 .viewer .ek-liste-baslik{margin:0 2px 2px;font-size:15px;font-weight:600;line-height:1.5}

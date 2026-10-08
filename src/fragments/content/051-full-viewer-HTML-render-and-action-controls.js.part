@@ -35,7 +35,7 @@
       return [...ekler, ...tum.filter(y => y.yetimEk && y.dosya === x.dosya && !ekIdleri.has(String(y.e.evrakId)) && bankAnaEvrak(y)?.k === x.k)]; };
     const bankCandidates = () => tum.filter(x => bankOwn(x) && !ihbarCevabiMi(x.tur) && /talep|haciz|m[üu]zekkere|ihbar/i.test(x.tur));
     // "Tam listeyi al" sürerken (teyitAlim) banka listesi ikinci kez istenmez.
-    const bankBusy = () => !!bankRun || !!bankaOkuma || !!zipRun || !!paketSession || !!paketRun || !!tebligatRead || !!teyitAlim;
+    const bankBusy = () => !!bankRun || !!bankaOkuma || !!zipRun || !!paketSession || !!paketRun || !!tebligatRead || !!teyitAlim || !!belgePdfRun;
     const bankFullList = () => !!kaynak && !kaynak.list.kilit && !kaynak.list.morePages && !kaynak.list.scopeUnknown &&
       (kaynak.list.groups ? kaynak.list.groups.some(bankMainGroup) : kaynak.list.some(e => bankMainGroup(e.dosyaGrubu)));
     const bankInvalid = () => Math.min(500, (kaynak?.list || []).filter(e => !evrakKey(e)).length +
