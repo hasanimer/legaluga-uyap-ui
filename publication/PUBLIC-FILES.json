@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "08575b56efbdb76ae6a6bc0a6d0cf0060cd19abaa6b4a5aea80590f8107d3b46"
+      "sha256": "1182c0120d461bd6aa5ad05410551339fcb0cb134201b08c77a8af28348ab264"
     },
     {
       "path": "SECURITY.md",
@@ -44,7 +44,7 @@
     },
     {
       "path": "demo/panel.css",
-      "sha256": "c2d975e0458a688575ca4d97f709c41bbc5e490a2045116c6f14295525ac756c"
+      "sha256": "d65a288d49a0e33705d80d28e22044786284f8c924ba931cc48577d9b60f221f"
     },
     {
       "path": "docs/DEVELOPMENT.md",
@@ -52,7 +52,7 @@
     },
     {
       "path": "docs/PRIVACY.md",
-      "sha256": "1e3b44526b373e79f17a785c0e8a971d54ee35fe05d5bfe496ac1c1abfff9d48"
+      "sha256": "2f732ae73a63799e440fc3b0988d311d87a104a756980e676101aa04e7557ea2"
     },
     {
       "path": "docs/images/01-uyap-baglantisi.png",
@@ -104,11 +104,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "636c82c33a95a8d9a0ccf6c7aa8d39fc352f2628952e0ccb7c2f6196ca5eeb58"
+      "sha256": "b03ba108a23dd81cfde99a54587919bf33ea90b267a573dc040491dacdd351f2"
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "7ed4d88fa76058541a0eb18eaf7d8dcf319b367b2cce004cc2a488647c6c7df6"
+      "sha256": "c0b0239cfe9ece49763335f76d150739c1e0724c162a784a7673bff99c99c61c"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -144,7 +144,7 @@
     },
     {
       "path": "src/extension/atif-paneli.js",
-      "sha256": "4d28231fe18475d98f78295faea5e6b6e1ec97114c837a33bea29259d16b515e"
+      "sha256": "24a83627ea55c176edaed7fa040053b9b2b5bc80684d157dbc35d2388fd148c4"
     },
     {
       "path": "src/extension/belge-pdf.js",
@@ -220,7 +220,7 @@
     },
     {
       "path": "src/extension/indirme-panel.js",
-      "sha256": "c051e2b9fcccf7b2d33bade47432ec9d0454af1348df5abbd29208dbc8cfffba"
+      "sha256": "647b0fb7729fe1d8834039fbb922da0344a9de90278f0f28bd3ae631ef12e8ba"
     },
     {
       "path": "src/extension/kunye-ayikla.js",
@@ -228,7 +228,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "0b98ab746889d3ad6c2716a245bf82101d9d3cb7ea4fd17d95a25f606c7725bf"
+      "sha256": "dadb6ddd10d317c2e31be9ebede027068957a50208481e18c80d81f873ba3a86"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -248,11 +248,11 @@
     },
     {
       "path": "src/extension/popup.css",
-      "sha256": "d66b5592e0fb13b2440472218aca0267f5bdfe3defa7e77e60e486717360f9e6"
+      "sha256": "c0e2c659bf645dd7ed855bb5d8228a3345c47426c1c9fe2be5f9cf3d6806b8a3"
     },
     {
       "path": "src/extension/popup.html",
-      "sha256": "5eb23d8cb117881bb2d4cdbfe7cbbcb4e7736edb2a00827a96a305b91d048aaa"
+      "sha256": "17cde02eaa18fe1ff891f87d07159a885c016e1e439f692d6ef6a56099777019"
     },
     {
       "path": "src/extension/popup.js",
@@ -276,7 +276,7 @@
     },
     {
       "path": "src/extension/tebligat-ui.js",
-      "sha256": "1e919ec837f20e88588b4ec3fe018e1721c23c8565105351c8226ff4964121a2"
+      "sha256": "b7213e179f863d2a62c4e25da5d84b8e8953b366d6ce2c9f73ee5a54818e379d"
     },
     {
       "path": "src/extension/telemetry.js",
@@ -292,7 +292,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "86d85f41733612d30c6026a8afba5721f102f3544f1e5dd113b01519a524ab3b"
+      "sha256": "f455d4e546c9fa280855ec746ed81c77885cb258df46189ac63dcf0aedc2e857"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -588,7 +588,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "49712a3c3864b40d509ac7d7e6b645d80e375b10f2de41506cda1ee800ef9626"
+      "sha256": "e766104e60dfa4662a3463f8d9e734729c944380eb2a571187d2a538b3a19591"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",

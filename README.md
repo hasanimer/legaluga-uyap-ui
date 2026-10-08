@@ -7,11 +7,15 @@ Eklenti, **Av. Hasan İmer Akın** tarafından meslektaşlarının ücretsiz kul
 
 Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lisansıyla** sunar. UYAP işlem motoru özel kaynaklıdır; tam eklenti mağazadan kurulur.
 
-> Bu rehber, **1.19.55** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+> Bu rehber, **1.19.57** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
 
 **1.19.54:** UYAP, HTTP `200` yanıtında `PRTL_GNL_1-1` güvenlik engeli bildirdiğinde tarama ve otomatik oturum yoklaması durur. Kontrol noktası bu Chrome profilinde şifreli saklanır; kısıtlama kalktığında **Sürdür** ile devam edebilirsiniz. Aynı sekme ve oturumda başarıyla alınmış mahkeme liste kapsamları ve sayfaları atlanır. Yeni sekme, sayfa yenilemesi veya yeni oturumda dosya kimliklerini tazelemek için listeler yeniden alınır; güvenlik nedeniyle duraklamış iş kendiliğinden başlamaz.
 
 **1.19.55:** UYAP’ın kendi evrak ekranındaki **Legaluga ile aç** ve **Atıfları bul** düğmeleri, UYAP’ın zaten yüklediği PDF/UDF/EYP belgeyi cihazda kullanır; belgeyi yeniden istemez. Görünüm yalnız belge ve karar atıflarını açar. EYP üst yazısı ve ekleri mevcut okuyucuda seçilebilir. **Cihazdan aç** ile yerel PDF/UDF/EYP seçilebilir. Güncellemeden sonra UYAP sekmesini yenileyip evrakı açın. Atıf taraması okunabilir metinle sınırlıdır; OCR yapılmaz.
+
+**1.19.57:** Dar ve kısa pencerelerde popup, sekmeler, filtreler, ayarlar, indirme durumu ve bildirimlerin taşması giderildi. Uzun dosya numaraları ve tebligat bilgileri kutuya sığar; atıf menüsü pencere sınırında kalır. İndirme düğmeleri sözcükleri bölmeden satıra geçer. Koyu temada not biçimi ve paket sıra numaralarının okunabilirliği artırıldı.
+
+**1.19.56:** UYAP’tan açılan tek belge görünümünde PDF/UDF/EYP önizlemesinin geniş pencerede 390 piksellik bir sütuna sıkışması düzeltildi. Belge mevcut pencere genişliğini kullanır.
 
 Görseller gerçek arayüz bileşenlerinden **örnek verilerle** hazırlanmıştır; gerçek kişi, dava veya UYAP oturumu içermez.
 
