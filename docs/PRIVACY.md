@@ -1,6 +1,6 @@
 # Legaluga UYAP Asistanı gizlilik politikası
 
-Son güncelleme: **8 Ekim 2026** · **1.19.48** sürümü için hazırlanmıştır. Özellikler kurulu sürüme göre farklı olabilir.
+Son güncelleme: **8 Ekim 2026** · **1.19.52** sürümü için hazırlanmıştır. Özellikler kurulu sürüme göre farklı olabilir.
 
 Legaluga UYAP Asistanı, Av. Hasan İmer Akın tarafından meslektaşlarının ücretsiz kullanımı için geliştirilmiştir. UYAP'ta erişim yetkiniz bulunan dosyaları bulma, görüntüleme ve evraklarını yönetme amacıyla çalışır. T.C. Adalet Bakanlığı, UYAP veya PTT ile resmi bir bağlantısı yoktur. İletişim: **info@legaluga.com**.
 
@@ -30,6 +30,10 @@ Genel web geçmişiniz okunmaz. Geçici iş koordinasyonu Chrome oturum alanın�
 
 UYAP, PTT ve UETS kendi hizmet ve gizlilik koşulları kapsamında istekleri işler; ağ adresinizi görürler. Başlamış bir isteği sonradan durdurmak alıcıya ulaşmış bilgiyi geri alamaz. Dosya belgeleri, ham belge metni ve UYAP oturum bilgileri geliştiricinin sunucusuna gönderilmez. Kullanıcının karar arama bağlantısıyla aktardığı sınırlı künye alanları ve isteğe bağlı teknik hata raporları yukarıdaki açıklamalara tabidir.
 
+## Resmî Danıştay araması
+
+**Resmî Danıştay araması:** Yalnız idare mahkemesi ve bölge idare mahkemesi dosyalarındaki tanınmış Danıştay atıflarında **Danıştay’da ara** bulunur. Tıklayınca `https://karararama.danistay.gov.tr/` açılır. Adresin `#legaluga=` bölümünde yalnız mahkeme, daire, esas numarası ve varsa karar numarası bulunur; belge, alıntı, dosya/taraf bilgisi ve UYAP oturumu yoktur. Paketlenmiş içerik betiği bu tek künyeyi doğrular ve resmî sayfanın arama formunu doldurur. Arama gönderilmez; kullanıcı **Ara** düğmesine basar ve gerekirse sitenin doğrulamasını tamamlar. Künye yerel depolamaya veya hata raporuna eklenmez. Form doldurulunca kullanılan URL parçası kaldırılır; tarayıcı önceki adresi geçmişinde tutmuş olabilir. Resmî siteye bağlantı IP adresinizi gösterir; kullanıcı arama yaptığında daire ve numaralar Danıştay’ın kendi hizmetine gönderilir. Site kendi hizmet ve gizlilik koşulları kapsamında çalışır.
+
 ## Yerel şifreleme ve dışa aktarma
 
 Kalıcı kullanıcı kayıtları **AES-256-GCM** ile şifrelenir. Dışa aktarılamayan `CryptoKey`, uzantının bu Chrome profilindeki IndexedDB alanında tutulur. Şifreleme kaynak kodunun açık olması anahtarınızı paylaşmaz. Ele geçirilmiş veya kilidi açık bir tarayıcı profilinden tam koruma garantisi vermez.
@@ -58,6 +62,7 @@ Raporlamayı kapatmak sonraki gönderimleri durdurur; başlamış isteği veya �
 | `declarativeNetRequestWithHostAccess` | Yalnız geçici PTT sorgu çerçevesinin yüklenmesi için gerekli yanıt başlıklarını sorgu boyunca düzenleme. |
 | `avukat.uyap.gov.tr` | Yetkili resmi oturumla dosya ve evrak işlemleri. |
 | `www.ptt.gov.tr`, `ptt.etebligat.gov.tr` | Kullanıcının seçtiği tebligatın resmi sorgusu. |
+| `karararama.danistay.gov.tr` | Kullanıcının açtığı künye bağlantısında resmî Danıştay arama formunu hazırlama; otomatik arama göndermez. |
 | İzinli Sentry adresi | Yalnız kullanıcı hata raporlamasını açarsa teknik rapor gönderme. |
 
 Uzantının JavaScript kodu paket içindedir; uzantıda çalıştırılmak üzere uzak kod indirilmez. Gömülen resmi PTT sayfası kendi site kodunu çalıştırır. Diğer sitelerin içeriğine genel erişim yoktur. Kullanıcının karar arama bağlantısıyla açtığı Legaluga sayfası normal bir web sekmesidir; eklenti bu site için içerik veya ağ erişim izni istemez.

@@ -22,7 +22,7 @@ test('açık kaynak envanteri bilinmeyen dosya ve değiştirilmiş kaynağı red
 });
 test('özel motor dosyası ve gerçek ağ kayıtlarının yolları açık kapsama alınamaz',async()=>{
   const {validate}=await import('../scripts/validate-public.mjs');
-  for(const name of ['content.js','evrak-indirme-motoru.js','session.har','secret.key','src/extension/content.js','src/fragments/background.js','docs/nested/banka-api.js']){
+  for(const name of ['content.js','evrak-indirme-motoru.js','danistay-content.js','session.har','secret.key','src/extension/content.js','src/extension/danistay-content.js','src/fragments/background.js','docs/nested/banka-api.js']){
     const dir=fixture(name);try{assert.throws(()=>validate(dir),/Özel veri|Tam motor/);}finally{fs.rmSync(dir,{recursive:true,force:true});}
   }
 });

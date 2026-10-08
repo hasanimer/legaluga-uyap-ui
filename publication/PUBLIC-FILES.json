@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "612f4db3a8fd353b875ddd71dabed27853b3cd6762f5fd4486a03dfdeb256731"
+      "sha256": "9b4f617d22206562be1c504726234269bdbf560df5af1d42375f38d2a4fb2b9c"
     },
     {
       "path": "SECURITY.md",
@@ -52,7 +52,7 @@
     },
     {
       "path": "docs/PRIVACY.md",
-      "sha256": "93e8b80fbae5876bacb3ade1845081450d002b62db2a4c0e0df9770793260e84"
+      "sha256": "497f2840d5ca3f99cb3373d635f84e2c9660a6c5b7115b4ee64016a02895177f"
     },
     {
       "path": "docs/images/01-uyap-baglantisi.png",
@@ -104,11 +104,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "4f55c1811e9974a698c1920fe81816322735ccb667bb7d36562541499d2d57a5"
+      "sha256": "9ed08ddcb7141546df1a46fa64e52404bc1b62d05d598e74c7692b5c6a4d94e1"
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "d176351dcad84b0ec12958218644b2bce1b6449045745c24c9481be43056de5f"
+      "sha256": "dd85f245304076691fe4f65acc6cf96d461934714cedcdea31c09400fbaaf4b9"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -140,11 +140,11 @@
     },
     {
       "path": "scripts/validate-public.mjs",
-      "sha256": "8ddbfddee0295241f3fbf30dd3136ca50ffd749ca8846573e8cf52cf452fe65f"
+      "sha256": "7336b877c4c7ed09393035b2cfebbbe0677295173de13206dea856d3af70cdde"
     },
     {
       "path": "src/extension/atif-paneli.js",
-      "sha256": "42fa35dc80b87d56c870284afdcdf06d6bb4a119ecd393ecd2ad05f5966d5495"
+      "sha256": "4d28231fe18475d98f78295faea5e6b6e1ec97114c837a33bea29259d16b515e"
     },
     {
       "path": "src/extension/belge-pdf.js",
@@ -224,11 +224,11 @@
     },
     {
       "path": "src/extension/kunye-ayikla.js",
-      "sha256": "e458ffb0184ac0afa6251dfa69e261924a14c372e77e08ab23537045c7de1df0"
+      "sha256": "a684526a912a7666f85049219061eade5c9b46463fce62e78ee03ec4f2597ccf"
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "5b54059b2821307acc5c3c60d65c5f96310c86cf8e82b9198a329cb3701387ba"
+      "sha256": "f9d667e6f2079ed2ede9632da328dcc2123e5e188b696340dc5e7b5bf7f6cf68"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -620,7 +620,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "c1829bc748ac95b2a2ca067a7a17042323e62c9927b00ad28fa7bfe089bb5be1"
+      "sha256": "363e7121382c36be2096eed7999505eafea9c6fd1444a105ab26edb2d367e289"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -848,7 +848,7 @@
     },
     {
       "path": "tests/publication-boundary.test.js",
-      "sha256": "f9e1a1f49d1e86f3891a6ac90654335ae987204440d79c8be420c6ce21044ba2"
+      "sha256": "f2803de4c053b1915ba5d960264adc9fa9855772d128f6ea3165c291926525b2"
     },
     {
       "path": "tests/ui-downloads.test.js",

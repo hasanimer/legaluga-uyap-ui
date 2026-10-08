@@ -194,6 +194,13 @@
 
   const bekle = () => new Promise(r => setTimeout(r, 0));
 
+  function idareDosyasi(rec) {
+    if (typeof rec?.birimAdi !== 'string') return false;
+    const ad = rec.birimAdi.toLocaleLowerCase('tr-TR').normalize('NFD').replace(/\p{M}/gu, '').replace(/ı/g, 'i')
+      .replace(/\./g, ' ').replace(/\s+/gu, ' ').trim();
+    return /(?:^|\s)idare mahkemesi(?:$|[\s(/-])/u.test(ad);
+  }
+
   // ---- Görüntüleyici bölümü. Bir dosya ekranında bir kez kurulur; her evrakta belge() ile yeniden doldurulur, temizle() ile boşalır.
   // el: görüntüleyicinin el() yardımcısı; onbar: önizleme çubuğu (icerik() yalnız onu korur); eylemler: evrak işlemleri grubu;
   // kutu: menü ve "Kararı bul" düğmesinin konduğu, odak tuzağının içindeki ekran kutusu; kok: kapalı gölge kök (seçim ve odak);
@@ -201,7 +208,7 @@
   // çerçevesinin konduğu öğe; kopru: çağrı anında duruşma paketi köprüsü (UHD.durusmaPaketiBridge); mesgulMu: köprüyü başka
   // bir belge işi (duruşma paketi, banka/tebligat okuması, toplu indirme…) kullanıyor mu? Köprü tekildir: açmak onu kapatırdı.
   function olustur({ el, onbar, eylemler, kutu, kok, kimlik = 'ek', duyur = () => {}, acikMi = () => true,
-    motorKabi = kutu, kopru = () => globalThis.UHD?.durusmaPaketiBridge, mesgulMu = () => false }) {
+    motorKabi = kutu, kopru = () => globalThis.UHD?.durusmaPaketiBridge, mesgulMu = () => false, resmiAramaMi = () => false }) {
     const id = `${kimlik}-atif`;
     const sayi = el('span', { class: 'ek-atif-sayi', 'aria-hidden': 'true' });
     const dugme = el('button', { type: 'button', class: 'ek-atif-ac', 'aria-expanded': 'false', 'aria-controls': id, title: 'Evraktaki karar atıfları' }, 'Atıflar', sayi);
@@ -376,6 +383,13 @@
       if (href) a.setAttribute('href', href); else a.hidden = true;
       return a;
     }
+    function resmiMetin(k) {
+      let izin = false;
+      try { izin = resmiAramaMi() === true; } catch { /* dosya türü belirlenemezse düğme gösterilmez */ }
+      const href = izin ? globalThis.UHDKunye?.resmiAdres?.(k) : null;
+      return href ? el('a', { class: 'chip ek-atif-resmi', href, target: '_blank', rel: 'noopener noreferrer', referrerpolicy: 'no-referrer',
+        title: 'Danıştay’ın resmî sayfasını daire ve esas/karar alanları hazır olarak aç' }, 'Danıştay’da ara') : null;
+    }
 
     function etkinYap(i) {
       etkin = i;
@@ -409,6 +423,7 @@
     function satirKur(k, i) {
       const K = globalThis.UHDKunye;
       const ac = tamMetin(i, 'chip ek-atif-git');
+      const resmi = resmiMetin(k);
       const kopyala = el('button', { type: 'button', class: 'chip ek-atif-kopyala' }, 'Künyeyi kopyala');
       const alintiKopyala = alintiDugmesi(k), yazi = alinti(alintiMetni, k, alintiBirimleri);
       const uyari = k.hatali === 'olmayan_daire' ? 'olmayan daire' : k.hatali === 'gecersiz_tarih' ? 'geçersiz tarih' : '';
@@ -419,10 +434,11 @@
         eksik ? el('small', { class: 'ek-atif-eksik' }, eksik) : null,
         uyari ? el('span', { class: 'ek-atif-uyari' }, uyari) : null),
       yazi ? el('p', { class: 'ek-atif-alinti', title: yazi }, yazi) : null,
-      el('span', { class: 'ek-atif-eylem' }, ac, kopyala, alintiKopyala));
+      el('span', { class: 'ek-atif-eylem' }, ac, resmi, kopyala, alintiKopyala));
       // Satıra tıklamak evraktaki ilk geçişe kaydırır; düğmeler kendi işini yapar (tıklama satıra yayılmaz).
       s.addEventListener('click', () => { etkinYap(i); atla(i); });
       ac.addEventListener('click', ev => ev.stopPropagation());
+      resmi?.addEventListener('click', ev => ev.stopPropagation());
       kopyala.addEventListener('click', ev => { ev.stopPropagation(); kopya(k, kopyala); });
       return s;
     }
@@ -483,14 +499,16 @@
       const k = kunyeler[i];
       if (!k) return;
       const ac = tamMetin(i, 'chip');
+      const resmi = resmiMetin(k);
       const kopyala = el('button', { type: 'button', class: 'chip' }, 'Künyeyi kopyala');
       const alintiKopyala = alintiDugmesi(k);
       const listede = el('button', { type: 'button', class: 'chip' }, 'Listede göster');
       menu = el('div', { class: 'ek-atif-menu', role: 'dialog', 'aria-label': 'Atıf işlemleri' },
         el('b', { class: 'ek-atif-kisa' }, globalThis.UHDKunye.kisaYazim(k)),
         kararNoEksik(k) ? el('small', { class: 'ek-atif-eksik' }, 'Karar numarası belirtilmemiş') : null,
-        el('div', { class: 'ek-atif-menu-eylem' }, ac, kopyala, alintiKopyala, listede));
+        el('div', { class: 'ek-atif-menu-eylem' }, ac, resmi, kopyala, alintiKopyala, listede));
       ac.addEventListener('click', () => sonra(() => menuKapat(false), 0));
+      resmi?.addEventListener('click', () => sonra(() => menuKapat(false), 0));
       kopyala.addEventListener('click', () => kopya(k, kopyala));
       listede.addEventListener('click', () => { menuKapat(false); listedeGoster(i); });
       kutu.append(menu);
@@ -875,7 +893,7 @@
 @media(prefers-contrast:more){.viewer .ek-atif{border-color:var(--shell-muted)}.viewer .atif-cizgi{text-decoration-thickness:2px}.viewer :is(.ek-atiflar,.ek-atif-menu){border-color:var(--shell-text)}}
 `;
 
-  const api = Object.freeze({ SINIR, ILETI, CSS, udfMetni, dagit, bol, birlestir, alinti, htmlIsaretle, olustur });
+  const api = Object.freeze({ SINIR, ILETI, CSS, udfMetni, dagit, bol, birlestir, alinti, idareDosyasi, htmlIsaretle, olustur });
   globalThis.UHDAtifPaneli = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })();

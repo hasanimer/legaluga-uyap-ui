@@ -407,8 +407,8 @@
       "source": "content.js",
       "order": 39,
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "c1829bc748ac95b2a2ca067a7a17042323e62c9927b00ad28fa7bfe089bb5be1",
-      "bytes": 54730,
+      "sha256": "363e7121382c36be2096eed7999505eafea9c6fd1444a105ab26edb2d367e289",
+      "bytes": 54799,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {

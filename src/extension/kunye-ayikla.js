@@ -436,7 +436,20 @@
     return deger.length > ADRES_UZUNLUK ? null : `${taban}#k=${deger}`;
   }
 
-  const api = Object.freeze({ SINIR, bul, ayikla, tekillestir, kisaYazim, tamYazim, disaAktar, kodla, coz, adres });
+  // Resmî Danıştay formuna yalnız seçilen künyenin daire ve E/K alanları taşınır. Belge, alıntı ve dosya bilgisi yoktur.
+  // Site URL parametrelerini okumaz; paketlenmiş özel içerik betiği #legaluga alanını doğrulayıp formu hazırlar.
+  function resmiAdres(k) {
+    const numara = /^(?:19|20)\d{2}\/[1-9]\d{0,6}$/;
+    const daire = /^(?:[1-9]|1[0-7])\. Daire$/;
+    const kurullar = ['İdari Dava Daireleri Kurulu', 'Vergi Dava Daireleri Kurulu', 'İçtihatları Birleştirme Kurulu'];
+    if (k?.mahkeme !== 'DANISTAY' || k.hatali || typeof k.daire !== 'string' || typeof k.esasNo !== 'string'
+      || (k.kararNo !== null && typeof k.kararNo !== 'string') || (!daire.test(k.daire) && !kurullar.includes(k.daire))
+      || !numara.test(k.esasNo) || (k.kararNo !== null && !numara.test(k.kararNo))) return null;
+    const temiz = { mahkeme: 'DANISTAY', daire: k.daire, esasNo: k.esasNo, kararNo: k.kararNo };
+    return `https://karararama.danistay.gov.tr/#legaluga=${kodla([temiz])}`;
+  }
+
+  const api = Object.freeze({ SINIR, bul, ayikla, tekillestir, kisaYazim, tamYazim, disaAktar, kodla, coz, adres, resmiAdres });
   globalThis.UHDKunye = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })();
