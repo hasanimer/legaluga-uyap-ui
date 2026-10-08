@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Legaluga UYAP Asistanı",
   "short_name": "Legaluga UYAP",
-  "version": "1.19.54",
+  "version": "1.19.55",
   "description": "UYAP dosyalarını bulun, evrakı okuyun. Künyeler seçiminizle Legaluga/Danıştay’a; isteğe bağlı hata raporları Sentry’ye gider.",
   "homepage_url": "https://legaluga.com",
   "icons": {
@@ -80,9 +80,20 @@
         "belge-pdf.js",
         "ui.js",
         "onboarding.js",
-        "content.js"
+        "content.js",
+        "uyap-document-native.js"
       ],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://avukat.uyap.gov.tr/*"
+      ],
+      "js": [
+        "uyap-document-main.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start"
     },
     {
       "matches": [

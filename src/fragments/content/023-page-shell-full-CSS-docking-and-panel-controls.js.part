@@ -347,6 +347,7 @@
 .viewer [hidden]{display:none!important}
 .viewer .ek-sekmebar{display:flex;align-items:end;flex-wrap:wrap;gap:6px;padding:8px 12px 0;border-bottom:1px solid var(--shell-line);background:var(--shell-soft)}
 .viewer .ek-sekmeler{display:flex;flex-wrap:wrap;gap:4px}
+.viewer .ek-native-document{grid-template-columns:minmax(0,1fr)}
 .viewer .ek-notlar{max-width:960px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:16px}
 .viewer .ek-not-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
 .viewer .ek-not-heading h3{margin:0;font-size:18px}

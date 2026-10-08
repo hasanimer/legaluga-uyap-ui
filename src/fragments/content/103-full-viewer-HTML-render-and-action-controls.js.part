@@ -93,7 +93,7 @@
     ara.addEventListener('keydown', ev => {
       if (ev.key === 'ArrowDown' && gorunen.length) { ev.preventDefault(); ogeler.focus({ preventScroll: true }); odakSync(true); }
     });
-    evrakYenile.addEventListener('click', () => kaynak ? tamListeAl() : listeAl());
+    evrakYenile.addEventListener('click', () => { if (!nativeDocument) return kaynak ? tamListeAl() : listeAl(); });
     kategoriGorunum.addEventListener('click', () => { kategorili = !kategorili; evrakOdak = null; listeyiCiz(); });
     tarihSirasi.addEventListener('click', () => { tarihArtan = !tarihArtan; listeyiCiz(); });
     ogeler.addEventListener('keydown', ev => {
@@ -156,7 +156,7 @@
       if (tasi && (!simdi || simdi === box || simdi === onizleme || !onizleme.contains(simdi))) (onizleme.querySelector('.docview') || onizleme).focus({ preventScroll: true });
     };
     const baslikYaz = x => {
-      evrakAdi.textContent = !x ? '' : x.ana ? `${/^Ek\s/.test(x.tur) ? '' : 'Ek: '}${x.tur} · ${x.ana.tur} eki · ${tarihYaz(x.onay)}` : `${x.yetimEk ? 'Ek: ' : ''}${x.tur} · ${tarihYaz(x.onay)}`;
+      evrakAdi.textContent = nativeDocument ? nativeDocument.e.tur : !x ? '' : x.ana ? `${/^Ek\s/.test(x.tur) ? '' : 'Ek: '}${x.tur} · ${x.ana.tur} eki · ${tarihYaz(x.onay)}` : `${x.yetimEk ? 'Ek: ' : ''}${x.tur} · ${tarihYaz(x.onay)}`;
       evrakAdi.title = evrakAdi.textContent;
     };
     // Gösterilen evrakın kaynakları: okuma iptal edilir, çizim bırakılır. Bağlantı yeni sekmede açıldıysa ya da indirildiyse
@@ -318,7 +318,7 @@
       const bilgi = tur === 'udf'
         ? ['UDF', oz.bolum > 1 ? `${oz.bolum} bölüm` : '', oz.resimReddi ? `${oz.resimReddi} resim gösterilemedi` : ''].filter(Boolean).join(' · ')
         : ['TIFF', `${oz.toplam} sayfa`, oz.sorunlu ? `${oz.sorunlu} sayfa gösterilemedi` : ''].filter(Boolean).join(' · ');
-      const uyap = tur === 'udf' ? el('button', { type: 'button', title: 'Dosyayı UYAP’ta açıp Evrak sekmesine geçer' }, 'UYAP’ta aç') : null;
+      const uyap = tur === 'udf' && !(typeof nativeDocument !== 'undefined' && nativeDocument) ? el('button', { type: 'button', title: 'Dosyayı UYAP’ta açıp Evrak sekmesine geçer' }, 'UYAP’ta aç') : null;
       uyap?.addEventListener('click', () => { closeDosyaEkrani(false); openFile(rec, false, false, { sekme: 'evrak' }); });
       const kucult = el('button', { type: 'button', title: 'Uzaklaştır', 'aria-label': 'Uzaklaştır' }, '−');
       s.yuzde = el('button', { type: 'button', class: 'yuzde', title: 'Pencereye sığdır', 'aria-label': 'Pencereye sığdır' }, '%100');
@@ -349,6 +349,17 @@
 
     function goster(e, doc, eypPaket = null) {
       birak();
+      const atifBelge = (...args) => {
+        const result = atif?.belge(...args);
+        if (typeof nativeCitations !== 'undefined' && nativeCitations) {
+          const button = onbar.querySelector('.ek-atif-ac');
+          if (button && !button.hidden) {
+            nativeCitations = false;
+            if (button.getAttribute('aria-expanded') !== 'true') button.click();
+          }
+        }
+        return result;
+      };
       const ext = documentExtension(doc);
       const url = URL.createObjectURL(documentPreviewBlob(doc, ext));
       // İndir her evrakta nötr türde ayrı bir adres kullanır: HTML ya da SVG gibi türler bağlam menüsünden yeni sekmede
@@ -364,7 +375,7 @@
       const x = simdikiOge && (simdikiOge.ekIndis != null || ayni(simdikiOge, kendi)) ? simdikiOge : kendi;
       const ad = x.ana ? `${x.ana.tur} eki ${x.tur}` : (e.tur || 'evrak');
       const name = zipTools.documentName(rec, x, ext);
-      const label = `${x.ana ? ad : e.tur || 'Evrak'} · ${fmtTrDate(e.onaylandigiTarih)}`;
+      const label = [x.ana ? ad : e.tur || 'Evrak', fmtTrDate(e.onaylandigiTarih)].filter(Boolean).join(' · ');
       s.title = label;
       tebligatUi?.sync();
       baslikYaz(x);
@@ -429,12 +440,12 @@
             if (gecerli()) goster(e, leaf, { ...paket, secili: paket.ilk });
           } else {
             icerik(el('div', { class: 'msg' }, 'Paket birden fazla belge içeriyor. Yukarıdan görüntülenecek üst yazıyı veya eki seçin.'));
-            atif?.belge('diger', { ext: 'eyp' });
+            atifBelge('diger', { ext: 'eyp' });
           }
         })().catch(err => {
           if (!gecerli()) return;
           icerik(unsupportedDoc(rec, e, ext, indirUrl, name, doc.type, err?.code === 'zip' ? err.message : 'EYP paketi açılamadı; özgün paketi indirin.'));
-          atif?.belge('diger', { ext: 'eyp' });
+          atifBelge('diger', { ext: 'eyp' });
         });
         return;
       }
@@ -444,7 +455,7 @@
         // Düz metin yerleşik eklenti gerektirmez ve kökensiz, betiksiz çerçevede gösterilir.
         const cerceve = el('iframe', { src: url, title: label, ...(ext === 'txt' ? { sandbox: '' } : {}) });
         icerik(cerceve);
-        return atif?.belge(ext, { doc, cerceve, signal: s.ac.signal, gecerli });
+        return atifBelge(ext, { doc, cerceve, signal: s.ac.signal, gecerli });
       }
       // HTML yeni sekmede açılmaz: orada UYAP'ın kökeninde, korumasız çalışırdı. İndir özgün dosyayı verir.
       if (ext === 'html') {
@@ -460,7 +471,7 @@
               cerceve = el('iframe', { srcdoc: html, title: label, sandbox: '', class: 'htmldoc', referrerpolicy: 'no-referrer' });
               icerik(cerceve);
             }
-            atif?.belge('html', { doc, signal: s.ac.signal, gecerli });
+            atifBelge('html', { doc, signal: s.ac.signal, gecerli });
             log('Evrak gösterildi (html).');
           }).catch(err => {
             if (simdiki !== s || closed || benim !== htmlNo) return;
@@ -478,18 +489,18 @@
         // Sayfanın kuralları resmi engellerse indirme ekranına düşülür.
         pic.addEventListener('error', () => { if (simdiki === s) icerik(unsupportedDoc(rec, e, ext, indirUrl, name, doc.type)); }, { once: true });
         icerik(el('div', { class: 'imgdoc' }, pic));
-        return atif?.belge('resim');
+        return atifBelge('resim');
       }
       const tur = okuyucuTuru(doc, ext);
       if (!(tur === 'udf' ? udf : tur === 'tiff' ? tiff : null)) {
         icerik(unsupportedDoc(rec, e, ext, indirUrl, name, doc.type));
-        return atif?.belge('diger', { doc, ext, signal: s.ac.signal, gecerli });
+        return atifBelge('diger', { doc, ext, signal: s.ac.signal, gecerli });
       }
       const kap = s.kap = el('div', { class: 'docview', tabindex: '0', 'aria-label': 'Evrak içeriği' },
         el('div', { class: 'docyer', role: 'status' }, 'Evrak hazırlanıyor…'));
       icerik(kap);
       // TIFF'te metin katmanı yoktur: Atıflar açıklaması çizimi beklemez (çizilemeyen BigTIFF'te de görünür).
-      if (tur === 'tiff') atif?.belge('tiff');
+      if (tur === 'tiff') atifBelge('tiff');
       const t0 = performance.now();
       (async () => {
         const signal = s.ac.signal;
@@ -508,7 +519,7 @@
           s.gozlem = new ResizeObserver(() => { if (yakinlik.mod === 'sigdir' && simdiki === s) olcekUygula(s); });
           s.gozlem.observe(kap);
         }
-        if (tur === 'udf') atif?.belge(tur, { doc, model, gorunum, kap, signal, gecerli });
+        if (tur === 'udf') atifBelge(tur, { doc, model, gorunum, kap, signal, gecerli });
         log(`Evrak gösterildi (${tur}, ${Math.round(performance.now() - t0)} ms).`);
       })().catch(err => {
         if (simdiki !== s || closed || (err && err.name === 'AbortError')) return;
@@ -526,6 +537,12 @@
     // eski istekler iptal edilir, böylece yanlış evrak gösterilmez. hemen: tıklama ya da Enter (bekleme yok).
     function sec(i, hemen = false, visible = false) {
       if (closed || i < 0 || i >= gorunen.length) return;
+      if (nativeDocument) {
+        sira = i;
+        simdikiOge = gorunen[i];
+        goster(nativeDocument.e, nativeDocument.doc);
+        return;
+      }
       const hedef = gorunen[i];
       if (i === sira && ayni(hedef, simdikiOge) && (!hemen || simdiki || gezAc)) { secimiCiz(visible); return; }
       sira = i;

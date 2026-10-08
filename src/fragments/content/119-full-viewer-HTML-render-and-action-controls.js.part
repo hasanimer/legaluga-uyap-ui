@@ -32,7 +32,7 @@
     }
     const yuklenen = new Set();
     function sekmeAc(k) {
-      if (k === aktif || closed) return;
+      if (k === aktif || closed || !SEKMELER.some(t => t[0] === k)) return;
       atif?.sakla?.();   // portal atıf paneli klavyeyle sekme değişince de eski evrakın üstünde kalmaz
       aktif = k;
       for (const b of sekmeDugmeleri) {
@@ -46,7 +46,12 @@
       if (!yuklenen.has(k)) {
         yuklenen.add(k);
         const p = paneller[k];
-        if (k === 'evrak' || k === 'paket') { if (kaynak) { if (!listeHazirlandi) listeHazir(); } else listeAl(); }
+        if (k === 'evrak' && nativeDocument) {
+          const x = oge('', '', nativeDocument.e);
+          tum = gorunen = [x]; sira = 0; simdikiOge = x;
+          goster(nativeDocument.e, nativeDocument.doc);
+        }
+        else if (k === 'evrak' || k === 'paket') { if (kaynak) { if (!listeHazirlandi) listeHazir(); } else listeAl(); }
         else if (k === 'indir') { if (!kaynak) listeAl(); bulkLoad(); zipSync(); }
         else if (k === 'banka') { bankaKartiEkle(p); }
         else {
@@ -175,15 +180,15 @@
     });
     document.addEventListener('keydown', onKey, true);
     if (!beside) hidePanel();
-    dosyaEkrani = { viewer, box, close: done, focus: () => close.focus(), atifAyariniUygula: () => {
+    dosyaEkrani = { viewer, box, nativeDocument: !!nativeDocument, close: done, focus: () => close.focus(), atifAyariniUygula: () => {
       if (atif?.ayarDegisti()) simdiki?.atifHtmlYenile?.();
     } };
     shadowRoot.append(viewer);
     syncOverlays();
-    const ilkSekme = SEKMELER.some(t => t[0] === o.sekme) ? o.sekme : 'ozet';
+    const ilkSekme = nativeDocument ? 'evrak' : SEKMELER.some(t => t[0] === o.sekme) ? o.sekme : 'ozet';
     if (kaynak && ilkSekme !== 'evrak' && ilkSekme !== 'paket') { listeKur(); suz(); }
-    if (downloads) bulkOff = downloads.subscribe(bulkWatch);
-    zipSync();
+    if (!nativeDocument && downloads) bulkOff = downloads.subscribe(bulkWatch);
+    if (!nativeDocument) zipSync();
     sekmeAc(ilkSekme);
     if (siraBar && okuma.yon) {
       const [geri, , ileri] = siraBar.children;
@@ -191,6 +196,26 @@
       (once.find(b => !b.disabled) || close).focus();
     } else close.focus();
   }
+
+  // UYAP'ın kullanıcı için zaten yüklediği belge: yalnız yerel okuyucuya aktarılır; dosya kimliği veya liste sorgusu gerekmez.
+  globalThis.UHD.openNativeDocument = ({ e, doc, title, administrative = false, showCitations = false } = {}) => {
+    if (!doc || !(doc.blob instanceof Blob) || !doc.blob.size || doc.blob.size > 64 * 1024 * 1024)
+      throw new Error('Belge boş veya görüntüleme sınırını aşıyor (64 MiB).');
+    const ext = documentExtension(doc);
+    if (!['pdf', 'udf', 'eyp'].includes(ext)) throw new Error('Bu belge PDF, UDF veya EYP biçiminde değil.');
+    const label = [...String(title || e?.tur || doc.filename || 'UYAP evrakı').slice(0, 1024)]
+      .map(char => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127 ? ' ' : char).join('').trim().slice(0, 256) || 'UYAP evrakı';
+    const event = { tur: label, onaylandigiTarih: '' };
+    const record = { birimAdi: administrative ? 'İdare Mahkemesi' : 'UYAP evrakı', dosyaNo: '', yargiTuru: '' };
+    showEkran(record, { sekme: 'evrak', nativeDocument: { e: event, doc, showCitations: !!showCitations } });
+    return true;
+  };
+
+  globalThis.UHD.closeNativeDocument = () => {
+    if (!dosyaEkrani?.nativeDocument) return false;
+    closeDosyaEkrani(false);
+    return true;
+  };
 
   // ---------------------------------------------------------------- Sayfa bildirimleri
   // Bildirimler bir yığında durur (en çok üç). Her işin kendi kimliği vardır: dosya açma ('acma'), evrak, güncelleme,

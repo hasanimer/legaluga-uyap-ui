@@ -7,9 +7,11 @@ Eklenti, **Av. Hasan İmer Akın** tarafından meslektaşlarının ücretsiz kul
 
 Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lisansıyla** sunar. UYAP işlem motoru özel kaynaklıdır; tam eklenti mağazadan kurulur.
 
-> Bu rehber, **1.19.54** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+> Bu rehber, **1.19.55** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
 
 **1.19.54:** UYAP, HTTP `200` yanıtında `PRTL_GNL_1-1` güvenlik engeli bildirdiğinde tarama ve otomatik oturum yoklaması durur. Kontrol noktası bu Chrome profilinde şifreli saklanır; kısıtlama kalktığında **Sürdür** ile devam edebilirsiniz. Aynı sekme ve oturumda başarıyla alınmış mahkeme liste kapsamları ve sayfaları atlanır. Yeni sekme, sayfa yenilemesi veya yeni oturumda dosya kimliklerini tazelemek için listeler yeniden alınır; güvenlik nedeniyle duraklamış iş kendiliğinden başlamaz.
+
+**1.19.55:** UYAP’ın kendi evrak ekranındaki **Legaluga ile aç** ve **Atıfları bul** düğmeleri, UYAP’ın zaten yüklediği PDF/UDF/EYP belgeyi cihazda kullanır; belgeyi yeniden istemez. Görünüm yalnız belge ve karar atıflarını açar. EYP üst yazısı ve ekleri mevcut okuyucuda seçilebilir. **Cihazdan aç** ile yerel PDF/UDF/EYP seçilebilir. Güncellemeden sonra UYAP sekmesini yenileyip evrakı açın. Atıf taraması okunabilir metinle sınırlıdır; OCR yapılmaz.
 
 Görseller gerçek arayüz bileşenlerinden **örnek verilerle** hazırlanmıştır; gerçek kişi, dava veya UYAP oturumu içermez.
 
@@ -112,7 +114,7 @@ UDF'de **300 karakteri aşmayan** bir künye seçtiğinizde seçimin yanında **
 
 HTML, TXT ve XML taramasında dosya sınırı **10 MB**, metin sınırı **2 MB**'tır; UDF'de yalnız görüntüleyicinin okuyabildiği bölüm taranır. PDF taramasında dosya sınırı **64 MB**, tarama sınırı ilk **300 sayfa** ve en çok **2 MB metin**'dir. Sınır nedeniyle eksik tarama açıkça belirtilir. Kısmen okunabilen PDF'te metin katmanı bulunmayan sayfalar ile metni okunamayan sayfalar ayrı uyarılır; okunamayan PDF, taranmış belge olarak sunulmaz. Evrak değişince veya ekran kapanınca tarama iptal edilir ve önceki evrakın sonuçları bırakılır. Duruşma paketi veya başka bir belge işlemi PDF okuyucusunu kullanıyorsa **Yeniden dene** gösterilir; diğer işlem bitince düğmeye basın.
 
-**Ayarlar → Evrak görüntüleyici → Evraktaki karar atıflarını işaretle** ile taramayı ve Atıflar arayüzünü kapatabilirsiniz. Seçenek başlangıçta açıktır.
+**Ayarlar → Evrak görüntüleyici → Evraktaki karar atıflarını işaretle** ile taramayı ve Atıflar arayüzünü kapatabilirsiniz. Seçenek başlangıçta açıktır. UYAP’ın kendi evrak ekranındaki **Atıfları bul**, kapalı tercihi yalnız o açık belge için aşar; kayıtlı ayarı değiştirmez.
 
 **Tam metni aç** ve **Kararı bul**, yalnız siz tıklayınca [Legaluga karar arama sayfasını](https://mcp.legaluga.com/karar-bul) normal bir yeni sekmede açar. Bağlantının `#k=` bölümünde yalnız mahkeme/daire, varsa il, esas veya başvuru numarası, karar numarası, varsa tarih ve künye uyarısı taşınır; seçilen künye önce gelir, listeden en çok 10 künye aktarılır. Belge, belge metni, seçimin ham metni, taraf/dosya bilgisi ve UYAP oturumu aktarılmaz. `#k=` sayfanın istemci kodu tarafından okunabilir; Base64URL kodlaması şifreleme değildir. Belge yükleme veya otomatik dış sorgu yapılmaz.
 
