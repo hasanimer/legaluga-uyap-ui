@@ -60,38 +60,38 @@
       el('div', { class: 'te-query-toolbar' }, queryFilters,
         el('div', { class: 'te-query-selection' }, pickUnqueried, pickCheck, clearSelection)), status, list);
     const style = el('style', null, `
-      .te-notice-form{width:100%;min-width:0;display:grid;gap:8px}.te-notice-header h4{margin:0 0 4px;font-size:15px}.te-notice-header p{margin:0}
+      .te-notice-form{width:100%;min-width:0;display:grid;gap:8px;container:tebligat-notice/inline-size}.te-notice-form>*{min-width:0}.te-notice-header h4{margin:0 0 4px;font-size:15px}.te-notice-header p{margin:0}
       .te-notice-toolbar{position:sticky;top:-12px;z-index:2;display:flex;gap:8px 14px;align-items:center;flex-wrap:wrap;padding:8px 0;
         background:var(--shell-bg,#fff);border-bottom:1px solid var(--shell-line,#d0d7de)}
       .te-notice-selectall{display:flex;gap:6px;align-items:center;white-space:nowrap;cursor:pointer;font-weight:600}
-      .te-filters{display:flex;gap:4px;flex-wrap:wrap}.te-filters:empty{display:none}
+      .te-filters{display:flex;gap:4px;flex-wrap:wrap;min-width:0;max-width:100%}.te-filters:empty{display:none}
       .te-filters .chip[aria-pressed="true"]{border-color:var(--shell-accent,#0b6663);color:var(--shell-accent,#0b6663);font-weight:600}
       .te-query-toolbar{display:flex;gap:6px 14px;align-items:center;flex-wrap:wrap}.te-query-toolbar[hidden]{display:none}
-      .te-query-selection{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}.te-query-selection .chip{font-size:12px}
+      .te-query-selection{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto;min-width:0;max-width:100%}.te-query-selection .chip{font-size:12px}
       .te-summary{margin:0}.te-notice-actions{display:flex;gap:8px;margin-left:auto;align-items:center}
       .te-status{margin:0}.te-status:empty{display:none}.te-status.err{color:var(--shell-error,#cf222e)}
-      .te-notice-list{display:grid;gap:6px}
-      .te-row{border:1px solid var(--shell-line,#d0d7de);border-left:3px solid var(--shell-line,#d0d7de);border-radius:10px;padding:8px 12px;background:var(--shell-bg,#fff)}
+      .te-notice-list{display:grid;gap:6px;min-width:0}
+      .te-row{min-width:0;border:1px solid var(--shell-line,#d0d7de);border-left:3px solid var(--shell-line,#d0d7de);border-radius:10px;padding:8px 12px;background:var(--shell-bg,#fff)}
       .te-row.busy{border-left-color:var(--shell-accent,#0b6663)}.te-row.attn{border-left-color:var(--shell-warn,#bf8700)}
       .te-row.done{border-left-color:var(--shell-success,#1a7f37)}.te-row.err{border-left-color:var(--shell-error,#cf222e)}
       .te-row-head{display:flex;gap:6px 12px;align-items:center;flex-wrap:wrap}
       .te-row-head>input{flex:none;width:16px;height:16px;margin:0;cursor:pointer}
       .te-row-main{flex:1 1 280px;min-width:0;display:grid;gap:2px;cursor:pointer}
       .te-row-title{font-weight:600;overflow-wrap:anywhere;line-height:1.35}.te-row-meta{color:var(--shell-muted,#57606a);font-size:12px;overflow-wrap:anywhere}
-      .te-badges{display:flex;gap:4px;flex-wrap:wrap}
+      .te-badges{display:flex;gap:4px;flex-wrap:wrap;min-width:0;max-width:100%}
       .te-badge{font-size:11px;line-height:1.2;padding:3px 8px;border-radius:999px;border:1px solid var(--shell-line,#d0d7de);color:var(--shell-muted,#57606a);white-space:nowrap}
-      .te-badge.ptt,.te-badge.uets{color:var(--shell-text,#1f2328)}.te-badge.uyap{color:var(--shell-success,#1a7f37);border-color:currentColor}
-      .te-state{font-size:12px;font-weight:600;white-space:nowrap;min-width:9em;text-align:right}
+      .te-badge.ptt,.te-badge.uets{color:var(--shell-text,#1f2328)}.te-badge.uyap{color:var(--shell-success,#1a7f37);border-color:currentColor;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+      .te-state{font-size:12px;font-weight:600;min-width:0;max-width:min(100%,32ch);white-space:normal;overflow-wrap:anywhere;text-align:right}
       .te-state.idle{color:var(--shell-muted,#57606a);font-weight:400}.te-state.busy{color:var(--shell-accent,#0b6663)}
       .te-state.attn{color:var(--shell-warn-text,#9a6700)}.te-state.done{color:var(--shell-success,#1a7f37)}.te-state.err{color:var(--shell-error,#cf222e)}
       .te-state.busy::before{content:"";display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:currentColor;animation:te-pulse 1s ease-in-out infinite}
       @keyframes te-pulse{50%{opacity:.25}}@media(prefers-reduced-motion:reduce){.te-state.busy::before{animation:none}}
       .te-row-go{flex:none}.te-notice-form .chip:is(:disabled,[aria-disabled="true"]){opacity:.45;cursor:default}.te-row-subject{margin:4px 0 0 28px!important}
-      .te-row-cmds{display:flex;gap:6px;flex:none;align-items:center}.te-row-cmds .chip{white-space:nowrap}
+      .te-row-cmds{display:flex;gap:6px;flex-wrap:wrap;min-width:0;max-width:100%;align-items:center}.te-notice-form .chip{box-sizing:border-box;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:center}
       .te-row-body{display:grid;gap:6px;margin:8px 0 2px 28px;min-width:0;overflow-wrap:anywhere}.te-row-body:empty{display:none}
       .te-row-body p{margin:0}.te-msg.warn{color:var(--shell-warn-text,#9a6700)}.te-msg.err{color:var(--shell-error,#cf222e)}
       .te-result{display:flex;gap:4px 12px;align-items:baseline;flex-wrap:wrap}.te-result strong{font-size:13px}
-      .te-facts{display:flex;flex-wrap:wrap;gap:2px 18px;margin:0}.te-facts div{display:flex;gap:6px}.te-facts dt{color:var(--shell-muted,#57606a)}.te-facts dd{margin:0}
+      .te-facts{display:flex;flex-wrap:wrap;gap:2px 18px;margin:0}.te-facts div{display:flex;flex-wrap:wrap;gap:6px;min-width:0;max-width:100%}.te-facts dt{color:var(--shell-muted,#57606a)}.te-facts dd{margin:0;min-width:0}
       .te-events summary{cursor:pointer;color:var(--shell-accent,#0b6663);font-size:12px;width:max-content}
       .te-tablewrap{max-height:240px;overflow:auto;margin-top:6px}.te-table{width:100%;font-size:12px;border-collapse:collapse}
       .te-table th,.te-table td{text-align:left;padding:5px 8px;vertical-align:top;border-bottom:1px solid var(--shell-line,#d0d7de)}
@@ -99,9 +99,10 @@
       .te-manual{display:grid;gap:6px;padding:8px 10px;border:1px dashed var(--shell-warn,#bf8700);border-radius:8px}.te-manual p{margin:0}
       .te-manual-chips,.te-manual-row,.te-row-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
       .te-manual-chips .chip[aria-pressed="true"]{border-color:var(--shell-accent,#0b6663);color:var(--shell-accent,#0b6663);font-weight:600}
-      .te-manual-row input{width:17ch;font:inherit;padding:5px 8px;border:1px solid var(--shell-line,#d0d7de);border-radius:6px;background:transparent;color:inherit}
+      .te-manual-row input{box-sizing:border-box;width:17ch;min-width:0;max-width:100%;font:inherit;padding:5px 8px;border:1px solid var(--shell-line,#d0d7de);border-radius:6px;background:transparent;color:inherit}
       .te-empty{margin:12px 0}
       @media(max-width:720px){.te-state{min-width:0;text-align:left}.te-row-body,.te-row-subject{margin-left:0!important}.te-notice-actions,.te-query-selection{margin-left:0}}
+      @container tebligat-notice (max-width:520px){.te-state{text-align:left}.te-row-body,.te-row-subject{margin-left:0!important}.te-notice-actions,.te-query-selection{margin-left:0}.te-row-main{flex-basis:calc(100% - 28px)}}
     `);
     container.replaceChildren(style, form);
     let destroyed = false, current = null, opening = false, openError = '', items = [], revision, revisionKnown = false, initialSelection = false, filter = 'all', queryFilter = 'all';
@@ -209,9 +210,9 @@
           el('div', { class: 'te-tablewrap' }, el('table', { class: 'te-table' },
             el('thead', null, el('tr', null, ['Tarih', 'İşlem', 'Ayrıntı'].map(text => el('th', { scope: 'col' }, text)))),
             el('tbody', null, events.map(event => el('tr', null,
-              el('td', { class: 'te-date' }, String(event.time || '—')),
-              el('td', null, `${event.mazbata === true ? 'Mazbata · ' : ''}${String(event.status || '—')}`),
-              el('td', null, [event.detail, event.location].filter(Boolean).map(String).join(' · ') || '—')))))))
+              el('td', { class: 'te-date', 'data-label': 'Tarih' }, String(event.time || '—')),
+              el('td', { 'data-label': 'İşlem' }, `${event.mazbata === true ? 'Mazbata · ' : ''}${String(event.status || '—')}`),
+              el('td', { 'data-label': 'Ayrıntı' }, [event.detail, event.location].filter(Boolean).map(String).join(' · ') || '—')))))))
           : el('p', { class: 'dp-muted' }, provider === 'uets'
             ? 'Mazbata eşleşti; olay tarihleri ayrı okunamadı. Belgeden kontrol edin.'
             : 'PTT bu sorgu için hareket kaydı döndürmedi.'));

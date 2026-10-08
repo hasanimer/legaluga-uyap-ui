@@ -321,11 +321,21 @@
       is();
     });
 
+    function geciciIzle() {
+      if (menu || secimDugme) globalThis.addEventListener?.('resize', geciciKapat);
+      else globalThis.removeEventListener?.('resize', geciciKapat);
+    }
+    function geciciKapat() {
+      const secimOdak = secimDugme?.contains(odakta());
+      menuKapat(); secimKapat();
+      if (secimOdak) kapDugum?.focus?.({ preventScroll: true });
+    }
     function menuKapat(odakDon = true) {
       if (!menu) return false;
       const icinde = menu.contains(odakta());
       menu.remove();
       menu = null;
+      geciciIzle();
       if (icinde && odakDon) kapDugum?.focus?.({ preventScroll: true });
       return true;
     }
@@ -333,6 +343,7 @@
       if (!secimDugme) return false;
       secimDugme.remove();
       secimDugme = null;
+      geciciIzle();
       return true;
     }
     // Menü ve "Kararı bul" düğmesi hedefin altında (sığmazsa üstünde), kutunun görünür alanı içinde durur. Koordinatlar
@@ -340,6 +351,9 @@
     function konumla(dugum, hedef) {
       const ust = dugum.offsetParent, k = kutu?.getBoundingClientRect?.();
       if (!ust || !k || !hedef || !dugum.style) return;
+      // Konumlandırma kabı görüntüleyiciden geniş olabilir; menü dar ekran kutusuna göre ölçülür.
+      dugum.style.setProperty('max-width', `${Math.min(dugum === menu ? 360 : Infinity, Math.max(0, k.right - k.left - 16))}px`);
+      if (dugum !== bolum) dugum.style.setProperty('max-height', `${Math.max(0, k.bottom - k.top - 16)}px`);
       const o = ust.getBoundingClientRect();
       const yukseklik = dugum.offsetHeight || 0, genislik = dugum.offsetWidth || 0;
       const x = Math.max(k.left + 8, Math.min(hedef.left, k.right - genislik - 8));
@@ -515,6 +529,7 @@
       // Satır kıran çizgide menü tıklanan satırın altına konur.
       const kutucuklar = [...(hedef?.getClientRects?.() || [])];
       konumla(menu, kutucuklar.find(r => ev?.clientY >= r.top && ev?.clientY <= r.bottom) || kutucuklar.at(-1) || hedef?.getBoundingClientRect?.());
+      geciciIzle();
       (ac.hidden ? kopyala : ac).focus({ preventScroll: true });
     }
     kutu?.addEventListener('pointerdown', ev => {
@@ -602,6 +617,7 @@
       }
       kutu.append(secimDugme);
       konumla(secimDugme, aralik.getBoundingClientRect?.());
+      geciciIzle();
     }
     function secimDinle(kap, benim) {
       kapDugum = kap;
@@ -867,7 +883,7 @@
 .viewer .ek-atif-liste{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .viewer .ek-atif{flex:none;display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:10px;border:1px solid var(--shell-line);border-radius:8px;background:var(--shell-bg);cursor:pointer}
 .viewer .ek-atif:hover{background:var(--shell-soft)}
-.viewer .ek-atif:focus-visible{outline:2px solid var(--shell-focus);outline-offset:1px}
+.viewer .ek-atif:focus-visible{outline:2px solid var(--shell-focus);outline-offset:-2px}
 .viewer .ek-atif-kunye{min-width:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .viewer .ek-atif-kunye small{color:var(--shell-muted);font-size:inherit}
 .viewer .ek-atif-kunye .ek-atif-eksik{display:block;margin-top:2px;font-size:11px}
@@ -882,10 +898,10 @@
 .viewer .atif-cizgi:hover,.viewer .atif-cizgi.vurgu{background:rgba(15,129,126,.16)}
 .viewer .atif-cizgi.vurgu{animation:atif-vurgu 1.6s ease-out}
 @keyframes atif-vurgu{from{background:rgba(15,129,126,.42)}to{background:rgba(15,129,126,.16)}}
-.viewer .ek-atif-menu{position:absolute;z-index:4;max-width:min(360px,calc(100% - 16px));display:flex;flex-direction:column;gap:8px;padding:10px 12px;border:1px solid var(--shell-line);border-radius:10px;background:var(--shell-bg);color:var(--shell-text);box-shadow:0 10px 28px rgba(16,24,40,.22);font-size:12px}
+.viewer .ek-atif-menu{position:absolute;z-index:4;box-sizing:border-box;max-width:min(360px,calc(100% - 16px));display:flex;flex-direction:column;gap:8px;padding:10px 12px;border:1px solid var(--shell-line);border-radius:10px;background:var(--shell-bg);color:var(--shell-text);box-shadow:0 10px 28px rgba(16,24,40,.22);font-size:12px;overflow:auto;overflow-wrap:anywhere}
 .viewer .ek-atif-menu-eylem{display:flex;flex-wrap:wrap;gap:6px}
 .viewer .ek-atif-menu a.chip{display:inline-flex;align-items:center;text-decoration:none}
-.viewer .ek-atif-bul{position:absolute;z-index:3;padding:5px 10px;box-shadow:0 6px 18px rgba(16,24,40,.25)}
+.viewer .ek-atif-bul{position:absolute;z-index:3;box-sizing:border-box;padding:5px 10px;box-shadow:0 6px 18px rgba(16,24,40,.25)}
 .viewer .ek-atif-secim{display:flex;flex-direction:column;gap:6px;border:1px solid var(--shell-line);border-radius:8px;background:var(--shell-bg);color:var(--shell-text);font-size:12px}
 :host([data-theme=dark]) .viewer :is(.ek-atiflar,.ek-atif-menu,.ek-atif-bul){box-shadow:0 10px 28px rgba(0,0,0,.55)}
 @container ekran (max-width:460px){.viewer .ek-atif-eylem :is(a,button){flex:1}.viewer .ek-atif-eylem .ek-atif-alinti-kopyala{flex-basis:100%}}
