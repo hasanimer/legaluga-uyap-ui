@@ -7,11 +7,13 @@ Eklenti, **Av. Hasan İmer Akın** tarafından meslektaşlarının ücretsiz kul
 
 Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lisansıyla** sunar. UYAP işlem motoru özel kaynaklıdır; tam eklenti mağazadan kurulur.
 
-> Bu rehber, **1.19.57** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+> Bu rehber, **1.19.58** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
 
 **1.19.54:** UYAP, HTTP `200` yanıtında `PRTL_GNL_1-1` güvenlik engeli bildirdiğinde tarama ve otomatik oturum yoklaması durur. Kontrol noktası bu Chrome profilinde şifreli saklanır; kısıtlama kalktığında **Sürdür** ile devam edebilirsiniz. Aynı sekme ve oturumda başarıyla alınmış mahkeme liste kapsamları ve sayfaları atlanır. Yeni sekme, sayfa yenilemesi veya yeni oturumda dosya kimliklerini tazelemek için listeler yeniden alınır; güvenlik nedeniyle duraklamış iş kendiliğinden başlamaz.
 
 **1.19.55:** UYAP’ın kendi evrak ekranındaki **Legaluga ile aç** ve **Atıfları bul** düğmeleri, UYAP’ın zaten yüklediği PDF/UDF/EYP belgeyi cihazda kullanır; belgeyi yeniden istemez. Görünüm yalnız belge ve karar atıflarını açar. EYP üst yazısı ve ekleri mevcut okuyucuda seçilebilir. **Cihazdan aç** ile yerel PDF/UDF/EYP seçilebilir. Güncellemeden sonra UYAP sekmesini yenileyip evrakı açın. Atıf taraması okunabilir metinle sınırlıdır; OCR yapılmaz.
+
+**1.19.58:** Atıf panelinde işaretlediğiniz künyeler **Seçilenleri aç** ile seçim sırasıyla tek sekmede açılır. Karar numarası olmayan künyeler (Anayasa Mahkemesi bireysel başvurusu hariç) seçilemez; en çok 10 künye gider, adres sığmazsa aktarılacak sayı yazılır.
 
 **1.19.57:** Dar ve kısa pencerelerde popup, sekmeler, filtreler, ayarlar, indirme durumu ve bildirimlerin taşması giderildi. Uzun dosya numaraları ve tebligat bilgileri kutuya sığar; atıf menüsü pencere sınırında kalır. İndirme düğmeleri sözcükleri bölmeden satıra geçer. Koyu temada not biçimi ve paket sıra numaralarının okunabilirliği artırıldı.
 
@@ -114,13 +116,13 @@ Dar panelde sekme metni ve sayaçlar sıkışmaz. Satıra sığmayan sekmelere y
 | **Metin katmanlı PDF** | Sayfa metni paket içindeki yerel PDF işçisiyle okunur ve listelenir. PDF görünümüne alt çizgi eklenmez; satırdan kaynak sayfaya gidilmez. |
 | **Taranmış PDF / TIFF / resim** | OCR yapılmaz. PDF'in metin katmanı olmayan sayfaları taranamaz; karma PDF'te okunabilen sayfaların sonuçları korunur ve atlanan sayfa sayısı gösterilir. TIFF ve resimde tarama yapılamadığı açıklanır. |
 
-UDF'de **300 karakteri aşmayan** bir künye seçtiğinizde seçimin yanında **Kararı bul** çıkar; bağlantıyı tıklayınca arama sayfası açılır. Listede **↑ ↓**, **Home / End** ile görünen atıflar arasında gezin, satır odaktayken **Enter** ile tam metin bağlantısını açın. **Tab** satırın düğmelerine geçer. **Esc** önce açık atıf menüsünü, seçim bağlantısını veya atıf panelini kapatır; Atıflar alanında **← →** evrakı değiştirmez.
+UDF'de **300 karakteri aşmayan** bir künye seçtiğinizde seçimin yanında **Kararı bul** çıkar; bağlantıyı tıklayınca arama sayfası açılır. Listede **↑ ↓**, **Home / End** ile görünen atıflar arasında gezin, satır odaktayken **Enter** ile tam metin bağlantısını açın, **Boşluk** ile künyeyi seçin. **Tab** satırın düğmelerine geçer. **Esc** önce açık atıf menüsünü, seçim bağlantısını veya atıf panelini kapatır; Atıflar alanında **← →** evrakı değiştirmez.
 
 HTML, TXT ve XML taramasında dosya sınırı **10 MB**, metin sınırı **2 MB**'tır; UDF'de yalnız görüntüleyicinin okuyabildiği bölüm taranır. PDF taramasında dosya sınırı **64 MB**, tarama sınırı ilk **300 sayfa** ve en çok **2 MB metin**'dir. Sınır nedeniyle eksik tarama açıkça belirtilir. Kısmen okunabilen PDF'te metin katmanı bulunmayan sayfalar ile metni okunamayan sayfalar ayrı uyarılır; okunamayan PDF, taranmış belge olarak sunulmaz. Evrak değişince veya ekran kapanınca tarama iptal edilir ve önceki evrakın sonuçları bırakılır. Duruşma paketi veya başka bir belge işlemi PDF okuyucusunu kullanıyorsa **Yeniden dene** gösterilir; diğer işlem bitince düğmeye basın.
 
 **Ayarlar → Evrak görüntüleyici → Evraktaki karar atıflarını işaretle** ile taramayı ve Atıflar arayüzünü kapatabilirsiniz. Seçenek başlangıçta açıktır. UYAP’ın kendi evrak ekranındaki **Atıfları bul**, kapalı tercihi yalnız o açık belge için aşar; kayıtlı ayarı değiştirmez.
 
-**Tam metni aç** ve **Kararı bul**, yalnız siz tıklayınca [Legaluga karar arama sayfasını](https://mcp.legaluga.com/karar-bul) normal bir yeni sekmede açar. Bağlantının `#k=` bölümünde yalnız mahkeme/daire, varsa il, esas veya başvuru numarası, karar numarası, varsa tarih ve künye uyarısı taşınır; seçilen künye önce gelir, listeden en çok 10 künye aktarılır. Belge, belge metni, seçimin ham metni, taraf/dosya bilgisi ve UYAP oturumu aktarılmaz. `#k=` sayfanın istemci kodu tarafından okunabilir; Base64URL kodlaması şifreleme değildir. Belge yükleme veya otomatik dış sorgu yapılmaz.
+**Tam metni aç** ve **Kararı bul**, yalnız siz tıklayınca [Legaluga karar arama sayfasını](https://mcp.legaluga.com/karar-bul) normal bir yeni sekmede açar. Bağlantının `#k=` bölümünde yalnız mahkeme/daire, varsa il, esas veya başvuru numarası, karar numarası, varsa tarih ve künye uyarısı taşınır; seçilen künye önce gelir, listeden en çok 10 künye aktarılır. Belge, belge metni, seçimin ham metni, taraf/dosya bilgisi ve UYAP oturumu aktarılmaz. `#k=` sayfanın istemci kodu tarafından okunabilir; Base64URL kodlaması şifreleme değildir. Belge yükleme veya otomatik dış sorgu yapılmaz. **Seçilenleri aç**, işaretlediğiniz künyeleri seçim sırasıyla aynı sayfada tek sekmede açar; karar numarası olmayan künyeler (Anayasa Mahkemesi bireysel başvurusu hariç) seçilemez, en çok 10 künye seçilir ve adres 4096 karakteri aşarsa kaçının aktarılacağı yazılır.
 
 ## Banka sorgusu ve cevapları
 
@@ -182,7 +184,7 @@ Devam edilen iş başlangıçta kaydedilen planı kullanır; sonradan değiştir
 
 ## Verileriniz ve şifreleme
 
-Dosya indeksi, notlar, tercihler, safahat ve banka takip özetleri bu Chrome profilinde yerel olarak saklanır. Oturum ve dosya belgeleri geliştiricinin sunucusuna aktarılmaz. **Tam metni aç / Kararı bul** bağlantısını tıklarsanız yalnız karar künyesi alanları Legaluga karar arama sayfasına aktarılır; belge yüklenmez. Belge okuma UYAP'a, canlı tebligat sorgusu ilgili resmî hizmete bağlanır.
+Dosya indeksi, notlar, tercihler, safahat ve banka takip özetleri bu Chrome profilinde yerel olarak saklanır. Oturum ve dosya belgeleri geliştiricinin sunucusuna aktarılmaz. **Tam metni aç / Seçilenleri aç / Kararı bul** bağlantısını tıklarsanız yalnız karar künyesi alanları Legaluga karar arama sayfasına aktarılır; belge yüklenmez. Belge okuma UYAP'a, canlı tebligat sorgusu ilgili resmî hizmete bağlanır.
 
 Yerel kayıtlar **AES-256-GCM** ile şifrelenir. Dışa aktarılamayan anahtar uzantının bu profildeki IndexedDB alanında tutulur. Şifreleme kodunun açık olması kullanıcı anahtarını veya belgelerini kaynak deposuna açmaz; ele geçirilmiş bir tarayıcı profilinden tam koruma garantisi de vermez.
 
