@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Legaluga UYAP Asistanı",
   "short_name": "Legaluga UYAP",
-  "version": "1.19.57",
+  "version": "1.19.58",
   "description": "UYAP dosyalarını bulun, evrakı okuyun. Künyeler seçiminizle Legaluga/Danıştay’a; isteğe bağlı hata raporları Sentry’ye gider.",
   "homepage_url": "https://legaluga.com",
   "icons": {

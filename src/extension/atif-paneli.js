@@ -218,12 +218,16 @@
     const not = el('p', { class: 'ek-atif-not' });
     const kapatDugme = el('button', { type: 'button', class: 'chip ek-atif-kapat', 'aria-label': 'Atıfları kapat', title: 'Kapat (Esc)' }, '×');
     const baslikSayi = el('span', { class: 'ek-atif-baslik-sayi' });
+    const secilenAc = el('a', { class: 'ek-atif-secilen', target: '_blank', rel: 'noopener noreferrer', referrerpolicy: 'no-referrer' }, 'Seçilenleri aç');
+    const aktarim = el('span', { id: `${id}-aktarim`, class: 'ek-atif-aktarim' });
+    const secilenSatir = el('div', { class: 'ek-atif-secilen-satir' }, secilenAc, aktarim);
     const ara = el('input', { type: 'search', class: 'ek-atif-ara', placeholder: 'Mahkeme veya numara ara', 'aria-label': 'Atıflarda ara', autocomplete: 'off', spellcheck: 'false' });
     const bos = el('p', { class: 'ek-atif-durum ek-atif-bos', hidden: true }, 'Aramanızla eşleşen atıf yok.');
     const ipucu = el('p', { class: 'ek-atif-ipucu' }, 'Alıntı, evraktaki ilk geçişin çevresindeki metindir.');
     const bolum = el('section', { class: 'ek-atiflar', id, role: 'dialog', 'aria-modal': 'false', 'aria-label': 'Karar atıfları' },
-      el('div', { class: 'ek-atif-baslik' }, el('b', null, 'Karar atıfları'), baslikSayi, kapatDugme), ara,
+      el('div', { class: 'ek-atif-baslik' }, el('b', null, 'Karar atıfları'), baslikSayi, kapatDugme), secilenSatir, ara,
       el('div', { class: 'ek-atif-icerik' }, durumYazi, yeniden, liste, bos, not), ipucu);
+    secilenAc.hidden = true; aktarim.hidden = true; secilenSatir.hidden = true;
     dugme.hidden = true; bolum.hidden = true; yeniden.hidden = true; liste.hidden = true; not.hidden = true;
     eylemler?.append(dugme);
     kutu.append(bolum);
@@ -231,6 +235,7 @@
     // Liste belge akışının dışında ve her evrakta kapalı başlar. no: evrak sayacı, eski işi durdurur.
     // tekrar: "Yeniden dene"nin işi; motor: süren PDF motoru oturumu ({ kapat }).
     let acik = false, no = 0, tur = null, kunyeler = [], satirlar = [], etkin = 0, alintiMetni = '', alintiBirimleri = [];
+    let secilen = [];   // seçim sırasıyla satır indeksleri; arama süzgeci bunu silmez, yeni evrak siler
     let boyutIzleyici = null;
     let cizimKok = null, kapDugum = null, menu = null, secimDugme = null, tekrar = null, motor = null, isNo = 0, sonBelge = null, secimBirak = null;
     const isaretliParcalar = new Set();
@@ -411,6 +416,7 @@
         const on = j === i && !s.hidden;
         s.setAttribute('tabindex', on ? '0' : '-1');
         for (const c of s.querySelectorAll('.chip')) c.setAttribute('tabindex', on ? '0' : '-1');
+        for (const c of s.querySelectorAll('.ek-atif-sec')) c.setAttribute('tabindex', on ? '0' : '-1');
       });
     }
     function vurgula(i) {
@@ -434,6 +440,60 @@
       s.focus();
     }
 
+    // Karar arama alıcısının kabul ettiği künye: adres() tek künyede null dönerse satır seçilemez (kararNo'suz yerel künye;
+    // AYM bireysel başvurusu istisnadır). Yeni adres üretilmez.
+    function gonderilebilir(k) {
+      const adres = globalThis.UHDKunye?.adres;
+      return typeof adres === 'function' && !!adres([k], 0);
+    }
+    function isaretSiniri() {
+      const n = globalThis.UHDKunye?.SINIR?.adres;
+      return Number.isInteger(n) && n > 0 ? n : 10;
+    }
+    // Seçilenleri aç: yalnız işaretli künyeler, seçim sırasıyla, mevcut adres() kısaltmasıyla tek sekme.
+    function secilenCiz() {
+      const K = globalThis.UHDKunye;
+      const liste = secilen.map(i => kunyeler[i]).filter(Boolean);
+      const href = liste.length && typeof K?.adres === 'function' ? K.adres(liste, 0) : null;
+      const parca = href ? href.slice(href.indexOf('#k=') + 3) : '';
+      const giden = href ? (K.coz?.(parca)?.k?.length || 0) : 0;
+      const acikLink = !!(href && giden);
+      secilenSatir.hidden = !acikLink;
+      secilenAc.hidden = !acikLink;
+      if (href) secilenAc.setAttribute('href', href); else secilenAc.removeAttribute('href');
+      secilenAc.textContent = `Seçilenleri aç (${liste.length})`;
+      const yazi = acikLink && giden < liste.length ? `${giden}/${liste.length} aktarılacak` : '';
+      const degisti = aktarim.textContent !== yazi;
+      aktarim.hidden = !yazi;
+      aktarim.textContent = yazi;
+      if (yazi) secilenAc.setAttribute('aria-describedby', aktarim.id || `${id}-aktarim`);
+      else secilenAc.removeAttribute('aria-describedby');
+      for (const s of satirlar) {
+        const kutu = s.querySelector('.ek-atif-sec');
+        if (kutu) kutu.checked = secilen.includes(Number(s.getAttribute('data-sira')));
+      }
+      if (degisti && yazi) duyur(yazi);
+      if (acik && !acikLink && secilenSatir.contains(odakta())) (satirlar[etkin] || kapatDugme).focus?.({ preventScroll: true });
+    }
+    function secilenDegistir(i, istenen) {
+      const kutu = satirlar[i]?.querySelector('.ek-atif-sec');
+      if (!kutu || kutu.disabled || !gonderilebilir(kunyeler[i])) {
+        if (kutu) kutu.checked = false;
+        return;
+      }
+      const yer = secilen.indexOf(i);
+      if (istenen) {
+        if (yer >= 0) { secilenCiz(); return; }
+        const sinir = isaretSiniri();
+        if (secilen.length >= sinir) {
+          kutu.checked = false;
+          duyur(`En çok ${sinir} künye seçilebilir.`, true);
+          return;
+        }
+        secilen.push(i);
+      } else if (yer >= 0) secilen.splice(yer, 1);
+      secilenCiz();
+    }
     function satirKur(k, i) {
       const K = globalThis.UHDKunye;
       const ac = tamMetin(i, 'chip ek-atif-git');
@@ -442,22 +502,30 @@
       const alintiKopyala = alintiDugmesi(k), yazi = alinti(alintiMetni, k, alintiBirimleri);
       const uyari = k.hatali === 'olmayan_daire' ? 'olmayan daire' : k.hatali === 'gecersiz_tarih' ? 'geçersiz tarih' : '';
       const eksik = kararNoEksik(k) ? 'Karar numarası belirtilmemiş' : '';
+      const uygun = gonderilebilir(k);
+      const kutu = el('input', { type: 'checkbox', class: 'ek-atif-sec', tabindex: '-1',
+        'aria-label': `${K.kisaYazim(k) || 'Künye'} künyesini seç` });
+      kutu.disabled = !uygun;
+      if (!uygun) kutu.title = eksik || 'Bu künye karar aramasına gönderilemez';
       const s = el('li', { class: 'ek-atif', tabindex: '-1', 'data-sira': String(i),
         'aria-label': [K.tamYazim(k), k.sayi > 1 ? `${k.sayi} geçiş` : '', eksik, uyari && `uyarı: ${uyari}`].filter(Boolean).join(', ') },
-      el('span', { class: 'ek-atif-kunye' }, el('b', { class: 'ek-atif-kisa' }, K.kisaYazim(k)), k.sayi > 1 ? el('small', null, ` · ${k.sayi} geçiş`) : null,
-        eksik ? el('small', { class: 'ek-atif-eksik' }, eksik) : null,
-        uyari ? el('span', { class: 'ek-atif-uyari' }, uyari) : null),
+      el('span', { class: 'ek-atif-bas' }, kutu,
+        el('span', { class: 'ek-atif-kunye' }, el('b', { class: 'ek-atif-kisa' }, K.kisaYazim(k)), k.sayi > 1 ? el('small', null, ` · ${k.sayi} geçiş`) : null,
+          eksik ? el('small', { class: 'ek-atif-eksik' }, eksik) : null,
+          uyari ? el('span', { class: 'ek-atif-uyari' }, uyari) : null)),
       yazi ? el('p', { class: 'ek-atif-alinti', title: yazi }, yazi) : null,
       el('span', { class: 'ek-atif-eylem' }, ac, resmi, kopyala, alintiKopyala));
-      // Satıra tıklamak evraktaki ilk geçişe kaydırır; düğmeler kendi işini yapar (tıklama satıra yayılmaz).
-      s.addEventListener('click', () => { etkinYap(i); atla(i); });
+      // Satıra tıklamak evraktaki ilk geçişe kaydırır; düğmeler ve seçim kutusu kendi işini yapar.
+      s.addEventListener('click', ev => { if (ev.target === kutu) return; etkinYap(i); atla(i); });
+      kutu.addEventListener('click', ev => ev.stopPropagation?.());
+      kutu.addEventListener('change', () => secilenDegistir(i, !!kutu.checked));
       ac.addEventListener('click', ev => ev.stopPropagation());
       resmi?.addEventListener('click', ev => ev.stopPropagation());
       kopyala.addEventListener('click', ev => { ev.stopPropagation(); kopya(k, kopyala); });
       return s;
     }
-    // Liste klavyesi: ↑ ↓ Home End satırlar arasında (tek sekme durağı), satırdayken Enter "Tam metni aç". ← → burada evrak
-    // değiştirmez (görüntüleyicinin onKey'i icerir() ile bölümü yerinde sayar).
+    // Liste klavyesi: ↑ ↓ Home End satırlar arasında (tek sekme durağı), satırdayken Enter "Tam metni aç", Boşluk seçimi
+    // değiştirir. ← → burada evrak değiştirmez (görüntüleyicinin onKey'i icerir() ile bölümü yerinde sayar).
     liste.addEventListener('keydown', ev => {
       if (ev.altKey || ev.ctrlKey || ev.metaKey || !satirlar.length) return;
       if (ev.key === 'Enter') {
@@ -465,6 +533,16 @@
         ev.preventDefault();
         const a = satirlar[etkin].querySelector('.ek-atif-git');
         if (a && !a.hidden) a.click();
+        return;
+      }
+      if (ev.key === ' ' || ev.key === 'Spacebar') {
+        const i = satirlar.indexOf(ev.target);
+        if (i < 0) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        const kutu = satirlar[i].querySelector('.ek-atif-sec');
+        if (!kutu || kutu.disabled) { duyur('Bu künye karar aramasına gönderilemez.'); return; }
+        secilenDegistir(i, !secilen.includes(i));
         return;
       }
       const gorunen = satirlar.map((s, i) => s.hidden ? -1 : i).filter(i => i >= 0), konum = gorunen.indexOf(etkin);
@@ -493,6 +571,7 @@
     ara.addEventListener('input', filtrele);
 
     function listeCiz(bulunan, notlar) {
+      secilen = [];
       kunyeler = bulunan;
       satirlar = bulunan.map(satirKur);
       liste.replaceChildren(...satirlar);
@@ -502,6 +581,7 @@
       not.textContent = notlar.join(' ');
       not.hidden = !notlar.length;
       goster(satirlar.length ? '' : ILETI.yok, String(satirlar.length));
+      secilenCiz();
       if (satirlar.length) duyur(`Evrakta ${satirlar.length} karar atfı bulundu.`);
     }
 
@@ -829,8 +909,8 @@
       // Ayar kapanırken evrak DOM'u yerinde kalır: yalnız bizim eklediğimiz UDF alt çizgilerini kaldır.
       for (const parca of isaretliParcalar) parca.replaceChildren(parca.textContent);
       isaretliParcalar.clear();
-      tur = null; kunyeler = []; satirlar = []; etkin = 0; cizimKok = null; kapDugum = null; tekrar = null;
-      alintiMetni = ''; alintiBirimleri = []; ara.value = ''; bos.hidden = true;
+      tur = null; kunyeler = []; satirlar = []; secilen = []; etkin = 0; cizimKok = null; kapDugum = null; tekrar = null;
+      alintiMetni = ''; alintiBirimleri = []; ara.value = ''; bos.hidden = true; secilenCiz();
       liste.replaceChildren();
       liste.hidden = true;
       not.hidden = true;
@@ -874,6 +954,8 @@
 .viewer .ek-atif-baslik{display:flex;align-items:center;gap:8px;flex:none;min-width:0;font-size:13px}
 .viewer .ek-atif-baslik-sayi{color:var(--shell-muted);font-variant-numeric:tabular-nums}
 .viewer .ek-atif-baslik .ek-atif-kapat{margin-left:auto;min-width:28px;font-size:20px;line-height:1}
+.viewer .ek-atif-secilen-satir{display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex:none;min-width:0}
+.viewer .ek-atif-aktarim{color:var(--shell-warn-text);font-size:11px;font-variant-numeric:tabular-nums}
 .viewer .ek-atif-ara{box-sizing:border-box;flex:none;width:100%;min-width:0;padding:8px 10px;border:1px solid var(--shell-line);border-radius:7px;background:var(--shell-bg);color:var(--shell-text);font:inherit}
 .viewer .ek-atif-icerik{min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:8px;scrollbar-gutter:stable}
 .viewer .ek-atif-ipucu{flex:none;margin:0;color:var(--shell-muted);font-size:11px;line-height:1.4}
@@ -884,7 +966,10 @@
 .viewer .ek-atif{flex:none;display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:10px;border:1px solid var(--shell-line);border-radius:8px;background:var(--shell-bg);cursor:pointer}
 .viewer .ek-atif:hover{background:var(--shell-soft)}
 .viewer .ek-atif:focus-visible{outline:2px solid var(--shell-focus);outline-offset:-2px}
-.viewer .ek-atif-kunye{min-width:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.viewer .ek-atif-bas{display:flex;align-items:flex-start;gap:8px;min-width:0}
+.viewer .ek-atif-sec{flex:none;width:16px;height:16px;margin:1px 0 0;accent-color:var(--shell-accent)}
+.viewer .ek-atiflar input.ek-atif-sec:disabled{opacity:.45;cursor:default}
+.viewer .ek-atif-kunye{flex:1;min-width:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .viewer .ek-atif-kunye small{color:var(--shell-muted);font-size:inherit}
 .viewer .ek-atif-kunye .ek-atif-eksik{display:block;margin-top:2px;font-size:11px}
 .viewer .ek-atif-alinti{margin:0;color:var(--shell-muted);font-size:11px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
