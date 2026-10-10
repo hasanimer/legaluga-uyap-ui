@@ -240,7 +240,8 @@ test('ilk kurulum güvenli varsayılanları gösterir ve tamamlanana kadar ayar 
   assert.equal(h.writes.length, 0);
   await h.next();
   for (const key of ['evrakTakip', 'safahatTakipOptIn', 'hataRaporu']) assert.equal(h.field(key).checked, false);
-  for (const key of ['panelSabit', 'durusmaBildirim', 'cakismaBildirim', 'duyuruBildirim', 'oturumAcik']) assert.equal(h.field(key).checked, true);
+  for (const key of ['panelSabit', 'durusmaBildirim', 'cakismaBildirim', 'duyuruBildirim']) assert.equal(h.field(key).checked, true);
+  assert.equal(h.field('oturumAcik').checked, false);
   assert.equal(h.field('tema').value, 'auto');
   assert.equal(h.field('otoGuncelle').value, 'kapali');
   assert.equal(h.field('acilisSekme').value, 'yok');

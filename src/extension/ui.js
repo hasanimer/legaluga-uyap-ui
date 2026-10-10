@@ -2251,7 +2251,20 @@
           check('durusmaBildirim', true, 'Yaklaşan duruşmaları hatırlat', 'Bugün ve yarınki duruşmaları bildirir. Duruşmalar ekranına her zaman ulaşabilirsiniz.', () => autoNotice()),
           check('cakismaBildirim', true, 'Duruşma çakışmalarını bildir', `Tarama varsayılan olarak kapalıdır; Duruşmalarım bölümünden açılır. Tarama açıkken aynı gün farklı mahkemelerdeki iki duruşma arasında aynı adliyede ${CAKISMA_DK.ayniAdliye} dakikadan, başka adliyede ${CAKISMA_DK.ayriAdliye / 60} saatten az varsa uyarır. Aynı mahkemedeki ve saati belli olmayan duruşmalar sayılmaz.`, () => autoNotice()),
           check('duyuruBildirim', true, 'Duyuruları bildirim olarak göster', 'Kesinti duyurusu UYAP Ana Sayfa’da, diğer duyurular sağ altta görünür. Metnin tamamını okuyabilirsiniz. × ile, sayfada boş bir yere tıklayarak ya da asistandan dosya açarak kapanır; başka bir ekrana geçince gizlenir.'),
-          check('oturumAcik', true, 'UYAP oturumunu koru')),
+          check('oturumAcik', false, 'UYAP oturumunu koru', 'Varsayılan kapalıdır. Açıkken, siz işlem yapmasanız da eklenti belirli aralıklarla UYAP’a küçük bir okuma isteği gönderir. İşlem koruması bunu da durdurur.'),
+          el('div', { class: 'row' }, (() => {
+            const korumaBirak = el('button', { type: 'button', class: 'btn sm' }, 'Otomatik işlemleri elle aç');
+            korumaBirak.addEventListener('click', async () => {
+              try {
+                const res = await chrome.runtime.sendMessage({ type: 'uhd-uyap-koruma-birak' });
+                setNotice(res?.ok
+                  ? 'Otomatik işlem kilidi açıldı. İndirme, tarama ve oturum yoklaması kendiliğinden başlamaz; sürdürmek için ilgili işi yeniden başlatın.'
+                  : 'Kilit açılamadı. UYAP sekmesini yenileyip tekrar deneyin.', 'warn');
+              } catch { setNotice('Kilit açılamadı. UYAP sekmesini yenileyip tekrar deneyin.', 'warn'); }
+            });
+            return korumaBirak;
+          })()),
+          el('div', { class: 'hint' }, 'UYAP indirme ve işlem koruması otomatik işleri durdurursa kendiliğinden devam etmez. Bu düğme yalnız kilidi açar; indirme, tarama ve oturum yoklaması yeniden başlamaz.')),
 
         el('h3', null, 'Veriler'),
         el('div', { class: 'box' },

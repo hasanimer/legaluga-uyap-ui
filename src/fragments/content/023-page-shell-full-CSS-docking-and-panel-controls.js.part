@@ -6,7 +6,13 @@
       reconcile: fileKey => chrome.runtime.sendMessage({ type: 'uhd-download-reconcile', fileKey }),
       locks: globalThis.navigator?.locks, documentExtension,
       continuation: { remember: rememberDownload, forget: forgetDownload },
-      beforeFetch: signal => { uyapBulk(signal); if (captchaOpen()) throw new Blocked(CAPTCHA_MSG); }
+      beforeFetch: async signal => {
+        uyapBulk(signal);
+        if (captchaOpen()) {
+          if (typeof uyapKorumaYaz === 'function') await uyapKorumaYaz();
+          throw new Blocked(CAPTCHA_MSG);
+        }
+      }
     }) : null;
   globalThis.UHDBulkDownloads = downloadManager;
   async function openDownload(fileKey) {

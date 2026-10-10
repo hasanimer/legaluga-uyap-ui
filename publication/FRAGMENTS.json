@@ -263,8 +263,8 @@
       "source": "content.js",
       "order": 3,
       "path": "src/fragments/content/003-bootstrap-shared-request-safety.js.part",
-      "sha256": "6d37b2695d6dd689b62af03b5176bda51bd732bb04ca1f583487d4d25e3eb20b",
-      "bytes": 6918,
+      "sha256": "ab59dbac72c5da0cdca14043f8951ef041f7103596e40e8d56070413c73356c8",
+      "bytes": 9801,
       "purpose": "bootstrap-shared-request-safety"
     },
     {
@@ -343,8 +343,8 @@
       "source": "content.js",
       "order": 23,
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "e766104e60dfa4662a3463f8d9e734729c944380eb2a571187d2a538b3a19591",
-      "bytes": 104944,
+      "sha256": "c22050ecf9f7a3a73c5c84988fafbed4ae72df0db12140b71f3db1057779eedf",
+      "bytes": 105150,
       "purpose": "page-shell-full-CSS-docking-and-panel-controls"
     },
     {
@@ -783,8 +783,8 @@
       "source": "content.js",
       "order": 127,
       "path": "src/fragments/content/127-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "5cb33aeb0ece255e771dbdb38cd1e7cc5ccad2d7cb5e6fda8d2454cf2929ee2c",
-      "bytes": 1648,
+      "sha256": "20ad3df4ff284e9b7f9ffa8bc7cf4f4d4c998b2da506b84102739344259c20a4",
+      "bytes": 1647,
       "purpose": "session-protection-lifecycle-and-visible-safety-gates"
     },
     {

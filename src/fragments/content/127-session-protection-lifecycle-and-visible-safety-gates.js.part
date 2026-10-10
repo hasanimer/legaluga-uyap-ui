@@ -2,7 +2,7 @@
   let sessionPingController = null, sessionDisposed = false;
   let sessionRevision = 0, sessionLoginState = null;
   let sessionScanBlocked = false, sessionScanStateRevision = 0;
-  const keepAliveOn = () => pagePrefs.oturumAcik !== false;
+  const keepAliveOn = () => pagePrefs.oturumAcik === true;
   function isLoginPage() {
     if (/^\/(giris|cikis|edevletlogin|testlogin|autologin)(\/|$)|^\/(web1|login)\.uyap(\/|$)/i.test(location.pathname)) return true;
     // E-imza penceresi SPA içinde açıkken eski giriş bayrağı kalabilir. PIN değerini okumayız.
