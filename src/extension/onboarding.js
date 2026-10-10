@@ -4,7 +4,7 @@
   const DEFAULTS = {
     taramaDurum: 'tum', savcilik: 'kapali', myName: '', tema: 'auto', panelSabit: true,
     acilisSekme: 'yok', evrakTakip: false, safahatTakipOptIn: false, otoGuncelle: 'kapali',
-    durusmaBildirim: true, cakismaBildirim: true, duyuruBildirim: true, oturumAcik: true, hataRaporu: false
+    durusmaBildirim: true, cakismaBildirim: true, duyuruBildirim: true, oturumAcik: false, hataRaporu: false
   };
   const OPTIONS = {
     taramaDurum: [['tum', 'Açık ve kapalı dosyalar'], ['acik', 'Yalnız açık dosyalar'], ['kapali', 'Yalnız kapalı dosyalar']],
@@ -228,7 +228,7 @@
         checkbox('durusmaBildirim', 'Yaklaşan duruşmaları hatırlat', 'Bugün ve yarınki duruşmalar için bildirim gösterir.'),
         checkbox('cakismaBildirim', 'Duruşma çakışmalarını bildir', 'Çakışma taramasını Duruşmalarım bölümünden açtığınızda uyarılar gösterilir.'),
         checkbox('duyuruBildirim', 'UYAP duyurularını göster'),
-        checkbox('oturumAcik', 'UYAP oturumunu koru')),
+        checkbox('oturumAcik', 'UYAP oturumunu koru', 'Varsayılan kapalıdır. Açılırsa eklenti, siz işlem yapmasanız da aralıklarla UYAP’a küçük bir okuma isteği gönderir.')),
       group('Hata raporlama', checkbox('hataRaporu', 'Teknik hata raporlarını Sentry’ye gönder',
         'Varsayılan olarak kapalıdır. Açıldığında hata türü, işlem, uzantı sürümü ve kod satırı gönderilir. Dosya numarası, kişi adı, evrak, hata metni, sayfa adresi ve oturum bilgileri gönderilmez. Sentry bağlantısı ağ adresinizi görür; rapora kullanıcı bilgisi eklenmez.')),
       group('Tarama seçiminiz', el('div', { class: 'setup-summary' },

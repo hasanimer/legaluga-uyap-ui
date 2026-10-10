@@ -20,7 +20,7 @@
       "progress": "saved is disk-completed prefix; inPart is provisional",
       "destroy": "unsubscribe view only; do not stop manager"
     },
-    "UHDKunye": "Pure local citation extractor (no DOM, network or storage); only disaAktar fields leave the page, inside a user-clicked BRAND.kararBul #k= link.",
+    "UHDKunye": "Pure local citation extractor (no DOM, network or storage). disaAktar is the only export shape: the citation panel may send it when opened, and a clicked karar-bul link carries the same fields in #k=.",
     "UHDAtifPaneli": {
       "olustur": "olustur({el,onbar,eylemler,kutu,kok,kimlik,duyur,acikMi,motorKabi,kopru,mesgulMu})",
       "controller": [
@@ -32,7 +32,7 @@
         "ayarDegisti"
       ],
       "pdf": "text via the hidden hearing-package frame: EXTRACT_PDF_TEXT {jobId,bytes,sayfaSiniri} -> PDF_TEXT_RESULT {jobId,sayfalar,toplamSayfa,bosSayfa,hataSayfa,kesildi,code?}; CANCEL_TEXT {jobId}; never starts while mesgulMu() and stops when another feature takes the bridge",
-      "privacy": "document text is scanned locally; no network, storage or logging; reports carry only error type and extension frames",
+      "privacy": "document text is scanned locally and is not stored or logged; opening the citation panel sends at most 20 disaAktar citations through the extension background to legaluga.com/havuz; clicked links still carry only the #k= fragment; reports carry only error type and extension frames",
       "preferences": "applyPagePrefs calls viewer.atifAyariniUygula -> ayarDegisti; disabling immediately cancels PDF, clears citations and UDF marks, refreshes HTML from the already-loaded blob; enabling rescans the current document"
     }
   },

@@ -1,7 +1,8 @@
 /* global module */
 // Evrak görüntüleyicisinde "Atıflar": açılmış evrakın metnindeki karar künyelerini (UHDKunye) bu cihazda bulur, listeler,
 // UDF görünümünde ince alt çizgiyle işaretler ve seçilen metinden "Kararı bul" bağlantısı sunar. Evrak metni ve künye
-// günlüğe, depolamaya ve hata raporuna girmez; legaluga.com'a giden tek şey kullanıcının tıkladığı bağlantının #k= parçasıdır.
+// günlüğe, depolamaya ve hata raporuna girmez. Kullanıcının tıkladığı bağlantının #k= parçası legaluga.com'a gidebilir.
+// Panel açılınca en çok 20 disaAktar künyesi arka plan üzerinden legaluga.com/havuz adresine sorulur; belge metni gitmez.
 // Saf parçalar (udfMetni, dagit, bol, birlestir) DOM'a dokunmaz; olustur() görüntüleyicinin el() yardımcısıyla çizer ve
 // UHDKunye ile DurusmaPaketiMetin'i çağrı anında okur (yükleme sırası: common.js, kunye-ayikla.js, durusma-paketi-metin.js).
 // PDF metni içerik betiğinde okunmaz: duruşma paketinin görünmez uzantı çerçevesi (paket motoru) ve onun pdf.js işçisi okur.
@@ -33,6 +34,63 @@
     pdfKesik: 'PDF çok uzun; yalnız ilk 300 sayfa ve en çok 2 MB metin tarandı.',
     pdfYer: 'PDF evrakta atıfın yerine gidilemez; künye yalnız listede gösterilir.'
   });
+  // Rozet yalnız arka planın hükmünü yazar. Havuz algoritması bu dosyada yoktur.
+  const HAVUZ_EN_COK = 20;
+  const HAVUZ_YAZI = Object.freeze({
+    dogrulandi: 'Havuzda', eslesti: 'Havuzda', dikkat: 'Dikkat', bulunamadi: 'Havuzda yok',
+    denetlenemedi: 'Denetlenemedi', 'hatali-kunye': 'Hatalı künye'
+  });
+  const HAVUZ_ANLAM = Object.freeze({
+    dogrulandi: 'Künye, havuzdaki bir kayıtla ve tarihle uyumlu görünüyor.',
+    eslesti: 'Künye, havuzdaki bir kayıtla eşleşti.',
+    dikkat: 'Künye havuzda var; tarih uyuşmayabilir.',
+    bulunamadi: 'Bu künye, taranan havuz parçasında yok.',
+    denetlenemedi: 'Havuz denetimi tamamlanamadı.',
+    'hatali-kunye': 'Daire numarası havuzun tanıdığı aralıkta değil.'
+  });
+  const HAVUZ_UYARI = 'Eşleşme varlık kanıtı değildir; tam metni açın. Havuzda yokluk, kararın bulunmadığı anlamına gelmez.';
+  function havuzYuku(k) {
+    const aktar = globalThis.UHDKunye && globalThis.UHDKunye.disaAktar;
+    if (typeof aktar !== 'function') return null;
+    const d = aktar(k);
+    return d && typeof d === 'object' ? d : null;
+  }
+  function havuzHukmu(sonuc) {
+    const hukum = sonuc && sonuc.hukum;
+    return Object.hasOwn(HAVUZ_YAZI, hukum) ? hukum : 'denetlenemedi';
+  }
+  function havuzIpucu(hukum, sonuc) {
+    let ek = '';
+    const kontroller = sonuc && Array.isArray(sonuc.kontroller) ? sonuc.kontroller : [];
+    const tarih = kontroller.find(k => k && k.kod === 'havuz-tarih' && typeof k.aciklama === 'string' && k.aciklama.length > 0 && k.aciklama.length <= 240);
+    if (hukum === 'dikkat' && tarih && !/https?:|\/havuz\/|\\/.test(tarih.aciklama)) ek = ` ${tarih.aciklama}`;
+    return `${HAVUZ_YAZI[hukum]}. ${HAVUZ_ANLAM[hukum]}${ek} ${HAVUZ_UYARI}`;
+  }
+  function havuzGonder(kunyeler, ozel) {
+    const mesaj = { type: 'uhd-havuz-denetle', kunyeler };
+    if (typeof ozel === 'function') {
+      try { return Promise.resolve(ozel(mesaj)); }
+      catch (err) { return Promise.reject(err); }
+    }
+    const kanal = globalThis['chrome'];
+    const runtime = kanal && kanal.runtime;
+    if (!runtime || typeof runtime.sendMessage !== 'function') return Promise.reject(new Error('kanal'));
+    try { return Promise.resolve(runtime.sendMessage(mesaj)); }
+    catch (err) { return Promise.reject(err); }
+  }
+  function havuzBeklet(promise, ms) {
+    return new Promise((resolve, reject) => {
+      let bitti = false;
+      const t = setTimeout(() => { if (!bitti) { bitti = true; reject(new Error('sure')); } }, ms);
+      Promise.resolve(promise).then(v => {
+        if (bitti) return;
+        bitti = true; clearTimeout(t); resolve(v);
+      }, err => {
+        if (bitti) return;
+        bitti = true; clearTimeout(t); reject(err);
+      });
+    });
+  }
 
   // ---- Saf parçalar.
 
@@ -208,7 +266,8 @@
   // çerçevesinin konduğu öğe; kopru: çağrı anında duruşma paketi köprüsü (UHD.durusmaPaketiBridge); mesgulMu: köprüyü başka
   // bir belge işi (duruşma paketi, banka/tebligat okuması, toplu indirme…) kullanıyor mu? Köprü tekildir: açmak onu kapatırdı.
   function olustur({ el, onbar, eylemler, kutu, kok, kimlik = 'ek', duyur = () => {}, acikMi = () => true,
-    motorKabi = kutu, kopru = () => globalThis.UHD?.durusmaPaketiBridge, mesgulMu = () => false, resmiAramaMi = () => false }) {
+    motorKabi = kutu, kopru = () => globalThis.UHD?.durusmaPaketiBridge, mesgulMu = () => false, resmiAramaMi = () => false,
+    havuzBekleme = 300, havuzSure = 16000, havuzDenetle = null }) {
     const id = `${kimlik}-atif`;
     const sayi = el('span', { class: 'ek-atif-sayi', 'aria-hidden': 'true' });
     const dugme = el('button', { type: 'button', class: 'ek-atif-ac', 'aria-expanded': 'false', 'aria-controls': id, title: 'Evraktaki karar atıfları' }, 'Atıflar', sayi);
@@ -243,6 +302,11 @@
     const zamanlayicilar = new Set();
     const sonra = (fn, ms) => { const t = setTimeout(() => { zamanlayicilar.delete(t); fn(); }, ms); zamanlayicilar.add(t); return t; };
     const vazgec = t => { clearTimeout(t); zamanlayicilar.delete(t); };
+    const havuzBekle = Number.isInteger(havuzBekleme) && havuzBekleme >= 0 && havuzBekleme <= 60000 ? havuzBekleme : 300;
+    const havuzSinir = Number.isInteger(havuzSure) && havuzSure >= 1 && havuzSure <= 120000 ? havuzSure : 16000;
+    const havuzOnbellek = new Map();
+    const havuzUcus = new Set();
+    let havuzZaman = null;
     const ayarAcik = () => { try { return acikMi() !== false; } catch { return false; } };
     let sonAyar = ayarAcik();
     // Sorulamazsa meşgul sayılır: başka işin köprüsü kapatılmaz.
@@ -294,12 +358,14 @@
       if (!acik) return false;
       const icinde = bolum.contains(odakta());
       acik = false; senkron(); panelIzle();
+      havuzPlanIptal();
       if (icinde && odakDon) dugme.focus?.({ preventScroll: true });
       return true;
     }
     function panelAc(odak = true) {
       acik = true; senkron(); panelIzle();
       if (odak) (ara.hidden ? kapatDugme : ara).focus?.({ preventScroll: true });
+      havuzPlanla();
     }
     // yeniden (isteğe bağlı): durum iletisinin altında "Yeniden dene" düğmesiyle çalışacak iş.
     function goster(metin, sayac = '', yenidenIs = null) {
@@ -507,12 +573,14 @@
         'aria-label': `${K.kisaYazim(k) || 'Künye'} künyesini seç` });
       kutu.disabled = !uygun;
       if (!uygun) kutu.title = eksik || 'Bu künye karar aramasına gönderilemez';
+      const rozet = el('span', { class: 'ek-atif-havuz' });
+      rozet.hidden = true;
       const s = el('li', { class: 'ek-atif', tabindex: '-1', 'data-sira': String(i),
         'aria-label': [K.tamYazim(k), k.sayi > 1 ? `${k.sayi} geçiş` : '', eksik, uyari && `uyarı: ${uyari}`].filter(Boolean).join(', ') },
       el('span', { class: 'ek-atif-bas' }, kutu,
         el('span', { class: 'ek-atif-kunye' }, el('b', { class: 'ek-atif-kisa' }, K.kisaYazim(k)), k.sayi > 1 ? el('small', null, ` · ${k.sayi} geçiş`) : null,
           eksik ? el('small', { class: 'ek-atif-eksik' }, eksik) : null,
-          uyari ? el('span', { class: 'ek-atif-uyari' }, uyari) : null)),
+          uyari ? el('span', { class: 'ek-atif-uyari' }, uyari) : null, rozet)),
       yazi ? el('p', { class: 'ek-atif-alinti', title: yazi }, yazi) : null,
       el('span', { class: 'ek-atif-eylem' }, ac, resmi, kopyala, alintiKopyala));
       // Satıra tıklamak evraktaki ilk geçişe kaydırır; düğmeler ve seçim kutusu kendi işini yapar.
@@ -569,6 +637,66 @@
       baslikSayi.textContent = kelimeler.length ? `${sayac} / ${satirlar.length}` : String(satirlar.length);
     }
     ara.addEventListener('input', filtrele);
+
+    function havuzBoya(rozet, kayit) {
+      if (!rozet) return;
+      const hukum = havuzHukmu(kayit);
+      const ipucu = havuzIpucu(hukum, kayit);
+      rozet.hidden = false;
+      rozet.setAttribute('data-hukum', hukum);
+      rozet.setAttribute('title', ipucu);
+      rozet.setAttribute('aria-label', ipucu);
+      rozet.replaceChildren(
+        el('span', { class: 'ek-atif-havuz-ad', 'aria-hidden': 'true' }, HAVUZ_YAZI[hukum]),
+        el('span', { class: 'ek-atif-havuz-not' }, ipucu));
+    }
+    function havuzSatirlariniBoya() {
+      satirlar.forEach((s, i) => {
+        const rozet = s.querySelector('.ek-atif-havuz');
+        const d = havuzYuku(kunyeler[i]);
+        if (!d) { havuzBoya(rozet, { hukum: 'denetlenemedi' }); return; }
+        const kayit = havuzOnbellek.get(JSON.stringify(d));
+        if (kayit) havuzBoya(rozet, kayit);
+      });
+    }
+    function havuzPlanIptal() {
+      if (!havuzZaman) return;
+      vazgec(havuzZaman);
+      havuzZaman = null;
+    }
+    function havuzUygula(giden, yanit) {
+      const liste = yanit && yanit.ok === true && Array.isArray(yanit.sonuclar) ? yanit.sonuclar : null;
+      giden.forEach((b, i) => {
+        havuzUcus.delete(b.anahtar);
+        const ham = liste && liste[i] && typeof liste[i] === 'object' ? liste[i] : null;
+        havuzOnbellek.set(b.anahtar, { hukum: havuzHukmu(ham), kontroller: ham && ham.kontroller });
+      });
+      havuzSatirlariniBoya();
+    }
+    function havuzIste() {
+      if (!acik) return;
+      const aday = [], gorulen = new Set();
+      for (let i = 0; i < kunyeler.length; i++) {
+        const d = havuzYuku(kunyeler[i]);
+        if (!d) continue;
+        const anahtar = JSON.stringify(d);
+        if (havuzOnbellek.has(anahtar) || havuzUcus.has(anahtar) || gorulen.has(anahtar)) continue;
+        gorulen.add(anahtar);
+        aday.push({ anahtar, d });
+      }
+      const giden = aday.slice(0, HAVUZ_EN_COK);
+      for (const b of aday.slice(HAVUZ_EN_COK)) havuzOnbellek.set(b.anahtar, { hukum: 'denetlenemedi' });
+      if (aday.length > HAVUZ_EN_COK) havuzSatirlariniBoya();
+      if (!giden.length) return;
+      for (const b of giden) havuzUcus.add(b.anahtar);
+      havuzBeklet(havuzGonder(giden.map(b => b.d), havuzDenetle), havuzSinir).then(yanit => havuzUygula(giden, yanit), () => havuzUygula(giden, null));
+    }
+    function havuzPlanla() {
+      havuzPlanIptal();
+      if (!acik) return;
+      havuzSatirlariniBoya();
+      havuzZaman = sonra(() => { havuzZaman = null; havuzIste(); }, havuzBekle);
+    }
 
     function listeCiz(bulunan, notlar) {
       secilen = [];
@@ -904,6 +1032,7 @@
       menuKapat(false);
       secimKapat();
       panelKapat(false);
+      havuzPlanIptal();
       for (const t of zamanlayicilar) clearTimeout(t);
       zamanlayicilar.clear();
       // Ayar kapanırken evrak DOM'u yerinde kalır: yalnız bizim eklediğimiz UDF alt çizgilerini kaldır.
@@ -974,6 +1103,11 @@
 .viewer .ek-atif-kunye .ek-atif-eksik{display:block;margin-top:2px;font-size:11px}
 .viewer .ek-atif-alinti{margin:0;color:var(--shell-muted);font-size:11px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .viewer .ek-atif-uyari{display:inline-block;margin-left:6px;padding:0 6px;border-radius:6px;background:var(--shell-error-bg);color:var(--shell-error);font-size:11px;font-weight:600}
+.viewer .ek-atif-havuz{position:relative;display:inline-flex;align-items:center;margin-left:6px;padding:0 6px;border-radius:6px;background:var(--shell-soft);color:var(--shell-muted);font-size:11px;font-weight:600;line-height:18px;vertical-align:1px}
+.viewer .ek-atif-havuz[data-hukum=dogrulandi],.viewer .ek-atif-havuz[data-hukum=eslesti]{color:var(--shell-accent)}
+.viewer .ek-atif-havuz[data-hukum=dikkat],.viewer .ek-atif-havuz[data-hukum=bulunamadi]{color:var(--shell-warn-text)}
+.viewer .ek-atif-havuz[data-hukum=hatali-kunye]{color:var(--shell-error)}
+.viewer .ek-atif-havuz-not{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .viewer .ek-atif-eylem{display:flex;flex-wrap:wrap;gap:6px}
 .viewer .ek-atiflar :is(a,button){display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;border:1px solid var(--shell-line);border-radius:7px;background:var(--shell-bg);color:var(--shell-text);text-decoration:none;cursor:pointer;min-height:28px;padding:4px 8px;font:inherit;font-size:11px}
 .viewer .ek-atiflar :is(a,button):hover{background:var(--shell-soft)}

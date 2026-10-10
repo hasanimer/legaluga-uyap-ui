@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "5e7315e189e9e8e6212f1e5430ddcc7f10a8cac4bc522f4118e5b9edfc71270c"
+      "sha256": "8af84631df1f76ae4bb48d9d9095a2c62ad65d470aadb33b694d168d1216ea45"
     },
     {
       "path": "SECURITY.md",
@@ -52,7 +52,7 @@
     },
     {
       "path": "docs/PRIVACY.md",
-      "sha256": "e97bff7e0715827c8f857fabbc4bb69cd403805d2022664a27a9641e65a32d92"
+      "sha256": "22a068db3ce3a195ed8074af293cd4dc28dafe8ddb3bda1d97efdedc0d4416b0"
     },
     {
       "path": "docs/images/01-uyap-baglantisi.png",
@@ -104,11 +104,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "229224039c49b6f2abe1cb748cbba76c4a61cb6364405a9768cb1574687fe689"
+      "sha256": "718920e6f4dbc507bcdc9fb446f86bb30fa2106b10e5502ac89275ee091c1714"
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "c0b0239cfe9ece49763335f76d150739c1e0724c162a784a7673bff99c99c61c"
+      "sha256": "86c2c169fdc81d732016e7fc9f2b3a7c2cc207ec1636de9a3a5973028dd3b68e"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/contracts.json",
-      "sha256": "819eb8470b50d1c34bd5f5ea4dff2052ab860e16c89afa21a6953eedf97b075a"
+      "sha256": "1ba862bf44aa6221e7741673712baacd557f660968e236b7f9121e76d2108334"
     },
     {
       "path": "scripts/build-hearing-vendor.mjs",
@@ -144,7 +144,7 @@
     },
     {
       "path": "src/extension/atif-paneli.js",
-      "sha256": "5767adb88265d36c95b14b01d93d4747e9c950cbaf42f3ee58e411778061dc60"
+      "sha256": "45123c900957a6d02136d481f422571aeaf90c7ef854fb00ef7701efb7ac7b17"
     },
     {
       "path": "src/extension/belge-pdf.js",
@@ -228,11 +228,11 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "2f6ace6368226e6116b02927f321d45bb669b0a692c33592eac6adc0a7b84372"
+      "sha256": "4d1573614803bf2183d366bd7420a1cf446aec0c8f992fd1826aabe07c1e89df"
     },
     {
       "path": "src/extension/onboarding.js",
-      "sha256": "f52d455e73bdd6614db86b43e1a89368ff5639b504b976304e751916c7829f82"
+      "sha256": "af841a96022184022e54053e3fb74abece42b181c68a75a40e1ef3c60d0604d7"
     },
     {
       "path": "src/extension/options.css",
@@ -280,7 +280,7 @@
     },
     {
       "path": "src/extension/telemetry.js",
-      "sha256": "af13bfee00e6eee6f011b65dbdfaec007201e60c40f3085d016040db16aa0b98"
+      "sha256": "b2d647f5c0e47182992d4472770cf3a8eb3964d32b3428ad7a4b67fc3f1b6eb6"
     },
     {
       "path": "src/extension/tiff.js",
@@ -292,7 +292,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "f455d4e546c9fa280855ec746ed81c77885cb258df46189ac63dcf0aedc2e857"
+      "sha256": "efc96c91ee85a31a97e9cc81520d4a982d4304dc07862a96b128e191140270ad"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -548,7 +548,7 @@
     },
     {
       "path": "src/fragments/content/003-bootstrap-shared-request-safety.js.part",
-      "sha256": "6d37b2695d6dd689b62af03b5176bda51bd732bb04ca1f583487d4d25e3eb20b"
+      "sha256": "ab59dbac72c5da0cdca14043f8951ef041f7103596e40e8d56070413c73356c8"
     },
     {
       "path": "src/fragments/content/005-context-invalidation-and-progress-boundaries.js.part",
@@ -588,7 +588,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "e766104e60dfa4662a3463f8d9e734729c944380eb2a571187d2a538b3a19591"
+      "sha256": "c22050ecf9f7a3a73c5c84988fafbed4ae72df0db12140b71f3db1057779eedf"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -808,7 +808,7 @@
     },
     {
       "path": "src/fragments/content/127-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "5cb33aeb0ece255e771dbdb38cd1e7cc5ccad2d7cb5e6fda8d2454cf2929ee2c"
+      "sha256": "20ad3df4ff284e9b7f9ffa8bc7cf4f4d4c998b2da506b84102739344259c20a4"
     },
     {
       "path": "src/fragments/content/129-session-protection-lifecycle-and-visible-safety-gates.js.part",
@@ -844,7 +844,7 @@
     },
     {
       "path": "tests/onboarding-ui.test.js",
-      "sha256": "a5e2bef29311fd5854b731f742167bc0e260796abf90c511bfa41f59ef284ad7"
+      "sha256": "473448bb582beae313e37775de8960e95ba8c5a4164266cdde42ccc32508d229"
     },
     {
       "path": "tests/publication-boundary.test.js",
