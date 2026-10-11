@@ -489,7 +489,7 @@
         // Sayfanın kuralları resmi engellerse indirme ekranına düşülür.
         pic.addEventListener('error', () => { if (simdiki === s) icerik(unsupportedDoc(rec, e, ext, indirUrl, name, doc.type)); }, { once: true });
         icerik(el('div', { class: 'imgdoc' }, pic));
-        return atifBelge('resim');
+        return atifBelge('resim', { doc, signal: s.ac.signal, gecerli });
       }
       const tur = okuyucuTuru(doc, ext);
       if (!(tur === 'udf' ? udf : tur === 'tiff' ? tiff : null)) {
@@ -499,8 +499,8 @@
       const kap = s.kap = el('div', { class: 'docview', tabindex: '0', 'aria-label': 'Evrak içeriği' },
         el('div', { class: 'docyer', role: 'status' }, 'Evrak hazırlanıyor…'));
       icerik(kap);
-      // TIFF'te metin katmanı yoktur: Atıflar açıklaması çizimi beklemez (çizilemeyen BigTIFF'te de görünür).
-      if (tur === 'tiff') atifBelge('tiff');
+      // TIFF'te metin katmanı yoktur: Atıflar açıklaması ve isteğe bağlı yerel OCR düğmesi çizimi beklemez.
+      if (tur === 'tiff') atifBelge('tiff', { doc, signal: s.ac.signal, gecerli });
       const t0 = performance.now();
       (async () => {
         const signal = s.ac.signal;

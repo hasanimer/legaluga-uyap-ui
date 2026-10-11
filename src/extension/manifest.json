@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Legaluga UYAP Asistanı",
   "short_name": "Legaluga UYAP",
-  "version": "1.19.59",
+  "version": "1.19.60",
   "description": "UYAP dosyalarını bulun, evrakı okuyun. Künyeler seçiminizle Legaluga/Danıştay’a; isteğe bağlı hata raporları Sentry’ye gider.",
   "homepage_url": "https://legaluga.com",
   "icons": {
@@ -63,6 +63,7 @@
         "kunye-ayikla.js",
         "durusma-paketi-metin.js",
         "durusma-paketi-zip.js",
+        "atif-ocr.js",
         "atif-paneli.js",
         "banka-api.js",
         "tebligat-barkod.js",
