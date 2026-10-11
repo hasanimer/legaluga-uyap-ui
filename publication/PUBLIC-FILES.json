@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "8af84631df1f76ae4bb48d9d9095a2c62ad65d470aadb33b694d168d1216ea45"
+      "sha256": "c0bc3366745cb12b9b0506a39de4bea8eb013e2b6a6f7021b823c3c09c8d2bb5"
     },
     {
       "path": "SECURITY.md",
@@ -48,11 +48,11 @@
     },
     {
       "path": "docs/DEVELOPMENT.md",
-      "sha256": "3b2b941f180fc3475fa01c58ef9218e7228593ee2ff057ae4af7026dfe8dac39"
+      "sha256": "85caf651057aa82815c8a2d3f0553c4cf141a6ece72a9f6f193cafc57beffcee"
     },
     {
       "path": "docs/PRIVACY.md",
-      "sha256": "22a068db3ce3a195ed8074af293cd4dc28dafe8ddb3bda1d97efdedc0d4416b0"
+      "sha256": "48321830beea9516930bc914d2b8650230968c9b38e4b4128216014cee43b42f"
     },
     {
       "path": "docs/images/01-uyap-baglantisi.png",
@@ -104,11 +104,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "718920e6f4dbc507bcdc9fb446f86bb30fa2106b10e5502ac89275ee091c1714"
+      "sha256": "6171452926b36f63568b6eafb5a684f94e0e3acee6123e92f25a62a9ef0620de"
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "86c2c169fdc81d732016e7fc9f2b3a7c2cc207ec1636de9a3a5973028dd3b68e"
+      "sha256": "fe2f4c367fae57063f4f90e3bd5fbbae7ad85ad9aa4ced791ea16d1276012441"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -143,8 +143,16 @@
       "sha256": "e072ff7ef60e22572df455d32a0ee51cc56e9e6a68e5e90c7a6b573a5cd96d61"
     },
     {
+      "path": "src/extension/atif-ocr.js",
+      "sha256": "c123f164d6137414e72d0aa21c0fe59927164e22a9087d1e45edee6dfdbc6a79"
+    },
+    {
+      "path": "src/extension/atif-ocr-worker.js",
+      "sha256": "0b047d51b9959946fbf4f853037fec63a6ce45f6ecf6a57e1ac0a4dc90e33395"
+    },
+    {
       "path": "src/extension/atif-paneli.js",
-      "sha256": "45123c900957a6d02136d481f422571aeaf90c7ef854fb00ef7701efb7ac7b17"
+      "sha256": "06277fbe07aba335ff344205b8f725cec6100b16d90aca1ac20ce6602db77917"
     },
     {
       "path": "src/extension/belge-pdf.js",
@@ -180,7 +188,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-ui.js",
-      "sha256": "480d391c21214c7c0c8a2416a79b14154ea9782dabb45ee31b03fe9c1e270ade"
+      "sha256": "cf81502dec86c5c966d040bccf2d0cb818a0836e6eb37b3a2570d8cbdd0d3d7e"
     },
     {
       "path": "src/extension/durusma-paketi-worker.js",
@@ -228,7 +236,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "4d1573614803bf2183d366bd7420a1cf446aec0c8f992fd1826aabe07c1e89df"
+      "sha256": "1330dcc26df30f8f2d584fd8c2020b2748bf34823456307db4a9984488aafb01"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -756,7 +764,7 @@
     },
     {
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "9c9860eb4ec37909715b21ae4ae964fb516e0d956776ca38a16ed54cf03c3cee"
+      "sha256": "e2c04a08720245226e9bec942881e77d0a57c6442fd94c7a2d48243e51b8d09d"
     },
     {
       "path": "src/fragments/content/105-viewer-navigation-abort-epoch-boundary.js.part",
@@ -861,6 +869,38 @@
     {
       "path": "tests/zip-yardimci.js",
       "sha256": "0ed52faa36a48583b8afe9625e9d0acc7839ebd2cb60024f4bd0d9ecdceddd4c"
+    },
+    {
+      "path": "src/extension/vendor/tesseract/UPSTREAM.md",
+      "sha256": "f365a0c4a5aac805af7ea9035041ce6979ce8f5127b8c985a2c67d4181b26595"
+    },
+    {
+      "path": "src/extension/vendor/tesseract/TESSERACT-CORE.LICENSE",
+      "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+    },
+    {
+      "path": "src/extension/vendor/tesseract/tesseract-core-simd-lstm.wasm.js",
+      "sha256": "ce20eda9533cbed1e6c2b4276fbae1e0adc61b6754b5513084be601787b457cf"
+    },
+    {
+      "path": "src/extension/vendor/tesseract/tesseract.min.js",
+      "sha256": "a8e29918d098b2b06e1012bdaeffb4aec0445c5d5654709023e0bd1f442a80e8"
+    },
+    {
+      "path": "src/extension/vendor/tesseract/tesseract.min.js.LICENSE.txt",
+      "sha256": "cdf963ced7d25a0f98901a547647b4d6e2dbe0197fd78c87a059a87b0e542fe2"
+    },
+    {
+      "path": "src/extension/vendor/tesseract/tur.traineddata.gz",
+      "sha256": "384ba0dc28040451b7818d7d60e0a88df0d3003fa5a01d713a468779bc3d8c04"
+    },
+    {
+      "path": "src/extension/vendor/tesseract/worker.min.js",
+      "sha256": "aca1229639fc9907d86f96e825955a2b7c5716d17f3bc3acd71f9c7ab66181fc"
+    },
+    {
+      "path": "src/extension/vendor/tesseract/worker.min.js.LICENSE.txt",
+      "sha256": "45f54171aeaa1d10c0c1a66f374b7bba1f02472b1487fbe892eec04f840002ac"
     }
   ]
 }

@@ -357,6 +357,49 @@
     try { w.postMessage({ type: 'PDF_TEXT', runId: jobId, bytes, sayfaSiniri }, [bytes]); }
     catch { bitir(bos('text-worker')); }
   }
+  // Atıflar: kullanıcının açtığı taranmış evrakın yerel OCR'ı. Görüntü işçiye aktarılır, geriye yalnız sayfa metni döner.
+  function ocrIsi(message) {
+    stopDocumentPdfJob(true);
+    const jobId = String(message.jobId || '');
+    const bytes = message.bytes;
+    const tur = message.tur;
+    textJob?.finish([], 'Önceki metin okuma işlemi durduruldu.');
+    const bos = code => ({ sayfalar: [], toplamSayfa: 0, kesildi: false, code });
+    if (!jobId || !(bytes instanceof ArrayBuffer) || !bytes.byteLength || bytes.byteLength > 64 * 1024 * 1024 || !['pdf', 'tiff', 'image'].includes(tur)) {
+      send('OCR_RESULT', { jobId, ...bos('ocr-invalid') }); return;
+    }
+    const sayfaSiniri = Number.isSafeInteger(message.sayfaSiniri) && message.sayfaSiniri > 0 && message.sayfaSiniri <= 12 ? message.sayfaSiniri : 12;
+    let w, zaman, finished = false;
+    const bitir = (sonuc, notify = true) => {
+      if (finished) return;
+      finished = true; clearTimeout(zaman);
+      if (textJob === is) textJob = null;
+      if (w) { w.onmessage = null; w.onerror = null; w.onmessageerror = null; try { w.terminate(); } catch {} }
+      if (notify) send('OCR_RESULT', { jobId, ...sonuc });
+    };
+    const is = { jobId, finish: (_texts, _hata, notify = true) => bitir(bos('ocr-stopped'), notify) };
+    textJob = is;
+    zaman = setTimeout(() => bitir(bos('ocr-timeout')), 240000);
+    try { w = new Worker(chrome.runtime.getURL('atif-ocr-worker.js')); }
+    catch { bitir(bos('ocr-worker')); return; }
+    w.onmessage = e => {
+      const d = e.data;
+      if (!d || d.runId !== jobId) return;
+      if (d.type === 'OCR_PROGRESS') {
+        send('OCR_PROGRESS', { jobId, sayfa: Number.isSafeInteger(d.sayfa) ? d.sayfa : 0, toplam: Number.isSafeInteger(d.toplam) ? d.toplam : 0 });
+        return;
+      }
+      if (d.type !== 'OCR_READY') return;
+      const sayfalar = Array.isArray(d.sayfalar) ? d.sayfalar.filter(p => p && typeof p.metin === 'string' && Number.isSafeInteger(p.no)).slice(0, 12).map(p => ({ no: p.no, metin: p.metin.slice(0, 200000) })) : [];
+      const code = typeof d.code === 'string' && /^ocr-[a-z0-9-]{1,24}$/.test(d.code) ? d.code : '';
+      bitir({ sayfalar, toplamSayfa: Number.isSafeInteger(d.toplamSayfa) && d.toplamSayfa >= 0 ? d.toplamSayfa : 0, kesildi: d.kesildi === true,
+        ...(d.sayfaKesildi === true ? { sayfaKesildi: true } : {}), ...(code ? { code } : {}) });
+    };
+    w.onerror = () => bitir(bos('ocr-worker'));
+    w.onmessageerror = () => bitir(bos('ocr-worker'));
+    try { w.postMessage({ type: 'OCR', runId: jobId, bytes, tur, sayfaSiniri }, [bytes]); }
+    catch { bitir(bos('ocr-worker')); }
+  }
   // Tek belge dönüşümü kendi işçisinde çalışır. UDF, sınırlı önizleme modelinden değil özgün baytlardan paket profiliyle okunur.
   function documentPdf(message) {
     const jobId = typeof message.jobId === 'string' ? message.jobId : '';
@@ -430,6 +473,7 @@
     if (message.type === 'EXTRACT_TEXT') { metinIsi(message); return; }
     // Atıflar: dosya ekranında açık PDF'in sayfa metni; CANCEL_TEXT süren metin işini yanıtsız durdurur.
     if (message.type === 'EXTRACT_PDF_TEXT') { pdfMetinIsi(message); return; }
+    if (message.type === 'OCR_ATIF') { ocrIsi(message); return; }
     if (message.type === 'CANCEL_TEXT') {
       const jobId = String(message.jobId || '');
       if (jobId && textJob?.jobId === jobId) textJob.finish([], '', false);

@@ -6,6 +6,7 @@
 // Saf parçalar (udfMetni, dagit, bol, birlestir) DOM'a dokunmaz; olustur() görüntüleyicinin el() yardımcısıyla çizer ve
 // UHDKunye ile DurusmaPaketiMetin'i çağrı anında okur (yükleme sırası: common.js, kunye-ayikla.js, durusma-paketi-metin.js).
 // PDF metni içerik betiğinde okunmaz: duruşma paketinin görünmez uzantı çerçevesi (paket motoru) ve onun pdf.js işçisi okur.
+// Metin katmanı yoksa OCR kendiliğinden başlamaz; düğmeyle aynı çerçevede paketlenmiş Tesseract çalışır, görüntü dışarı çıkmaz.
 (() => {
   'use strict';
   if (globalThis.UHDAtifPaneli) return;   // arka plan içerik betiklerini yeniden yükleyebilir
@@ -14,7 +15,8 @@
   // taranan en çok sayfa; pdfHazir motor çerçevesinin bağlanma, pdfSure işin üst süresi (motorun 120 sn'sinin üstünde);
   // pdfBekleme çerçevenin load olayı gelmezse taramanın başlama süresi; pdfYokla köprünün başka işe geçip geçmediğine bakma aralığı.
   const SINIR = Object.freeze({ karakter: 2 * 1024 * 1024, bayt: 10 * 1024 * 1024, dilim: 40,
-    pdfBayt: 64 * 1024 * 1024, pdfSayfa: 300, pdfHazir: 20000, pdfSure: 125000, pdfBekleme: 4000, pdfYokla: 400 });
+    pdfBayt: 64 * 1024 * 1024, pdfSayfa: 300, pdfHazir: 20000, pdfSure: 125000, pdfBekleme: 4000, pdfYokla: 400,
+    ocrSayfa: 12, ocrSure: 250000 });
   const RENK = globalThis.UHD?.BRAND?.primary || '#0f817e';   // evrak kâğıdı hep açık renk: çizgi temadan bağımsızdır
   const RESIM = new Set(['tif', 'tiff', 'jpg', 'jpeg', 'png', 'gif', 'bmp']);
   const ILETI = Object.freeze({
@@ -32,7 +34,11 @@
     pdfHata: 'PDF metni okunamadı; atıf taraması yapılamadı.',
     pdfBuyuk: 'PDF atıf taraması için çok büyük (64 MB üstü).',
     pdfKesik: 'PDF çok uzun; yalnız ilk 300 sayfa ve en çok 2 MB metin tarandı.',
-    pdfYer: 'PDF evrakta atıfın yerine gidilemez; künye yalnız listede gösterilir.'
+    pdfYer: 'PDF evrakta atıfın yerine gidilemez; künye yalnız listede gösterilir.',
+    ocrYok: 'Taranmış metinde karar atfı bulunamadı.',
+    ocrKesik: 'Taranmış belgenin yalnız ilk 12 sayfası okundu.',
+    ocrHata: 'Taranmış belge okunamadı. Bir kez daha deneyebilirsiniz.',
+    ocrNot: 'Künyeler taranmış görüntüden okundu. O/0, l/1 ve eksik eğik çizgi düzeltilmiş olabilir; evrakla karşılaştırın.'
   });
   // Rozet yalnız arka planın hükmünü yazar. Havuz algoritması bu dosyada yoktur.
   const HAVUZ_EN_COK = 20;
@@ -272,6 +278,7 @@
     const sayi = el('span', { class: 'ek-atif-sayi', 'aria-hidden': 'true' });
     const dugme = el('button', { type: 'button', class: 'ek-atif-ac', 'aria-expanded': 'false', 'aria-controls': id, title: 'Evraktaki karar atıfları' }, 'Atıflar', sayi);
     const durumYazi = el('p', { class: 'ek-atif-durum' });
+    const ocrAra = el('button', { type: 'button', class: 'chip ek-atif-ocr-ara' }, 'Taranmış belgede atıfı ara');
     const yeniden = el('button', { type: 'button', class: 'chip ek-atif-yeniden' }, 'Yeniden dene');
     const liste = el('ul', { class: 'ek-atif-liste', 'aria-label': 'Evraktaki karar atıfları' });
     const not = el('p', { class: 'ek-atif-not' });
@@ -285,9 +292,9 @@
     const ipucu = el('p', { class: 'ek-atif-ipucu' }, 'Alıntı, evraktaki ilk geçişin çevresindeki metindir.');
     const bolum = el('section', { class: 'ek-atiflar', id, role: 'dialog', 'aria-modal': 'false', 'aria-label': 'Karar atıfları' },
       el('div', { class: 'ek-atif-baslik' }, el('b', null, 'Karar atıfları'), baslikSayi, kapatDugme), secilenSatir, ara,
-      el('div', { class: 'ek-atif-icerik' }, durumYazi, yeniden, liste, bos, not), ipucu);
+      el('div', { class: 'ek-atif-icerik' }, durumYazi, ocrAra, yeniden, liste, bos, not), ipucu);
     secilenAc.hidden = true; aktarim.hidden = true; secilenSatir.hidden = true;
-    dugme.hidden = true; bolum.hidden = true; yeniden.hidden = true; liste.hidden = true; not.hidden = true;
+    dugme.hidden = true; bolum.hidden = true; yeniden.hidden = true; ocrAra.hidden = true; liste.hidden = true; not.hidden = true;
     eylemler?.append(dugme);
     kutu.append(bolum);
 
@@ -297,6 +304,7 @@
     let secilen = [];   // seçim sırasıyla satır indeksleri; arama süzgeci bunu silmez, yeni evrak siler
     let boyutIzleyici = null;
     let cizimKok = null, kapDugum = null, menu = null, secimDugme = null, tekrar = null, motor = null, isNo = 0, sonBelge = null, secimBirak = null;
+    let ocrHedef = null, ocrOnbellek = null, ocrCalisiyor = false, ocrNesil = 0;
     const isaretliParcalar = new Set();
     const kopyaEtiketleri = new WeakMap(), kopyaDenemeleri = new WeakMap(), kopyaZamanlari = new WeakMap();
     const zamanlayicilar = new Set();
@@ -390,6 +398,12 @@
       // Düğme gizlenince odak kopmasın: Atıflar düğmesine geçer.
       if (odakta() === yeniden) dugme.focus?.({ preventScroll: true });
       is();
+    });
+    ocrAra.addEventListener('click', () => {
+      if (ocrCalisiyor) { ocrDurdur(); return; }
+      ocrCalisiyor = true;
+      ocrAra.textContent = 'Durdur';
+      void ocrCalistir();
     });
 
     function geciciIzle() {
@@ -580,7 +594,8 @@
       el('span', { class: 'ek-atif-bas' }, kutu,
         el('span', { class: 'ek-atif-kunye' }, el('b', { class: 'ek-atif-kisa' }, K.kisaYazim(k)), k.sayi > 1 ? el('small', null, ` · ${k.sayi} geçiş`) : null,
           eksik ? el('small', { class: 'ek-atif-eksik' }, eksik) : null,
-          uyari ? el('span', { class: 'ek-atif-uyari' }, uyari) : null, rozet)),
+          uyari ? el('span', { class: 'ek-atif-uyari' }, uyari) : null,
+          k.kaynak === 'ocr' ? el('span', { class: 'ek-atif-ocr' }, 'taranmış metin') : null, rozet)),
       yazi ? el('p', { class: 'ek-atif-alinti', title: yazi }, yazi) : null,
       el('span', { class: 'ek-atif-eylem' }, ac, resmi, kopyala, alintiKopyala));
       // Satıra tıklamak evraktaki ilk geçişe kaydırır; düğmeler ve seçim kutusu kendi işini yapar.
@@ -865,7 +880,11 @@
         if (t === 'diger') {
           const ilk = Metin.tur(new Uint8Array(await blob.slice(0, 4100).arrayBuffer()));
           if (!surer()) return;
-          if (RESIM.has(ilk)) return goster(ILETI.resim);
+          if (RESIM.has(ilk)) {
+            goster(ILETI.resim);
+            if (ocrUygun(b)) ocrTeklif(b, ilk === 'tif' || ilk === 'tiff' ? 'tiff' : 'image', surer);
+            return;
+          }
           if (ilk !== 'xml') return goster(ILETI.desteklenmiyor);
         }
         const bayt = new Uint8Array(await blob.arrayBuffer());
@@ -886,6 +905,182 @@
       if (!await b.gorunum.bitti || !surer()) return;
       cizimKok = b.gorunum.kok;
       await cizgile(b.gorunum.kok, metin, paragraflar, kesik, hepsi, new Map(bulunan.map((k, i) => [k.anahtar, i])), surer);
+    }
+
+    // ---- Taranmış evrak: kullanıcı düğmeye basınca, açık belgenin kopyası aynı uzantı çerçevesinde yerel OCR ile okunur.
+    function ocrDenetimTemiz(s) {
+      let out = '';
+      for (const ch of String(s || '')) {
+        const c = ch.charCodeAt(0);
+        if (c === 9 || c === 10 || c === 13 || (c > 31 && c !== 127)) out += ch;
+      }
+      return out;
+    }
+    function ocrUygun(b) {
+      const blob = b?.doc?.blob;
+      return !!blob && blob.size > 0 && blob.size <= SINIR.pdfBayt && typeof blob.arrayBuffer === 'function';
+    }
+    function ocrTeklif(b, kaynakTur, surer) {
+      ocrHedef = { b, tur: kaynakTur, surer };
+      ocrCalisiyor = false;
+      ocrAra.hidden = false;
+      ocrAra.textContent = 'Taranmış belgede atıfı ara';
+    }
+    function ocrDurumYazisi() {
+      return ocrHedef?.tur === 'pdf' ? ILETI.pdfMetinsiz : ILETI.resim;
+    }
+    function ocrDurdur() {
+      ocrNesil++;
+      ocrCalisiyor = false;
+      ocrAra.textContent = 'Taranmış belgede atıfı ara';
+      if (ocrHedef?.surer()) durumYazi.textContent = ocrDurumYazisi();
+      motor?.kapat('iptal');
+    }
+    function ocrHataGoster() {
+      ocrCalisiyor = false;
+      ocrAra.textContent = 'Taranmış belgede atıfı ara';
+      goster(ILETI.ocrHata, '', () => { if (ocrHedef?.surer() && !ocrCalisiyor) { ocrCalisiyor = true; ocrAra.textContent = 'Durdur'; void ocrCalistir(); } });
+      if (ocrHedef) ocrAra.hidden = false;
+    }
+    function ocrSayfaBirlestir(sayfalar) {
+      let onceki = null, bas = 0;
+      const birimler = [];
+      const metin = sayfalar.map(p => {
+        const ayirac = onceki === null ? '' : Number.isSafeInteger(p.no) && p.no === onceki + 1 ? '\n' : '\n\n';
+        onceki = p.no;
+        birimler.push({ bas: bas + ayirac.length, uzunluk: p.metin.length });
+        bas += ayirac.length + p.metin.length;
+        return ayirac + p.metin;
+      }).join('');
+      return { metin, birimler };
+    }
+    function ocrSonucUygula(onbellek, hedef) {
+      if (!hedef.surer()) return;
+      const O = globalThis.UHDAtifOcr, K = globalThis.UHDKunye;
+      if (!O?.duzelt || !K?.bul) return ocrHataGoster();
+      const sayfalar = onbellek.sayfalar.map(p => ({
+        no: p.no,
+        metin: O.duzelt(ocrDenetimTemiz(p.metin))
+      })).filter(p => p.metin.trim());
+      const notlar = [ILETI.ocrNot, onbellek.sayfaKesildi && ILETI.ocrKesik].filter(Boolean);
+      if (!sayfalar.length) {
+        goster(ILETI.ocrYok);
+        not.textContent = notlar.join(' ');
+        not.hidden = !notlar.length;
+        ocrAra.hidden = false;
+        return;
+      }
+      let { metin, birimler } = ocrSayfaBirlestir(sayfalar);
+      let metinKesik = false;
+      if (metin.length > SINIR.karakter) { metin = metin.slice(0, SINIR.karakter); metinKesik = true; }
+      const hepsi = K.bul(metin);
+      const bulunan = K.tekillestir(hepsi).map(k => ({ ...k, kaynak: 'ocr' }));
+      alintiMetni = metin;
+      alintiBirimleri = birimler;
+      if (metinKesik || hepsi.kesildi || (onbellek.kesildi && !onbellek.sayfaKesildi)) notlar.push(ILETI.kesik);
+      listeCiz(bulunan, notlar);
+      if (!bulunan.length) durumYazi.textContent = ILETI.ocrYok;
+      ocrAra.hidden = false;
+    }
+    async function ocrCalistir() {
+      const nesil = ocrNesil;
+      const hedef = ocrHedef;
+      const guncel = () => nesil === ocrNesil && !!hedef?.surer();
+      if (!hedef?.surer() || !ocrUygun(hedef.b)) {
+        ocrCalisiyor = false;
+        ocrAra.textContent = 'Taranmış belgede atıfı ara';
+        return;
+      }
+      const O = globalThis.UHDAtifOcr;
+      let bayt;
+      try { bayt = await hedef.b.doc.blob.arrayBuffer(); }
+      catch { if (guncel()) ocrHataGoster(); return; }
+      if (!guncel()) return;
+      if (!O?.imza || !O.duzelt) { ocrHataGoster(); return; }
+      const imza = O.imza(new Uint8Array(bayt));
+      if (ocrOnbellek?.imza === imza) {
+        ocrCalisiyor = false;
+        ocrAra.textContent = 'Taranmış belgede atıfı ara';
+        ocrSonucUygula(ocrOnbellek, hedef);
+        return;
+      }
+      if (mesgul()) {
+        ocrCalisiyor = false;
+        ocrAra.textContent = 'Taranmış belgede atıfı ara';
+        goster(ILETI.pdfMesgul, '', () => { if (guncel() && !ocrCalisiyor) { ocrCalisiyor = true; ocrAra.textContent = 'Durdur'; void ocrCalistir(); } });
+        ocrAra.hidden = false;
+        return;
+      }
+      durumYazi.hidden = false;
+      durumYazi.textContent = 'Sayfa 1 / … okunuyor…';
+      yeniden.hidden = true;
+      tekrar = null;
+      const r = await ocrMotoru(bayt, hedef.tur, guncel, (sayfa, toplam) => {
+        if (!guncel()) return;
+        durumYazi.textContent = `Sayfa ${sayfa} / ${toplam} okunuyor…`;
+      });
+      if (!guncel() || r.durum === 'iptal') return;
+      ocrCalisiyor = false;
+      ocrAra.textContent = 'Taranmış belgede atıfı ara';
+      if (r.durum === 'durdu') {
+        goster(ILETI.pdfDurdu, '', () => { if (guncel() && !ocrCalisiyor) { ocrCalisiyor = true; ocrAra.textContent = 'Durdur'; void ocrCalistir(); } });
+        ocrAra.hidden = false;
+        return;
+      }
+      const m = r.durum === 'tamam' ? r.sonuc : null;
+      if (!m || m.code) { ocrHataGoster(); return; }
+      const sayfalar = Array.isArray(m.sayfalar) ? m.sayfalar.filter(p => p && typeof p.metin === 'string' && Number.isSafeInteger(p.no) && p.no > 0) : [];
+      ocrOnbellek = { imza, sayfalar, kesildi: m.kesildi === true, sayfaKesildi: m.sayfaKesildi === true };
+      ocrSonucUygula(ocrOnbellek, hedef);
+    }
+    function ocrMotoru(bayt, kaynakTur, guncel, ilerleme) {
+      return new Promise(coz => {
+        let k;
+        try { k = kopru(); } catch { k = null; }
+        if (typeof k?.create !== 'function' || typeof motorKabi?.append !== 'function') { coz({ durum: 'hata' }); return; }
+        const cerceve = el('iframe', { title: 'Atıf okuyucu', class: 'paket-motor', tabindex: '-1', 'aria-hidden': 'true' });
+        const jobId = `atif-${++isNo}`, zamanlar = [];
+        let oturum = null, hazir = false, gonderildi = false, bitti = false;
+        const kapat = (durum, sonuc) => {
+          if (bitti) return;
+          bitti = true;
+          zamanlar.forEach(vazgec);
+          if (motor === bu) motor = null;
+          if (durum === 'iptal' && gonderildi && !oturum?.closed) {
+            try { oturum.send({ type: 'CANCEL_TEXT', jobId }); } catch { /* çerçeve zaten kaldırılıyor */ }
+          }
+          try { oturum?.close(); } catch { /* kapanmış köprü */ }
+          cerceve.remove();
+          coz({ durum, sonuc });
+        };
+        const bu = { kapat };
+        motor = bu;
+        motorKabi.append(cerceve);
+        try {
+          oturum = k.create(cerceve, m => {
+            if (bitti || !m || m.sessionId !== oturum?.sessionId) return;
+            if (m.type === 'LIST_REQUEST' && !hazir) {
+              hazir = true;
+              if (!guncel()) { kapat('iptal'); return; }
+              try {
+                oturum.send({ type: 'OCR_ATIF', jobId, bytes: bayt, tur: kaynakTur, sayfaSiniri: SINIR.ocrSayfa }, [bayt]);
+                gonderildi = true;
+              } catch { kapat('hata'); }
+            } else if (m.type === 'OCR_PROGRESS' && m.jobId === jobId) {
+              const sayfa = Number.isSafeInteger(m.sayfa) && m.sayfa > 0 && m.sayfa <= SINIR.ocrSayfa ? m.sayfa : 0;
+              const toplam = Number.isSafeInteger(m.toplam) && m.toplam > 0 && m.toplam <= SINIR.ocrSayfa ? m.toplam : 0;
+              if (sayfa && toplam && sayfa <= toplam) ilerleme(sayfa, toplam);
+            } else if (m.type === 'OCR_RESULT' && m.jobId === jobId) kapat('tamam', m);
+          });
+        } catch { kapat('hata'); return; }
+        const yokla = () => {
+          if (bitti) return;
+          if (!guncel()) kapat('iptal');
+          else if (oturum?.closed) kapat('durdu');
+          else zamanlar[2] = sonra(yokla, SINIR.pdfYokla);
+        };
+        zamanlar.push(sonra(() => { if (!hazir) kapat('hata'); }, SINIR.pdfHazir), sonra(() => kapat('hata'), SINIR.ocrSure), sonra(yokla, SINIR.pdfYokla));
+      });
     }
 
     // ---- PDF: metin, duruşma paketinin görünmez uzantı çerçevesindeki pdf.js işçisinde sayfa sayfa okunur.
@@ -953,7 +1148,12 @@
       const m = r.durum === 'tamam' ? r.sonuc : null;
       const sayfalar = Array.isArray(m?.sayfalar) ? m.sayfalar.filter(p => typeof p?.metin === 'string' && p.metin.trim()) : [];
       const hata = Number.isSafeInteger(m?.hataSayfa) && m.hataSayfa > 0 ? m.hataSayfa : 0;
-      if (!sayfalar.length) return goster(m && !m.code && !hata ? ILETI.pdfMetinsiz : ILETI.pdfHata);
+      if (!sayfalar.length) {
+        const metinsiz = !!(m && !m.code && !hata);
+        goster(metinsiz ? ILETI.pdfMetinsiz : ILETI.pdfHata);
+        if (metinsiz && ocrUygun(b)) ocrTeklif(b, 'pdf', surer);
+        return;
+      }
       // Arada okunamayan/metinsiz sayfa varsa iki ayrı sayfanın parçaları tek bir künye gibi eşleşmemeli.
       let oncekiSayfa = null, bas = 0;
       const birimler = [];
@@ -1008,9 +1208,14 @@
       sonAyar = ayarAcik();
       if (!globalThis.UHDKunye || !sonAyar) return;
       const benim = no;
+      const kaynakTur = t === 'tiff' || (t === 'diger' && (b.ext === 'tif' || b.ext === 'tiff')) ? 'tiff' : 'image';
       tur = t === 'tiff' || t === 'resim' || (t === 'diger' && RESIM.has(b.ext)) ? 'resim' : t;
       const surer = () => benim === no && ayarAcik() && !b.signal?.aborted && (typeof b.gecerli !== 'function' || b.gecerli());
-      if (tur === 'resim') return goster(ILETI.resim);
+      if (tur === 'resim') {
+        goster(ILETI.resim);
+        if (ocrUygun(b)) ocrTeklif(b, kaynakTur, surer);
+        return;
+      }
       if (!['udf', 'html', 'txt', 'pdf', 'diger'].includes(tur)) return goster(ILETI.desteklenmiyor);
       goster(ILETI.taraniyor, '…');
       if (tur === 'pdf') return pdfBekle(b, surer);
@@ -1025,6 +1230,7 @@
     // Evrak değişti ya da ekran kapanıyor: liste, menü, seçim düğmesi ve süren iş (PDF motoru dahil) bırakılır.
     function temizle(belgeyiBirak = true) {
       no++;
+      ocrNesil++;
       if (belgeyiBirak) sonBelge = null;
       motor?.kapat('iptal');
       secimBirak?.();
@@ -1039,6 +1245,8 @@
       for (const parca of isaretliParcalar) parca.replaceChildren(parca.textContent);
       isaretliParcalar.clear();
       tur = null; kunyeler = []; satirlar = []; secilen = []; etkin = 0; cizimKok = null; kapDugum = null; tekrar = null;
+      ocrHedef = null; ocrOnbellek = null; ocrCalisiyor = false;
+      ocrAra.hidden = true; ocrAra.textContent = 'Taranmış belgede atıfı ara';
       alintiMetni = ''; alintiBirimleri = []; ara.value = ''; bos.hidden = true; secilenCiz();
       liste.replaceChildren();
       liste.hidden = true;
@@ -1103,6 +1311,8 @@
 .viewer .ek-atif-kunye .ek-atif-eksik{display:block;margin-top:2px;font-size:11px}
 .viewer .ek-atif-alinti{margin:0;color:var(--shell-muted);font-size:11px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .viewer .ek-atif-uyari{display:inline-block;margin-left:6px;padding:0 6px;border-radius:6px;background:var(--shell-error-bg);color:var(--shell-error);font-size:11px;font-weight:600}
+.viewer .ek-atif-ocr{display:inline-block;margin-left:6px;padding:0 6px;border-radius:6px;background:var(--shell-soft);color:var(--shell-muted);font-size:11px;font-weight:600}
+.viewer .ek-atif-ocr-ara{align-self:flex-start}
 .viewer .ek-atif-havuz{position:relative;display:inline-flex;align-items:center;margin-left:6px;padding:0 6px;border-radius:6px;background:var(--shell-soft);color:var(--shell-muted);font-size:11px;font-weight:600;line-height:18px;vertical-align:1px}
 .viewer .ek-atif-havuz[data-hukum=dogrulandi],.viewer .ek-atif-havuz[data-hukum=eslesti]{color:var(--shell-accent)}
 .viewer .ek-atif-havuz[data-hukum=dikkat],.viewer .ek-atif-havuz[data-hukum=bulunamadi]{color:var(--shell-warn-text)}
