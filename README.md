@@ -7,7 +7,9 @@ Eklenti, **Av. Hasan İmer Akın** tarafından meslektaşlarının ücretsiz kul
 
 Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lisansıyla** sunar. UYAP işlem motoru özel kaynaklıdır; tam eklenti mağazadan kurulur.
 
-> Bu rehber, **1.19.60** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+> Bu rehber, **1.19.61** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+**1.19.61:** **Legaluga ile aç** yeniden evrak listesini ve evrakları getirir. 1.19.59 ve 1.19.60'ta Evrak sekmesi, evrak açma, arama, Güncelle ve indirme UYAP'a istek göndermeden **UYAP kapısı kapandı** hatasıyla duruyordu; **Otomatik işlemleri elle aç** bunu düzeltmiyordu. Güncellemeden sonra UYAP sekmesini yenileyin.
+
 **1.19.60:** Metin katmanı olmayan PDF, TIFF ve resimde Atıflar paneli **Taranmış belgede atıfı ara** düğmesini gösterir. Okuma yalnız bu düğmeyle, bu cihazda, paketlenmiş Türkçe modelle ve en çok 12 sayfayla yapılır. Görüntü ve metin makineden çıkmaz; sonuç yalnız o sayfa görünümünün belleğinde tutulur.
 
 **1.19.59:** UYAP indirme ve işlem koruması (403/429/503, Retry-After, PRTL_GNL_1-1 veya doğrulama sayfası) bütün sekmelerdeki otomatik UYAP isteklerini durdurur; süre dolunca kendiliğinden devam etmez. Ayarlardaki **Otomatik işlemleri elle aç** yalnız kilidi kaldırır. İndirme ve sorgular tek kuyrukta, önceki sürümden yavaş aralıkla gider. **UYAP oturumunu koru** varsayılan olarak kapalıdır.
