@@ -512,6 +512,13 @@
         if (simdiki !== s || closed) { gorunum.birak(); return; }
         s.gorunum = gorunum;
         s.model = model;
+        // UYAP türü ve adı bildirmediyse (bin) ama UDF okuyucusu açtıysa özgün baytlar .udf adıyla da sunulur.
+        if (tur === 'udf' && ext === 'bin') {
+          udfIndir.href = indirUrl;
+          udfIndir.download = zipTools.documentName(rec, x, 'udf');
+          udfIndir.hidden = false;
+          indir.hidden = true;
+        }
         kap.replaceChildren(gorunum.kok);
         icerik(...docbarKur(s, tur), kap);
         olcekUygula(s);
