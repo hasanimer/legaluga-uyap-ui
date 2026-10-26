@@ -303,8 +303,8 @@
       "source": "content.js",
       "order": 13,
       "path": "src/fragments/content/013-native-window-navigation-and-identity-guards.js.part",
-      "sha256": "d8f5a57de5f167208ba54758cdb7b2dfc5f2f57cbf3386389d610655facc40e4",
-      "bytes": 16261,
+      "sha256": "2e8dba23bc21024c9f37d8b842510e1b06c951084815708a8a5b9bb29d2137e1",
+      "bytes": 16269,
       "purpose": "native-window-navigation-and-identity-guards"
     },
     {

@@ -109,7 +109,8 @@
       const f = field();
       if (f) return f;
       if (onFormPage()) log('Form alanı kayboldu:', id);
-      throw new Error(onFormPage() ? 'UYAP’taki Dosya Sorgulama formu yeniden kuruldu; tekrar deneyin.' : 'Dosya Sorgulama ekranından çıkıldı.');
+      // Alanın kaybolması UYAP'ın formu yeniden kurmasıdır (ya da ekrandan çıkılmıştır): eklenti hatası sayılmaz.
+      throw formYenidenKuruldu();
     };
     await waitFor(field, 8000, 'Dosya Sorgulama formu zamanında yüklenmedi; tekrar deneyin.');
     if (read() === want) return false;
