@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "61b185f53b095d94bf4cdd17317b189981109dc8aa105a171983ef3d04333602"
+      "sha256": "46ed4f61d86162f07eb320034ab3d449499becb7bdfbef779c909fa732e032dc"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -576,7 +576,7 @@
     },
     {
       "path": "src/fragments/content/013-native-window-navigation-and-identity-guards.js.part",
-      "sha256": "d8f5a57de5f167208ba54758cdb7b2dfc5f2f57cbf3386389d610655facc40e4"
+      "sha256": "2e8dba23bc21024c9f37d8b842510e1b06c951084815708a8a5b9bb29d2137e1"
     },
     {
       "path": "src/fragments/content/015-native-window-navigation-and-identity-guards.js.part",
