@@ -2375,6 +2375,15 @@
       say(`Tema: ${TEMA[temaAyari()].ad}.`);
     });
 
+    // Kayıtlı tema dizin okumasını beklemesin: küçük tercih okuması depo kuyruğunda önce gider. Sayfa panelinde
+    // içerik betiğinin tercih okuması kullanılır (opts.prefsRead); ayrı istek gönderilmez.
+    const temaRevision = prefsRevision;
+    const temaRead = opts.prefsRead || (opts.mode === 'page' ? null : chrome.storage.local.get('uhdPrefs'));
+    if (temaRead) temaRead.then(v => {
+      if (loaded || prefsRevision !== temaRevision) return;
+      prefs = { ...prefs, tema: v.uhdPrefs?.tema };
+      applyTheme();
+    }).catch(() => {});
     render();
     function loadInitial() {
       const initialPrefsRevision = prefsRevision;

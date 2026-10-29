@@ -99,12 +99,15 @@
       const saved = await native.get(keys == null ? null : [...keys, REV]);
       const data = query && !Array.isArray(query) && typeof query === 'object' ? clone(query) : {};
       const present = [];
+      // Yanıt boyutu üst sınırı: değerin JSON'u düz metinden ({"exists":…,"value":…}), düz metin Base64 zarfın 3/4'ünden kısadır.
+      // Tam yanıt yalnız 32 MiB aşılabilecekken yeniden serileştirilip ölçülür. seal() sıkıştırırsa bu sınır geçersizleşir.
+      let bound = 1024 + (query && typeof query === 'object' ? 3 * JSON.stringify(query).length : 0);
       for (const [name, value] of Object.entries(saved)) if (validKey(name)) {
         const result = await UHDVaultCrypto.open(keyRecord.key, keyRecord.id, name, value);
-        if (result.exists) { data[name] = result.value; present.push(name); }
+        if (result.exists) { data[name] = result.value; present.push(name); bound += value.data.length / 4 * 3 + 2 * name.length + 16; }
         else if (!(query && typeof query === 'object' && !Array.isArray(query))) delete data[name];
       }
-      if (wire) checkMessage({ data, present, revision });
+      if (wire && bound > MAX_MESSAGE) checkMessage({ data, present, revision });
       return { data, present, revision };
     }
     async function broadcast(changes) {
@@ -115,7 +118,7 @@
       const tabs = await chrome.tabs.query({ url: 'https://avukat.uyap.gov.tr/*' }).catch(() => []);
       for (const tab of tabs) void chrome.tabs.sendMessage(tab.id, message, { frameId: 0 }).catch(() => {});
     }
-    async function write(values, absent = []) {
+    async function write(values, absent = [], quiet = null) {
       if (!values || typeof values !== 'object' || Array.isArray(values)) throw new Error('Depolama verisi geçersiz.');
       checkMessage(values);
       const names = [...new Set([...Object.keys(values), ...absent])]; checkKeys(names);
@@ -125,9 +128,9 @@
         const exists = Object.hasOwn(values, name) && values[name] !== undefined;
         encrypted[name] = await UHDVaultCrypto.seal(keyRecord.key, keyRecord.id, name, values[name], exists);
         // Ürün dinleyicileri yalnız newValue kullanır; eski+yeni büyük indeks tek mesajda ikiye katlanmaz.
-        changes[name] = exists ? { newValue: clone(values[name]) } : {};
+        if (!quiet?.has(name)) changes[name] = exists ? { newValue: clone(values[name]) } : {};
       }
-      if (names.length) { await commit(encrypted); await broadcast(changes); }
+      if (names.length) { await commit(encrypted); if (Object.keys(changes).length) await broadcast(changes); }
       return { revision };
     }
     broker = (operation, args) => transact(async () => {
@@ -217,7 +220,12 @@
         // Kontrol sırasında gelen kullanıcı durdurması eski iş nesnesiyle silinmez; sahibi duraklamayı kaydedebilir.
         const values = saved.uhdJob.stop && args.values.uhdJob && args.values.uhdJob.paused !== 'kullanici'
           ? { ...args.values, uhdJob: { ...args.values.uhdJob, stop: true } } : args.values;
-        await write(values, args.absent);
+        // İş kaydında liste kontrol noktası dışında değişiklik yoksa kayıt şifreli yazılır ama yayınlanmaz: hiçbir dinleyici listCheckpoint okumaz,
+        // büyük found listesi her sayfada sekmelere gitmez. Diğer alanlardaki (stop, paused, listDone, stats…) değişiklik yayınlanır.
+        const head = job => JSON.stringify({ ...job, listCheckpoint: undefined });
+        const quiet = values.uhdJob && typeof values.uhdJob === 'object' && !args.absent.includes('uhdJob') &&
+          head(values.uhdJob) === head(saved.uhdJob) ? new Set(['uhdJob']) : null;
+        await write(values, args.absent, quiet);
         return { data: true, revision };
       }
       if (operation === 'stopScan') {
