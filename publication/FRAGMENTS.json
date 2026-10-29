@@ -7,8 +7,8 @@
       "source": "common.js",
       "order": 1,
       "path": "src/fragments/common/001.js.part",
-      "sha256": "957005ec18266a0ea9559987d134aa80b41d5e00e79606760668ea3fbabe8c39",
-      "bytes": 16067,
+      "sha256": "09fd82f0972aeed0a712c46b1c445811080f556c9f0898276cf873d36b8261a9",
+      "bytes": 17565,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
@@ -343,8 +343,8 @@
       "source": "content.js",
       "order": 23,
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "c22050ecf9f7a3a73c5c84988fafbed4ae72df0db12140b71f3db1057779eedf",
-      "bytes": 105150,
+      "sha256": "78b5826139b11dac92a115d09e034a0beb460f61f48d0eba4f94d6145cc2bfc4",
+      "bytes": 105362,
       "purpose": "page-shell-full-CSS-docking-and-panel-controls"
     },
     {
@@ -407,8 +407,8 @@
       "source": "content.js",
       "order": 39,
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "c38fd85989112ce6cd2b3d258d581b7c0c4162d7d8306a5c439737dd47c0a60b",
-      "bytes": 55479,
+      "sha256": "326b629355aefdb086f1cdfe196f332f4e70acf16d3958622a439242f82faf55",
+      "bytes": 55482,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {

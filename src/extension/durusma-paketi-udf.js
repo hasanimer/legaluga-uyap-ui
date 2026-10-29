@@ -81,14 +81,15 @@
   const color = c => c ? PDF.rgb(c[0] / 255, c[1] / 255, c[2] / 255) : PDF.rgb(0, 0, 0);
   // Shared text geometry for wrapping, drawing and future table/header cell measurement.
   // Images/tables/headers remain unsupported until Editor reference checks exist.
-  function lineMetrics(parts, faces, spacing = 0, explicitSpacing = false) {
+  function lineMetrics(parts, faces, spacing = 0, explicitSpacing = false,
+    measure = (key, text, size) => faces[key].pdf.widthOfTextAtSize(text, size)) {
     let ascent = 0, descent = 0, maxSize = 0, width = 0;
     for (const part of parts) {
       const face = faces[part.face], scale = part.style.punto / face.glyph.unitsPerEm;
       ascent = Math.max(ascent, face.glyph.ascent * scale);
       descent = Math.max(descent, -face.glyph.descent * scale);
       maxSize = Math.max(maxSize, part.style.punto);
-      width += face.pdf.widthOfTextAtSize(part.text, part.style.punto);
+      width += measure(part.face, part.text, part.style.punto);
     }
     // Editor FO reference: normal 1.2× point size; explicit LineSpacing v → (1+v)×.
     // Font ascent/descent still governs the baseline and bottom-content bound.
@@ -125,6 +126,14 @@
     const faces = {};
     for (const key of used) faces[key] = { pdf: await pdf.embedFont(raw(fonts[key]), { subset: true }), glyph: KIT.create(raw(fonts[key])) };
     let yerine = 0;
+    // Genişlik (yüz, punto, metin) için saftır; her sözcük kırma ve çizimde tekrar ölçüldüğünden belge başına önbelleklenir.
+    const widths = new Map();
+    const measure = (key, text, size) => {
+      const k = key + '\u0000' + size + '\u0000' + text;
+      let w = widths.get(k);
+      if (w === undefined) { w = faces[key].pdf.widthOfTextAtSize(text, size); widths.set(k, w); }
+      return w;
+    };
     if (esnek) for (const section of model.bolumler) for (const block of section) for (const piece of block.parcalar) {
       const glyph = faces[fontKey(styleOf(piece, block, model))].glyph;
       piece.yazi = Array.from(piece.yazi, ch => (ch === '\n' || glyph.hasGlyphForCodePoint(ch.codePointAt(0)) ? ch : (yerine++, '?'))).join('');
@@ -138,7 +147,7 @@
     }
     function drawLine(line, block, first, last, explicit) {
       const hasSpacing = block.aralikVar === true || (block.aralik || 0) > 0;
-      const m = lineMetrics(line, faces, block.aralik || 0, hasSpacing);
+      const m = lineMetrics(line, faces, block.aralik || 0, hasSpacing, measure);
       if (!line.length) {
         const s = styleOf(null, block, model), glyph = faces[fontKey(s)].glyph;
         m.ascent = glyph.ascent * s.punto / glyph.unitsPerEm;
@@ -163,9 +172,9 @@
         // Draw one segment per word/space so justified spacing is in the same measured coordinate system.
         for (const token of part.text.match(/[^ ]+| +/gu) || []) {
           if (!/^ +$/u.test(token)) page.drawText(token, { x, y: baseline, size: s.punto, font: face, color: color(s.renk) });
-          x += face.widthOfTextAtSize(token, s.punto) + extra * (token.match(/ /gu) || []).length;
+          x += measure(part.face, token, s.punto) + extra * (token.match(/ /gu) || []).length;
         }
-        const width = face.widthOfTextAtSize(part.text, s.punto) + extra * (part.text.match(/ /gu) || []).length;
+        const width = measure(part.face, part.text, s.punto) + extra * (part.text.match(/ /gu) || []).length;
         const end = x;
         if (s.alti) page.drawLine({ start: { x: end - width, y: baseline - s.punto * 0.12 },
           end: { x: end, y: baseline - s.punto * 0.12 }, thickness: Math.max(0.5, s.punto / 16), color: color(s.renk) });
@@ -187,13 +196,13 @@
           for (const run of token.runs) {
             for (const ch of run.text) if (!faces[run.face].glyph.hasGlyphForCodePoint(ch.codePointAt(0)))
               reject('udf-glyph', `UDF karakteri fontta yok: U+${ch.codePointAt(0).toString(16)}`);
-            width += faces[run.face].pdf.widthOfTextAtSize(run.text, run.style.punto);
+            width += measure(run.face, run.text, run.style.punto);
           }
           if (lineWidth + width > widthLimit() && line.length) flush(false);
           if (width > widthLimit() && esnek) {
             // Sığmayan uzun sözcük (adres, kimlik, bitişik değer) harf harf bölünür.
             for (const run of token.runs) for (const ch of run.text) {
-              const w = faces[run.face].pdf.widthOfTextAtSize(ch, run.style.punto);
+              const w = measure(run.face, ch, run.style.punto);
               if (lineWidth + w > widthLimit() && line.length) flush(false);
               const previous = line.at(-1);
               if (previous?.style === run.style) previous.text += ch; else line.push({ text: ch, style: run.style, face: run.face });

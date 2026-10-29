@@ -577,6 +577,7 @@
       zipSelectionCount.textContent = !kaynak ? 'İndirilecek sayı evrak listesi alınınca gösterilir.'
         : `İndirilecek: ${fmtNum(documents)}${plus} evrak + ${fmtNum(attachments)}${plus} ek = ${fmtNum(selected.length)}${plus} / ${fmtNum(rows.length)}${plus} toplam.`;
       if (zipState || bulkJob || bulkState) zipSelectionCount.textContent += ' Bu seçimler yeni indirme içindir; kalanları tekrar denemek ve devam etmek önceki hedef listesini kullanır.';
+      return selected;
     }
     // Toplu İndir sekmesindeki kapsam seçenekleri; seçenekler değişmedikçe yeniden kurulmaz (oklarla gezinirken odak kalır).
     function zipKapsamCiz() {
@@ -598,8 +599,7 @@
     function zipSync() {
       if (closed) return;
       zipKapsamCiz();
-      zipTypesCiz();
-      const count = zipTargets().length;
+      const count = zipTypesCiz().length;
       if (bulkTools && !bulkChoice) zipParts.checked = count > bulkTools.PART_ENTRIES;
       const needsFullList = !!(kaynak?.list.morePages || kaynak?.list.scopeUnknown) && !['son20', 'gorunen'].includes(zipKapsam);
       const busy = !!zipRun || !!bankRun || !!paketSession || !!bankaOkuma || !!tebligatRead || !!listeBekliyor || !!belgePdfRun;

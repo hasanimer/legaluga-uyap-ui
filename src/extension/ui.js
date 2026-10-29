@@ -491,6 +491,7 @@
     let allParties = new Set();// tüm tarafları gösterilen kartlar
     let pendingJob = null;     // yarıda kalmış güncelleme işi (uhdJob)
     let person = null;         // açık müvekkil kartı: { name }
+    let personLimit = LIMIT;   // müvekkil kartında gösterilen dosya sayısı (ana listenin sayfasından ayrı)
     let filtersExpanded = false;
     const busy = new Map();    // açılmakta olan dosyalar: key → düğme yazısı ("Açılıyor · 2/4")
     let hearingRange = 'week';
@@ -1686,6 +1687,7 @@
 
     function openPerson(name) {
       person = { name };
+      personLimit = LIMIT;
       editing = null;
       sel = 0;
       render();
@@ -1731,13 +1733,24 @@
         files.length ? el('div', { class: 'row' }, copyAll) : null,
         el('div', { class: 'hint' }, 'UYAP taraf listesinde kimlik numarası yer almadığından aynı ad-soyada sahip farklı kişiler birlikte listelenebilir.'));
       list.append(head);
-      current = files.map(f => f.r);
+      // Binlerce dosyada geçen taraf (banka, şirket) için kartlar sayfa sayfa çizilir; özet ve kopyalama tüm dosyaları kapsar.
+      const shown = files.slice(0, personLimit);
+      current = shown.map(f => f.r);
       if (sel >= current.length) sel = 0;
-      files.forEach((f, i) => {
+      shown.forEach((f, i) => {
         const bizde = f.roller.some(x => x.muvekkil);
         const rolText = f.roller.map(x => x.rol + (x.muvekkil ? ' · müvekkiliniz' : '')).join(', ');
         list.append(item(f.r, i, [], keys, el('div', { class: 'rolein' + (bizde ? '' : ' other') }, `Bu dosyada: ${rolText}`)));
       });
+      if (files.length > shown.length) {
+        const more = el('button', { class: 'btn sm load-more' }, `Daha fazla göster · ${fmtNum(shown.length)} / ${fmtNum(files.length)}`);
+        more.addEventListener('click', () => {
+          const previous = current.length;
+          personLimit += LIMIT; render();
+          list.querySelectorAll('.item')[previous]?.querySelector('button')?.focus();
+        });
+        list.append(more);
+      }
     }
 
     // ------------------------------------------------ kayıt işlemleri
