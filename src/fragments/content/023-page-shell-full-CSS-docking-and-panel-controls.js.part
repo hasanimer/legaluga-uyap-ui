@@ -1204,8 +1204,12 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     });
     readPageZoom();
     window.addEventListener('resize', readPageZoom, { passive: true });
+    // Depo işlemleri SW'de sırayla yürür: küçük tercih okumaları panelin büyük ilk okumasından (uhdIndex) önce gider;
+    // sabit panel, tema ve tanıtım ipucu dizini beklemez. Tercih okuması panelin temasına da verilir.
+    const prefsRead = chrome.storage.local.get('uhdPrefs'), introRead = chrome.storage.local.get('uhdLauncherIntroPending');
     ui = mountUI(panel, {
       mode: 'page',
+      prefsRead,
       downloads: downloadManager,
       openDownload,
       showDownloadPart,
@@ -1265,7 +1269,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
       if (area === 'local' && changes.uhdLauncherIntroPending) applyLauncherIntro(changes.uhdLauncherIntroPending.newValue);
     });
     const initialPrefsRevision = prefsRevision;
-    prefsReady = chrome.storage.local.get('uhdPrefs').then(v => {
+    prefsReady = prefsRead.then(v => {
       // İlk okuma, bu arada gelen storage.onChanged olayını geri almamalı. panelPinned() prefsLoaded'a baktığı için
       // bayrak önce kalkar; tercih gelmeden açılmış panel sabitse yuvaya geçer.
       prefsLoaded = true;
@@ -1278,7 +1282,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
       if (invalidated(error)) stopInvalidatedContext();
       else { prefsLoaded = true; syncPinAvailability(); }
     });
-    chrome.storage.local.get('uhdLauncherIntroPending').then(v => applyLauncherIntro(v.uhdLauncherIntroPending)).catch(error => {
+    introRead.then(v => applyLauncherIntro(v.uhdLauncherIntroPending)).catch(error => {
       if (invalidated(error)) stopInvalidatedContext();
     });
     if (pageDarkMq && pageDarkMq.addEventListener) pageDarkMq.addEventListener('change', () => applyPagePrefs(pagePrefs));
