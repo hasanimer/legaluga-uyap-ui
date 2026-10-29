@@ -553,6 +553,8 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
   function findAccessMenuHeading(root) {
     if (root && root.nodeType === 3) root = root.parentElement;
     if (!root || root.nodeType !== 1) return null;
+    // Büyük eklemelerde (tablo, liste) her öğe ayrı ayrı normalleştirilmez; metinde başlık sözcüğü yoksa tarama atlanır.
+    if (!norm(root.textContent).includes('erisilebilirlik')) return null;
     const nodes = [root, ...root.querySelectorAll('h1,h2,h3,h4,b,strong,span,div,[role="heading"]')];
     return nodes.find(node => norm([...node.childNodes].filter(child => child.nodeType === 3).map(child => child.textContent).join(' ').trim()) === 'erisilebilirlik menusu') || null;
   }

@@ -181,10 +181,13 @@
       const ilk = birimler[parcalar[0].i], sonuncu = birimler[parcalar.at(-1).i];
       bas = ilk.bas; son = sonuncu.bas + sonuncu.uzunluk;
     }
-    const once = metin.lastIndexOf('\n\n', k.bas), sonra = metin.indexOf('\n\n', k.son);
+    // Boş satır yalnız sonucu değiştirebilen pencerede aranır; uzun PDF metni her künyede baştan sona taranmaz.
+    const ON = 480, ARD = 900, pb = Math.max(0, k.bas - ON - 2);
+    const o = metin.slice(pb, k.bas + 2).lastIndexOf('\n\n'), s = metin.slice(k.son, k.son + ARD + 2).indexOf('\n\n');
+    const once = o < 0 ? -1 : pb + o, sonra = s < 0 ? -1 : k.son + s;
     if (once >= bas) bas = once + 2;
     if (sonra >= 0) son = Math.min(son, sonra);
-    let x = Math.max(bas, k.bas - 480), y = Math.min(son, k.son + 900);
+    let x = Math.max(bas, k.bas - ON), y = Math.min(son, k.son + ARD);
     // Yarım sözcük kopyalama; özgün satır sonları ve yazım olduğu gibi kalır.
     if (x > bas) { const bos = metin.slice(x, Math.min(x + 80, k.bas)).search(/\s/u); if (bos >= 0) x += bos + 1; }
     if (y < son) { const parca = metin.slice(Math.max(k.son, y - 80), y), bos = parca.match(/\s\S*$/u); if (bos) y -= parca.length - bos.index; }
@@ -464,8 +467,7 @@
       d.textContent = ok ? 'Kopyalandı' : 'Kopyalanamadı';
       kopyaZamanlari.set(d, sonra(() => { d.textContent = kopyaEtiketleri.get(d); kopyaZamanlari.delete(d); }, 1800));
     }
-    function alintiDugmesi(k) {
-      const yazi = alinti(alintiMetni, k, alintiBirimleri);
+    function alintiDugmesi(k, yazi = alinti(alintiMetni, k, alintiBirimleri)) {
       const d = el('button', { type: 'button', class: 'chip ek-atif-alinti-kopyala',
         title: 'Atıfın evrakta geçtiği bölümü künye ile kopyala', disabled: !yazi }, 'Alıntıyı kopyala');
       d.addEventListener('click', ev => {
@@ -579,7 +581,7 @@
       const ac = tamMetin(i, 'chip ek-atif-git');
       const resmi = resmiMetin(k);
       const kopyala = el('button', { type: 'button', class: 'chip ek-atif-kopyala' }, 'Künyeyi kopyala');
-      const alintiKopyala = alintiDugmesi(k), yazi = alinti(alintiMetni, k, alintiBirimleri);
+      const yazi = alinti(alintiMetni, k, alintiBirimleri), alintiKopyala = alintiDugmesi(k, yazi);
       const uyari = k.hatali === 'olmayan_daire' ? 'olmayan daire' : k.hatali === 'gecersiz_tarih' ? 'geçersiz tarih' : '';
       const eksik = kararNoEksik(k) ? 'Karar numarası belirtilmemiş' : '';
       const uygun = gonderilebilir(k);

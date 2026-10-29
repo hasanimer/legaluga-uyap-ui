@@ -5,7 +5,8 @@
   if (globalThis.UHDStorage || !globalThis.chrome?.storage?.local) return;
   const native = Object.fromEntries(['get', 'set', 'remove', 'clear'].map(k => [k, chrome.storage.local[k].bind(chrome.storage.local)]));
   const rawListen = chrome.storage.onChanged.addListener.bind(chrome.storage.onChanged);
-  const listeners = new Set(), cache = new Map(), REV = '__uhdVaultRevision';
+  const listeners = new Set(), cache = new Map(), REV = '__uhdVaultRevision', NOT_KEPT = Symbol('not-kept');
+  let pendingGets = 0;
   const MAX_MESSAGE = 32 * 1024 * 1024;
   const checkMessage = value => {
     if (new TextEncoder().encode(JSON.stringify(value)).length > MAX_MESSAGE) throw Object.assign(new Error('Şifreli depolama işlemi 32 MiB sınırını aşıyor. Mevcut veriler değiştirilmedi.'), { code: 'storage-size' });
@@ -14,11 +15,26 @@
   const keysOf = value => value == null ? null : typeof value === 'string' ? [value] : Array.isArray(value) ? value : Object.keys(value);
   const checkKeys = keys => { if (keys && keys.some(k => !validKey(k))) throw new Error('Depolama anahtarı geçersiz.'); };
   const clone = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
-  const fire = (changes, area = 'local', revision = 0) => {
-    for (const [key, change] of Object.entries(changes)) {
-      if (area === 'local') cache.set(key, { value: clone(change.newValue), revision });
+  // Her dinleyici kendi kopyasını alır; alan ilk okunduğunda bir kez kopyalanır, okumayan dinleyici büyük indeksi kopyalamaz.
+  const lazyChanges = source => {
+    const out = {};
+    for (const [key, change] of Object.entries(source)) {
+      if (!change || typeof change !== 'object' || Array.isArray(change)) { out[key] = clone(change); continue; }
+      const view = out[key] = {};
+      for (const field of Object.keys(change)) {
+        let done = false, copy;
+        Object.defineProperty(view, field, { enumerable: true, configurable: true,
+          get() { if (!done) { copy = clone(change[field]); done = true; } return copy; },
+          set(value) { copy = value; done = true; } });
+      }
     }
-    for (const fn of listeners) { try { fn(clone(changes), area); } catch { /* belge/metin içeren hatayı günlüğe alma */ } }
+    return out;
+  };
+  const fire = (changes, area = 'local', revision = 0) => {
+    // Tek değişmez kopya. Önbellek değeri yalnız yanıtı beklenen get varken tutar; geç yanıtı yamalamak için yeterli.
+    const keep = area === 'local' && pendingGets > 0, source = keep || listeners.size ? clone(changes) : null;
+    if (area === 'local') for (const key of Object.keys(changes)) cache.set(key, { value: keep ? source[key].newValue : NOT_KEPT, revision });
+    for (const fn of listeners) { try { fn(lazyChanges(source), area); } catch { /* belge/metin içeren hatayı günlüğe alma */ } }
   };
   let broker;
   if (typeof document === 'undefined') {
@@ -55,10 +71,13 @@
         keyRecord = record;
         revision = Number.isSafeInteger(saved[REV]) ? saved[REV] : 0;
         const replacement = {};
+        const legacy = Object.entries(saved).some(([name, value]) => validKey(name) && !UHDVaultCrypto.isEnvelope(value));
         // Başarısız çözmede eski veri silinmez. Bütün eski değerler şifrelenmeden yazma yapılmaz.
+        // Göç varken her zarf tam doğrulanır; yoksa yalnız biçim/anahtar kimliği. Her read() ve write() ön kontrolü AES-GCM ile doğrular.
         for (const [name, value] of Object.entries(saved)) if (validKey(name)) {
-          if (UHDVaultCrypto.isEnvelope(value)) await UHDVaultCrypto.open(record.key, record.id, name, value);
-          else replacement[name] = await UHDVaultCrypto.seal(record.key, record.id, name, value);
+          if (!UHDVaultCrypto.isEnvelope(value)) replacement[name] = await UHDVaultCrypto.seal(record.key, record.id, name, value);
+          else if (legacy) await UHDVaultCrypto.open(record.key, record.id, name, value);
+          else if (value.version !== 1 || value.keyId !== record.id) throw new Error('Yerel veri anahtarı veya biçimi uyuşmuyor. Veriler değiştirilmedi.');
         }
         if (Object.keys(replacement).length) await commit(replacement);
       } finally { db.close(); }
@@ -408,18 +427,22 @@
   }
   const local = {
     async get(query = null) {
-      const result = await request('get', query), data = result.data, keys = keysOf(query);
-      for (const [name, entry] of cache) if ((keys == null || keys.includes(name)) && entry.revision > result.revision) {
-        if (entry.value === undefined) {
-          if (query && typeof query === 'object' && !Array.isArray(query) && Object.hasOwn(query, name)) data[name] = clone(query[name]);
-          else delete data[name];
-        } else data[name] = clone(entry.value);
-      }
-      const names = new Set([...(keys || Object.keys(data)), ...(keys == null ? cache.keys() : [])]);
-      for (const name of names) if (!cache.has(name) || cache.get(name).revision <= result.revision) {
-        cache.set(name, { value: result.present.includes(name) ? clone(data[name]) : undefined, revision: result.revision });
-      }
-      return data;
+      pendingGets++;
+      try {
+        const result = await request('get', query), data = result.data, keys = keysOf(query);
+        for (const [name, entry] of cache) if ((keys == null || keys.includes(name)) && entry.revision > result.revision && entry.value !== NOT_KEPT) {
+          if (entry.value === undefined) {
+            if (query && typeof query === 'object' && !Array.isArray(query) && Object.hasOwn(query, name)) data[name] = clone(query[name]);
+            else delete data[name];
+          } else data[name] = clone(entry.value);
+        }
+        const names = new Set([...(keys || Object.keys(data)), ...(keys == null ? cache.keys() : [])]);
+        // Okunan değer önbellekte tutulmaz; yalnız revizyon filigranı kalır.
+        for (const name of names) if (!cache.has(name) || cache.get(name).revision <= result.revision) {
+          cache.set(name, { value: NOT_KEPT, revision: result.revision });
+        }
+        return data;
+      } finally { if (--pendingGets === 0) for (const entry of cache.values()) entry.value = NOT_KEPT; }
     },
     async set(values) { await request('set', values); },
     async remove(keys) { await request('remove', keys); },

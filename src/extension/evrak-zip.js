@@ -6,8 +6,20 @@
   const MAX_NAME_BYTES = 220;
   const UINT32_MAX = 0xffffffff;
   const encoder = new TextEncoder();
-  const typeKey = value => String(value).toLocaleLowerCase('tr-TR').normalize('NFD')
+  const typeKeyRaw = value => String(value).toLocaleLowerCase('tr-TR').normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '').replace(/ı/g, 'i').replace(/\s+/gu, ' ').trim();
+  // Tür başlıkları çok tekrar eder; her liste çiziminde satır başına yeniden normalize edilmez.
+  const typeKeys = new Map();
+  const typeKey = value => {
+    const text = String(value);
+    let key = typeKeys.get(text);
+    if (key === undefined) {
+      if (typeKeys.size >= 4096) typeKeys.clear();
+      key = typeKeyRaw(text);
+      typeKeys.set(text, key);
+    }
+    return key;
+  };
   function documentType(item) {
     for (const value of [item?.ekTuru, item?.tur, item?.e?.tur]) {
       if (typeof value === 'string' && value.trim()) return value.replace(/\s+/gu, ' ').trim();

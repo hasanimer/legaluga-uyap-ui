@@ -161,6 +161,18 @@
     return s.trim().replace(/\s+/g, ' ');
   }
   const nameKey = s => norm(s).replace(/^av\.?\s+/, '').replace(/\s+/g, ' ').trim();
+  // Vekil adları dosyalar arasında çok tekrar eder; anahtar ham metne göre önbelleklenir (boyutu sınırlı).
+  const vekilKeyCache = new Map();
+  function vekilKey(v) {
+    if (typeof v !== 'string' || v.length > 200) return nameKey(v);
+    let k = vekilKeyCache.get(v);
+    if (k === undefined) {
+      if (vekilKeyCache.size >= 20000) vekilKeyCache.clear();
+      k = nameKey(v);
+      vekilKeyCache.set(v, k);
+    }
+    return k;
+  }
 
   // "Vekil adınız" ayarı boşsa: indekste en çok dosyada vekil olarak geçen ad kullanıcının adıdır.
   function detectMyName(records) {
@@ -169,7 +181,7 @@
       const seen = new Set();
       for (const p of r.taraflar || []) {
         for (const v of p.vekil || []) {
-          const k = nameKey(v);
+          const k = vekilKey(v);
           if (!k || seen.has(k)) continue;
           seen.add(k);
           const c = counts.get(k) || { name: v, n: 0 };
@@ -188,7 +200,7 @@
   }
 
   const isClient = (p, keys) => keys.length > 0 && (p.vekil || []).some(v => {
-    const k = nameKey(v);
+    const k = vekilKey(v);
     return keys.some(m => k === m || k.includes(m));
   });
 
@@ -216,11 +228,14 @@
     if (c && c.ctx === ctx) return c;
     const clients = [], others = [], vekils = [];
     for (const p of r.taraflar || []) {
-      (isClient(p, keys) ? clients : others).push(norm(p.adi));
+      // isClient ile aynı ayrım; vekil anahtarına bir kez bakılır.
+      let client = false;
       for (const v of p.vekil || []) {
-        const k = nameKey(v);
-        if (!keys.some(m => k === m || k.includes(m))) vekils.push(norm(v));
+        const k = vekilKey(v);
+        if (keys.some(m => k === m || k.includes(m))) client = true;
+        else vekils.push(norm(v));
       }
+      (client ? clients : others).push(norm(p.adi));
     }
     const base = [r.dosyaNo, r.birimAdi, r.dosyaTur, r.yargiTuruAdi, r.birimTuruAdi].map(norm);
     if (r.yargiTuru === CBS.kod) base.push(`savcilik bassavcilik sorusturma cbs ${norm(r.ilAdi)}`.trim());
@@ -229,11 +244,11 @@
     const fieldsWithVekils = fields.concat(vekils);
     c = {
       ctx,
-      no: norm(r.dosyaNo),
+      no: base[0],
       fileYear: fileNo ? Number(fileNo[1]) : 0,
       fileSequence: fileNo ? Number(fileNo[2]) : 0,
       fileSequenceText: fileNo ? fileNo[2] : '',
-      birim: norm(r.birimAdi),
+      birim: base[1],
       clients,
       parties: clients.concat(others),
       vekils,
@@ -245,6 +260,18 @@
     };
     infoCache.set(r, c);
     return c;
+  }
+
+  // Not metni (biçimli notta JSON) her tuşta yeniden çözülüp normalleştirilmez; ham değere göre önbelleklenir.
+  const noteCache = new Map();
+  function noteNorm(raw) {
+    let n = noteCache.get(raw);
+    if (n === undefined) {
+      if (noteCache.size >= 5000) noteCache.clear();
+      n = norm(noteText(raw));
+      noteCache.set(raw, n);
+    }
+    return n;
   }
 
   const wordStart = (list, t) => list.some(p => p.startsWith(t) || p.includes(' ' + t));
@@ -274,7 +301,7 @@
       const c = info(r, keys, ctx);
       if (f.onlyClient && !c.clients.length) continue;
       const hay = f.onlyClient ? c.clientOnly : vekilAra ? c.all : c.noVek;
-      const note = ts.length && notes[r.key] ? norm(noteText(notes[r.key])) : '';
+      const note = ts.length && notes[r.key] ? noteNorm(notes[r.key]) : '';
       let score = 0;
       let ok = true;
       for (const t of ts) {
@@ -302,12 +329,25 @@
       (yeni.get(b.r.key) || 0) - (yeni.get(a.r.key) || 0) ||
       (a.r.sorguDurum || 0) - (b.r.sorguDurum || 0) ||
       (b.r.acilisTs || 0) - (a.r.acilisTs || 0);
-    hits.sort(o.sort === 'newest'
+    const sirala = o.sort === 'newest'
       ? (a, b) => (b.r.acilisTs || 0) - (a.r.acilisTs || 0) || byRelevance(a, b)
       : o.sort === 'fileNo'
         ? (a, b) => b.c.fileYear - a.c.fileYear || b.c.fileSequence - a.c.fileSequence || byRelevance(a, b)
-        : byRelevance);
+        : byRelevance;
     const limit = o.limit || 60;
-    return { total: hits.length, items: hits.slice(0, limit).map(h => h.r), tokens: ts };
+    // Çok sonuçta yalnız ilk `limit` kararlı biçimde seçilir (sort + slice ile aynı sıra).
+    let top;
+    if (!(hits.length > limit * 8)) top = hits.sort(sirala).slice(0, limit);
+    else {
+      top = [];
+      for (const h of hits) {
+        if (top.length === limit && sirala(h, top[limit - 1]) >= 0) continue;
+        let lo = 0, hi = top.length;
+        while (lo < hi) { const m = (lo + hi) >> 1; if (sirala(h, top[m]) < 0) hi = m; else lo = m + 1; }
+        top.splice(lo, 0, h);
+        if (top.length > limit) top.pop();
+      }
+    }
+    return { total: hits.length, items: top.map(h => h.r), tokens: ts };
   }
 

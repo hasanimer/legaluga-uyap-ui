@@ -6,8 +6,10 @@
   const BACKUP_PASSWORD_MIN_LENGTH = 6, BACKUP_PASSWORD_MAX_LENGTH = 1024;
   const enc = new TextEncoder(), dec = new TextDecoder('utf-8', { fatal: true });
   const b64 = bytes => {
+    if (typeof bytes.toBase64 === 'function') return bytes.toBase64();
+    // Spread typed array'i iterator ile açar ve büyük zarflarda birkaç kat yavaştır; apply aynı çıktıyı verir.
     let text = '';
-    for (let i = 0; i < bytes.length; i += 8192) text += String.fromCharCode(...bytes.subarray(i, i + 8192));
+    for (let i = 0; i < bytes.length; i += 8192) text += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
     return btoa(text);
   };
   function un64(text, max = MAX_BYTES + 16) {

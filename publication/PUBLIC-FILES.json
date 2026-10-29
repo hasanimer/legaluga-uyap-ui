@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "46ed4f61d86162f07eb320034ab3d449499becb7bdfbef779c909fa732e032dc"
+      "sha256": "b4db88e1f926c3094b71b9d527f261e1d91c8b9b37fd326acf7a93d1dd084d31"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -152,7 +152,7 @@
     },
     {
       "path": "src/extension/atif-paneli.js",
-      "sha256": "06277fbe07aba335ff344205b8f725cec6100b16d90aca1ac20ce6602db77917"
+      "sha256": "d6572868f877e08c4e90be0d26598734137702f2ecb81644878a386fffef5acf"
     },
     {
       "path": "src/extension/belge-pdf.js",
@@ -184,7 +184,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-udf.js",
-      "sha256": "587424077719ce4cf350ce76e1d4c0ee0b57b46f481cf123127c7c5222e4579c"
+      "sha256": "4fe319fcf2e22199ea33e11a90f06941ef85f56f3c85c5563129fa417963b600"
     },
     {
       "path": "src/extension/durusma-paketi-ui.js",
@@ -192,7 +192,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-worker.js",
-      "sha256": "23d94e0a682eaa5e397b2321f360cbff3718ff94c2d31d01772f18919d3f9ce7"
+      "sha256": "d7985e2ffb03c86e3518e071122859a673f2016ecc95db8d6f49381dac60ab8c"
     },
     {
       "path": "src/extension/durusma-paketi-zip.js",
@@ -208,7 +208,7 @@
     },
     {
       "path": "src/extension/evrak-zip.js",
-      "sha256": "850058df8a32333f4c43b1643ea518d1a1559a0e56c5698da7481b46f49ab53a"
+      "sha256": "ea352da68ccdaa7c1e69e6f6522f6a980c5b1a2deda6b749efb09653f5008f5e"
     },
     {
       "path": "src/extension/icons/icon-128.png",
@@ -276,7 +276,7 @@
     },
     {
       "path": "src/extension/storage.js",
-      "sha256": "7ca373457849675281b966949d4c0b489933b90bad29bee00bfe241636069c1d"
+      "sha256": "50c4722b3ba54cc617262d46224e94c5f986aad9bfab8153617b80613a6647c8"
     },
     {
       "path": "src/extension/tabs.js",
@@ -292,7 +292,7 @@
     },
     {
       "path": "src/extension/tiff.js",
-      "sha256": "017dea1aa83672836a0c5bf9f6f8fecd1518dc2e476b5693eaa7bb9fd19c01f9"
+      "sha256": "7d771829e6bb0433a6a7e89c60795cf3ef8a1fefffb651d59e3149f41d95d721"
     },
     {
       "path": "src/extension/udf.js",
@@ -300,11 +300,11 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "efc96c91ee85a31a97e9cc81520d4a982d4304dc07862a96b128e191140270ad"
+      "sha256": "8bf76d288b06f46f8644572d610c188f90b1492b71eed6cca87cdbaacc821669"
     },
     {
       "path": "src/extension/vault-crypto.js",
-      "sha256": "69e21b36c861dbb48e7c7afe752e4c3380125fa5132a37effbd08ad453408435"
+      "sha256": "5a8f026b633a434cc9b6612ff10e2cba9df13c7d300f629bdbfd8a764ddf3a38"
     },
     {
       "path": "src/extension/vendor/FONTKIT-APACHE-2.0.LICENSE",
@@ -520,7 +520,7 @@
     },
     {
       "path": "src/fragments/common/001.js.part",
-      "sha256": "957005ec18266a0ea9559987d134aa80b41d5e00e79606760668ea3fbabe8c39"
+      "sha256": "09fd82f0972aeed0a712c46b1c445811080f556c9f0898276cf873d36b8261a9"
     },
     {
       "path": "src/fragments/common/003.js.part",
@@ -596,7 +596,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "c22050ecf9f7a3a73c5c84988fafbed4ae72df0db12140b71f3db1057779eedf"
+      "sha256": "78b5826139b11dac92a115d09e034a0beb460f61f48d0eba4f94d6145cc2bfc4"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -628,7 +628,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "c38fd85989112ce6cd2b3d258d581b7c0c4162d7d8306a5c439737dd47c0a60b"
+      "sha256": "326b629355aefdb086f1cdfe196f332f4e70acf16d3958622a439242f82faf55"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",

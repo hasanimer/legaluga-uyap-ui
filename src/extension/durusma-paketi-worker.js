@@ -9,7 +9,13 @@ if (typeof Promise.try !== 'function') Object.defineProperty(Promise, 'try', {
     });
   }
 });
-importScripts('vendor/pdf-lib.min.js', 'vendor/fontkit.umd.js', 'vendor/pdfjs-reader.js', 'durusma-paketi-pdf.js');
+importScripts('vendor/pdfjs-reader.js');
+// pdf-lib ve fontkit yalnız PDF üreten işlerde (paket, tek belge) yüklenir; metin işleri pdf.js ile yetinir.
+// Sıra korunur: durusma-paketi-pdf.js ve UDF çizici iki globali yüklenirken okur.
+function pdfMotoruYukle() {
+  if (!globalThis.PDFLib || !globalThis.fontkit) importScripts('vendor/pdf-lib.min.js', 'vendor/fontkit.umd.js');
+  if (!globalThis.DurusmaPaketiPDF) importScripts('durusma-paketi-pdf.js');
+}
 
 let session = null;
 let controller = null;
@@ -173,6 +179,7 @@ async function singlePdf(data) {
   singlePdfJob = job;
   const signal = job.controller.signal;
   try {
+    pdfMotoruYukle();
     const item = data.item;
     if (!item || typeof item.id !== 'string' || !item.id || !(item.bytes instanceof ArrayBuffer) || !item.bytes.byteLength)
       throw Object.assign(new Error('Belge girişi geçersiz'), { code: 'document-invalid' });
@@ -213,6 +220,7 @@ async function start(message) {
   controller = new AbortController();
   const signal = controller.signal;
   try {
+    pdfMotoruYukle();
     if (!Array.isArray(session.items) || session.items.length > 100 ||
       session.items.some(item => typeof item.id !== 'string' || !item.id ||
         !(item.bytes instanceof ArrayBuffer) || item.bytes.byteLength > 64 * 1024 * 1024))

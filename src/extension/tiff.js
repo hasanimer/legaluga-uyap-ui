@@ -194,7 +194,7 @@
   // UTIF'in CCITT çözücüleri her bit için önceki satırı baştan tarar ve satırı sınırsız uzatabilir; LZW çözücüsü
   // bozuk veride sonsuz döngüye girebilir (sınamada rastgele LZW verisi sekmeyi kilitledi). Satıcı dosyası
   // değiştirilmeden, çözücülerin çağırdığı yardımcılar burada sınırlı sürümlerle değiştirilir: satır uzunluğu ve
-  // süre denetlenir, önceki satır ikili aramayla taranır, LZW ise burada yazılmış çözücüyle açılır.
+  // süre denetlenir, önceki satır ikili aramayla taranır, LZW ve G4 ise burada yazılmış çözücülerle açılır.
   const koruma = { bitis: 0, satir: 0, sayac: 0 };
   const korumaDenetle = () => {
     if ((++koruma.sayac & 1023) === 0 && performance.now() > koruma.bitis) throw new Error('çözüm süresi aşıldı');
@@ -238,24 +238,91 @@
     return cik - toff;
   }
 
+  // Değişim listesi [konum, renk, …] konuma göre sıralıdır: ilk uygun konum ikili aramayla bulunur (n: geçerli uzunluk).
+  function farkBul(line, n, x, clr) {
+    korumaDenetle();
+    if (!(x <= line[n - 2])) return undefined;
+    let a = 0, b = (n >> 1) - 1;
+    while (a < b) { const m = (a + b) >> 1; if (line[2 * m] >= x) b = m; else a = m + 1; }
+    for (let i = 2 * a; i < n; i += 2) if (line[i] >= x && line[i + 1] === clr) return line[i];
+    return undefined;
+  }
+
+  // CCITT G4: UTIF._decodeG4 ile aynı durum makinesi ve aynı çıktı. UTIF kod sözcüğünü dizgi olarak biriktirip her
+  // bitte iki farkBul yapar ve her pikseli diziye ekler (A4 300 dpi sayfa ~150 ms). Burada kod sözcüğü başında 1 taşıyan
+  // tamsayıdır ve tabloda aranır; b1/b2 yalnız a0, renk ya da başvuru satırı değişince bulunur; satır değişim listesi
+  // olarak kurulur ve yalnız siyah koşular yazılır. Tablolar ilk G4 sayfasında UTIF'in kod tablolarından kurulur.
+  function g4Kur(D) {
+    const YOK = 0x7fff;
+    let tablo = null;
+    const tabloKur = () => {
+      // Anahtar (1 << uzunluk) | kod: her bit dizgisinin tek anahtarı vardır; en uzun kod 13 bittir.
+      const enUzun = Math.max(...[D._dmap, ...D._lens].flatMap(o => Object.keys(o).map(k => k.length)));
+      const kur = o => {
+        const t = new Int16Array(2 << enUzun).fill(YOK);
+        for (const k of Object.keys(o)) t[(1 << k.length) | parseInt(k, 2)] = o[k];
+        return t;
+      };
+      return { enUzun, lens: D._lens.map(kur), dmap: kur(D._dmap) };
+    };
+    return function g4Coz(data, off, slen, tgt, toff, w, fo) {
+      const { enUzun, lens, dmap } = tablo || (tablo = tabloKur());
+      const bipl = Math.ceil(w / 8) * 8, son = off + slen;
+      let boff = off << 3, kod = 1, kodBoy = 0, len = 0;
+      // pline başvuru, line kurulan satır: [konum, renk, …]; satır sonunda w,0,w,1 eklenir (UTIF _makeDiff).
+      let pline = [w, 0, w, 1], pn = 4, line = [], n = 0, boy = 0, sonRenk = 0;
+      let a0 = 0, b1 = 0, b2 = 0, clr = 0, kirli = true, y = 0, modH = false, toRead = 0;
+      // _addNtimes(line, k, c) karşılığı: pikseller yerine renk değişimi kaydedilir.
+      const ekle = (k, c) => {
+        if (!(k > 0)) return;
+        if (boy + k > koruma.satir) throw new Error('satır sınırı aşıldı');
+        if (boy === 0 ? c === 1 : c !== sonRenk) { line[n++] = boy; line[n++] = c; }
+        sonRenk = c; boy += k;
+      };
+      while ((boff >>> 3) < son) {
+        if (kirli) { b1 = farkBul(pline, pn, a0 + (a0 == 0 ? 0 : 1), 1 - clr); b2 = farkBul(pline, pn, b1, clr); kirli = false; }
+        const bit = fo == 1 ? (data[boff >>> 3] >>> (7 - (boff & 7))) & 1 : fo == 2 ? (data[boff >>> 3] >>> (boff & 7)) & 1 : 0;
+        boff++;
+        if (++kodBoy > 100) return 1;   // hata, büyük olasılıkla G3
+        kod = kodBoy <= enUzun ? (kod << 1) | bit : 0;   // 0 hiçbir kodla eşleşmez
+        if (modH) {
+          const dl = lens[clr][kod];
+          if (dl !== YOK) {
+            kod = 1; kodBoy = 0; len += dl;
+            if (dl < 64) { ekle(len, clr); a0 += len; clr = 1 - clr; len = 0; if (--toRead == 0) modH = false; kirli = true; }
+            else korumaDenetle();   // uzun ek kod dizisinde de süre sınırı işler
+          }
+        } else if (kod === 0b10001) { kod = 1; kodBoy = 0; ekle(b2 - a0, clr); a0 = b2; kirli = true; }   // 0001: geçiş
+        else if (kod === 0b1001) { kod = 1; kodBoy = 0; modH = true; toRead = 2; }   // 001: yatay
+        else if (dmap[kod] !== YOK) {   // dikey
+          const a1 = b1 + dmap[kod];
+          ekle(a1 - a0, clr); a0 = a1; kod = 1; kodBoy = 0; clr = 1 - clr; kirli = true;
+        }
+        if (boy == w && !modH) {
+          // _writeBits yalnız 1 bitlerini yazar: siyah koşular aynı bit adreslerine yazılır.
+          const taban = toff * 8 + y * bipl;
+          for (let i = 0; i < n; i += 2) if (line[i + 1] === 1)
+            for (let p = taban + line[i], s = taban + (i + 2 < n ? line[i + 2] : w); p < s; p++) tgt[p >>> 3] |= 1 << (7 - (p & 7));
+          line[n++] = w; line[n++] = 0; line[n++] = w; line[n++] = 1;
+          const t = pline; pline = line; pn = n; line = t; n = 0; boy = 0; sonRenk = 0;
+          clr = 0; y++; a0 = 0; kirli = true;
+        }
+      }
+      return 0;
+    };
+  }
+
   (function korumaKur() {
     const D = globalThis.UTIF && globalThis.UTIF.decode;
     if (!D || D.__legalugaKoruma) return;
-    // Değişim listesi [konum, renk, …] konuma göre sıralıdır: ilk uygun konum ikili aramayla bulunur.
-    D._findDiff = function (line, x, clr) {
-      korumaDenetle();
-      if (!(x <= line[line.length - 2])) return undefined;
-      let a = 0, b = (line.length >> 1) - 1;
-      while (a < b) { const m = (a + b) >> 1; if (line[2 * m] >= x) b = m; else a = m + 1; }
-      for (let i = 2 * a; i < line.length; i += 2) if (line[i] >= x && line[i + 1] === clr) return line[i];
-      return undefined;
-    };
+    D._findDiff = (line, x, clr) => farkBul(line, line.length, x, clr);
     D._addNtimes = function (arr, n, val) {
       if (!(n > 0)) return;
       if (arr.length + n > koruma.satir) throw new Error('satır sınırı aşıldı');
       for (let i = 0; i < n; i++) arr.push(val);
     };
     D._decodeLZW = lzwCoz;
+    D._decodeG4 = g4Kur(D);
     D.__legalugaKoruma = true;
   })();
 
