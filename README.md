@@ -101,7 +101,7 @@ Dar panelde sekme metni ve sayaçlar sıkışmaz. Satıra sığmayan sekmelere y
 
 **Dosyada kalan tutar**, mahkeme ve icra dosyalarının **Özet** ekranındaki UYAP Tahsilat/Reddiyat yanıtından alınır. **Tutarları yenile** açık dosyanın bilgisini yeniler. Kalan tutar yalnız **Özet** ekranında gösterilir. Son alınan tutar ve tarih Chrome profilinde şifreli saklanır. Dosya taraması tutarları topluca sorgulamaz. Eklenti bakiye hesaplamaz ve alınamayan tutarı sıfır göstermez; önceki kayıt tarihiyle korunur. Kayıtlar şifreli yedeğe dahildir ve **Tüm verileri sil** ile silinir. Savcılık dosyalarında kalan tutar alanı yoktur.
 
-**Vergi Takibi'ne aktar** düğmesi, Özet'te alınmış tutarlardan bir JSON dosyası indirir (birim, dosya no, taraf adları ve sıfatları, icra vekâlet ücreti, tahsilat, reddiyat ve kalan tutar). UYAP'a ek istek atmaz; kimlik numarası, vekil ve teknik kimlik yazmaz. Dosya Legaluga Vergi Takibi sayfasında içe alınır; eklenti legaluga.com'a bağlanmaz.
+**Vergi Takibi'ne gönder** düğmesi, Özet'te alınmış tutarları (birim, dosya no, taraf adları ve sıfatları, icra vekâlet ücreti, tahsilat, reddiyat ve kalan tutar) Legaluga Vergi Takibi sayfasına verir: bilgi eklentinin bellekteki oturum deposunda bekler, sayfa onu tek kullanımlık jetonla, 5 dakika içinde ve bir kez alır. Yalnız `https://legaluga.com/*` eklentiye ileti gönderebilir (`externally_connectable`); UYAP'a ek istek, ağ aktarımı ya da yeni izin yoktur. Kimlik numarası, vekil ve teknik kimlik aktarılmaz. **JSON indir** aynı bilgiyi dosya olarak verir.
 
 ![Safahat: kaydedilen işlem listesi, alınma tarihi ve yeni sorgu için kalan süre — örnek veriler](docs/images/10-kaydedilen-safahat.png)
 

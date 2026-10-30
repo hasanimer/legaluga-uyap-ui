@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "b97d2e4aea7a4dc8f81e1294d2b8e776f412083c9f95a261e09580285ac1b4f5"
+      "sha256": "dfe798d593eee11c847c42767a0f4ffea0b4fb314df54ff3d19942badb47b14e"
     },
     {
       "path": "SECURITY.md",
@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "32248f9bf81319abaca70bbba18ed397913d148b9406ff2ea4cfe75941f16671"
+      "sha256": "e2f3f1e8b96df1d99e79759db91897294d10d8a6ade863c4dc4a30735f9c0bda"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -236,7 +236,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "25a231693afa37cb75d445953da3c43ad00e42635fb75dee3d13fd8d88680711"
+      "sha256": "ea1b16a31f2bbd7fa534ff2385623530306a1dcefa81b1b9d0528458b3922c60"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -472,7 +472,7 @@
     },
     {
       "path": "src/fragments/background/023.js.part",
-      "sha256": "0225dabfbe9d4ea4bfc475222d3966740dddc0aaffe3ae9b2b654bcd410fea49"
+      "sha256": "a3d4ecba37f0ea150f5b859d64b419775a069ccdecf503f5d10002031ebae2b2"
     },
     {
       "path": "src/fragments/background/025.js.part",
@@ -544,11 +544,11 @@
     },
     {
       "path": "src/fragments/common/013.js.part",
-      "sha256": "a3cce76879989996e9bfa72d0ff7e70ac426d5af053e64760033467bdc39823f"
+      "sha256": "acfd7da380cde60f9d0709e14f0a0afa382b1a5d970deb5bd87f8929646f609a"
     },
     {
       "path": "src/fragments/common/015.js.part",
-      "sha256": "a9f2148b6d385df6014a82e4b6466b16ef6a0a4c79494aee26964539fb142e93"
+      "sha256": "8a28147f9f0c53322989a7708e8fbf7470ce9db44d68cd2dcbdfc9ae79c1d344"
     },
     {
       "path": "src/fragments/content/001-bootstrap-shared-request-safety.js.part",
@@ -596,7 +596,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "ceae2df3df5fcfabf417455319a25e557d966c56c2e01dd1d4a02a5344440a59"
+      "sha256": "31d80e4952d1a7eb728794ddefd6887beeb72e0f3501a0cd41953ee1d01207a4"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -624,7 +624,7 @@
     },
     {
       "path": "src/fragments/content/037-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "5227d1cc9ee4a58ce1afe185351ab6fd061abe8b7e39ad14911bb40bae79bd2a"
+      "sha256": "d6881223355ae36e4f04ed89b84f70b4f1ad813ffbb1832b9cee67d3adf25b6d"
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",

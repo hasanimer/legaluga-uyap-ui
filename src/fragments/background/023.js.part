@@ -26,3 +26,39 @@ chrome.action.onClicked.addListener(async tab => {
   await chrome.action.setPopup({ tabId: tab.id, popup: 'popup.html' }).catch(() => {});
   try { await chrome.action.openPopup({ windowId: tab.windowId }); } catch { /* bu Chrome sürümünde yok */ }
 });
+
+// Vergi Takibi devri: UYAP Özet'inden gönderilen aktarım, legaluga.com Vergi Takibi sayfasına bir kez ve 5 dakika
+// içinde verilir. Veri yalnız bellekteki oturum deposunda durur; sayfa onu sekme adresindeki tek kullanımlık jetonla
+// ve yalnız https://legaluga.com kökeninden alabilir (manifest externally_connectable). Ağa bir şey gönderilmez.
+const VERGI_KOKENI = 'https://legaluga.com';
+const VERGI_SAYFASI = VERGI_KOKENI + '/avukat-araclari/vergi-takibi';
+const VERGI_DEVIR_MS = 5 * 60 * 1000;
+const vergiAktarimiMi = metin => {
+  if (typeof metin !== 'string' || !metin || metin.length > 256 * 1024) return false;
+  try { const v = JSON.parse(metin); return v?.tur === 'legaluga-uyap-aktarimi' && v.surum === 1 && Array.isArray(v.dosyalar) && v.dosyalar.length > 0; }
+  catch { return false; }
+};
+chrome.runtime.onMessage.addListener((msg, sender, reply) => {
+  if (msg?.type !== 'uhd-vergi-devir' || sender.id !== chrome.runtime.id) return;
+  if (!sender.tab || sender.frameId !== 0 || !uyapUrl(sender.url) || !vergiAktarimiMi(msg.metin)) { reply({ ok: false }); return; }
+  const jeton = crypto.randomUUID();
+  chrome.storage.session.set({ uhdVergiDevir: { jeton, metin: msg.metin, at: Date.now() } })
+    .then(() => chrome.tabs.create({ url: `${VERGI_SAYFASI}?uyap-aktarim=${jeton}&kaynak=${chrome.runtime.id}`,
+      ...(Number.isInteger(sender.tab.index) ? { index: sender.tab.index + 1 } : {}), openerTabId: sender.tab.id }))
+    .then(() => reply({ ok: true }), () => reply({ ok: false }));
+  return true;
+});
+chrome.runtime.onMessageExternal?.addListener((msg, sender, reply) => {
+  if (msg?.type !== 'legaluga-vergi-devir-al') return;
+  const url = String(sender.url || '');
+  if (sender.origin !== VERGI_KOKENI || !(url === VERGI_SAYFASI || url.startsWith(VERGI_SAYFASI + '?') || url.startsWith(VERGI_SAYFASI + '#')) ||
+      typeof msg.jeton !== 'string' || !/^[0-9a-f-]{36}$/.test(msg.jeton)) { reply({ ok: false }); return; }
+  (async () => {
+    const { uhdVergiDevir: devir } = await chrome.storage.session.get('uhdVergiDevir');
+    if (!devir || devir.jeton !== msg.jeton) return { ok: false, neden: 'bulunamadi' };
+    await chrome.storage.session.remove('uhdVergiDevir');
+    if (!(Date.now() - devir.at <= VERGI_DEVIR_MS)) return { ok: false, neden: 'suresi-doldu' };
+    return { ok: true, metin: devir.metin };
+  })().then(reply, () => reply({ ok: false }));
+  return true;
+});

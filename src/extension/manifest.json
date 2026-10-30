@@ -140,5 +140,10 @@
         "https://avukat.uyap.gov.tr/*"
       ]
     }
-  ]
+  ],
+  "externally_connectable": {
+    "matches": [
+      "https://legaluga.com/*"
+    ]
+  }
 }
