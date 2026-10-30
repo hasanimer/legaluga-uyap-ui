@@ -121,6 +121,28 @@
     return m ? `${m[2]} (${m[1].toLocaleLowerCase('tr-TR')})` : s;
   }
 
+  // Legaluga Vergi Takibi aktarımı: Özet'te zaten alınmış verinin JSON'u; UYAP'a ayrı istek atılmaz.
+  // Kimlik numarası, vekil, adres ve UYAP'ın teknik kimlikleri yazılmaz. Eksik tutar sıfıra çevrilmez, null kalır.
+  function vergiAktarimi(rec, { tahsilat = null, icraVekaletUcreti = null } = {}, fetchedAt = Date.now()) {
+    const tutar = (o, k) => (o && Number.isFinite(o[k]) ? o[k] : null);
+    const temiz = (v, max) => String(v || '').replace(/\b\d{10,11}\b/g, '').replace(/\s+/g, ' ').trim().slice(0, max);
+    const taraflar = (Array.isArray(rec?.taraflar) ? rec.taraflar : [])
+      .map(t => ({ rol: temiz(t?.rol, 80), ad: temiz(t?.adi, 300) })).filter(t => t.ad).slice(0, 100);
+    const birim = temiz(cleanBirim(rec?.birimAdi), 200), dosyaNo = temiz(rec?.dosyaNo, 40), dosyaTuru = temiz(dosyaTurAdi(rec), 80);
+    const t = tahsilat && typeof tahsilat === 'object' && !Array.isArray(tahsilat) ? tahsilat : null;
+    const alinma = new Date(fetchedAt).toISOString();
+    const dosya = {
+      anahtar: [birim, dosyaNo, dosyaTuru].join('|'), birim, dosyaNo, dosyaTuru, icra: rec?.yargiTuru === '2', taraflar,
+      icraVekaletUcreti: Number.isFinite(icraVekaletUcreti) ? icraVekaletUcreti : null,
+      tahsilat: t ? { toplamTahsilat: tutar(t, 'toplamTahsilat'), toplamReddiyat: tutar(t, 'toplamreddiyat'), toplamKalan: tutar(t, 'toplamKalan'), haricen: tutar(t, 'haricen') } : null,
+      alinma
+    };
+    return {
+      ad: `legaluga-uyap-${(dosyaNo || 'dosya').replace(/[^0-9A-Za-z]+/g, '-')}.json`,
+      metin: JSON.stringify({ tur: 'legaluga-uyap-aktarimi', surum: 1, olusturma: alinma, dosyalar: [dosya] }, null, 2)
+    };
+  }
+
   // Yeni evrak takibi: yeni kurulumda kapalı. Önceki sürümde açık kullanılıyorsa (taranmış kayıt varsa) açık kalır.
   function evrakTakipAcik(prefs, records) {
     prefs = prefs || {};

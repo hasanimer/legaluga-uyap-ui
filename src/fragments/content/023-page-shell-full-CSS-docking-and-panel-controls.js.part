@@ -181,6 +181,7 @@
 .viewer .dp-status.open{color:var(--shell-success)}
 .viewer .dp-status.closed{color:var(--shell-muted)}
 .viewer .dp-summary-source{color:var(--shell-muted);font-size:12px;line-height:1.5;margin:0}
+.viewer .dp-summary-source .dp-vergi-aktar{margin-left:8px;font-size:12px;vertical-align:middle}
 .viewer .dp-summary-count{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:20px;background:var(--shell-soft);color:var(--shell-muted);font-size:12px;font-weight:500}
 .viewer .dp-summary-parties .dp-tablewrap{max-height:none;border:1px solid var(--shell-line);border-radius:8px}
 .viewer .dp-overview-finance{min-width:0;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px}

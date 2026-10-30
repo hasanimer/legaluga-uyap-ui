@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "040bb184a9517f7e014fa1eed8ec759da8f8ea749af514a455785a100e525cd2"
+      "sha256": "b97d2e4aea7a4dc8f81e1294d2b8e776f412083c9f95a261e09580285ac1b4f5"
     },
     {
       "path": "SECURITY.md",
@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "7d3a6e76378e1083e1ad3bb5536bbaa5d26679f5b3d2a17bfae795e9e70555f1"
+      "sha256": "32248f9bf81319abaca70bbba18ed397913d148b9406ff2ea4cfe75941f16671"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -544,11 +544,11 @@
     },
     {
       "path": "src/fragments/common/013.js.part",
-      "sha256": "afb0c5c3d8ab3e9610dab8ba3e6a182a955b3a8fab77138e30e7bb7fcdddf4e3"
+      "sha256": "a3cce76879989996e9bfa72d0ff7e70ac426d5af053e64760033467bdc39823f"
     },
     {
       "path": "src/fragments/common/015.js.part",
-      "sha256": "88a2200ec0b1e815a42f677ae169ed07c5d18ae9a49537ada0404a0a6f248600"
+      "sha256": "a9f2148b6d385df6014a82e4b6466b16ef6a0a4c79494aee26964539fb142e93"
     },
     {
       "path": "src/fragments/content/001-bootstrap-shared-request-safety.js.part",
@@ -596,7 +596,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "c0cc1f5c3ec4ff3b20de8ebfdb5cd987fe47c8086d558e6d56a9a5ebfba2fb22"
+      "sha256": "ceae2df3df5fcfabf417455319a25e557d966c56c2e01dd1d4a02a5344440a59"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -624,7 +624,7 @@
     },
     {
       "path": "src/fragments/content/037-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "dbc8ebc53ff7f48fa54aa0e1f58fac200b37cc6241d3fa47e16cd3ee60ecfcc7"
+      "sha256": "5227d1cc9ee4a58ce1afe185351ab6fd061abe8b7e39ad14911bb40bae79bd2a"
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",

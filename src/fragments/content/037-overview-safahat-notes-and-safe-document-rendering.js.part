@@ -19,10 +19,25 @@
             money(t, 'toplamKalan', 'Tahsilat Kalanı (dosyada kalan para)', { class: 'dp-strong', title: 'Dosyaya yatırılıp henüz reddiyatı yapılmamış tutar' })]
             : [money(ayrinti, 'yapilmisBorcTahsilati', 'Yapılmış Borç Tahsilatı'), el('div', { class: 'dp-muted' }, 'Tahsilat ve reddiyat bilgileri alınamadı.')],
             el('div', { class: 'dp-summary-notice' }, 'Tahsilat Kalanı dosyaya yatırılıp henüz reddiyatı yapılmamış tutardır. Borç bakiyesini UYAP’taki Dosya Hesap Bilgileri’nden kontrol edin.'))))),
-      el('div', { class: 'dp-summary-source' }, `UYAP’tan alındı: ${globalThis.UHD.fmtDate(fetchedAt)}. Resmî hesap için UYAP’taki Dosya Hesabı ekranını esas alın.`));
+      el('div', { class: 'dp-summary-source' }, `UYAP’tan alındı: ${globalThis.UHD.fmtDate(fetchedAt)}. Resmî hesap için UYAP’taki Dosya Hesabı ekranını esas alın.`,
+        vergiAktarDugmesi(rec, { tahsilat: t, icraVekaletUcreti: ayrinti.vekaletUcreti }, fetchedAt)));
   }
 
-  function renderTahsilatOzet(body, tahsilat, fetchedAt) {
+  // Legaluga Vergi Takibi için JSON indirir. Yalnız ekrandaki veriden üretilir; UYAP'a istek atmaz, dosya bu cihazda kalır.
+  function vergiAktarDugmesi(rec, veri, fetchedAt) {
+    if (!rec) return null;
+    const dugme = el('button', { type: 'button', class: 'chip dp-vergi-aktar',
+      title: 'Tahsilat, reddiyat ve vekâlet ücretini Legaluga Vergi Takibi’ne aktarmak için dosya indirir' }, 'Vergi Takibi’ne aktar');
+    dugme.addEventListener('click', () => {
+      const { ad, metin } = globalThis.UHD.vergiAktarimi(rec, veri, fetchedAt);
+      const url = URL.createObjectURL(new Blob([metin], { type: 'application/json' }));
+      el('a', { href: url, download: ad }).click();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    });
+    return dugme;
+  }
+
+  function renderTahsilatOzet(body, tahsilat, fetchedAt, rec) {
     // Yalnız bilinen toplam alanları gösterilir. Kalan tutar UYAP yanıtından aynen alınır;
     // harçlar tahsilattan düşülmez ve eksik tutar sıfır olarak yorumlanmaz.
     const money = (key, label) => el('div', { class: 'dp-summary-row dp-money-row' },
@@ -39,7 +54,8 @@
               known ? fmtTL(tahsilat.toplamKalan) : 'UYAP’tan alınamadı')),
           money('toplamTahsilat', 'Toplam Tahsilat'), money('toplamreddiyat', 'Toplam Reddiyat'),
           el('div', { class: 'dp-summary-notice' }, 'UYAP’ın Tahsilat ve Reddiyat Bilgileri ekranındaki Kalan tutarıdır. Borç bakiyesi veya iade edilebilir tutar olarak hesaplanmaz.'))),
-      el('div', { class: 'dp-summary-source' }, `UYAP’tan alındı: ${globalThis.UHD.fmtDate(fetchedAt)}. Güncel tutar için Tutarları yenile’yi kullanın.`));
+      el('div', { class: 'dp-summary-source' }, `UYAP’tan alındı: ${globalThis.UHD.fmtDate(fetchedAt)}. Güncel tutar için Tutarları yenile’yi kullanın.`,
+        vergiAktarDugmesi(rec, { tahsilat }, fetchedAt)));
   }
 
   // Dosya kartıyla ortak, yalnız bu bilgisayarda saklanan not. Ayrı bir not deposu veya UYAP isteği yoktur.
