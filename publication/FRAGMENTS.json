@@ -55,8 +55,8 @@
       "source": "common.js",
       "order": 13,
       "path": "src/fragments/common/013.js.part",
-      "sha256": "acfd7da380cde60f9d0709e14f0a0afa382b1a5d970deb5bd87f8929646f609a",
-      "bytes": 19782,
+      "sha256": "c240b37265b3a7717d5e4b4f607df192ac7496ecbdaac9551305ef3d8c2e4d64",
+      "bytes": 20148,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
@@ -159,8 +159,8 @@
       "source": "background.js",
       "order": 23,
       "path": "src/fragments/background/023.js.part",
-      "sha256": "a3d4ecba37f0ea150f5b859d64b419775a069ccdecf503f5d10002031ebae2b2",
-      "bytes": 3998,
+      "sha256": "6b8977ef938d5f68515b1d367944bdf3215da71d5b3a627116df372a4ae1bf78",
+      "bytes": 5365,
       "purpose": "Generic keyboard-shortcut reporting, panel toggle and popup fallback UI"
     },
     {
@@ -399,8 +399,8 @@
       "source": "content.js",
       "order": 37,
       "path": "src/fragments/content/037-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "d6881223355ae36e4f04ed89b84f70b4f1ad813ffbb1832b9cee67d3adf25b6d",
-      "bytes": 18677,
+      "sha256": "fcf75f5269ae2d5d3e281e74c46f3f75280072ef7ef5e1b3dba8d4286ae88f56",
+      "bytes": 19246,
       "purpose": "overview-safahat-notes-and-safe-document-rendering"
     },
     {

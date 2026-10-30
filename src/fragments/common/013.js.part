@@ -123,9 +123,13 @@
 
   // Legaluga Vergi Takibi aktarımı: Özet'te zaten alınmış verinin JSON'u; UYAP'a ayrı istek atılmaz.
   // Kimlik numarası, vekil, adres ve UYAP'ın teknik kimlikleri yazılmaz. Eksik tutar sıfıra çevrilmez, null kalır.
-  function vergiAktarimi(rec, { tahsilat = null, icraVekaletUcreti = null } = {}, fetchedAt = Date.now()) {
+  // Kimlik temizliği "T.C./TCKN/VKN" etiketlerini ve boşluk, nokta ya da tireyle bölünmüş 10-11 haneli dizileri de kapsar.
+  function vergiAktarimi(rec, { tahsilat = null, icraVekaletUcreti = null } = {}, fetchedAt = Date.now(), olusturma = Date.now()) {
     const tutar = (o, k) => (o && Number.isFinite(o[k]) ? o[k] : null);
-    const temiz = (v, max) => String(v || '').replace(/\b\d{10,11}\b/g, '').replace(/\s+/g, ' ').trim().slice(0, max);
+    const temiz = (v, max) => String(v || '')
+      .replace(/(?<![\p{L}\d])(?:T\.?\s?C\.?|TCKN|VKN|V\.K\.N\.?)(?!\p{L})\s*(?:K[İIiı]ML[İIiı]K\s*)?(?:NO\.?|NUMARASI)?\s*[:.]?\s*/giu, ' ')
+      .replace(/(?<!\d)\d(?:[\s.-]?\d){9,10}(?!\d)/g, '')
+      .replace(/\s+/g, ' ').trim().slice(0, max);
     const taraflar = (Array.isArray(rec?.taraflar) ? rec.taraflar : [])
       .map(t => ({ rol: temiz(t?.rol, 80), ad: temiz(t?.adi, 300) })).filter(t => t.ad).slice(0, 100);
     const birim = temiz(cleanBirim(rec?.birimAdi), 200), dosyaNo = temiz(rec?.dosyaNo, 40), dosyaTuru = temiz(dosyaTurAdi(rec), 80);
@@ -139,7 +143,7 @@
     };
     return {
       ad: `legaluga-uyap-${(dosyaNo || 'dosya').replace(/[^0-9A-Za-z]+/g, '-')}.json`,
-      metin: JSON.stringify({ tur: 'legaluga-uyap-aktarimi', surum: 1, olusturma: alinma, dosyalar: [dosya] }, null, 2)
+      metin: JSON.stringify({ tur: 'legaluga-uyap-aktarimi', surum: 1, olusturma: new Date(olusturma).toISOString(), dosyalar: [dosya] }, null, 2)
     };
   }
 

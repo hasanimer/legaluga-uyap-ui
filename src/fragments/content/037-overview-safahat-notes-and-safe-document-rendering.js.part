@@ -20,30 +20,37 @@
             : [money(ayrinti, 'yapilmisBorcTahsilati', 'Yapılmış Borç Tahsilatı'), el('div', { class: 'dp-muted' }, 'Tahsilat ve reddiyat bilgileri alınamadı.')],
             el('div', { class: 'dp-summary-notice' }, 'Tahsilat Kalanı dosyaya yatırılıp henüz reddiyatı yapılmamış tutardır. Borç bakiyesini UYAP’taki Dosya Hesap Bilgileri’nden kontrol edin.'))))),
       el('div', { class: 'dp-summary-source' }, `UYAP’tan alındı: ${globalThis.UHD.fmtDate(fetchedAt)}. Resmî hesap için UYAP’taki Dosya Hesabı ekranını esas alın.`,
-        vergiAktarDugmesi(rec, { tahsilat: t, icraVekaletUcreti: ayrinti.vekaletUcreti }, fetchedAt)));
+        vergiAktarDugmesi(rec, { tahsilat: t, icraVekaletUcreti: hesapSatirlari.length
+          ? hesapSatirlari.find(x => /vek[aâ]let\s*ücret/i.test(x.textAlan))?.degerAlan : ayrinti.vekaletUcreti }, fetchedAt)));
   }
 
   // Legaluga Vergi Takibi'ne aktarım. "Gönder" veriyi eklentinin bellekteki devir deposuna koyup Vergi Takibi'ni açar;
   // sayfa onu bir kez alır. "JSON indir" aynı içeriği dosya olarak verir. İkisi de yalnız ekrandaki veriyi kullanır,
-  // UYAP'a istek atmaz.
+  // UYAP'a istek atmaz. Aktarım her tıklamada bir kez üretilir; gönderim sürerken düğme kilitlidir.
   function vergiAktarDugmesi(rec, veri, fetchedAt) {
     if (!rec) return null;
-    const indir = metin => {
+    const indir = ({ ad, metin }) => {
       const url = URL.createObjectURL(new Blob([metin], { type: 'application/json' }));
-      el('a', { href: url, download: globalThis.UHD.vergiAktarimi(rec, veri, fetchedAt).ad }).click();
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      const a = el('a', { href: url, download: ad });
+      document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
     };
     const gonder = el('button', { type: 'button', class: 'chip dp-vergi-aktar',
       title: 'Tahsilat, reddiyat ve vekâlet ücretini Legaluga Vergi Takibi’nde açar' }, 'Vergi Takibi’ne gönder');
     const dosya = el('button', { type: 'button', class: 'chip dp-vergi-aktar',
       title: 'Aynı bilgileri Vergi Takibi’ne elle yüklemek için JSON dosyası indirir' }, 'JSON indir');
     gonder.addEventListener('click', async () => {
-      const { metin } = globalThis.UHD.vergiAktarimi(rec, veri, fetchedAt);
-      let sonuc;
-      try { sonuc = await globalThis.chrome?.runtime?.sendMessage?.({ type: 'uhd-vergi-devir', metin }); } catch { sonuc = null; }
-      if (sonuc?.ok !== true) indir(metin);
+      if (gonder.disabled) return;
+      gonder.disabled = true;
+      try {
+        const aktarim = globalThis.UHD.vergiAktarimi(rec, veri, fetchedAt);
+        let sonuc;
+        try { sonuc = await globalThis.chrome?.runtime?.sendMessage?.({ type: 'uhd-vergi-devir', metin: aktarim.metin }); } catch { sonuc = null; }
+        if (sonuc?.ok === true) return;
+        indir(aktarim);
+        if (typeof toast === 'function') toast('Vergi Takibi açılamadı; bilgiler JSON dosyası olarak indirildi. Legaluga Vergi Takibi’nde Ücretler → UYAP’tan aktar ile yükleyin.', 'err', 10000);
+      } finally { gonder.disabled = false; }
     });
-    dosya.addEventListener('click', () => indir(globalThis.UHD.vergiAktarimi(rec, veri, fetchedAt).metin));
+    dosya.addEventListener('click', () => indir(globalThis.UHD.vergiAktarimi(rec, veri, fetchedAt)));
     return [gonder, dosya];
   }
 

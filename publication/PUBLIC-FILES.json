@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "e2f3f1e8b96df1d99e79759db91897294d10d8a6ade863c4dc4a30735f9c0bda"
+      "sha256": "b100f454518070f2cf37673144d625aa62fab1cdef5f7dbb465a11943230accb"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -276,7 +276,7 @@
     },
     {
       "path": "src/extension/storage.js",
-      "sha256": "57903c75f7ef140aed52c95f3e2fc7b9e60eaae4dc185b2285fdb57bb5012cda"
+      "sha256": "08ed45d8f6d1c6747727ba3acad401c0e3055193b2df7148431faf7491c0c5e3"
     },
     {
       "path": "src/extension/tabs.js",
@@ -472,7 +472,7 @@
     },
     {
       "path": "src/fragments/background/023.js.part",
-      "sha256": "a3d4ecba37f0ea150f5b859d64b419775a069ccdecf503f5d10002031ebae2b2"
+      "sha256": "6b8977ef938d5f68515b1d367944bdf3215da71d5b3a627116df372a4ae1bf78"
     },
     {
       "path": "src/fragments/background/025.js.part",
@@ -544,7 +544,7 @@
     },
     {
       "path": "src/fragments/common/013.js.part",
-      "sha256": "acfd7da380cde60f9d0709e14f0a0afa382b1a5d970deb5bd87f8929646f609a"
+      "sha256": "c240b37265b3a7717d5e4b4f607df192ac7496ecbdaac9551305ef3d8c2e4d64"
     },
     {
       "path": "src/fragments/common/015.js.part",
@@ -624,7 +624,7 @@
     },
     {
       "path": "src/fragments/content/037-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "d6881223355ae36e4f04ed89b84f70b4f1ad813ffbb1832b9cee67d3adf25b6d"
+      "sha256": "fcf75f5269ae2d5d3e281e74c46f3f75280072ef7ef5e1b3dba8d4286ae88f56"
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",

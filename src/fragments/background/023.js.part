@@ -28,24 +28,52 @@ chrome.action.onClicked.addListener(async tab => {
 });
 
 // Vergi Takibi devri: UYAP Özet'inden gönderilen aktarım, legaluga.com Vergi Takibi sayfasına bir kez ve 5 dakika
-// içinde verilir. Veri yalnız bellekteki oturum deposunda durur; sayfa onu sekme adresindeki tek kullanımlık jetonla
-// ve yalnız https://legaluga.com kökeninden alabilir (manifest externally_connectable). Ağa bir şey gönderilmez.
+// içinde verilir. Her gönderim kendi jetonuyla ayrı tutulur (art arda gönderimler birbirini silmez). Veri yalnız
+// bellekteki oturum deposunda durur; süresi dolanlar her iletide ve service worker her başladığında silinir.
+// Sayfa onu yalnız https://legaluga.com kökeninden ve tek kullanımlık jetonla alabilir (manifest
+// externally_connectable). Ağa bir şey gönderilmez.
 const VERGI_KOKENI = 'https://legaluga.com';
 const VERGI_SAYFASI = VERGI_KOKENI + '/avukat-araclari/vergi-takibi';
 const VERGI_DEVIR_MS = 5 * 60 * 1000;
+const VERGI_DEVIR_AZAMI = 20;
 const vergiAktarimiMi = metin => {
   if (typeof metin !== 'string' || !metin || metin.length > 256 * 1024) return false;
   try { const v = JSON.parse(metin); return v?.tur === 'legaluga-uyap-aktarimi' && v.surum === 1 && Array.isArray(v.dosyalar) && v.dosyalar.length > 0; }
   catch { return false; }
 };
+// Oturum deposundaki devirleri okur, süresi dolanları atar ve sonucu geri yazar.
+async function vergiDevirleri(degistir = d => d) {
+  const { uhdVergiDevir: kayit } = await chrome.storage.session.get('uhdVergiDevir');
+  const simdi = Date.now();
+  const gecerli = {};
+  if (kayit && typeof kayit === 'object' && !Array.isArray(kayit))
+    for (const [jeton, d] of Object.entries(kayit))
+      if (/^[0-9a-f-]{36}$/.test(jeton) && typeof d?.metin === 'string' && simdi - d.at >= 0 && simdi - d.at <= VERGI_DEVIR_MS) gecerli[jeton] = d;
+  const sonuc = degistir(gecerli);
+  if (Object.keys(sonuc).length) await chrome.storage.session.set({ uhdVergiDevir: sonuc });
+  else await chrome.storage.session.remove('uhdVergiDevir');
+  return sonuc;
+}
+vergiDevirleri().catch(() => {});
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if (msg?.type !== 'uhd-vergi-devir' || sender.id !== chrome.runtime.id) return;
   if (!sender.tab || sender.frameId !== 0 || !uyapUrl(sender.url) || !vergiAktarimiMi(msg.metin)) { reply({ ok: false }); return; }
   const jeton = crypto.randomUUID();
-  chrome.storage.session.set({ uhdVergiDevir: { jeton, metin: msg.metin, at: Date.now() } })
-    .then(() => chrome.tabs.create({ url: `${VERGI_SAYFASI}?uyap-aktarim=${jeton}&kaynak=${chrome.runtime.id}`,
-      ...(Number.isInteger(sender.tab.index) ? { index: sender.tab.index + 1 } : {}), openerTabId: sender.tab.id }))
-    .then(() => reply({ ok: true }), () => reply({ ok: false }));
+  (async () => {
+    await vergiDevirleri(d => {
+      const sirali = Object.entries(d).sort((a, b) => a[1].at - b[1].at).slice(-(VERGI_DEVIR_AZAMI - 1));
+      return { ...Object.fromEntries(sirali), [jeton]: { metin: msg.metin, at: Date.now() } };
+    });
+    try {
+      await chrome.tabs.create({ url: `${VERGI_SAYFASI}?uyap-aktarim=${jeton}&kaynak=${chrome.runtime.id}`,
+        ...(Number.isInteger(sender.tab.index) ? { index: sender.tab.index + 1 } : {}), openerTabId: sender.tab.id });
+    } catch (error) {
+      // Sekme açılamazsa veri bekletilmez.
+      await vergiDevirleri(d => { delete d[jeton]; return d; });
+      throw error;
+    }
+    return { ok: true };
+  })().then(reply, () => reply({ ok: false }));
   return true;
 });
 chrome.runtime.onMessageExternal?.addListener((msg, sender, reply) => {
@@ -54,11 +82,12 @@ chrome.runtime.onMessageExternal?.addListener((msg, sender, reply) => {
   if (sender.origin !== VERGI_KOKENI || !(url === VERGI_SAYFASI || url.startsWith(VERGI_SAYFASI + '?') || url.startsWith(VERGI_SAYFASI + '#')) ||
       typeof msg.jeton !== 'string' || !/^[0-9a-f-]{36}$/.test(msg.jeton)) { reply({ ok: false }); return; }
   (async () => {
-    const { uhdVergiDevir: devir } = await chrome.storage.session.get('uhdVergiDevir');
-    if (!devir || devir.jeton !== msg.jeton) return { ok: false, neden: 'bulunamadi' };
-    await chrome.storage.session.remove('uhdVergiDevir');
-    if (!(Date.now() - devir.at <= VERGI_DEVIR_MS)) return { ok: false, neden: 'suresi-doldu' };
-    return { ok: true, metin: devir.metin };
+    const { uhdVergiDevir: kayit } = await chrome.storage.session.get('uhdVergiDevir');
+    const ham = kayit && typeof kayit === 'object' ? kayit[msg.jeton] : undefined;
+    let devir = null;
+    await vergiDevirleri(d => { devir = d[msg.jeton] ?? null; delete d[msg.jeton]; return d; });
+    if (devir) return { ok: true, metin: devir.metin };
+    return { ok: false, neden: ham ? 'suresi-doldu' : 'bulunamadi' };
   })().then(reply, () => reply({ ok: false }));
   return true;
 });
