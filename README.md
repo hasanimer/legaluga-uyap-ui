@@ -7,7 +7,9 @@ Eklenti, **Av. Hasan İmer Akın** tarafından meslektaşlarının ücretsiz kul
 
 Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lisansıyla** sunar. UYAP işlem motoru özel kaynaklıdır; tam eklenti mağazadan kurulur.
 
-> Bu rehber, **1.19.62** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+> Bu rehber, **1.19.63** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+**1.19.63:** Duruşma paketinde UDF evraktan PDF üretimi yaklaşık 2,6 kat hızlandı; üretilen PDF dosyaları ~%53 küçüldü (#122).
+
 **1.19.62:** UYAP’ın kendi evrak ekranında açık evrak UDF ise Legaluga araçlarında **UDF olarak indir** görünür; UYAP’ın yüklediği özgün `.udf` dosyası yeniden istenmeden bu cihazdan kaydedilir. Türü belirsiz evrakta önce içeriğe bakılır, UDF değilse indirilmez. Legaluga görüntüleyicisinde de UYAP türünü veya adını bildirmese bile UDF olarak açılan evrakta **UDF olarak indir** çıkar.
 
 **1.19.61:** **Legaluga ile aç** yeniden evrak listesini ve evrakları getirir. 1.19.59 ve 1.19.60'ta Evrak sekmesi, evrak açma, arama, Güncelle ve indirme UYAP'a istek göndermeden **UYAP kapısı kapandı** hatasıyla duruyordu; **Otomatik işlemleri elle aç** bunu düzeltmiyordu. Güncellemeden sonra UYAP sekmesini yenileyin.

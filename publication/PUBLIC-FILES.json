@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "dfe798d593eee11c847c42767a0f4ffea0b4fb314df54ff3d19942badb47b14e"
+      "sha256": "b8e01e0a8479587206a6cc83a1bb059d41a1cdbaba3f3ea0f02e3f9a46dcda97"
     },
     {
       "path": "SECURITY.md",
@@ -52,7 +52,7 @@
     },
     {
       "path": "docs/PRIVACY.md",
-      "sha256": "3590e6e6e1c4f0141dd510f2e20a9625b2df2385a8f4af173c35b11f55f278bd"
+      "sha256": "a4962572af1a5257f1d4012f4755d05c80790c9caf07123cfbe9d817e0f0a71c"
     },
     {
       "path": "docs/images/01-uyap-baglantisi.png",
@@ -104,7 +104,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "3df9a4acf4f7ba150e7ff6f9283f0247669098e758c555c00dcfa6cf74d74c1e"
+      "sha256": "2bae7d4fc0b060f320c9915367b36976e00b1f846259a8df82f3dec1857d1890"
     },
     {
       "path": "publication/FRAGMENTS.json",
@@ -236,7 +236,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "ea1b16a31f2bbd7fa534ff2385623530306a1dcefa81b1b9d0528458b3922c60"
+      "sha256": "2831743e6c56e5cbf47735e654b002bb35fc27f0737f8354559435d4d5dc15e8"
     },
     {
       "path": "src/extension/onboarding.js",
