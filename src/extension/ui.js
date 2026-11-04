@@ -2229,7 +2229,12 @@
 
         el('h3', null, 'UYAP ana sayfası'),
         el('div', { class: 'box' },
-          check('anaSayfaTanitimGizle', true, 'Ana sayfadaki tanıtım kutularını gizle', 'E-Duruşma ve UYAP SMS kartları, indirme bağlantıları kutusu ve görsel kaydırıcı Avukat Portalı ana sayfasında gösterilmez. Kapatınca sayfa UYAP’taki gibi görünür.')),
+          check('anaSayfaTanitimGizle', true, 'Ana sayfadaki tanıtım kutularını gizle', 'E-Duruşma ve UYAP SMS kartları, indirme bağlantıları kutusu ve görsel kaydırıcı Avukat Portalı ana sayfasında gösterilmez. Kapatınca sayfa UYAP’taki gibi görünür.'),
+          check('anaSayfaDurusma', true, 'Bugün ve bu hafta duruşmalar', 'Ana sayfanın üstündeki Legaluga şeridinde bugünkü ve önümüzdeki 7 günün duruşmalarını gösterir. Basınca dosya açılır.'),
+          check('anaSayfaHizli', true, 'Hızlı işlemler', 'Dosya sorgulama ve Legaluga panelindeki dosyalar, duruşmalar ve yeni evraklar için kısayollar.'),
+          check('anaSayfaYeniEvrak', true, 'Yeni evrak özeti', 'Son taramadan beri gelen ve henüz görülmemiş evrakları dosya dosya gösterir.'),
+          check('anaSayfaSonAcilan', true, 'Son açılan dosyalar', 'Legaluga ile açtığınız son 10 dosya. Liste yalnız bu bilgisayarda tutulur.'),
+          el('div', { class: 'hint' }, 'Şeritteki bilgiler yalnız uzantının bu bilgisayardaki kayıtlarından okunur; hiçbir yere gönderilmez.')),
 
         el('h3', null, 'Dosya açma'),
         el('div', { class: 'box' },
