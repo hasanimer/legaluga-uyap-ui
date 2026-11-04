@@ -407,8 +407,8 @@
       "source": "content.js",
       "order": 39,
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "326b629355aefdb086f1cdfe196f332f4e70acf16d3958622a439242f82faf55",
-      "bytes": 55482,
+      "sha256": "731f7c4dff46fbc540189954f11432483a6974d1b55a7e8c49fd4509c05f7cbd",
+      "bytes": 55869,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -679,8 +679,8 @@
       "source": "content.js",
       "order": 103,
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "556cad6c5d21054bcfdb65b4071cf6d50f58a0154eb8f84f9dd2d4eb6bd8b742",
-      "bytes": 34985,
+      "sha256": "5e4fe1b5eb0e7b5307cb76ee37b0f29ff51ed180cb0b04f73c34a001b2099911",
+      "bytes": 34773,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {

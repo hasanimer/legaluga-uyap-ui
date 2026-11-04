@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "b100f454518070f2cf37673144d625aa62fab1cdef5f7dbb465a11943230accb"
+      "sha256": "087594fdccb7a74ce2db99bc2f579c351a6e2b3812756360afeeebac54694e11"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -208,7 +208,7 @@
     },
     {
       "path": "src/extension/evrak-zip.js",
-      "sha256": "ea352da68ccdaa7c1e69e6f6522f6a980c5b1a2deda6b749efb09653f5008f5e"
+      "sha256": "a7668ec91373ac891d7bebd1e832f571eea992f3ceb6794fea6996c467378fe0"
     },
     {
       "path": "src/extension/icons/icon-128.png",
@@ -276,7 +276,7 @@
     },
     {
       "path": "src/extension/storage.js",
-      "sha256": "08ed45d8f6d1c6747727ba3acad401c0e3055193b2df7148431faf7491c0c5e3"
+      "sha256": "5bfe897761718bc60de2cfeb7e853dd397c3d1e0147d8042b6ac0d8abcdba0a7"
     },
     {
       "path": "src/extension/tabs.js",
@@ -628,7 +628,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "326b629355aefdb086f1cdfe196f332f4e70acf16d3958622a439242f82faf55"
+      "sha256": "731f7c4dff46fbc540189954f11432483a6974d1b55a7e8c49fd4509c05f7cbd"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -764,7 +764,7 @@
     },
     {
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "556cad6c5d21054bcfdb65b4071cf6d50f58a0154eb8f84f9dd2d4eb6bd8b742"
+      "sha256": "5e4fe1b5eb0e7b5307cb76ee37b0f29ff51ed180cb0b04f73c34a001b2099911"
     },
     {
       "path": "src/fragments/content/105-viewer-navigation-abort-epoch-boundary.js.part",
