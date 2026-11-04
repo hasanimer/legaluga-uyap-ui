@@ -19,10 +19,42 @@
             money(t, 'toplamKalan', 'Tahsilat Kalanı (dosyada kalan para)', { class: 'dp-strong', title: 'Dosyaya yatırılıp henüz reddiyatı yapılmamış tutar' })]
             : [money(ayrinti, 'yapilmisBorcTahsilati', 'Yapılmış Borç Tahsilatı'), el('div', { class: 'dp-muted' }, 'Tahsilat ve reddiyat bilgileri alınamadı.')],
             el('div', { class: 'dp-summary-notice' }, 'Tahsilat Kalanı dosyaya yatırılıp henüz reddiyatı yapılmamış tutardır. Borç bakiyesini UYAP’taki Dosya Hesap Bilgileri’nden kontrol edin.'))))),
-      el('div', { class: 'dp-summary-source' }, `UYAP’tan alındı: ${globalThis.UHD.fmtDate(fetchedAt)}. Resmî hesap için UYAP’taki Dosya Hesabı ekranını esas alın.`));
+      el('div', { class: 'dp-summary-source' }, `UYAP’tan alındı: ${globalThis.UHD.fmtDate(fetchedAt)}. Resmî hesap için UYAP’taki Dosya Hesabı ekranını esas alın.`,
+        vergiAktarDugmesi(rec, { tahsilat: t, icraVekaletUcreti: hesapSatirlari.length
+          ? hesapSatirlari.find(x => /vek[aâ]let\s*ücret/i.test(x.textAlan))?.degerAlan : ayrinti.vekaletUcreti }, fetchedAt)));
   }
 
-  function renderTahsilatOzet(body, tahsilat, fetchedAt) {
+  // Legaluga Vergi Takibi'ne aktarım. "Gönder" veriyi eklentinin bellekteki devir deposuna koyup Vergi Takibi'ni açar;
+  // sayfa onu bir kez alır. "JSON indir" aynı içeriği dosya olarak verir. İkisi de yalnız ekrandaki veriyi kullanır,
+  // UYAP'a istek atmaz. Aktarım her tıklamada bir kez üretilir; gönderim sürerken düğme kilitlidir.
+  function vergiAktarDugmesi(rec, veri, fetchedAt) {
+    if (!rec) return null;
+    const indir = ({ ad, metin }) => {
+      const url = URL.createObjectURL(new Blob([metin], { type: 'application/json' }));
+      const a = el('a', { href: url, download: ad });
+      document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+    };
+    const gonder = el('button', { type: 'button', class: 'chip dp-vergi-aktar',
+      title: 'Tahsilat, reddiyat ve vekâlet ücretini Legaluga Vergi Takibi’nde açar' }, 'Vergi Takibi’ne gönder');
+    const dosya = el('button', { type: 'button', class: 'chip dp-vergi-aktar',
+      title: 'Aynı bilgileri Vergi Takibi’ne elle yüklemek için JSON dosyası indirir' }, 'JSON indir');
+    gonder.addEventListener('click', async () => {
+      if (gonder.disabled) return;
+      gonder.disabled = true;
+      try {
+        const aktarim = globalThis.UHD.vergiAktarimi(rec, veri, fetchedAt);
+        let sonuc;
+        try { sonuc = await globalThis.chrome?.runtime?.sendMessage?.({ type: 'uhd-vergi-devir', metin: aktarim.metin }); } catch { sonuc = null; }
+        if (sonuc?.ok === true) return;
+        indir(aktarim);
+        if (typeof toast === 'function') toast('Vergi Takibi açılamadı; bilgiler JSON dosyası olarak indirildi. Legaluga Vergi Takibi’nde Ücretler → UYAP’tan aktar ile yükleyin.', 'err', 10000);
+      } finally { gonder.disabled = false; }
+    });
+    dosya.addEventListener('click', () => indir(globalThis.UHD.vergiAktarimi(rec, veri, fetchedAt)));
+    return [gonder, dosya];
+  }
+
+  function renderTahsilatOzet(body, tahsilat, fetchedAt, rec) {
     // Yalnız bilinen toplam alanları gösterilir. Kalan tutar UYAP yanıtından aynen alınır;
     // harçlar tahsilattan düşülmez ve eksik tutar sıfır olarak yorumlanmaz.
     const money = (key, label) => el('div', { class: 'dp-summary-row dp-money-row' },
@@ -39,7 +71,8 @@
               known ? fmtTL(tahsilat.toplamKalan) : 'UYAP’tan alınamadı')),
           money('toplamTahsilat', 'Toplam Tahsilat'), money('toplamreddiyat', 'Toplam Reddiyat'),
           el('div', { class: 'dp-summary-notice' }, 'UYAP’ın Tahsilat ve Reddiyat Bilgileri ekranındaki Kalan tutarıdır. Borç bakiyesi veya iade edilebilir tutar olarak hesaplanmaz.'))),
-      el('div', { class: 'dp-summary-source' }, `UYAP’tan alındı: ${globalThis.UHD.fmtDate(fetchedAt)}. Güncel tutar için Tutarları yenile’yi kullanın.`));
+      el('div', { class: 'dp-summary-source' }, `UYAP’tan alındı: ${globalThis.UHD.fmtDate(fetchedAt)}. Güncel tutar için Tutarları yenile’yi kullanın.`,
+        vergiAktarDugmesi(rec, { tahsilat }, fetchedAt)));
   }
 
   // Dosya kartıyla ortak, yalnız bu bilgisayarda saklanan not. Ayrı bir not deposu veya UYAP isteği yoktur.

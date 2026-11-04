@@ -280,6 +280,8 @@
         if (Object.entries(saved).some(([key, value]) => /^uhdBulkDownload_[0-9a-f]{64}$/.test(key) && value?.pendingDownload))
           return { data: { cleared: false, pending: true }, revision };
         await write({ uhdScanEpoch: crypto.randomUUID() }, Object.keys(saved).filter(key => key !== 'uhdScanEpoch'));
+        // Vergi Takibi'ne gönderilip henüz alınmamış aktarımlar da bellekteki oturum deposundan silinir.
+        try { await chrome.storage.session?.remove('uhdVergiDevir'); } catch { /* yalnız arka planda erişilebilir */ }
         return { data: { cleared: true }, revision };
       }
       if (operation === 'mergeBankCheck') {
