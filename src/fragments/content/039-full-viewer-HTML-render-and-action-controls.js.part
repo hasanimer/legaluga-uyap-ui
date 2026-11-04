@@ -117,6 +117,10 @@
     const zipSelectionCount = el('p', { class: 'dp-muted', 'data-zip': 'secim-sayi', role: 'status', 'aria-live': 'polite' });
     const zipSelectedTypes = new Set();
     const zipParts = el('input', { type: 'checkbox', 'data-zip': 'parcali' });
+    // Klasör düzeni ayarı varsayılan olarak kapalıdır; seçim bu tarayıcıda hatırlanır.
+    const zipKlasor = el('input', { type: 'checkbox', 'data-zip': 'klasor' });
+    Promise.resolve(globalThis.chrome?.storage?.local?.get?.('uhdKlasorDuzeni'))
+      .then(v => { if (!zipRun) zipKlasor.checked = v?.uhdKlasorDuzeni === true; }).catch(() => {});
     const bulkStatus = el('p', { class: 'dp-muted', 'data-zip': 'bulk-status', role: 'status' });
     const bulkResume = el('button', { type: 'button', class: 'chip', hidden: true, 'data-zip': 'devam' }, 'Kaldığı yerden devam et');
     const bulkNew = el('button', { type: 'button', class: 'chip', hidden: true, 'data-zip': 'yeni' }, 'Yeni indirme planı');
@@ -134,7 +138,9 @@
         el('label', { class: 'ti-secenek' }, zipEkler, el('span', null, 'Ekleri de indir',
           el('small', null, 'Kapalıysa hiçbir ek indirilmez. Açıkken seçilen ana evrakın ekleri de alınır; ek türünü ayrıca seçebilir veya hariç tutabilirsiniz.'))),
         el('label', { class: 'ti-secenek' }, zipParts, el('span', null, 'Parçalı ve kaldığı yerden devam eden indirme',
-          el('small', null, 'Her parçada en çok 100 evrak veya yaklaşık 32 MiB; daha büyük tek evrak ayrı parçaya konur (üst sınır 128 MiB). UYAP sekmesi açıkken bu ekranı kapatsanız da indirme sürer. Sekme veya tarayıcı kapanırsa tamamlanan parçadan devam edebilirsiniz.')))),
+          el('small', null, 'Her parçada en çok 100 evrak veya yaklaşık 32 MiB; daha büyük tek evrak ayrı parçaya konur (üst sınır 128 MiB). UYAP sekmesi açıkken bu ekranı kapatsanız da indirme sürer. Sekme veya tarayıcı kapanırsa tamamlanan parçadan devam edebilirsiniz.'))),
+        el('label', { class: 'ti-secenek' }, zipKlasor, el('span', null, 'Klasör düzeninde indir',
+          el('small', null, 'ZIP içinde Avukat / Yargı türü / Birim türü / Mahkeme ve esas no klasörü açılır; evraklar özgün biçimleriyle kategori klasörlerine, ekler evrakın yanındaki _ekler klasörüne konur. Dosya bilgileri uyap-project.json kaydına yazılır. Parçalı indirmede tüm parçaları aynı klasöre çıkarın; kayıtlı plan devam ederken başladığı düzeni korur.')))),
       bulkCard,
       el('div', { class: 'ti-eylem' }, zipIndir, zipDurdur, zipTekrar, zipKaydet, zipPanel),
       zipProgress, zipStatus);
@@ -612,6 +618,7 @@
       paketBar.hidden = !paketMod;
       paketYaz();
       zipEkler.disabled = !!zipRun;
+      zipKlasor.disabled = !!zipRun;
       zipParts.disabled = !!zipRun || !bulkTools;
       bulkCard.hidden = !bulkJob && !bulkState && !bulkIssue;
       if (bulkJob || bulkState) {

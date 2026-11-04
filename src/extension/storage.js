@@ -323,7 +323,8 @@
         const saved = values[key], plan = values[planKey];
         const job = saved ? bulk.check({ ...(plan || {}), ...saved }) : null;
         const planOf = value => ({ v: value.v, id: value.id, fileKey: value.fileKey, createdAt: value.createdAt,
-          scope: value.scope, includeAttachments: value.includeAttachments, targets: value.targets });
+          scope: value.scope, includeAttachments: value.includeAttachments,
+          ...(value.klasorDuzeni ? { klasorDuzeni: value.klasorDuzeni } : {}), targets: value.targets });
         const stateOf = value => ({ v: value.v, id: value.id, fileKey: value.fileKey, updatedAt: value.updatedAt,
           cursor: value.cursor, parts: value.parts, pendingDownload: value.pendingDownload, status: value.status });
         if (job && job.fileKey !== fileKey) throw new Error('İndirme planının dosyası uyuşmuyor.');

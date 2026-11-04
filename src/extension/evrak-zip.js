@@ -162,6 +162,18 @@
     }
   }
 
+  // Klasörlü girdi: her bölüm ayrı temizlenir; "/" ile biten ad boş klasör kaydıdır.
+  function pathName(value, usedKeys) {
+    const dir = String(value).endsWith('/');
+    const parts = String(value).split('/').filter(Boolean).map(part => clean(part, '_', Infinity));
+    if (!parts.length) throw new Error('ZIP yolu geçersiz.');
+    const name = parts.join('/') + (dir ? '/' : '');
+    const key = collisionKey(name);
+    if (usedKeys.has(key)) throw new Error('ZIP içinde aynı yol iki kez kullanılamaz.');
+    usedKeys.add(key);
+    return name;
+  }
+
   function uniqueName(name, usedSet) {
     if (!(usedSet instanceof Set)) throw new TypeError('Dosya adları için Set gerekli.');
     const keys = new Set([...usedSet].map(value => collisionKey(clean(value))));
@@ -220,7 +232,7 @@
     let size = 22, localSize = 0, centralSize = 0;
     const prepared = entries.map(entry => {
       if (!entry || !(entry.blob instanceof Blob)) throw new TypeError('ZIP evrakı geçerli bir Blob içermeli.');
-      const name = encoder.encode(nextName(entry.name, usedKeys, nextIndices));
+      const name = encoder.encode(entry.path ? pathName(entry.name, usedKeys) : nextName(entry.name, usedKeys, nextIndices));
       const bytes = entry.blob.size;
       if (!Number.isSafeInteger(bytes) || bytes < 0 || bytes > UINT32_MAX) throw new Error('Evrak ZIP32 boyut sınırını aşıyor.');
       if (name.length > 0xffff) throw new Error('Evrak adı ZIP32 sınırını aşıyor.');
@@ -277,6 +289,151 @@
     return new Blob([...parts, ...central, end], { type: 'application/zip' });
   }
 
+  // Klasör düzeninde indirme: avukat / yargı türü / birim türü / dosya ağacı. Evraklar özgün biçimleriyle kalır.
+  // Yollar (uzantı dahil) 200 karakteri aşmaz; Windows'un 260 sınırında çıkarma klasörüne yer kalır. Ana evrak adı,
+  // yanındaki _ekler klasöründe en az 16 karakterlik ek adına yer bırakacak kadar kısaltılır.
+  const FOLDER_PATH_MAX = 200, EK_ROOM = 7 + 16;
+  const KATEGORILER = Object.freeze([
+    // Önce özgül kurallar: aynı kelimeyi taşıyan genel kurallardan önce eşleşir.
+    ['04-Muzekkereler-Yazismalar', ['teblig muzekkeresi', 'genel karar/muzekkere', 'haciz karar yazisi', '89/1 haciz ihbarnamesi cevabi']],
+    ['11-Sorgu-Belgeleri', ['ptt tebligat sorgulamasi', 'adli sicil', 'nufus kayit', 'adres sorusturmasi', 'tasit sahiplik',
+      'mahrumiyet raporu', 'dosya hesabi raporu']],
+    ['07-Vekalet-Idari', ['talep evraki', 'vekaletname', 'hedef sure formu', 'dava acilis formu', 'istinaf formu']],
+    ['09-Durusma-Zabitlari', ['hukuk genel tutanak', 'durusma zapti', 'tensip zapti', 'durusma tutanag']],
+    ['10-Talimat', ['talimat']],
+    ['12-Sorusturma', ['iddianame', 'hazirlik dosyasi']],
+    ['05-Bilirkisi', ['bilirkisi', 'ek rapor', 'teslim tutanagi']],
+    ['06-Mali', ['makbuz', 'reddiyat', 'sayman mutem', 'vekalet pulu', 'harc']],
+    ['03-Tebligatlar', ['tebligat', 'mazbata']],
+    ['01-Kararlar-Tutanaklar', ['karar', 'kesinlesme serhi', 'ifade tutanagi', 'cbs genel tutanak']],
+    ['04-Muzekkereler-Yazismalar', ['muzekkere', 'tekit yazisi', 'tekid yazisi', 'dosya isteme yazisi', 'cevap yazisi', 'cevabi', 'yazisi']],
+    ['02-Dilekceler', ['dilekce', 'istinaf basvuru', 'mazeret', 'delil', 'vekillikten cekilme', 'takip talebi', 'savunma', 'cevap']],
+    ['08-Ekler-Diger', ['diger evrak', 'goruldu evraki', 'sgk hizmet dokumu']]
+  ]);
+  const DIGER = '99-Siniflandirilmamis';
+  function kategori(value) {
+    const key = typeKeyRaw(String(value || '')).replace(/ı/g, 'i');
+    if (!key) return DIGER;
+    for (const [name, words] of KATEGORILER) if (words.some(word => key.includes(word))) return name;
+    if (/talebi$/.test(key)) return '02-Dilekceler';
+    return DIGER;
+  }
+  const upperTr = value => String(value || '').toLocaleUpperCase('tr-TR');
+  function yargiKlasoru(rec) {
+    const r = rec || {}, kod = String(r.yargiTuru ?? '');
+    if (kod === '0' || kod === '3') return 'Ceza';
+    if (kod === '1') return 'Hukuk';
+    if (kod === '2') return 'İcra';
+    if (kod === '6') return 'İdari';
+    const text = typeKeyRaw([r.yargiTuruAdi, r.birimAdi, r.dosyaTur].filter(Boolean).join(' '));
+    if (/\bicra\b/.test(text)) return 'İcra';
+    if (/\b(?:idar[ie]|idari|vergi mahkemesi|danistay)\b/.test(text)) return 'İdari';
+    if (/\b(?:ceza|savcilik|bassavcilig|cbs)\b/.test(text)) return 'Ceza';
+    return 'Hukuk';
+  }
+  function birimTuru(rec) {
+    const r = rec || {};
+    let text = String(r.birimTuruAdi || '').trim();
+    if (!text || /^\d+$/.test(text)) {
+      text = String(r.birimAdi || '').replace(/^\(.+?\)\s*/, '').trim();
+      const numbered = /^.*?\d+\.\s*(.+)$/.exec(text);
+      if (numbered) text = numbered[1];
+      else {
+        const words = text.split(/\s+/);
+        // "Örnekşehir İcra Dairesi" gibi sırasız birimlerde ilk kelime yer adıdır.
+        if (words.length > 2) text = words.slice(1).join(' ');
+      }
+    }
+    return clean(upperTr(text.replace(/\s+/g, ' ')), 'BİRİM', 60);
+  }
+  const shorten = (value, max) => {
+    const chars = [...value];
+    return chars.length > max ? chars.slice(0, max).join('').replace(/[ ._-]+$/g, '') : value;
+  };
+  const segment = (value, fallback, max) => shorten(clean(value, fallback, Infinity), max) || fallback;
+  function folderLayout(rec, avukat, now = Date.now()) {
+    const r = rec || {}, yargi = yargiKlasoru(r);
+    return { v: 1, avukat: segment(avukat, 'Avukat', 30), yargi, birimTuru: birimTuru(r),
+      mahkeme: segment(r.birimAdi, 'Mahkeme', 80), esasNo: String(r.dosyaNo || '').slice(0, 60),
+      dosyaId: String(r.dosyaId ?? '').slice(0, 100), birimId: String(r.birimId ?? '').slice(0, 100),
+      caseType: String(r.dosyaTur || r.yargiTuruAdi || yargi).slice(0, 100), isIcra: yargi === 'İcra',
+      clonedAt: new Date(now).toISOString() };
+  }
+  function caseRoot(layout) {
+    const l = layout || {};
+    const esas = String(l.esasNo || '').replace(/[\\/]/g, '-');
+    // Esas numarası kısaltmada korunur: mahkeme adı kısalır.
+    const mahkeme = segment(l.mahkeme, 'Mahkeme', Math.max(10, 49 - esas.length));
+    return [segment(l.avukat, 'Avukat', 30), segment(l.yargi, 'Hukuk', 10), segment(l.birimTuru, 'BİRİM', 35),
+      segment([mahkeme, esas].filter(Boolean).join(' '), 'Dosya', 50)].join('/');
+  }
+  // UYAP'ta evrakın yönü (gelen/giden) varsa kullanılır; liste verisinde yoksa Dosya.
+  function yon(item) {
+    const x = item || {}, main = x.ana || x;
+    const raw = typeKeyRaw(main.yon || main.e?.yon || main.e?.evrakYonu || '');
+    return raw.startsWith('gelen') ? 'Gelen' : raw.startsWith('giden') ? 'Giden' : 'Dosya';
+  }
+  function stampOf(item) {
+    const x = item || {}, main = x.ana || x;
+    const date = dateParts(main.onay || main.e?.onaylandigiTarih || x.onay);
+    return date ? date.slice(0, 3).map((n, i) => String(n).padStart(i ? 2 : 4, '0')).join('-') : 'Tarihsiz';
+  }
+  function mainBase(item) {
+    const x = item || {};
+    const tur = shorten(clean(String(x.tur || x.e?.tur || 'Evrak').replace(/\//g, '_'), 'Evrak', Infinity), 50);
+    const no = x.no ?? x.e?.birimEvrakNo;
+    return [stampOf(x), tur, no != null && no !== '' ? shorten(clean(no, '', Infinity), 20) : ''].filter(Boolean).join('_');
+  }
+  // Hedeflerin tamamı için kararlı ve benzersiz yollar (uzantısız). Devamda aynı hedef listesi aynı yolları verir.
+  function folderPaths(layout, targets) {
+    const root = caseRoot(layout), used = new Set(), mains = new Map(), out = [];
+    const take = (dir, base, reserve = 0) => {
+      for (let i = 1; ; i++) {
+        const suffix = i === 1 ? '' : ` (${i})`;
+        const room = Math.max(12, FOLDER_PATH_MAX - [...dir].length - 1 - 6 - reserve - suffix.length);
+        const name = shorten(base, room) + suffix, key = collisionKey(dir + '/' + name);
+        if (!used.has(key)) { used.add(key); return dir + '/' + name; }
+      }
+    };
+    const mainPath = main => {
+      const id = JSON.stringify([main.k, main.dosya || '']);
+      if (!mains.has(id)) mains.set(id, take(`${root}/evraklar/${yon(main)}/${kategori(main.tur || main.e?.tur)}`, mainBase(main), EK_ROOM));
+      return mains.get(id);
+    };
+    for (const item of Array.isArray(targets) ? targets : []) if (item && !item.ana) mainPath(item);
+    for (const item of Array.isArray(targets) ? targets : []) {
+      if (!item) { out.push(null); continue; }
+      if (!item.ana) { out.push(mainPath(item)); continue; }
+      const dir = mainPath(item.ana) + '_ekler';
+      const n = Number.isInteger(item.ekIndis) ? item.ekIndis + 1 : out.length + 1;
+      const ad = shorten(clean(String(item.ekTuru || item.tur || 'Ek').replace(/\//g, '_'), 'Ek', Infinity), 40);
+      // take() ek adını kalan yere göre kısaltır; "EkNN_" öneki korunur.
+      out.push(take(dir, `Ek${String(n).padStart(2, '0')}_${ad}`));
+    }
+    return out;
+  }
+  function projectJson(layout, rows, now = Date.now()) {
+    const l = layout || {};
+    return JSON.stringify({ dosyaId: l.dosyaId || '', mahkeme: l.mahkeme || '', birimId: l.birimId || '', esasNo: l.esasNo || '',
+      caseType: l.caseType || '', indirenAvukat: l.avukat || '', isIcra: !!l.isIcra, clonedAt: l.clonedAt || new Date(now).toISOString(),
+      lastSyncedAt: new Date(now).toISOString(),
+      evraklar: (Array.isArray(rows) ? rows : []).map(({ target: x = {}, path, ext }) => {
+        const main = x.ana || x;
+        return { yol: path ? path.slice(caseRoot(l).length + 1) + (ext ? '.' + extension(ext) : '') : '',
+          uzanti: ext ? extension(ext) : null, evrakId: String((x.ana ? x.ekId : x.e?.evrakId) ?? ''),
+          tur: String(x.ekTuru || x.tur || x.e?.tur || ''), tarih: stampOf(x), evrakNo: String(main.no ?? main.e?.birimEvrakNo ?? ''),
+          kategori: kategori(main.tur || main.e?.tur), yon: yon(x), ek: !!x.ana,
+          ...(x.ana ? { anaEvrakId: String(x.ana.e?.evrakId ?? '') } : {}) };
+      }) }, null, 2);
+  }
+  // ZIP'e yol olarak eklenecek sabit girdiler: proje kaydı ve boş "ilgili-dosyalar" klasörü.
+  function folderExtras(layout, rows, now = Date.now()) {
+    const root = caseRoot(layout);
+    return [{ name: `${root}/ilgili-dosyalar/`, path: true, blob: new Blob([]) },
+      { name: `${root}/uyap-project.json`, path: true, blob: new Blob([projectJson(layout, rows, now)], { type: 'application/json' }), date: now }];
+  }
+
   globalThis.UHD = globalThis.UHD || {};
-  globalThis.UHD.evrakZip = { archiveName, documentName, uniqueName, createZip, documentType, typeGroups, selectRows, MAX_BYTES, MAX_ENTRIES };
+  globalThis.UHD.evrakZip = { kategori, yargiKlasoru, birimTuru, folderLayout, caseRoot, folderPaths, projectJson, folderExtras, FOLDER_PATH_MAX,
+    archiveName, documentName, uniqueName, createZip, documentType, typeGroups, selectRows, MAX_BYTES, MAX_ENTRIES };
 })();

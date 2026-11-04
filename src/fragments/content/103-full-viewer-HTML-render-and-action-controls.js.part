@@ -15,6 +15,7 @@
     });
     zipTypeClear.addEventListener('click', () => { if (!zipRun) { zipSelectedTypes.clear(); zipSync(); } });
     zipEkler.addEventListener('change', zipSync);
+    zipKlasor.addEventListener('change', () => { Promise.resolve(globalThis.chrome?.storage?.local?.set?.({ uhdKlasorDuzeni: zipKlasor.checked })).catch(() => {}); zipSync(); });
     zipParts.addEventListener('change', () => { bulkChoice = true; zipSync(); });
     bulkResume.addEventListener('click', bulkDownload);
     bulkNew.addEventListener('click', async () => {
