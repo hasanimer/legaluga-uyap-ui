@@ -131,19 +131,39 @@
     const measure = (key, text, size) => {
       const k = key + '\u0000' + size + '\u0000' + text;
       let w = widths.get(k);
-      if (w === undefined) { w = faces[key].pdf.widthOfTextAtSize(text, size); widths.set(k, w); }
+      if (w === undefined) { w = faces[key].pdf.widthOfTextAtSize(text, size); if (widths.size >= 200000) widths.clear(); widths.set(k, w); }
       return w;
     };
     if (esnek) for (const section of model.bolumler) for (const block of section) for (const piece of block.parcalar) {
       const glyph = faces[fontKey(styleOf(piece, block, model))].glyph;
       piece.yazi = Array.from(piece.yazi, ch => (ch === '\n' || glyph.hasGlyphForCodePoint(ch.codePointAt(0)) ? ch : (yerine++, '?'))).join('');
     }
+    // BAŞARIM: pdf-lib page.drawText her çağrıda sayfanın /Font sözlüğüne aynı font için YENİ rastgele anahtar
+    // ekler; sözcük başına çağrıldığından sayfada yüzlerce yinelenen kayıt oluşur, anahtar üretimi tüm kayıtları
+    // tarar ve dosya şişer. Anahtar (sayfa, font) başına bir kez üretilir, kodlanmış metin önbelleklenir ve
+    // drawText'in tek satır/döndürmesiz çiziminin operatörleri (q BT rg Tf Tm Tj ET Q) doğrudan yazılır.
+    // drawText'in cleanText/satır bölme ile dönüştürdüğü denetim karakterlerinde pdf-lib yoluna düşülür.
+    // eslint-disable-next-line no-control-regex -- drawText ile birebir aynı denetim karakterleri
+    const OZEL = /[\n\r\f\t\u000b\b\u0085\u2028\u2029]/u;
+    const encoded = new Map(), colors = new Map();
+    let pageKeys = null;
+    const fill = c => { const k = c ? c.join(',') : ''; let v = colors.get(k); if (!v) colors.set(k, v = color(c)); return v; };
+    const drawToken = (text, x, y, size, font, rgb) => {
+      if (OZEL.test(text)) { page.drawText(text, { x, y, size, font, color: rgb }); return; }
+      let key = pageKeys.get(font);
+      if (!key) pageKeys.set(font, key = page.node.newFontDictionary(font.name, font.ref));
+      const ek = font.name + '\u0000' + text;
+      let hex = encoded.get(ek);
+      if (!hex) { hex = font.encodeText(text); if (encoded.size >= 200000) encoded.clear(); encoded.set(ek, hex); }
+      page.pushOperators(PDF.pushGraphicsState(), PDF.beginText(), PDF.setFillingColor(rgb), PDF.setFontAndSize(key, size),
+        PDF.setTextMatrix(1, 0, 0, 1, x, y), PDF.showText(hex), PDF.endText(), PDF.popGraphicsState());
+    };
     const p = model.sayfa, top = p.boy - p.ust, bottom = p.alt;
     const maxPages = Math.min(limits.pages || 300, 300);
     let page, y;
     function newPage() {
       if (pdf.getPageCount() >= maxPages) reject('udf-page-limit', 'UDF sayfa sınırı aşıldı');
-      page = pdf.addPage([p.en, p.boy]); y = top;
+      page = pdf.addPage([p.en, p.boy]); y = top; pageKeys = new Map();
     }
     function drawLine(line, block, first, last, explicit) {
       const hasSpacing = block.aralikVar === true || (block.aralik || 0) > 0;
@@ -171,7 +191,7 @@
         const face = faces[part.face].pdf, s = part.style;
         // Draw one segment per word/space so justified spacing is in the same measured coordinate system.
         for (const token of part.text.match(/[^ ]+| +/gu) || []) {
-          if (!/^ +$/u.test(token)) page.drawText(token, { x, y: baseline, size: s.punto, font: face, color: color(s.renk) });
+          if (!/^ +$/u.test(token)) drawToken(token, x, baseline, s.punto, face, fill(s.renk));
           x += measure(part.face, token, s.punto) + extra * (token.match(/ /gu) || []).length;
         }
         const width = measure(part.face, part.text, s.punto) + extra * (part.text.match(/ /gu) || []).length;
