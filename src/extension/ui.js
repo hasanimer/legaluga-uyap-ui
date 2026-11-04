@@ -2227,6 +2227,10 @@
           el('div', { class: 'field' }, kisayolSatiri, kisayolDegistir),
           el('div', { class: 'hint' }, 'Araç çubuğundaki Legaluga simgesi ve kısayol UYAP sekmesinde paneli açıp kapatır; başka sitelerde hızlı aramayı açar.')),
 
+        el('h3', null, 'UYAP ana sayfası'),
+        el('div', { class: 'box' },
+          check('anaSayfaTanitimGizle', true, 'Ana sayfadaki tanıtım kutularını gizle', 'E-Duruşma ve UYAP SMS kartları ile görsel kaydırıcı Avukat Portalı ana sayfasında gösterilmez. Kapatınca sayfa UYAP’taki gibi görünür.')),
+
         el('h3', null, 'Dosya açma'),
         el('div', { class: 'box' },
           select('acilisSekme', 'yok', 'Dosya açılınca geçilecek sekme', [['yok', 'Hiçbiri'], ['evrak', 'Evrak'], ['taraf', 'Taraf bilgileri']]),
