@@ -2229,7 +2229,7 @@
 
         el('h3', null, 'UYAP ana sayfası'),
         el('div', { class: 'box' },
-          check('anaSayfaTanitimGizle', true, 'Ana sayfadaki tanıtım kutularını gizle', 'E-Duruşma ve UYAP SMS kartları ile görsel kaydırıcı Avukat Portalı ana sayfasında gösterilmez. Kapatınca sayfa UYAP’taki gibi görünür.')),
+          check('anaSayfaTanitimGizle', true, 'Ana sayfadaki tanıtım kutularını gizle', 'E-Duruşma ve UYAP SMS kartları, indirme bağlantıları kutusu ve görsel kaydırıcı Avukat Portalı ana sayfasında gösterilmez. Kapatınca sayfa UYAP’taki gibi görünür.')),
 
         el('h3', null, 'Dosya açma'),
         el('div', { class: 'box' },
