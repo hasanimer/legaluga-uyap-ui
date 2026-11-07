@@ -1173,12 +1173,23 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     if (panelMode === 'dock' && pagePrefs.panelGenislik !== oncekiGenislik) schedulePanelFit();
   }
 
+  // UYAP'ın gölgeli (kipli) DevExtreme pencereleri açıkken DevExtreme belgeye kabarma aşamasında bir keydown dinleyicisi
+  // ekler: Tab en üstteki pencerenin dışından gelirse varsayılanı engellenir ve odak o pencerenin ilk öğesine taşınır.
+  // Kapalı gölge kökten gelen olayın hedefi belge düzeyinde host görünür; dosya ekranı UYAP'ın dosya penceresinin üstünde
+  // açıkken Legaluga'daki her Tab (Shift+Tab da) bu yüzden arkadaki pencereye kaçardı. Tab host'tan yukarı kabarmaz;
+  // varsayılanı engellenmez, tarayıcı odağı yine taşır. Görüntüleyicinin belge düzeyindeki yakalama dinleyicisi (viewerKeys)
+  // ve gölge kökteki dinleyiciler bundan önce çalışır; öbür tuşlar (Enter, Esc, oklar) eskisi gibi yukarı kabarır.
+  function guardHostTab(host) {
+    host.addEventListener('keydown', e => { if (e.key === 'Tab') e.stopPropagation(); });
+  }
+
   function mountPage() {
     const host = document.createElement('div');
     host.id = 'uhd-host';
     host.style.cssText = 'all:initial;position:fixed;top:0;left:0;width:0;height:0;z-index:2147483646';
     document.documentElement.append(host);
     const shadow = host.attachShadow({ mode: 'closed' }); // UYAP sayfasındaki betikler panel içeriğini okuyamaz
+    guardHostTab(host);
     // UYAP'ın Dosya Sorgulama formu Enter'ı pencere düzeyinde (yakalama aşamasında) dinler: detaylı formda sorgu başlatır,
     // basit formda uyarı çıkarır. Panelde basılan Enter (dosya açma, not kaydetme) UYAP'a ulaşmasın. Aynı hedef ve
     // aşamadaki dinleyiciler kayıt sırasıyla çalıştığı için bu, UYAP'ın form her kurulduğunda eklediği dinleyiciden önce gelir.

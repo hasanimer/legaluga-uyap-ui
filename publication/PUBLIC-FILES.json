@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "32582b054a41ad8df7f9342d15dd82dfd345f8524a6eb32f3d9a2b6182c92988"
+      "sha256": "af02d06f6e7685512dbc40f8d7d7d6bb0231d4a9d252e1444871dd28a2258b1a"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -596,7 +596,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "1787f19434df38b931112ece4f5abb6f71776f564624a17b665ac02714d4031c"
+      "sha256": "b86e23ad27bcac6b3b07e51d9782168ecf70bc40989103ce15fbf19a57d6b504"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -628,7 +628,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "ead0e55540877b6191f60356c7ebbf4fe224a8c505814a63def1d32d5720508a"
+      "sha256": "c88647ebaa949cdf769d84a5cf0f2695598bda93fd873089757861c1cf9597d5"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -804,7 +804,7 @@
     },
     {
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",
-      "sha256": "6b6dcfaeb957fc8aeb52bcac87abddf1da32df4e1b256ac784142182be7fcf63"
+      "sha256": "e82bc1aa68187d89fde1f74ae8da8f0307dadefc1ab28f9d1ca8a6d4cd5f71bf"
     },
     {
       "path": "src/fragments/content/123-panel-command-action-boundary.js.part",

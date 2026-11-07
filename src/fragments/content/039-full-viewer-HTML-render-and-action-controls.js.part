@@ -649,9 +649,12 @@
     }
     const zipTitle = x => zipTools.documentName(rec, x, 'bin').replace(/\.bin$/i, '');
     // Motor, taze listede kimliği kesin doğrulanamayan evrakı yanlış belge indirmemek için atlar ve yerine not koyar.
+    // Sayı kayıtlı parçalardan gelir; motor kaydı yoksa saklanan plandaki parça kayıtları okunur.
     function bulkAtlanan() {
-      return Number.isSafeInteger(bulkState?.skipped) && bulkState.skipped > 0
-        ? `${fmtNum(bulkState.skipped)} evrak güvenle eşleştirilemediği için atlandı; ZIP içinde yerine “İNDİRİLEMEDİ” notu var. Bu evrakları UYAP’ta elle açabilirsiniz.` : '';
+      const atlanan = bulkState ? bulkState.skipped : (Array.isArray(bulkJob?.parts) ? bulkJob.parts : [])
+        .reduce((sum, part) => sum + (Array.isArray(part?.skipped) ? part.skipped.length : 0), 0);
+      return Number.isSafeInteger(atlanan) && atlanan > 0
+        ? `${fmtNum(atlanan)} evrak güvenle eşleştirilemediği için atlandı; ZIP içinde yerine “İNDİRİLEMEDİ” notu var. Bu evrakları UYAP’ta elle açabilirsiniz.` : '';
     }
     function bulkWatch(states) {
       if (closed) return;

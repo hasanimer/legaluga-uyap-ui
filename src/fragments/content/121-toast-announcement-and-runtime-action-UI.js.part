@@ -214,6 +214,7 @@
         welcomeHost.className = 'col-12';
         welcomeHost.style.cssText = 'display:block;position:relative;z-index:1';
         welcomeShadow = welcomeHost.attachShadow({ mode: 'closed' });
+        guardHostTab(welcomeHost);
         welcomeShadow.append(el('style', null, PAGE_CSS + '\n.announcement,.announcement.outage{width:100%;box-sizing:border-box;max-height:50vh;max-height:50dvh;pointer-events:auto}'));
       }
       welcomeHost.dataset.theme = shadowRoot.host.dataset.theme;
