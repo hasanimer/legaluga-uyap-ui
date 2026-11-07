@@ -74,6 +74,8 @@
             el('td', { 'data-label': 'Taraf' }, t?.adi || '—'),
             el('td', { 'data-label': 'Vekil' }, (Array.isArray(t?.vekil) ? t.vekil : []).join(', ') || '—'))))));
     };
+    // Duruşma tarihi belliyse son güncellemenin duruşma listesinden sonradan eklenir; ilk çizim beklemez.
+    const durusmaYeri = cbs ? null : el('div', { class: 'dp-summary-durusma' });
     const yerel = el('div', { class: 'dp-summary' },
       el('div', { class: 'dp-summary-grid' },
         el('div', { class: 'dp-card dp-summary-info' }, el('h4', null, 'Dosya bilgileri'),
@@ -82,7 +84,7 @@
           cbs ? satir('İl', ilAdi(rec.ilAdi)) : null,
           satir('Durum', el('span', { class: `dp-status ${rec.sorguDurum === 1 ? 'closed' : 'open'}` },
             (d.label || (rec.sorguDurum === 1 ? 'Kapalı' : 'Açık')) + (d.tarih ? ` (${fmtTrDate(d.tarih)})` : ''))),
-          satir('Açılış', rec.acilis ? fmtTrDate(rec.acilis) : ''),
+          satir('Açılış', rec.acilis ? fmtTrDate(rec.acilis) : ''), durusmaYeri,
           cbs ? satir('Dava açıldı mı', evetHayir(rec.davaAcildi)) : null,
           cbs ? satir('İnceleme izni', rec.incelemeIzni === true ? 'Var' : rec.incelemeIzni === false ? 'Yok; evrak, Cumhuriyet savcısının onayından sonra görünür' : '') : null)),
         el('div', { class: 'dp-card dp-summary-latest' }, el('h4', null, 'Son hareketler'),
@@ -97,6 +99,14 @@
         cbs ? el('div', { class: 'dp-muted' }, 'UYAP savcılık dosyalarında taraf ve safahat bilgisi vermez.')
           : taraflar.length ? el('div', { class: 'dp-party-groups' }, [...tarafGruplari].map(tarafGrubu))
             : el('div', { class: 'dp-muted' }, 'Kaydedilmiş taraf bilgisi yok. Ayarlar → Güncelleme’den taraf bilgilerini yenileyebilirsiniz.')));
+    if (durusmaYeri) void (async () => {
+      const { uhdDurusmalar } = (await globalThis.chrome?.storage?.local?.get?.('uhdDurusmalar')) || {};
+      const list = dosyaDurusmalari(uhdDurusmalar && uhdDurusmalar.list, rec.key);
+      if (!list.length) return;
+      durusmaYeri.replaceChildren(el('div', { class: 'dp-summary-row', title: list.map(x => durusmaOzeti(x)).join('\n') },
+        el('span', { class: 'dp-k' }, 'Sonraki duruşma: '),
+        el('span', { class: 'dp-v' }, durusmaOzeti(list[0]) + (list.length > 1 ? ` (+${list.length - 1})` : ''))));
+    })().catch(() => {});
     if (cbs) { body.replaceChildren(el('div', { class: 'dp-overview' }, yerel, tarafKarti)); return; }
     const icra = rec.yargiTuru === '2';
     const baslik = icra ? 'Hesap ve tahsilat' : 'Tahsilat ve reddiyat';

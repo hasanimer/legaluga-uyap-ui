@@ -5,8 +5,8 @@
     // Son 20 yanıtı grup taşımayabilir; açık bir hedef başka bilinen dosya grubuna taşınmaz.
     const unknown = group ? candidates.filter(x => !x.dosyaGrubu) : [];
     const matches = grouped.length ? grouped : group ? unknown : candidates;
-    if (matches.length > 1) throw new Error('Aynı bilgileri taşıyan birden fazla evrak var; yanlış evrakı açmamak için dosyayı UYAP’ta açın.');
-    if (!matches[0]) throw new Error('Evrak dosyanın evrak listesinde bulunamadı; Güncelle’ye basıp tekrar deneyin.');
+    if (matches.length > 1) throw kimlikHatasi('Aynı bilgileri taşıyan birden fazla evrak var; yanlış evrakı açmamak için dosyayı UYAP’ta açın.');
+    if (!matches[0]) throw kimlikHatasi('Evrak dosyanın evrak listesinde bulunamadı; Güncelle’ye basıp tekrar deneyin.');
     return matches[0];
   }
 
@@ -49,6 +49,18 @@
       if (ilkAynilar.length === 1 && yeniAynilar.length === 1 &&
           (kimlik == null || kimlik === '' || String(ilkAynilar[0].evrakId) === String(kimlik))) ek = yeniAynilar[0];
     }
-    if (!ek || ek.evrakId == null || ek.evrakId === '') throw new Error('Ek, ana evrakın ek listesinde bulunamadı; Güncelle’ye basıp tekrar deneyin.');
+    // UYAP'ın kimliksiz verdiği ek (evrakId'siz) hiçbir listede açılamaz; ayrı ve anlaşılır iletiyle bildirilir.
+    const ilkEk = ilkListe[hedef.ekIndis];
+    const kimliksizEk = ek ? ek.evrakId == null || ek.evrakId === '' :
+      (kimlik == null || kimlik === '') && !!ilkEk && typeof ilkEk === 'object' && (ilkEk.evrakId == null || ilkEk.evrakId === '');
+    if (kimliksizEk) throw kimlikHatasi('Ek, UYAP’ta açılabilir bir kimlikle verilmiyor; eki UYAP’ta açmayı deneyin.', true);
+    if (!ek) throw kimlikHatasi('Ek, ana evrakın ek listesinde bulunamadı; Güncelle’ye basıp tekrar deneyin.', true);
     return { evrakId: ek.evrakId, dosyaId: ana.dosyaId, dosyaGrubu: ana.dosyaGrubu, tur: hedef.tur, onaylandigiTarih: ana.onaylandigiTarih };
+  }
+
+  // Kayıtlı hedefin listedeki kimliği kesin çözülemedi (bulunamadı, belirsiz veya kimliksiz). Toplu indirme bu türü
+  // yalnız taze ve tam listeyle doğrulandığında atlar; tek evrak görünümü iletiyi olduğu gibi gösterir.
+  // anaBulundu: ana evrak listede tek ve kesin bulundu; ek listesi ana evrakla birlikte geldiğinden sayfa kapsamından bağımsızdır.
+  function kimlikHatasi(message, anaBulundu = false) {
+    return Object.assign(new Error(message), { kind: 'kimlik' }, anaBulundu ? { anaBulundu: true } : {});
   }
