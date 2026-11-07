@@ -11,7 +11,12 @@
     const beside = besideDock();
     const close = el('button', { type: 'button', title: 'Kapat (Esc)' }, 'Kapat');
     const sekmeCubugu = el('div', { class: 'ek-sekmeler', role: 'tablist', 'aria-label': 'Dosya ekranı' });
-    const sekmeBar = el('div', { class: 'ek-sekmebar' }, sekmeCubugu);
+    // UYAP'ta işlem: sekme gibi görünen eylem düğmeleri (sekme değildir). Dosya UYAP'ta açılıp ilgili sekmeye geçilir.
+    // UYAP'ın kendi belge görünümünde (nativeDocument) kullanıcı zaten UYAP'tadır; gösterilmez.
+    const uyapIslemleri = nativeDocument ? null : el('div', { class: 'ek-uyap-islem', role: 'group', 'aria-label': 'UYAP’ta işlem' },
+      el('button', { type: 'button', 'data-uyap-sekme': 'odeme', title: 'Dosyayı UYAP’ta açıp Ödeme sekmesine geçer' }, 'Ödeme ↗'),
+      el('button', { type: 'button', 'data-uyap-sekme': 'gonder', title: 'Dosyayı UYAP’ta açıp Evrak Gönder sekmesine geçer' }, 'Evrak Gönder ↗'));
+    const sekmeBar = el('div', { class: 'ek-sekmebar' }, sekmeCubugu, uyapIslemleri);
     const govde = el('div', { class: 'ek-govde' });
     // Sırayla okumada başlıkta dosyalar arası geçiş: "‹ Önceki dosya · Dosya 2 / 5 · Sonraki dosya ›".
     const okuma = !nativeDocument && o.sira && Array.isArray(o.sira.kuyruk) && o.sira.kuyruk.length > 1 ? o.sira : null;
@@ -624,7 +629,8 @@
       if (bulkJob || bulkState) {
         const last = bulkState ? bulkState.lastPart : bulkJob.parts.at(-1);
         bulkStatus.textContent = `${fmtNum(bulkState?.saved ?? bulkJob.cursor)}/${fmtNum(bulkState?.total ?? bulkJob.targets.length)} evrak diske kaydedildi · ${fmtNum(bulkState?.partCount ?? bulkJob.parts.length)} ZIP parçası${last ? ` · Son kayıt: ${new Date(last.completedAt).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}` : ''}. ` +
-          (bulkState?.persistentPending || bulkJob?.pendingDownload ? 'Chrome indirmesi henüz tamamlanmadı. Durumunu kontrol edebilirsiniz.' : savedPlan ? 'Devam etmek kaydedilmiş kapsamı kullanır; yukarıdaki seçimler bu planı değiştirmez.' : 'Bu indirme tamamlandı.') + (bulkIssue ? ` ${bulkIssue}` : '');
+          (bulkState?.persistentPending || bulkJob?.pendingDownload ? 'Chrome indirmesi henüz tamamlanmadı. Durumunu kontrol edebilirsiniz.' : savedPlan ? 'Devam etmek kaydedilmiş kapsamı kullanır; yukarıdaki seçimler bu planı değiştirmez.' : 'Bu indirme tamamlandı.') +
+          (bulkAtlanan() ? ` ${bulkAtlanan()}` : '') + (bulkIssue ? ` ${bulkIssue}` : '');
       } else bulkStatus.textContent = bulkIssue;
       bulkResume.hidden = !savedPlan;
       bulkResume.textContent = bulkState?.persistentPending || bulkJob?.pendingDownload ? 'İndirme durumunu kontrol et' : 'Kaldığı yerden devam et';
@@ -642,6 +648,11 @@
       zipStatus.classList.toggle('err', error);
     }
     const zipTitle = x => zipTools.documentName(rec, x, 'bin').replace(/\.bin$/i, '');
+    // Motor, taze listede kimliği kesin doğrulanamayan evrakı yanlış belge indirmemek için atlar ve yerine not koyar.
+    function bulkAtlanan() {
+      return Number.isSafeInteger(bulkState?.skipped) && bulkState.skipped > 0
+        ? `${fmtNum(bulkState.skipped)} evrak güvenle eşleştirilemediği için atlandı; ZIP içinde yerine “İNDİRİLEMEDİ” notu var. Bu evrakları UYAP’ta elle açabilirsiniz.` : '';
+    }
     function bulkWatch(states) {
       if (closed) return;
       bulkState = states.find(state => state.fileKey === rec.key) || null;
@@ -654,7 +665,7 @@
       const stage = { waiting: 'Kuyrukta', fetching: 'Evrak alınıyor', packing: 'ZIP hazırlanıyor', saving: 'Diske kaydediliyor' }[bulkState.phase];
       const result = bulkState.status === 'complete' ? 'İndirme tamamlandı.' : bulkState.status === 'error' ? bulkState.error :
         bulkState.status === 'paused' && !active ? 'Duraklatıldı. Kaldığı yerden devam edebilirsiniz.' : stage || 'İndirme sürüyor';
-      zipMessage(`${result} ${fmtNum(bulkState.saved)}/${fmtNum(bulkState.total)} evrak kaydedildi · ${fmtNum(bulkState.inPart)} evrak bu parçada.`, bulkState.status === 'error');
+      zipMessage(`${result} ${fmtNum(bulkState.saved)}/${fmtNum(bulkState.total)} evrak kaydedildi · ${fmtNum(bulkState.inPart)} evrak bu parçada.${bulkAtlanan() ? ` ${bulkAtlanan()}` : ''}`, bulkState.status === 'error');
       const signature = `${bulkState.id}|${bulkState.saved}|${bulkState.partCount}|${bulkState.status}`;
       if (!active && signature !== bulkFinished) { bulkFinished = signature; bulkLoad(true); }
       zipSync();

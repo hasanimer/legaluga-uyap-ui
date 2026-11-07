@@ -170,12 +170,23 @@
       }
       viewerKeys(ev, box, done);
     };
+    // Ekran kapanınca süren işler de biter: kapatma ve UYAP'a geçiş onayında söylenir.
+    const devamEden = () => zipRun?.managed ? '\nParçalı indirme arka planda sürer; UYAP sekmesini açık tutun.' : zipRun || paketRun || bankRun || bankaOkuma || tebligatRead ? '\nDevam eden indirme, sorgu veya okuma da durdurulur.' : '';
     close.addEventListener('click', () => done());
+    // Ödeme ↗ / Evrak Gönder ↗: dosya UYAP'ta açılıp ilgili sekmeye geçilir (gotoTab). Süren iş varsa önce sorulur.
+    for (const b of uyapIslemleri ? uyapIslemleri.querySelectorAll('button') : []) b.addEventListener('click', () => {
+      if (closed) return;
+      const devam = devamEden();
+      if (devam && !confirm(`Dosya UYAP’ta açılacak ve bu ekran kapanacak.${devam}`)) return;
+      const sekme = b.getAttribute('data-uyap-sekme');
+      closeDosyaEkrani(false);
+      openFile(rec, false, false, { sekme });
+    });
     viewer.addEventListener('click', ev => {
       if (ev.target !== viewer || closed) return;
       ev.preventDefault();
       ev.stopPropagation();
-      const devam = zipRun?.managed ? '\nParçalı indirme arka planda sürer; UYAP sekmesini açık tutun.' : zipRun || paketRun || bankRun || bankaOkuma || tebligatRead ? '\nDevam eden indirme, sorgu veya okuma da durdurulur.' : '';
+      const devam = devamEden();
       if (confirm(`Dosya ekranını kapatmak istiyor musunuz?\nAçık evrak, okuma konumu ve bu ekrandaki geçici sonuçlar kapanır.${devam}`)) done();
     });
     document.addEventListener('keydown', onKey, true);

@@ -287,3 +287,18 @@ test('iş listeden kaldırılırsa bekleyen kontrolün geç hatası başka işin
   assert.equal(h.calls.filter(call => call[0] === 'resume').length, 1);
   h.api.destroy();
 });
+
+test('atlanan evrak sayısı ayrı not olarak görünür ve bildirilir; tamamlanan iş eksik diye işaretlenir', () => {
+  const state = job({ status: 'running', phase: 'fetching' }), h = harness([state]);
+  assert.equal(h.field('skipped').hidden, true);
+  h.update([{ ...state, saved: 300, partCount: 3, skipped: 2 }]);
+  assert.equal(h.field('skipped').hidden, false);
+  assert.match(h.field('skipped').textContent, /^2 evrak güvenle eşleştirilemediği için atlandı; ZIP içinde yerine “İNDİRİLEMEDİ” notu var\./);
+  assert.match(h.field('live').textContent, /2 evrak güvenle eşleştirilemediği için atlandı/);
+  h.update([{ ...state, status: 'complete', phase: 'idle', saved: 10840, partCount: 109, skipped: 2 }]);
+  assert.equal(h.field('status').textContent, 'Tamamlandı (eksik)');
+  assert.equal(h.field('skipped').hidden, false);
+  h.update([{ ...state, status: 'complete', phase: 'idle', saved: 10840, partCount: 109, skipped: 0 }]);
+  assert.equal(h.field('status').textContent, 'Tamamlandı'); assert.equal(h.field('skipped').hidden, true);
+  h.api.destroy();
+});

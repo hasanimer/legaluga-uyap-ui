@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "087594fdccb7a74ce2db99bc2f579c351a6e2b3812756360afeeebac54694e11"
+      "sha256": "32582b054a41ad8df7f9342d15dd82dfd345f8524a6eb32f3d9a2b6182c92988"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -228,7 +228,7 @@
     },
     {
       "path": "src/extension/indirme-panel.js",
-      "sha256": "647b0fb7729fe1d8834039fbb922da0344a9de90278f0f28bd3ae631ef12e8ba"
+      "sha256": "dda9f9d7fcbd9186db1e548f2481106b8a4b1306435084a3c044ed475a224425"
     },
     {
       "path": "src/extension/kunye-ayikla.js",
@@ -536,7 +536,7 @@
     },
     {
       "path": "src/fragments/common/009.js.part",
-      "sha256": "1641be3ae04cdf63657a2fd488c95fc0b48d9629d08723c321c6b24aeee35749"
+      "sha256": "a8285326b903f8ca030eaead0dcfeeaeb45e9cbcdc0e8901876f3a4d25b516fa"
     },
     {
       "path": "src/fragments/common/011.js.part",
@@ -548,11 +548,11 @@
     },
     {
       "path": "src/fragments/common/015.js.part",
-      "sha256": "8a28147f9f0c53322989a7708e8fbf7470ce9db44d68cd2dcbdfc9ae79c1d344"
+      "sha256": "3b7242ce075a76c7d47a7600c2a4a07a6b7277fe74b439499104668ab44b6573"
     },
     {
       "path": "src/fragments/content/001-bootstrap-shared-request-safety.js.part",
-      "sha256": "a13388eefff0c755ba77b58f9d233c8f730ae0b46e96a0a6a76bb6068f8b26d1"
+      "sha256": "7c327eaa273dd2db78cdb1022e09455bfb1d46c1105f386996927f1b8fd59cbd"
     },
     {
       "path": "src/fragments/content/003-bootstrap-shared-request-safety.js.part",
@@ -584,7 +584,7 @@
     },
     {
       "path": "src/fragments/content/017-native-window-navigation-and-identity-guards.js.part",
-      "sha256": "4750f2c50273597a39b3cc20d8ec0ba8f7c9728a787e315db69474547a55d122"
+      "sha256": "be16681e49a7dae1cad13bc689556405481a600f43bb7c5f246255dfc5d38a9b"
     },
     {
       "path": "src/fragments/content/019-native-window-navigation-and-identity-guards.js.part",
@@ -596,11 +596,11 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "31d80e4952d1a7eb728794ddefd6887beeb72e0f3501a0cd41953ee1d01207a4"
+      "sha256": "1787f19434df38b931112ece4f5abb6f71776f564624a17b665ac02714d4031c"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
-      "sha256": "64b5fda88a94b0f3316a52f5a053ed751b14b08a8d19a726ac164d6815b13e42"
+      "sha256": "b18250efb398907804bd0c95d8fe545e70c8799fbea05263717cbc6094b55f18"
     },
     {
       "path": "src/fragments/content/027-document-view-command-abort-guards.js.part",
@@ -616,7 +616,7 @@
     },
     {
       "path": "src/fragments/content/033-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "01070b8986a30e231000710f1b5114c121e7aca8b2e0a6f078755864aafe8b4e"
+      "sha256": "8644dc576402f2aecd44858895b6f7cc3c64006292e37bd5971d48894308d2d4"
     },
     {
       "path": "src/fragments/content/035-overview-safahat-notes-and-safe-document-rendering.js.part",
@@ -628,7 +628,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "731f7c4dff46fbc540189954f11432483a6974d1b55a7e8c49fd4509c05f7cbd"
+      "sha256": "ead0e55540877b6191f60356c7ebbf4fe224a8c505814a63def1d32d5720508a"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -800,7 +800,7 @@
     },
     {
       "path": "src/fragments/content/119-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "7139df01bf61546da7b65b522829eb7701e792528ff38808dd44b0203b257ada"
+      "sha256": "2ea8c20cd81e339d2c507fb5f2e9e79d04a959545cba7445e4f240d64354f095"
     },
     {
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",
@@ -848,7 +848,7 @@
     },
     {
       "path": "tests/indirme-panel.test.js",
-      "sha256": "50aee8aae70c537a3a5d80fc46efc67647c0e0b0f3cafb56f33cc0c5de5cfb28"
+      "sha256": "37e8ab1b309f88dce2d2233d6e88a6db277e43952434f53e82de9b9693c5098c"
     },
     {
       "path": "tests/onboarding-ui.test.js",

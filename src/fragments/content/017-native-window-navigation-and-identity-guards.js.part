@@ -286,28 +286,80 @@
     }
   }
 
-  // Dosya penceresinde istenen sekmeye (Evrak / Taraf bilgileri) geç; sekme yoksa hiçbir şeye basma.
+  // Dosya penceresinde geçilebilen sekmeler. Yalnız bu tablodaki değerler işlenir; tanınmayan değer hiçbir şeye bastırmaz.
+  // Evrak birebir eşleşir: "Evrak" sekmesi olmayan dosyada adı "evrak" ile başlayan "Evrak Gönderme" formuna basılmaz.
+  // Ödeme ve Evrak Gönder yalnız sekme ve gezinme ögelerinde aranır; formdaki "Öde", "Gönder" gibi düğmelere hiç basılmaz.
+  // Bu ikisinde etiketin noktalaması boşluğa indirilir: "Harç/Masraf Ödeme" → "harc masraf odeme".
+  const SEKME_GEZINME = '[role="tab"], .dx-tab, .nav-link, .nav-item a, [role="menuitem"], .dx-menu-item, .dx-treeview-item, .dx-list-item';
+  const SEKME_ESKI = '[role="tab"], .dx-tab, .nav-link, .nav-item a, button';
+  // Evrak Gönder bazı pencerelerde sekme değil başlık şeridindeki düğmedir: yalnız etiketi tam "Evrak Gönder(me)" olan,
+  // bu pencerenin başlığında ya da sekme şeridinde duran ve hiçbir form, tablo, sekme içeriği ya da alt pencere içinde
+  // olmayan düğme veya bağlantı kabul edilir.
+  const SEKME_SERIDI = '.dx-popup-title, [role="tablist"], .dx-tabs, .nav-tabs';
+  const SEKME_ICERIGI = 'form, .dx-form, .dx-field, .dx-datagrid, [role="tabpanel"], .dx-multiview, .dx-tabpanel-container, .tab-content, .dx-popup-bottom';
+  // Ödeme ve Evrak Gönder aramasında ağaç, liste ve menü öğeleri sekme içeriğindeyse (evrak ağacı, form listesi) sayılmaz;
+  // içerikte yalnızca gerçek sekmeler (iç içe sekme şeridi) kabul edilir.
+  const icerikte = e => !e.matches('[role="tab"], .dx-tab, .nav-link, .nav-item a') && !!e.closest(SEKME_ICERIGI);
+  const seritte = (e, pop) => {
+    const s = e.closest(SEKME_SERIDI);
+    return !!s && s.closest('.dosya-sorgula-popup .dx-overlay-content') === pop && !e.closest(SEKME_ICERIGI);
+  };
+  const odemeEtiketi = t => {
+    if (t.includes('odeme emri')) return false;   // icra belgesinin adı; ödeme ekranı değildir
+    const w = t.split(' ');
+    return w.includes('odeme') || (/^(harc|masraf) /.test(t) && w.some(x => x.startsWith('ode')));
+  };
+  const UYAP_SEKMELERI = {
+    evrak: { ad: 'Evrak', secici: SEKME_ESKI, sure: 5000, esles: ham => ham === 'evrak' },
+    taraf: { ad: 'Taraf bilgileri', secici: SEKME_ESKI, sure: 5000, esles: ham => ham.startsWith('taraf bilgi') || ham.startsWith('taraflar') },
+    odeme: { ad: 'Ödeme', secici: SEKME_GEZINME, sure: 8000, bildir: true, esles: (ham, sade) => odemeEtiketi(sade) },
+    gonder: { ad: 'Evrak Gönder', secici: SEKME_GEZINME, sure: 8000, bildir: true, esles: (ham, sade) => sade.startsWith('evrak gonder'),
+      serit: sade => sade === 'evrak gonder' || sade === 'evrak gonderme' }
+  };
+  const sekmeEtiketi = e => {
+    const ham = norm(e.innerText.trim());
+    return [ham, ham.replace(/[^a-z0-9]+/g, ' ').trim()];
+  };
+  const sekmeSecili = tab => [tab, tab.closest('.dx-tab, [role="tab"]')].filter(Boolean)
+    .some(x => x.getAttribute('aria-selected') === 'true' || x.classList.contains('dx-tab-selected') || x.classList.contains('active'));
+
+  // Dosya penceresinde istenen sekmeye geçilir; sekme yoksa hiçbir şeye basılmaz. Yalnız sekmeye basılır: ödeme, gönderme
+  // ya da onay gibi işlemler avukata bırakılır. Açıkça istenen Ödeme / Evrak Gönder sekmesi bulunamazsa söylenir ve
+  // pencerede görünen sekme adları (yalnız arayüz metni) günlüğe yazılır. Dönüş: 'gecildi', 'yok' ya da 'kesildi'.
   async function gotoTab(rec, seq, sekme) {
     const { uhdPrefs } = sekme ? {} : await chrome.storage.local.get('uhdPrefs');
     const want = sekme || (uhdPrefs && uhdPrefs.acilisSekme);
-    if (!want || want === 'yok') return;
-    if (want === 'taraf' && rec.yargiTuru === CBS.kod) return;
-    const words = want === 'evrak' ? ['evrak'] : ['taraf bilgi', 'taraflar'];
+    if (!want || want === 'yok') return 'yok';
+    const tanim = typeof want === 'string' && Object.hasOwn(UYAP_SEKMELERI, want) ? UYAP_SEKMELERI[want] : null;
+    if (!tanim) { log('Tanınmayan sekme isteği; hiçbir şeye basılmadı:', String(want).slice(0, 20)); return 'yok'; }
+    if (want === 'taraf' && rec.yargiTuru === CBS.kod) return 'yok';
+    const pencere = () => fileWindowFor(rec) || fileWindows().pop();
     const find = () => {
       if (seq !== openSeq) throw new Superseded();   // bu arada başka bir dosya istendi
-      const pop = fileWindowFor(rec) || fileWindows().pop();
+      const pop = pencere();
       if (!pop) return null;
-      // "Evrak" sekmesi olmayan dosyada adı "evrak" ile başlayan "Evrak Gönderme" formuna basılmasın.
-      const ok = t => want === 'evrak' ? t === 'evrak' : words.some(w => t.startsWith(w));
-      return [...pop.querySelectorAll('[role="tab"], .dx-tab, .nav-link, .nav-item a, button')]
-        .find(e => visible(e) && e.innerText.trim().length < 40 && ok(norm(e.innerText.trim()))) || null;
+      const uygun = e => visible(e) && e.innerText.trim().length < 40;
+      return [...pop.querySelectorAll(tanim.secici)].find(e => uygun(e) && !(tanim.bildir && icerikte(e)) && tanim.esles(...sekmeEtiketi(e)))
+        || (tanim.serit && [...pop.querySelectorAll('button, a')].find(e => uygun(e) && tanim.serit(sekmeEtiketi(e)[1]) && seritte(e, pop)))
+        || null;
     };
     try {
-      const tab = await waitFor(find, 5000, 'yok');
+      const tab = await waitFor(find, tanim.sure, 'yok');
       log('Sekmeye geçiliyor:', tab.innerText.trim());
       tab.click();
+      // Seçimin görünmesi kısa süre beklenir; görünmezse yeniden basılmaz.
+      await soft(waitFor(() => { if (seq !== openSeq) throw new Superseded(); return sekmeSecili(tab); }, 1500));
+      return 'gecildi';
     } catch (e) {
-      if (!(e instanceof Superseded)) log('İstenen sekme bu dosyada yok; hiçbir şeye basılmadı.');
+      if (e instanceof Superseded) return 'kesildi';
+      if (seq !== openSeq) return 'kesildi';
+      const pop = pencere();
+      if (!tanim.bildir || !sekme || !pop) { log('İstenen sekme bu dosyada yok; hiçbir şeye basılmadı.'); return 'yok'; }
+      const adlar = [...pop.querySelectorAll(SEKME_GEZINME)].filter(x => visible(x) && !icerikte(x)).map(x => x.innerText.trim().slice(0, 60)).filter(Boolean).slice(0, 20);
+      log(`“${tanim.ad}” sekmesi bulunamadı; hiçbir şeye basılmadı. Penceredeki sekmeler:`, adlar);
+      toast(`“${tanim.ad}” sekmesi bu dosyanın UYAP penceresinde bulunamadı. Dosya UYAP’ta açık; ilgili sekmeyi pencereden seçebilirsiniz.`, 'warn', 8000, null,
+        { id: 'acma', title: `${rec.dosyaNo} · ${cleanBirim(rec.birimAdi)}` });
+      return 'yok';
     }
   }
 

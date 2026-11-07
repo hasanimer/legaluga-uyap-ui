@@ -73,7 +73,10 @@
     container.append(root);
     const announce = text => { if (!destroyed && text) live.textContent = text; };
     const pausing = state => state.status === 'paused' && state.phase !== 'idle' && !state.persistentPending;
-    const phaseText = state => pausing(state) ? 'Duraklatılıyor…' : state.status === 'running' || state.status === 'queued' ? phases[state.phase] || labels[state.status] : labels[state.status] || 'Durum bekleniyor';
+    const phaseText = state => pausing(state) ? 'Duraklatılıyor…' : state.status === 'running' || state.status === 'queued' ? phases[state.phase] || labels[state.status]
+      : state.status === 'complete' && number(state.skipped) ? 'Tamamlandı (eksik)' : labels[state.status] || 'Durum bekleniyor';
+    // Motor, taze listede kimliği kesin doğrulanamayan evrakı yanlış belge indirmemek için atlar ve yerine not koyar.
+    const skippedText = state => number(state.skipped) ? `${fmt(state.skipped)} evrak güvenle eşleştirilemediği için atlandı; ZIP içinde yerine “İNDİRİLEMEDİ” notu var. Bu evrakları UYAP’ta elle açabilirsiniz.` : '';
     const stateError = state => literal(state.error, 400);
 
     function createRow(fileKey) {
@@ -90,6 +93,7 @@
       const duration = el('span', data('elapsed'));
       const last = el('span', data('last'));
       const current = el('p', data('current', { class: 'bdp-current' }));
+      const skipped = el('p', data('skipped', { class: 'bdp-current', hidden: true }));
       const error = el('p', data('error', { class: 'bdp-error', hidden: true }));
       const control = el('button', data('control', { type: 'button' }));
       const open = el('button', data('open', { type: 'button', hidden: typeof openFile !== 'function' }), 'Dosyayı aç');
@@ -97,9 +101,9 @@
       const card = el('div', data('job', { class: 'bdp-card', role: 'listitem', 'data-file-key': fileKey, 'aria-labelledby': titleId }),
         el('div', { class: 'bdp-top' }, el('div', { class: 'bdp-file' }, title, court), status),
         el('div', { class: 'bdp-saved' }, saved, percent), progress,
-        el('div', { class: 'bdp-meta' }, parts, received, measured, duration, last), current, error,
+        el('div', { class: 'bdp-meta' }, parts, received, measured, duration, last), current, skipped, error,
         el('div', { class: 'bdp-actions' }, control, open, folder));
-      const row = { card, title, court, status, saved, percent, progress, parts, received, measured, duration, last, current, error,
+      const row = { card, title, court, status, saved, percent, progress, parts, received, measured, duration, last, current, skipped, error,
         control, open, folder, state: null, pending: null, issue: '', stamp: '', alive: true };
       const call = async (name, fn) => {
         if (destroyed || !row.alive || row.pending?.name === name) return;
@@ -160,6 +164,8 @@
       const current = literal(state.currentTitle);
       row.current.hidden = !current || !['running', 'queued'].includes(state.status);
       row.current.textContent = current ? `Evrak: ${current}` : '';
+      row.skipped.textContent = skippedText(state);
+      row.skipped.hidden = !row.skipped.textContent;
       const message = row.issue || stateError(state);
       row.error.hidden = !message;
       row.error.textContent = message;
@@ -189,12 +195,12 @@
         if (state.status === 'queued') queued++;
         let row = rows.get(state.fileKey);
         if (!row) { row = createRow(state.fileKey); rows.set(state.fileKey, row); }
-        const stamp = JSON.stringify([state.status, state.phase, number(state.partCount), stateError(state)]);
+        const stamp = JSON.stringify([state.status, state.phase, number(state.partCount), stateError(state), number(state.skipped)]);
         const previous = row.state;
         row.state = state;
         if (previous && previous.status !== state.status && ['running', 'queued', 'complete'].includes(state.status)) row.issue = '';
         drawRow(row);
-        if (row.stamp && row.stamp !== stamp) announcements.push(`${row.title.textContent}: ${phaseText(state)}. ${fmt(state.saved)} / ${fmt(state.total)} evrak kaydedildi.${stateError(state) ? ' ' + stateError(state) : ''}`);
+        if (row.stamp && row.stamp !== stamp) announcements.push(`${row.title.textContent}: ${phaseText(state)}. ${fmt(state.saved)} / ${fmt(state.total)} evrak kaydedildi.${skippedText(state) ? ' ' + skippedText(state) : ''}${stateError(state) ? ' ' + stateError(state) : ''}`);
         row.stamp = stamp;
       }
       for (const [fileKey, row] of rows) if (!present.has(fileKey)) {
