@@ -148,7 +148,7 @@
     },
     {
       "path": "src/extension/atif-ocr-worker.js",
-      "sha256": "0b047d51b9959946fbf4f853037fec63a6ce45f6ecf6a57e1ac0a4dc90e33395"
+      "sha256": "294987e6400bd1cbdf5397aa2aedf1fc51ae7e94e268cad8bf52f49684fd393d"
     },
     {
       "path": "src/extension/atif-paneli.js",
@@ -236,7 +236,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "2831743e6c56e5cbf47735e654b002bb35fc27f0737f8354559435d4d5dc15e8"
+      "sha256": "4a4a2838ad67d2d7cc822ca8bc39d1b2c8157d2030ebcdcc9cf0e6f8bfd47649"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -833,6 +833,10 @@
     {
       "path": "src/fragments/content/135-session-protection-lifecycle-and-visible-safety-gates.js.part",
       "sha256": "ad2e4665edd15697ce833595363eb113a251101c67fa4df34844819f0be4287c"
+    },
+    {
+      "path": "tests/atif-ocr-worker.test.js",
+      "sha256": "ef512eddef07094c45f28ec66bf53fddfd4a0ccf0e0e4f90ee257f6acd4e1ebb"
     },
     {
       "path": "tests/crypto-invariants.test.js",

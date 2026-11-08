@@ -27,7 +27,7 @@
     return Number.isSafeInteger(n) && n > 0 && n <= SAYFA ? n : SAYFA;
   }
   function yerel(ad) {
-    const url = chrome.runtime.getURL(ad);
+    const url = new URL(ad, self.location.href).href;
     if (!url.startsWith('chrome-extension://')) throw new Error('yerel');
     return url;
   }
@@ -114,7 +114,15 @@
   }
 
   async function taniciAc() {
+    // Tesseract yol çözümü için geçici window taklidi. Kalıcı bırakılırsa pdf.js çizimi
+    // window.requestAnimationFrame arar ve metinsiz PDF OCR'ı düşer; bu yüzden geri alınır.
+    const oncekiPencere = globalThis.window;
     globalThis.window = { location: { href: self.location.href } };
+    try { return await taniciKur(); }
+    finally { globalThis.window = oncekiPencere; }
+  }
+
+  async function taniciKur() {
     importScripts('vendor/tesseract/tesseract.min.js');
     const Tesseract = globalThis.Tesseract;
     const kok = yerel('vendor/tesseract/');
