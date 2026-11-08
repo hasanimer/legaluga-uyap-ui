@@ -159,8 +159,8 @@
       "source": "background.js",
       "order": 23,
       "path": "src/fragments/background/023.js.part",
-      "sha256": "6b8977ef938d5f68515b1d367944bdf3215da71d5b3a627116df372a4ae1bf78",
-      "bytes": 5365,
+      "sha256": "d4afb117b0b2d84a57f949e867c2dfcc28d905964beedcbdaba18110ca679f83",
+      "bytes": 5585,
       "purpose": "Generic keyboard-shortcut reporting, panel toggle and popup fallback UI"
     },
     {

@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "af02d06f6e7685512dbc40f8d7d7d6bb0231d4a9d252e1444871dd28a2258b1a"
+      "sha256": "559bd4e5615b421e73fa448bbe29567d956dc5d8277476d9c7cc2cccc14165fb"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -472,7 +472,7 @@
     },
     {
       "path": "src/fragments/background/023.js.part",
-      "sha256": "6b8977ef938d5f68515b1d367944bdf3215da71d5b3a627116df372a4ae1bf78"
+      "sha256": "d4afb117b0b2d84a57f949e867c2dfcc28d905964beedcbdaba18110ca679f83"
     },
     {
       "path": "src/fragments/background/025.js.part",
