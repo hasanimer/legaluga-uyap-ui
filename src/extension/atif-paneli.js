@@ -667,12 +667,13 @@
         el('span', { class: 'ek-atif-havuz-ad', 'aria-hidden': 'true' }, HAVUZ_YAZI[hukum]),
         el('span', { class: 'ek-atif-havuz-not' }, ipucu));
     }
-    function havuzSatirlariniBoya() {
+    function havuzSatirlariniBoya(gecici = null) {
       satirlar.forEach((s, i) => {
         const rozet = s.querySelector('.ek-atif-havuz');
         const d = havuzYuku(kunyeler[i]);
         if (!d) { havuzBoya(rozet, { hukum: 'denetlenemedi' }); return; }
-        const kayit = havuzOnbellek.get(JSON.stringify(d));
+        const anahtar = JSON.stringify(d);
+        const kayit = havuzOnbellek.get(anahtar) || (gecici && gecici.get(anahtar));
         if (kayit) havuzBoya(rozet, kayit);
       });
     }
@@ -681,14 +682,19 @@
       vazgec(havuzZaman);
       havuzZaman = null;
     }
+    // Geçici hata (kanal, süre, ok:false ya da arka planın veri-yok yanıtı) önbelleğe girmez: rozet Denetlenemedi
+    // gösterilir, panel yeniden açılınca künye yeniden sorulur. Kalıcı hükümler aynı ekranda bir kez sorulur.
     function havuzUygula(giden, yanit) {
       const liste = yanit && yanit.ok === true && Array.isArray(yanit.sonuclar) ? yanit.sonuclar : null;
+      const gecici = new Map();
       giden.forEach((b, i) => {
         havuzUcus.delete(b.anahtar);
         const ham = liste && liste[i] && typeof liste[i] === 'object' ? liste[i] : null;
-        havuzOnbellek.set(b.anahtar, { hukum: havuzHukmu(ham), kontroller: ham && ham.kontroller });
+        const kayit = { hukum: havuzHukmu(ham), kontroller: ham && ham.kontroller };
+        if (!ham || (ham.havuz && ham.havuz.durum === 'veri-yok' && ham.havuz.kalici !== true)) gecici.set(b.anahtar, kayit);
+        else havuzOnbellek.set(b.anahtar, kayit);
       });
-      havuzSatirlariniBoya();
+      havuzSatirlariniBoya(gecici);
     }
     function havuzIste() {
       if (!acik) return;
