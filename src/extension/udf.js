@@ -36,10 +36,14 @@
     resimPiksel: 40e6,
     resimToplamPiksel: 100e6,
     tuvalPiksel: 8e6,         // bir resmin çizildiği tuvalin en çok piksel sayısı
-    sure: 8000,               // okuma ve model kurma için ms
+    sure: 8000,               // okuma ve model kurma için ms (önizleme)
+    sureUst: 120000,          // çağıranın verebileceği en uzun okuma süresi (ms)
     sutun: 64,
     kaplama: 64
   });
+  // Durak yoksa sekmenin gittiği varsayılan ızgara (pt). PDF çizicisindeki (durusma-paketi-udf.js) değerle aynı
+  // tutulur; Swing'in kendi varsayılanı 72'dir, Editör ölçümüyle iki yerde birlikte güncellenecek.
+  const VARSAYILAN_SEKME_PT = 36;
 
   const ILETI = {
     zip: 'Evrak açılamadı: dosya bozuk ya da UDF değil.',
@@ -132,6 +136,7 @@
       cikti = ham.slice();
     } else if (g.yontem === 8) {
       // Açılan bayt sayılır: yalancı başlıkta beyanı ya da üst sınırı aşan akış durdurulur (zip bombası).
+      // Üst sınırı aşan beyan yukarıda reddedildi; beyanı aşan akış bozuk girdidir, boyut değil zip hatasıdır.
       const sinir = Math.min(g.acik, ust);
       const okuyucu = new Blob([ham]).stream().pipeThrough(new DecompressionStream('deflate-raw')).getReader();
       const parcalar = [];
@@ -144,7 +149,7 @@
           toplam += value.length;
           if (toplam > sinir) {
             okuyucu.cancel().catch(() => {});
-            throw hata('boyut', 'açılan veri beyanı aştı');
+            throw hata('zip', 'açılan veri beyanı aştı');
           }
           parcalar.push(value);
         }
@@ -206,31 +211,36 @@
 
   // Görüntüleyicinin esnek çözümlemesi korunur; PDF dışa aktarma için kaybolabilecek
   // özellikleri ayrı tanıyla bildirir. Dar profil dışındaki XML aynen reddedilir.
-  function paketProfili(kok, signal) {
+  // Süre, oku'nun başlangıcından sayılır: model ve profil aynı okuma bütçesini paylaşır.
+  function paketProfili(kok, signal, { baslangic = performance.now(), sure = SINIR.sure } = {}) {
     const issues = []; let unsupported = 0;
-    // Tanılarda belge metni/öznitelik değeri tutulmaz; yalnız özellik ve yapısal konum vardır.
-    const issue = (code, path, message) => {
+    // Tanılarda belge metni/öznitelik değeri tutulmaz; yalnız özellik, yapısal konum ve sabit sözlükten neden vardır.
+    const issue = (code, path, message, neden) => {
       unsupported++;
-      if (issues.length < 20) issues.push({ code, path, message });
+      if (issues.length < 20) issues.push({ code, path, message, neden });
     };
     const result = () => ({ complete: unsupported === 0, unsupported, issues });
     if (ad(kok) !== 'template') {
-      issue('format-root', 'document', 'UDF belge yapısı kurulu Editör biçimiyle uyuşmuyor.'); return result();
+      issue('format-root', 'document', 'UDF belge yapısı kurulu Editör biçimiyle uyuşmuyor.', 'format'); return result();
     }
     const font = ['family', 'size', 'bold', 'italic', 'underline', 'strikethrough', 'foreground', 'background', 'resolver', 'style'];
     const attrs = {
       template: ['format_id'], properties: [], elements: ['resolver'], styles: [],
       pageformat: ['mediasizename', 'paperorientation', 'leftmargin', 'rightmargin', 'topmargin', 'bottommargin', 'headerfoffset', 'footerfoffset'],
-      paragraph: [...font, 'alignment', 'leftindent', 'rightindent', 'firstlineindent', 'spaceabove', 'spacebefore', 'spacebelow', 'spaceafter', 'linespacing', 'tabset'],
-      content: [...font, 'startoffset', 'length'],
+      paragraph: [...font, 'alignment', 'leftindent', 'rightindent', 'firstlineindent', 'spaceabove', 'spacebefore', 'spacebelow', 'spaceafter', 'linespacing', 'tabset',
+        'bulleted', 'numbered', 'listid', 'listlevel', 'bullettype', 'numbertype'],
+      content: [...font, 'startoffset', 'length'], tab: [...font, 'startoffset', 'length'],
       style: [...font, 'name', 'parent', 'description'],
-      pagebreak: [], br: [], linebreak: [], newline: [], space: []
+      pagebreak: ['startoffset', 'length'], 'page-break': ['startoffset', 'length'], br: [], linebreak: [], newline: [], space: []
     };
+    // Havuz, gövde, özellik ve stil bölümleri yalnız kökte ve en çok birer kez bulunur; modelKur yalnız ilkini okur.
+    // İkinci ya da başka yere konmuş havuzdaki metin hiçbir denetime girmeden düşmesin; satır içi content paragraftadır.
+    const BOLUMLER = ['content', 'elements', 'properties', 'styles'], kokBolumleri = new Set();
     const styles = new Map();
     for (const node of cocuk(kok, 'styles')?.children || []) {
       const name = String(oz(node, 'name') || '').toLowerCase();
       if (!name || styles.has(name) || styles.size >= SINIR.stil) {
-        issue('style-definition', 'document/styles', 'UDF yazı stili tanımı eksik, yinelenmiş veya sınırı aşıyor.'); return result();
+        issue('style-definition', 'document/styles', 'UDF yazı stili tanımı eksik, yinelenmiş veya sınırı aşıyor.', 'style'); return result();
       }
       styles.set(name, node);
     }
@@ -238,7 +248,7 @@
       const chain = new Set(); let current = node;
       while (current) {
         if (chain.has(current) || chain.size >= SINIR.stilZinciri) {
-          issue('style-cycle', 'document/styles', 'UDF yazı stilleri döngülü veya iç içe stil sınırını aşıyor.'); return result();
+          issue('style-cycle', 'document/styles', 'UDF yazı stilleri döngülü veya iç içe stil sınırını aşıyor.', 'style'); return result();
         }
         chain.add(current);
         current = styles.get(String(oz(current, 'resolver') || oz(current, 'parent') || '').toLowerCase());
@@ -246,85 +256,118 @@
     }
     const pageSize = sayfaAyari(cocuk(kok, 'properties'));
     const textWidth = pageSize.en - pageSize.sol - pageSize.sag;
-    const started = performance.now();
-    const pending = [{ node: kok, path: 'document', depth: 0 }]; let seen = 0;
+    // TabSet: virgüllü "konum[:hiza[:dolgu]]" listesi, en çok 32 durak; hiza ve dolgu Swing TabStop sabitleridir (0-5).
+    const duraklarGecerli = deger => {
+      const girdiler = String(deger).split(',').map(x => x.trim()).filter(Boolean);
+      return girdiler.length <= 32 && girdiler.every(girdi => {
+        const [konum, ...ek] = girdi.split(':'), n = sayi(konum);
+        return ek.length <= 2 && Number.isFinite(n) && n >= 0 && n <= textWidth &&
+          ek.every(v => { const k = tamsayi(v); return Number.isInteger(k) && k >= 0 && k <= 5; });
+      });
+    };
+    // NumberType dilbilgisi: tanınmayan tür yanlış numara üretmesin diye belge reddedilir; NumberType yoksa "1." olur.
+    const numaraTuru = /^NUMBER_TYPE_(NUMBER|CHAR_(SMALL|CAPITAL|BIG)|ROMAN_(SMALL|CAPITAL|BIG))_(DOT|PARANTHESE|PARENTHESE|TRE)$/;
+    const pending = [{ node: kok, path: 'document', depth: 0, ust: null }]; let seen = 0;
     while (pending.length) {
-      const { node, path, depth } = pending.pop();
+      const { node, path, depth, ust } = pending.pop();
       if (depth > SINIR.derinlik) {
-        issue('profile-depth', path, 'UDF özellik denetimi iç içe öğe sınırını aştı.'); return result();
+        issue('profile-depth', path, 'UDF özellik denetimi iç içe öğe sınırını aştı.', 'limit'); return result();
       }
       if (++seen > SINIR.gezinti) {
-        issue('profile-limit', path, 'UDF özellik denetimi öğe sınırını aştı.'); return result();
+        issue('profile-limit', path, 'UDF özellik denetimi öğe sınırını aştı.', 'limit'); return result();
       }
       if (seen % 512 === 0) {
         iptalDenetle(signal);
-        if (performance.now() - started > SINIR.sure) {
-          issue('profile-timeout', path, 'UDF özellik denetimi süre sınırını aştı.'); return result();
+        if (performance.now() - baslangic > sure) {
+          issue('profile-timeout', path, 'UDF özellik denetimi süre sınırını aştı.', 'limit'); return result();
         }
       }
       const tag = ad(node), allowed = attrs[tag];
       if (!allowed) {
         const names = { table: 'Tablo', image: 'Resim', header: 'Üst bilgi', footer: 'Alt bilgi',
-          bgimage: 'Filigran', data: 'Şablon verisi', field: 'Şablon alanı', tab: 'Sekme' };
+          bgimage: 'Filigran', data: 'Şablon verisi', field: 'Şablon alanı' };
+        const nedenler = { table: 'table', image: 'image', header: 'header', footer: 'footer',
+          bgimage: 'watermark', data: 'template', field: 'template' };
         issue('element', path, names[tag] ? `${names[tag]} düzeni bu UDF profilinde henüz desteklenmiyor.` :
-          'UDF desteklenmeyen bir belge öğesi içeriyor.');
+          'UDF desteklenmeyen bir belge öğesi içeriyor.', Object.hasOwn(nedenler, tag) ? nedenler[tag] : 'element');
         // Bu özellik zaten belgeyi bloke eder; altındaki bilinmeyenleri çoğaltma.
         continue;
       }
+      if (BOLUMLER.includes(tag) && !(tag === 'content' && ust === 'paragraph')) {
+        if (ust !== 'template' || kokBolumleri.has(tag)) {
+          issue('format-structure', path, 'UDF yinelenmiş ya da yeri yanlış bir içerik, gövde, özellik veya stil bölümü içeriyor.', 'uncovered-text');
+          continue;
+        }
+        kokBolumleri.add(tag);
+      }
+      // "default" Swing arayüzünün stilidir; stilCozucu onu metne uygulamaz. Editör'ün bu stile yazdığı
+      // FONT_ATTRIBUTE_KEY gibi bilinmeyen öznitelikler çizimi etkilemez; başka stilde yine sorun sayılır.
+      const arayuzStili = tag === 'style' && String(oz(node, 'name') || '').toLowerCase() === 'default';
       for (const attribute of node.attributes || []) {
         const key = attribute.localName.toLowerCase();
         if (!allowed?.includes(key)) {
           // Destek dışı öğenin alt özelliklerini ayrıca saymak aynı nedeni gereksiz çoğaltır.
-          if (allowed) issue('attribute', path, 'UDF desteklenmeyen bir biçim özelliği içeriyor.');
+          if (allowed && !arayuzStili) issue('attribute', path, 'UDF desteklenmeyen bir biçim özelliği içeriyor.', 'attribute');
           continue;
         }
+        // Aile adı çizicideki gibi en çok 128 karakterdir; uzun ad worker'da her parçada yeniden işlenmesin.
+        if (key === 'family' && String(attribute.value).length > 128)
+          issue('font-family', path, 'UDF yazı tipi adı desteklenen uzunluğu aşıyor.', 'font-style');
         if (key === 'size' && (!Number.isFinite(sayi(attribute.value)) || sayi(attribute.value) < 4 || sayi(attribute.value) > 96))
-          issue('font-size', path, 'UDF yazı boyutu geçersiz veya desteklenen aralığın dışında.');
+          issue('font-size', path, 'UDF yazı boyutu geçersiz veya desteklenen aralığın dışında.', 'font-style');
         if (['bold', 'italic', 'underline', 'strikethrough'].includes(key) && mantik(attribute.value) === undefined)
-          issue('font-style', path, 'UDF yazı biçimi değeri geçersiz.');
+          issue('font-style', path, 'UDF yazı biçimi değeri geçersiz.', 'font-style');
         if (['resolver', 'style', 'parent'].includes(key) && attribute.value &&
-            !styles.has(attribute.value.toLowerCase())) issue('missing-style', path, 'UDF tanımlanmamış bir yazı stiline başvuruyor.');
-        if (key === 'background') issue('color', path, 'Yazı zemini bu UDF profilinde henüz desteklenmiyor.');
-        if (key === 'foreground') {
+            !styles.has(attribute.value.toLowerCase())) issue('missing-style', path, 'UDF tanımlanmamış bir yazı stiline başvuruyor.', 'style');
+        // Zemin de yazı rengi gibi doğrulanır: alfa 255 olmalı; yalnız geçersiz değer sorundur.
+        if (key === 'foreground' || key === 'background') {
           const n = tamsayi(attribute.value);
           if (!Number.isFinite(n) || n < -2147483648 || n > 4294967295 || (n >>> 24) !== 255)
-            issue('color', path, 'UDF yazı rengi geçersiz veya alfa bilgisi doğrulanmadı.');
+            issue('color', path, key === 'foreground' ? 'UDF yazı rengi geçersiz veya alfa bilgisi doğrulanmadı.' :
+              'UDF yazı zemini rengi geçersiz veya alfa bilgisi doğrulanmadı.', key === 'foreground' ? 'color' : 'background');
         }
+        if ((key === 'bulleted' || key === 'numbered') && mantik(attribute.value) === undefined)
+          issue('list-type', path, 'UDF liste özelliği geçersiz.', 'list');
+        if (key === 'listlevel' && !(Number.isInteger(tamsayi(attribute.value)) && tamsayi(attribute.value) >= 0 && tamsayi(attribute.value) <= 8))
+          issue('list-type', path, 'UDF liste düzeyi geçersiz veya desteklenen aralığın dışında.', 'list');
+        if (key === 'numbertype' && !numaraTuru.test(String(attribute.value).trim().toUpperCase()))
+          issue('list-type', path, 'UDF numara türü henüz doğrulanmadı.', 'list');
         if (['leftindent', 'rightindent'].includes(key) &&
             (!Number.isFinite(sayi(attribute.value)) || sayi(attribute.value) < 0 || sayi(attribute.value) > textWidth * 0.8))
-          issue('paragraph-indent', path, 'UDF girintisi geçersiz veya desteklenen aralığın dışında.');
+          issue('paragraph-indent', path, 'UDF girintisi geçersiz veya desteklenen aralığın dışında.', 'paragraph');
         if (key === 'firstlineindent' && (!Number.isFinite(sayi(attribute.value)) ||
             sayi(attribute.value) < -(sayi(oz(node, 'LeftIndent')) || 0) || sayi(attribute.value) > textWidth * 0.8))
-          issue('paragraph-indent', path, 'UDF ilk satır girintisi geçersiz veya desteklenen aralığın dışında.');
+          issue('paragraph-indent', path, 'UDF ilk satır girintisi geçersiz veya desteklenen aralığın dışında.', 'paragraph');
         if (key === 'linespacing' && (!Number.isFinite(sayi(attribute.value)) || sayi(attribute.value) < 0 || sayi(attribute.value) > 3))
-          issue('paragraph-spacing', path, 'UDF satır aralığı geçersiz veya desteklenen aralığın dışında.');
-        if (key === 'tabset' && attribute.value.trim()) issue('tab-stop', path, 'Sekme durakları bu UDF profilinde henüz desteklenmiyor.');
+          issue('paragraph-spacing', path, 'UDF satır aralığı geçersiz veya desteklenen aralığın dışında.', 'paragraph');
+        if (key === 'tabset' && !duraklarGecerli(attribute.value))
+          issue('tab-stop', path, 'UDF sekme durakları geçersiz veya desteklenen aralığın dışında.', 'tab-stop');
         if (['spaceabove', 'spacebefore', 'spacebelow', 'spaceafter'].includes(key) &&
             (!Number.isFinite(sayi(attribute.value)) || sayi(attribute.value) < 0 || sayi(attribute.value) > 144))
-          issue('paragraph-spacing', path, 'UDF paragraf boşluğu geçersiz veya desteklenen aralığın dışında.');
+          issue('paragraph-spacing', path, 'UDF paragraf boşluğu geçersiz veya desteklenen aralığın dışında.', 'paragraph');
       }
       if (tag === 'template' && oz(node, 'format_id') !== '1.8')
-        issue('format-version', path, 'UDF biçim sürümü henüz doğrulanmadı.');
+        issue('format-version', path, 'UDF biçim sürümü henüz doğrulanmadı.', 'format');
       if (tag === 'elements' && oz(node, 'resolver') && oz(node, 'resolver').toLowerCase() !== 'hvl-default')
-        issue('body-style', path, 'UDF gövde stilinin yerleşimi henüz doğrulanmadı.');
+        issue('body-style', path, 'UDF gövde stilinin yerleşimi henüz doğrulanmadı.', 'style');
       if (ad(node) === 'pageformat') {
         if (!['1', '2', '3', 'A4', 'LETTER', 'LEGAL'].includes(String(oz(node, 'mediaSizeName') || '1').toUpperCase()))
-          issue('page-size', path, 'UDF kâğıt ölçüsü desteklenmiyor.');
+          issue('page-size', path, 'UDF kâğıt ölçüsü desteklenmiyor.', 'page');
         if (!['1', '2', 'portrait', 'landscape'].includes(String(oz(node, 'paperOrientation') || '1').toLowerCase()))
-          issue('page-orientation', path, 'UDF kâğıt yönü geçersiz.');
+          issue('page-orientation', path, 'UDF kâğıt yönü geçersiz.', 'page');
         const size = sayfaAyari({ children: [node] });
         for (const [key, max] of [['leftMargin', size.en], ['rightMargin', size.en], ['topMargin', size.boy], ['bottomMargin', size.boy]]) {
           const raw = oz(node, key);
           if (raw != null && (!Number.isFinite(sayi(raw)) || sayi(raw) < 0 || sayi(raw) > max * 0.4))
-            issue('page-margin', path, 'UDF sayfa kenar boşluğu geçersiz veya desteklenen aralığın dışında.');
+            issue('page-margin', path, 'UDF sayfa kenar boşluğu geçersiz veya desteklenen aralığın dışında.', 'page');
         }
       }
       if (tag === 'paragraph' && !['0', '1', '2', '3', 'left', 'center', 'right', 'justify', 'justified'].includes(String(oz(node, 'Alignment') || '0').toLowerCase()))
-        issue('alignment', path, 'UDF paragraf hizalaması geçersiz.');
+        issue('alignment', path, 'UDF paragraf hizalaması geçersiz.', 'paragraph');
       // Ters push kaynak sırasını korur; konum değer veya belge metni taşımaz.
       for (let i = node.children.length - 1; i >= 0; i--) {
         const child = node.children[i], childName = attrs[ad(child)] ? ad(child) : 'unsupported';
-        pending.push({ node: child, path: `${path}/${childName}[${i + 1}]`.slice(-256), depth: depth + 1 });
+        pending.push({ node: child, path: `${path}/${childName}[${i + 1}]`.slice(-256), depth: depth + 1, ust: tag });
       }
     }
     return result();
@@ -551,6 +594,9 @@
   // ---------------------------------------------------------------- model
   const HIZA = { 0: 'left', left: 'left', 1: 'center', center: 'center', 2: 'right', right: 'right', 3: 'justify', justify: 'justify', justified: 'justify' };
   const MADDE = ['•', '◦', '▪'];
+  // BulletType yalnız paket fontlarında (Liberation) bulunan gliflere eşlenir; bilinmeyen tür düzeyin glifini alır.
+  const MADDE_TURU = Object.freeze({ ELLIPSE: '•', RECTANGLE: '▪', RECTANGLE_D: '□', DIAMOND: '♦', TRIANGLE: '►',
+    ARROW: '→', DASH: '–', LINE: '–', SQUARE: '▪' });
 
   function romen(n) {
     const t = [[1000, 'm'], [900, 'cm'], [500, 'd'], [400, 'cd'], [100, 'c'], [90, 'xc'], [50, 'l'], [40, 'xl'], [10, 'x'], [9, 'ix'], [5, 'v'], [4, 'iv'], [1, 'i']];
@@ -558,12 +604,15 @@
     for (const [d, h] of t) while (n >= d) { s += h; n -= d; }
     return s;
   }
+  // NUMBER_TYPE_{NUMBER|CHAR_*|ROMAN_*}_{DOT|PARANTHESE|TRE}: CHAR harf, PARANTHESE ")", TRE "-" üretir.
+  // Harf ve Romen rakamı ASCII'dir; büyütme dile duyarsızdır ("ii" → "II", "İİ" değil).
+  // Profil türü kırpılmış değerle doğrular; burada da kırpılır ki sondaki boşluk "-" ekini "." yapmasın.
   function numaraYaz(n, tur) {
-    const t = String(tur || '').toUpperCase();
+    const t = String(tur || '').trim().toUpperCase();
     const buyuk = /UPPER|CAPITAL|BIG|BUYUK/.test(t);
-    let s = /ROMAN/.test(t) ? romen(Math.min(n, 3999)) : /LETTER|ALPHA|HARF/.test(t) ? harfNumara(n) : String(n);
-    if (buyuk) s = s.toLocaleUpperCase('tr');
-    return s + (/PAREN/.test(t) ? ')' : '.');
+    let s = /ROMAN/.test(t) ? romen(Math.min(n, 3999)) : /CHAR|LETTER|ALPHA|HARF/.test(t) ? harfNumara(n) : String(n);
+    if (buyuk) s = s.toUpperCase();
+    return s + (/PARAN|PAREN/.test(t) ? ')' : /(^|_)TRE$/.test(t) ? '-' : '.');
   }
   function harfNumara(n) {
     let s = '';
@@ -581,7 +630,18 @@
     return { en, boy, sol: kenar('leftMargin', 42.52, en), sag: kenar('rightMargin', 28.35, en), ust: kenar('topMargin', 42.52, boy), alt: kenar('bottomMargin', 14.17, boy) };
   }
 
-  function modelKur(doc, { baslangic, signal }) {
+  // Hiçbir öğenin göstermediği havuz metni sayılır (ör. atlanan ikinci üst bilgi); boşluk ve nesne yer tutucusu
+  // (U+FFFC) sayılmaz. Aralıklar sıralanıp birleştirilir; aynı metni gösteren öğeler işi çoğaltmaz.
+  function kapsanmayanSay(havuz, araliklar) {
+    araliklar.sort((a, b) => a[0] - b[0]);
+    let n = 0, konum = 0;
+    const say = (bas, son) => { if (son > bas) n += havuz.slice(bas, son).replace(/[\s\ufffc]+/gu, '').length; };
+    for (const [bas, son] of araliklar) { say(konum, bas); konum = Math.max(konum, son); }
+    say(konum, havuz.length);
+    return n;
+  }
+
+  function modelKur(doc, { baslangic, signal, sure = SINIR.sure }) {
     const kok = doc.documentElement;
     const havuz = (cocuk(kok, 'content') || { textContent: '' }).textContent;
     const govde = cocuk(kok, 'elements');
@@ -594,8 +654,10 @@
     const { zincir, taban } = stilCozucu(cocuk(kok, 'styles'));
     const s = {
       kokAdi: ad(kok), paragraf: 0, tablo: 0, resimSayisi: 0, resimBayt: 0, resimPiksel: 0, resimReddi: 0, sayfaSonu: 0,
-      blok: 0, parca: 0, metin: 0, hucre: 0, gezinti: 0, veriSatiri: 0, veriGezinti: 0, ofsetSorunu: 0, bilinmeyen: 0, kesildi: null
+      blok: 0, parca: 0, metin: 0, hucre: 0, gezinti: 0, veriSatiri: 0, veriGezinti: 0, ofsetSorunu: 0, bilinmeyen: 0, kesildi: null,
+      kapsanmayan: 0
     };
+    const gosterilen = [];   // öğelerin gösterdiği havuz aralıkları [bas, son]
     const bag = veri ? veriBaglayici(s) : null;
     const kokKapsam = veri ? { dugumler: [...veri.children], ust: null } : null;
     const listeler = new Map();   // ListId (ya da adsız liste) → düzey sayaçları
@@ -604,14 +666,24 @@
     const zamanDenetle = () => {
       if ((s.gezinti & 255) !== 0) return;
       iptalDenetle(signal);
-      if (performance.now() - baslangic > SINIR.sure) s.kesildi = s.kesildi || 'sure';
+      if (performance.now() - baslangic > sure) s.kesildi = s.kesildi || 'sure';
     };
 
     const dilim = el => {
       const a = tamsayi(oz(el, 'startOffset')), u = tamsayi(oz(el, 'length'));
       if (!Number.isInteger(a) || !Number.isInteger(u) || a < 0 || u <= 0 || a >= havuz.length) { s.ofsetSorunu++; return { bas: 0, son: 0 }; }
       if (a + u > havuz.length) s.ofsetSorunu++;
-      return { bas: a, son: Math.min(a + u, havuz.length) };
+      const son = Math.min(a + u, havuz.length);
+      gosterilen.push([a, son]);
+      return { bas: a, son };
+    };
+    // Sekme ve sayfa sonu havuzda yalnız ayırıcı gösterebilir; öteki karakterler sessizce düşmesin. Tarama length'ten
+    // bağımsız sınırlıdır: uzun aralık taranmadan ofset sorunu sayılır (aynı uzun aralığı gösteren binlerce öğe okumayı kilitlemesin).
+    const AYIRICI_EN_COK = 64;
+    const ayiriciDenetle = (el, yabanci) => {
+      if (oz(el, 'startOffset') == null && oz(el, 'length') == null) return;
+      const { bas, son } = dilim(el);
+      if (son - bas > AYIRICI_EN_COK || yabanci.test(havuz.slice(bas, son))) s.ofsetSorunu++;
     };
 
     // Şablon belgede parçanın metni: alan ise veriden, gruba bağlı düz metinse grup doluysa. Yer tutucu adı hiç gösterilmez.
@@ -654,8 +726,8 @@
       for (let i = duzey + 1; i < 9; i++) sayac[i] = 0;
       let isaret;
       if (madde) {
-        const bt = String(oz(p, 'BulletType') || '').toUpperCase();
-        isaret = /DASH|LINE/.test(bt) ? '–' : /RECT|SQUARE/.test(bt) ? '▪' : MADDE[duzey % MADDE.length];
+        const bt = String(oz(p, 'BulletType') || '').trim().toUpperCase().replace(/^BULLET_TYPE_/, '');
+        isaret = Object.hasOwn(MADDE_TURU, bt) ? MADDE_TURU[bt] : MADDE[duzey % MADDE.length];
       } else isaret = numaraYaz(sayac[duzey], oz(p, 'NumberType'));
       return { tur, duzey, isaret };
     }
@@ -675,14 +747,18 @@
       const sol = kistir(sayi(oz(p, 'LeftIndent')) || 0, 0, metinEn * 0.8) + (liste ? liste.duzey * 18 : 0);
       const ilk = kistir(sayi(oz(p, 'FirstLineIndent')) || 0, -sol, metinEn * 0.8);
       const bosluk = (...adlar) => { for (const a of adlar) { const v = sayi(oz(p, a)); if (Number.isFinite(v)) return kistir(v, 0, 144); } return 0; };
-      const duraklar = String(oz(p, 'TabSet') || '').split(',').slice(0, 32).map(x => sayi(x.split(':')[0]))
-        .filter(v => Number.isFinite(v) && v > 0 && v <= metinEn).sort((a, b) => a - b);
+      // Görüntüleyici yalnız sıralı konumları kullanır; PDF çizicisi hiza ve dolguyu ayrıntıdan okur.
+      const duraklarAyrinti = String(oz(p, 'TabSet') || '').split(',').slice(0, 32).map(x => {
+        const [konum, hiza, dolgu] = x.split(':');
+        return { konum: sayi(konum), hiza: tamsayi(hiza) || 0, dolgu: tamsayi(dolgu) || 0 };
+      }).filter(d => Number.isFinite(d.konum) && d.konum > 0 && d.konum <= metinEn).sort((a, b) => a.konum - b.konum);
+      const duraklar = duraklarAyrinti.map(d => d.konum);
       const model = {
         t: 'p', hiza: HIZA[String(oz(p, 'Alignment') || '0').trim().toLowerCase()] || 'left',
         sol, sag: kistir(sayi(oz(p, 'RightIndent')) || 0, 0, metinEn * 0.8), ilk,
         once: bosluk('SpaceAbove', 'SpaceBefore'), sonra: bosluk('SpaceBelow', 'SpaceAfter'),
         aralik: kistir(sayi(oz(p, 'LineSpacing')) || 0, 0, 3), aralikVar: oz(p, 'LineSpacing') != null,
-        duraklar, liste, stil: pTaban, parcalar: []
+        duraklar, duraklarAyrinti, liste, stil: pTaban, parcalar: []
       };
       const icTablolar = [];
       let paragrafMetin = 0, paragrafParca = 0;
@@ -701,7 +777,11 @@
         if (++s.parca > SINIR.parca) { s.kesildi = s.kesildi || 'oge'; break; }
         const a = ad(c);
         if (a === 'table') { icTablolar.push(c); continue; }
-        if (a === 'tab') { ekle({ t: 'sekme', stil: stilIcin(c, pTaban) }); continue; }
+        if (a === 'tab') {
+          // Havuzu gösteren sekme yalnız sekme ya da boşluk kapsayabilir.
+          ayiriciDenetle(c, /[^\t ]/u);
+          ekle({ t: 'sekme', stil: stilIcin(c, pTaban) }); continue;
+        }
         if (a === 'space') { ekle({ t: 'metin', yazi: ' ', stil: stilIcin(c, pTaban) }); continue; }
         if (a === 'br' || a === 'linebreak' || a === 'newline') { ekle({ t: 'metin', yazi: '\n', stil: pTaban }); continue; }
         if (a === 'image') {
@@ -782,6 +862,9 @@
         zamanDenetle();
         const a = ad(c);
         if (a === 'page-break' || a === 'pagebreak') {
+          // Havuzu gösteren sayfa sonu yalnız boşluk, satır sonu ya da nesne yer tutucusu kapsayabilir (kapsama
+          // denetimiyle aynı kural); noktalama ve simgeler de metindir.
+          ayiriciDenetle(c, /[^\s\ufffc]/u);
           s.sayfaSonu++;
           if (bolumler) {
             if (bolumler.length >= SINIR.bolum) throw hata('boyut', 'bölüm');
@@ -812,6 +895,7 @@
 
     const bolumler = [];
     bloklar(govde, 0, kokKapsam, bolumler);
+    s.kapsanmayan = kapsanmayanSay(havuz, gosterilen);
 
     let filigran = null;
     const bg = cocuk(props, 'bgimage');
@@ -822,15 +906,17 @@
     return {
       sayfa, metinEn, taban, bolumler, ust: s.header || null, alt: s.footer || null, filigran,
       sablon: !!veri, kesildi: s.kesildi, kokAdi: s.kokAdi,
-      sayac: { paragraf: s.paragraf, tablo: s.tablo, resim: s.resimSayisi, resimReddi: s.resimReddi, sayfaSonu: s.sayfaSonu, ofsetSorunu: s.ofsetSorunu, bilinmeyen: s.bilinmeyen, veriSatiri: s.veriSatiri, blok: s.blok }
+      sayac: { paragraf: s.paragraf, tablo: s.tablo, resim: s.resimSayisi, resimReddi: s.resimReddi, sayfaSonu: s.sayfaSonu, ofsetSorunu: s.ofsetSorunu, bilinmeyen: s.bilinmeyen, veriSatiri: s.veriSatiri, blok: s.blok, kapsanmayan: s.kapsanmayan }
     };
   }
 
   // UYAP e-imzası içerikten ayrı sign.sgn girdisindedir; belge metnini değiştirmez. Paket profilinde yalnız bu ek girdi kabul edilir.
   const imzaGirdisi = g => /^(\.?\/)*sign\.sgn$/i.test(g.ad);
   // Blobu okur ve düz JS modeli döndürür; XML belgesine ait hiçbir düğüm modelde kalmaz.
-  async function oku(blob, { signal, paket = false } = {}) {
+  // sure: okuma bütçesi (ms). Önizleme varsayılan 8 sn ile çalışır; PDF dönüşümü daha uzun bir süre geçirir.
+  async function oku(blob, { signal, paket = false, sure } = {}) {
     const baslangic = performance.now();
+    const butce = Number.isFinite(sure) && sure > 0 ? Math.min(sure, SINIR.sureUst) : SINIR.sure;
     try { new DecompressionStream('deflate-raw'); } catch { throw hata('desteklenmiyor'); }
     if (!blob || blob.size > SINIR.paket) throw hata('boyut', 'paket');
     const u8 = new Uint8Array(await blob.arrayBuffer());
@@ -843,13 +929,16 @@
     iptalDenetle(signal);
     const { metin, kodlama } = metneCevir(bayt);
     const xml = xmlCozumle(metin);
-    const model = modelKur(xml, { baslangic, signal });
+    const model = modelKur(xml, { baslangic, signal, sure: butce });
     if (paket) {
-      model.paketTani = paketProfili(xml.documentElement, signal);
-      if (girdiler.some(g => g !== icerik[0] && !imzaGirdisi(g))) model.paketTani = { ...model.paketTani, complete: false,
-        unsupported: model.paketTani.unsupported + 1,
-        issues: [...model.paketTani.issues.slice(0, 19), { code: 'package-entry', path: 'archive',
-          message: 'UDF ek paket girdileri içeriyor; bütün içerik doğrulanmadan dönüştürülemez.' }] };
+      const tani = paketProfili(xml.documentElement, signal, { baslangic, sure: butce }), ek = [];
+      if (girdiler.some(g => g !== icerik[0] && !imzaGirdisi(g))) ek.push({ code: 'package-entry', path: 'archive',
+        message: 'UDF ek paket girdileri içeriyor; bütün içerik doğrulanmadan dönüştürülemez.', neden: 'package-entry' });
+      // Havuzda hiçbir öğenin göstermediği metin PDF'te sessizce eksik kalmasın; içerik kaybı sayılır.
+      if (model.sayac.kapsanmayan) ek.push({ code: 'uncovered-text', path: 'document/content',
+        message: 'UDF içeriğinde hiçbir belge öğesinin göstermediği metin var.', neden: 'uncovered-text' });
+      model.paketTani = ek.length ? { ...tani, complete: false, unsupported: tani.unsupported + ek.length,
+        issues: [...tani.issues.slice(0, 20 - ek.length), ...ek] } : tani;
     }
     model.kodlama = kodlama;
     model.imza = girdiler.some(g => /(^|\/)sign\.sgn$/i.test(g.ad));
@@ -1043,7 +1132,7 @@
       if (p.aralik) st.setProperty('line-height', String(Math.round(1.15 * (1 + p.aralik) * 1000) / 1000));
       bicimle(d, p.stil, taban);
       // Sekmeler: durak, metnin o satırdaki genişliği ölçülerek seçilir; sekme karakterinin genişliğini tarayıcı
-      // o durağa göre verir (tab-size). Durak yoksa 36 pt aralıklı varsayılan duraklar kullanılır.
+      // o durağa göre verir (tab-size). Durak yoksa VARSAYILAN_SEKME_PT aralıklı ızgara kullanılır.
       const sekmeli = p.parcalar.some(c => c.t === 'sekme');
       let x = p.ilk;
       if (p.liste) {
@@ -1066,7 +1155,7 @@
             x += genislikPt(satirlar[satirlar.length - 1], c.stil);
           }
         } else if (c.t === 'sekme') {
-          const durak = p.duraklar.find(v => v > x + 0.01) || (Math.floor(x / 36) + 1) * 36;
+          const durak = p.duraklar.find(v => v > x + 0.01) || (Math.floor(x / VARSAYILAN_SEKME_PT) + 1) * VARSAYILAN_SEKME_PT;
           const sp = E('span', 'udf-sekme');
           sp.textContent = '\t';
           sp.style.setProperty('tab-size', pt(durak));
@@ -1236,7 +1325,7 @@
 .viewer .udf{display:flex;flex-direction:column;align-items:center;gap:16px;padding:16px 8px 24px;width:max-content;min-width:100%;box-sizing:border-box}
 .viewer .udf-sayfa{position:relative;box-sizing:border-box;background:#fff;color:#000;box-shadow:0 1px 4px rgba(16,24,40,.25);line-height:1.15;font-kerning:normal;text-rendering:optimizeLegibility;color-scheme:light}
 .viewer .udf-dilim{content-visibility:auto;contain-intrinsic-size:auto 800px;position:relative}
-.viewer .udf-p{white-space:pre-wrap;overflow-wrap:anywhere;tab-size:36pt}
+.viewer .udf-p{white-space:pre-wrap;overflow-wrap:anywhere;tab-size:${VARSAYILAN_SEKME_PT}pt}
 .viewer .udf-sekme{white-space:pre}
 .viewer .udf-tablo{table-layout:fixed;width:100%;border-collapse:collapse;margin:0}
 .viewer .udf-tablo td{padding:2pt;vertical-align:top;overflow-wrap:anywhere}
