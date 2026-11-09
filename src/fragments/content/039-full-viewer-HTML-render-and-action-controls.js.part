@@ -491,7 +491,7 @@
       if (bekleyenAna && ekDom.has(bekleyenAna) && gorunen[sira]?.ana && paketAnahtar(gorunen[sira].ana) === bekleyenAna) { ekAc(bekleyenAna, true, true); bekleyenAna = null; }
       odakSync();
       listeDurum.textContent = !gorunen.length ? (ara.value.trim() ? 'Aramaya uyan evrak yok.'
-        : kaynak && kaynak.list.kilit ? 'Evrak, savcı onayından sonra görünür.' : teyitBos() || 'Bu grupta evrak yok.') : '';
+        : kaynak && kaynak.list.kilit ? (kaynak.list.kilitTuru === 'yetki' ? 'UYAP bu dosyada evrak görüntülemeye izin vermiyor.' : 'Evrak, savcı onayından sonra görünür.') : teyitBos() || 'Bu grupta evrak yok.') : '';
       listeDurum.hidden = !!gorunen.length;
       const sayim = evrakSayim(gorunen);
       listeSayi.textContent = sayim.ek ? `${fmtNum(sayim.evrak)} evrak · ${fmtNum(sayim.ek)} ek` : `${fmtNum(sayim.evrak)} evrak`;

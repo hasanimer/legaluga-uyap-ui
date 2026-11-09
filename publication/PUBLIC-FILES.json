@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "559bd4e5615b421e73fa448bbe29567d956dc5d8277476d9c7cc2cccc14165fb"
+      "sha256": "f865d101d685929543ac67896232d6d8d1fdc44b95dcc66c2befd9076f344764"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -608,7 +608,7 @@
     },
     {
       "path": "src/fragments/content/029-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "9c1eb96e3a3a06edab6294b881f09e416ffec63bb468b0b75282f418377c3fde"
+      "sha256": "ce9917a68ac9a6e707e00c5465060f0d75c5e86b4991cbc60355881fa65ddfc7"
     },
     {
       "path": "src/fragments/content/031-overview-safahat-notes-and-safe-document-rendering.js.part",
@@ -616,7 +616,7 @@
     },
     {
       "path": "src/fragments/content/033-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "8644dc576402f2aecd44858895b6f7cc3c64006292e37bd5971d48894308d2d4"
+      "sha256": "b1f7f9528c3bb2f79b852d137405edae73640354c9249da48a860044c083697e"
     },
     {
       "path": "src/fragments/content/035-overview-safahat-notes-and-safe-document-rendering.js.part",
@@ -624,11 +624,11 @@
     },
     {
       "path": "src/fragments/content/037-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "fcf75f5269ae2d5d3e281e74c46f3f75280072ef7ef5e1b3dba8d4286ae88f56"
+      "sha256": "ffe1e55ba4a3178e9d4b3c73c1d028329a4fb78ee1e32124676267841024189a"
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "c88647ebaa949cdf769d84a5cf0f2695598bda93fd873089757861c1cf9597d5"
+      "sha256": "48e867527acfa0d5ccdffb2a068c5daae1a20bb673cead4ddf02367caf4cd1e9"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -724,7 +724,7 @@
     },
     {
       "path": "src/fragments/content/083-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "e590d1ad7ffe12c82440eecf19c3fb320d23214d6d1e6731a687da62afd0ec49"
+      "sha256": "0bed375ee46cbe528f711322c93b36a09d296165c82f02f10da6f40120a115ba"
     },
     {
       "path": "src/fragments/content/085-full-viewer-HTML-render-and-action-controls.js.part",
@@ -788,7 +788,7 @@
     },
     {
       "path": "src/fragments/content/115-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "502b7a7bce180bb020846f9e0d01e6aa9f250e719eca87b0c8d2f4d08cc1552b"
+      "sha256": "f608039618b0368f3f1daaf29155fea3e71c2bcf7a14f70f81aa997ad9ce7ff4"
     },
     {
       "path": "src/fragments/content/116-viewer-list-loading-retry-and-error-controls.js.part",

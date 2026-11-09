@@ -66,9 +66,11 @@
       el('div', { class: 'sf-head' }, el('div', null, el('h3', null, 'Safahat'), el('div', { class: 'sf-meta' }, count, date)),
         el('div', { class: 'sf-actions' }, refresh, stop)),
       status, wait, search, list));
-    let snapshot = null, peerBusyUntil = 0, ready = false, closed = false, run = null, timer = null, generation = 0, notice = '';
+    // yetkisiz: UYAP bu dosyada safahat görüntülemeye izin vermiyor (açılışta bilinen ret, Safahatı getir'de yeniden okunur);
+    // kaydedilmiş eski safahat da gösterilmez.
+    let snapshot = null, peerBusyUntil = 0, ready = false, closed = false, run = null, timer = null, generation = 0, notice = '', yetkisiz = false;
     const alive = () => !closed && !signal?.aborted;
-    const apply = state => { snapshot = state.snapshot; peerBusyUntil = state.busy ? Date.now() + state.busyMs : 0; };
+    const apply = state => { snapshot = yetkisiz ? null : state.snapshot; peerBusyUntil = state.busy ? Date.now() + state.busyMs : 0; };
     const remaining = ms => `${Math.ceil(ms / 60000)} dakika`;
     const draw = (renderRows = true) => {
       if (!alive()) return;
@@ -102,6 +104,12 @@
       const task = run = { ac: new AbortController(), token: null };
       notice = 'Safahat UYAP’tan alınıyor… Önceki kayıt korunuyor.'; draw();
       try {
+        // UYAP bu dosyada Safahat sekmesini vermiyorsa safahat istenmez; eski kayıt da gösterilmez. Denetim 60 dakikalık
+        // bekleme izninden önce yapılır: izin verilmese de yetki kilidi uygulanır.
+        const yetkiKilidi = await safahatYetkiKilidi(rec, task.ac.signal);
+        task.ac.signal.throwIfAborted(); if (!alive()) return;
+        yetkisiz = !!yetkiKilidi;
+        if (yetkiKilidi) { snapshot = null; notice = yetkiKilidi; return; }
         const permit = await storage.beginSafahat(rec.key);
         task.token = permit.token;
         task.ac.signal.throwIfAborted(); if (!alive()) return;
