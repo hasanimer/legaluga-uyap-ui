@@ -50,8 +50,8 @@
     if (!model || diagnostics?.complete !== true || model.paketTani?.complete === false ||
       model.kesildi || model.sayac?.resimReddi || model.sayac?.ofsetSorunu || model.sayac?.bilinmeyen)
       reject('udf-incomplete', 'UDF öğeleri veya içeriği eksik çözüldü');
-    if (model.sablon || model.ust || model.alt || model.filigran || model.imza)
-      reject('udf-profile', 'UDF şablon, üst/alt bilgi, filigran veya imza içeriyor');
+    if (model.sablon || model.ust || model.alt || model.filigran)
+      reject('udf-profile', 'UDF şablon, üst/alt bilgi veya filigran içeriyor');
     if (!Array.isArray(model.bolumler) || !model.bolumler.length || !model.sayfa)
       reject('udf-model', 'UDF sayfa modeli geçersiz');
     const p = model.sayfa;
@@ -241,7 +241,8 @@
     check(signal);
     const bytes = await pdf.save();
     const warnings = esnek ? [...(uyarilar || []), yerine ? `${yerine} karakter yazı tipinde bulunmadığı için “?” olarak yazıldı` : null].filter(Boolean)
-      : ['UDF sayfalaması UYAP Editör referans PDF ile henüz karşılaştırılmadı'];
+      : ['UDF sayfalaması UYAP Editör referans PDF ile henüz karşılaştırılmadı',
+        ...(model.imza ? ['Özgün UDF’deki e-imza PDF’e taşınmaz; bu PDF imzalı evrakın yerine geçmez.'] : [])];
     return { bytes, diagnostics: { complete: true, referenceVerified: false, warnings },
       sourcePages: pdf.getPageCount(), warnings };
   }

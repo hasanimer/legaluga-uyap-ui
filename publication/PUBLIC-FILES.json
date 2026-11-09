@@ -184,7 +184,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-udf.js",
-      "sha256": "418c4292688b9678887a1307d78e573b851a4665bf899f7d7b56b4ccab646b93"
+      "sha256": "b1d92b76d63ed39b1fcb25bbe60fe2a2d850227b77ed1cd3b5e0923a203d0be2"
     },
     {
       "path": "src/extension/durusma-paketi-ui.js",
@@ -296,7 +296,7 @@
     },
     {
       "path": "src/extension/udf.js",
-      "sha256": "8a47a43f16ed3e9a67f0fb5c2321881e55313f68fecadb4849002b7d90c2100d"
+      "sha256": "7803a7becc2528e3dd7a3488c652d192bdc6ee9db16ca02026949a8d96102cc4"
     },
     {
       "path": "src/extension/ui.js",
