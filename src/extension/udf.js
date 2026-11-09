@@ -826,6 +826,8 @@
     };
   }
 
+  // UYAP e-imzası içerikten ayrı sign.sgn girdisindedir; belge metnini değiştirmez. Paket profilinde yalnız bu ek girdi kabul edilir.
+  const imzaGirdisi = g => /^(\.?\/)*sign\.sgn$/i.test(g.ad);
   // Blobu okur ve düz JS modeli döndürür; XML belgesine ait hiçbir düğüm modelde kalmaz.
   async function oku(blob, { signal, paket = false } = {}) {
     const baslangic = performance.now();
@@ -844,7 +846,7 @@
     const model = modelKur(xml, { baslangic, signal });
     if (paket) {
       model.paketTani = paketProfili(xml.documentElement, signal);
-      if (girdiler.length !== 1) model.paketTani = { ...model.paketTani, complete: false,
+      if (girdiler.some(g => g !== icerik[0] && !imzaGirdisi(g))) model.paketTani = { ...model.paketTani, complete: false,
         unsupported: model.paketTani.unsupported + 1,
         issues: [...model.paketTani.issues.slice(0, 19), { code: 'package-entry', path: 'archive',
           message: 'UDF ek paket girdileri içeriyor; bütün içerik doğrulanmadan dönüştürülemez.' }] };
