@@ -20,8 +20,10 @@
         load.addEventListener('click', bankLoadBorrowers); query.addEventListener('click', bankQuery); requests.addEventListener('click', bankScanRequests);
         select.addEventListener('change', () => { bankSelected = select.value; bankNotice = ''; bankDraw(); });
         stop.addEventListener('click', () => bankRun?.ac.abort());
-        chrome.storage.local.get('uhdBankChecks').then(({ uhdBankChecks }) => {
-          if (closed || !uhdBankChecks) return;
+        bankKayitKilidi().then(kilit => kilit ? { kilit } : chrome.storage.local.get('uhdBankChecks')).then(({ kilit, uhdBankChecks }) => {
+          if (closed) return;
+          if (kilit) { bankNotice = kilit; bankDraw(); return; }
+          if (!uhdBankChecks) return;
           const saved = bankChecks.sanitizeStore(uhdBankChecks).files[rec.key]?.subjects || {};
           for (const [key, snapshot] of Object.entries(saved)) if (!bankSubjects[key] || bankSubjects[key].at < snapshot.at) bankSubjects[key] = snapshot;
           if (!bankBorrowers.length) {

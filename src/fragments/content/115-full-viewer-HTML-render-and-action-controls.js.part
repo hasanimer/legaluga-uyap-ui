@@ -6,12 +6,15 @@
       listeHazirlandi = true;
       listeKur();
       bankaCiz();
-      // Savcı onayı yok: UYAP'ın iletisi gösterilir, "Bu dosyada evrak yok" denmez.
+      // Savcı onayı yok ya da UYAP bu dosyada evrak görüntülemeye izin vermiyor (yetki kilidi): UYAP'ın iletisi gösterilir,
+      // "Bu dosyada evrak yok" denmez.
       if (kaynak && kaynak.list.kilit) {
         grup = 'tumu';
         suz(); gruplariCiz(); listeyiCiz(); konumYaz();
         icerik(el('div', { class: 'msg', role: 'status' }, el('p', null, `UYAP: ${kaynak.list.kilit}`),
-          el('p', { class: 'dp-muted' }, 'Cumhuriyet savcısı inceleme talebinizi onaylayınca evrak burada görünür.')));
+          el('p', { class: 'dp-muted' }, kaynak.list.kilitTuru === 'yetki'
+            ? 'UYAP bu dosyanın evrak listesini göstermiyor; eklenti de evrakı listelemez ve indirmez.'
+            : 'Cumhuriyet savcısı inceleme talebinizi onaylayınca evrak burada görünür.')));
         return;
       }
       const ilkOge = o.ilk ? oge(evrakKey(o.ilk.e) || '', o.ilk.e.dosyaGrubu, o.ilk.e) : null;

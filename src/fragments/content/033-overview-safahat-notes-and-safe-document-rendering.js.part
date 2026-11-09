@@ -34,6 +34,9 @@
     try {
       const saved = await storage.getSafahat(rec.key);
       if (!alive()) return;
+      // Bu dosyada safahat yetkisinin olmadığı biliniyorsa (UYAP'a yeni istek atılmaz) kaydedilmiş eski safahat gösterilmez.
+      const bilinenKilit = safahatYetkiBilinen(rec);
+      if (bilinenKilit) { yetkisiz = true; snapshot = null; notice = bilinenKilit; }
       if (generation === initialGeneration) apply(saved);
       ready = true; draw();
     } catch {
