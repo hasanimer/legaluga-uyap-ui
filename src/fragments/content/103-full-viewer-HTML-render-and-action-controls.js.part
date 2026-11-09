@@ -232,7 +232,9 @@
       } catch (err) {
         if (simdiki !== s || closed || s.ac.signal.aborted || err?.name === 'AbortError') return;
         pdfDurum.hidden = false;
-        pdfDurum.textContent = `PDF oluşturulamadı: ${String(err?.message || 'Biraz sonra tekrar deneyin.').slice(0, 500)} Aslını indirebilirsiniz.`;
+        // Dönüştürücü iletisi yalnız nedeni söyler; öneri görünen indirme düğmesinin adıyla bir kez eklenir.
+        const oneri = udfIndir.hidden ? 'Özgün evrakı “Aslını indir” ile alabilirsiniz.' : 'Özgün evrakı “UDF olarak indir” ile alabilirsiniz.';
+        pdfDurum.textContent = `PDF oluşturulamadı: ${String(err?.message || 'Biraz sonra tekrar deneyin.').slice(0, 500)} ${oneri}`;
       } finally {
         if (belgePdfRun === s) belgePdfRun = null;
         if (simdiki === s && !closed) {

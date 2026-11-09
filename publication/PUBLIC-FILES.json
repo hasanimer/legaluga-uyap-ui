@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "f865d101d685929543ac67896232d6d8d1fdc44b95dcc66c2befd9076f344764"
+      "sha256": "4939b46b67ada231d1696cae2462f753dc8978c8e507080ed30fba6b8da21cf6"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -156,7 +156,7 @@
     },
     {
       "path": "src/extension/belge-pdf.js",
-      "sha256": "482405f99be450fcc6341cbd22dd297e75ec11299c75fb85a0344bccc14012ff"
+      "sha256": "5a1f94b3d63dd967881fd13277c99a6b596835f5ae230801f518ab31e6c1600e"
     },
     {
       "path": "src/extension/durusma-paketi-bootstrap.js",
@@ -184,15 +184,15 @@
     },
     {
       "path": "src/extension/durusma-paketi-udf.js",
-      "sha256": "b1d92b76d63ed39b1fcb25bbe60fe2a2d850227b77ed1cd3b5e0923a203d0be2"
+      "sha256": "2f1b849513009d5df25f4fb8f431f47560a457877a61d617d00b108d3e1e7f13"
     },
     {
       "path": "src/extension/durusma-paketi-ui.js",
-      "sha256": "cf81502dec86c5c966d040bccf2d0cb818a0836e6eb37b3a2570d8cbdd0d3d7e"
+      "sha256": "d72eea3e4545c24a6388998964f48eb076deda255d5c7c8fab7fa6ab8f7b1bbb"
     },
     {
       "path": "src/extension/durusma-paketi-worker.js",
-      "sha256": "d7985e2ffb03c86e3518e071122859a673f2016ecc95db8d6f49381dac60ab8c"
+      "sha256": "f58413e87b7568c4782a06af9c184ff6244597516b2cec7a532084dacc1e3c10"
     },
     {
       "path": "src/extension/durusma-paketi-zip.js",
@@ -296,7 +296,7 @@
     },
     {
       "path": "src/extension/udf.js",
-      "sha256": "7803a7becc2528e3dd7a3488c652d192bdc6ee9db16ca02026949a8d96102cc4"
+      "sha256": "90654b5359bd73c660b00a86868e5272f07e758cfd9ad3a6d53c3e19440aee0b"
     },
     {
       "path": "src/extension/ui.js",
@@ -764,7 +764,7 @@
     },
     {
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "5e4fe1b5eb0e7b5307cb76ee37b0f29ff51ed180cb0b04f73c34a001b2099911"
+      "sha256": "bd3f34e5e71f2ef034c1df77f3c7ccf85b9209095019b659d7551e0fe6c51a68"
     },
     {
       "path": "src/fragments/content/105-viewer-navigation-abort-epoch-boundary.js.part",

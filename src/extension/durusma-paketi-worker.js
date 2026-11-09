@@ -9,7 +9,16 @@ if (typeof Promise.try !== 'function') Object.defineProperty(Promise, 'try', {
     });
   }
 });
-importScripts('vendor/pdfjs-reader.js');
+// pdf.js (1,6 MB) yalnız PDF okuyan işlerde yüklenir: metin işlerinde PDF açılınca ve paketin metin denetiminde.
+// Tek belge dönüşümü yüklemez. Yükleme hatası opak işçi hatası yerine document-runtime koduyla döner.
+function pdfOkuyucuYukle() {
+  if (!globalThis.DurusmaPaketiPDFJS) {
+    try { importScripts('vendor/pdfjs-reader.js'); } catch { /* aşağıda kodlu hata verilir */ }
+  }
+  if (typeof globalThis.DurusmaPaketiPDFJS?.getDocument !== 'function')
+    throw Object.assign(new Error('PDF okuyucu yüklenemedi'), { code: 'document-runtime' });
+  return globalThis.DurusmaPaketiPDFJS;
+}
 // pdf-lib ve fontkit yalnız PDF üreten işlerde (paket, tek belge) yüklenir; metin işleri pdf.js ile yetinir.
 // Sıra korunur: durusma-paketi-pdf.js ve UDF çizici iki globali yüklenirken okur.
 function pdfMotoruYukle() {
@@ -132,8 +141,11 @@ async function prepare(item, fonts, signal, onPage, limits = session?.limits || 
       made = await globalThis.DurusmaPaketiUDF.convert({ model, diagnostics: { complete: true }, signal, limits, fonts, esnek: true, uyarilar });
     } catch (error) {
       if (signal.aborted || error?.code === 'cancelled') throw error;
+      // Metin evrakı UDF çizicisiyle çizilir; çizicinin udf-* kodu metin koduna çevrilir, kullanıcıya "UDF" diye görünmez.
+      const code = error?.code === 'udf-page-limit' ? 'page-limit' : error?.code === 'udf-budget' ? 'text-limit'
+        : !error?.code || /^udf-/.test(error.code) ? 'text-convert' : error.code;
       throw Object.assign(new Error(`${item.title || item.id}: ${error?.code === 'metin-bos' ? error.message : `${name[detected]} evrak PDF’e çevrilemedi`}`),
-        { code: error?.code || 'text-convert', id: item.id });
+        { code, id: item.id });
     }
     return { ...item, bytes: made.bytes, format: 'pdf', sourceFormat: detected === 'text' ? 'txt' : detected, originalSha256,
       sourcePages: made.sourcePages, warnings: made.warnings || [] };
@@ -147,19 +159,9 @@ async function prepare(item, fonts, signal, onPage, limits = session?.limits || 
       sourcePages: made.sourcePages, warnings: made.warnings || [] };
   }
   if (!globalThis.DurusmaPaketiUDF) importScripts('durusma-paketi-udf.js');
-  // Yalnız belgede kullanılan eğik yüz yüklenir; PDF/TIFF ve düz UDF ek font istemez.
-  const extraFaces = new Set();
-  for (const section of item.udfModel?.bolumler || []) for (const block of section) {
-    const base = { ...item.udfModel.taban, ...block.stil };
-    if (base.italik) extraFaces.add(base.kalin ? 'boldItalic' : 'italic');
-    for (const piece of block.parcalar || []) {
-      const style = { ...base, ...piece.stil };
-      if (style.italik) extraFaces.add(style.kalin ? 'boldItalic' : 'italic');
-    }
-  }
-  for (const face of extraFaces) if (!fonts[face]) {
-    fonts[face] = await fontFile(face === 'boldItalic' ? 'LiberationSerif-BoldItalic.ttf' : 'LiberationSerif-Italic.ttf');
-  }
+  // Yalnız belgede kullanılan yüzler (aile ve biçime göre) yüklenir; paketteki evraklar yüklenmiş yüzleri paylaşır.
+  for (const [key, file] of Object.entries(globalThis.DurusmaPaketiUDF.fontDosyalari(item.udfModel)))
+    if (!fonts[key]) fonts[key] = await fontFile(file);
   const made = await globalThis.DurusmaPaketiUDF.convert({ bytes: item.bytes, model: item.udfModel,
     diagnostics: item.udfDiagnostics, signal, limits, fonts });
   if (made.diagnostics?.complete !== true) throw Object.assign(new Error('UDF eksiksiz dönüştürülemedi'),
@@ -191,7 +193,8 @@ async function singlePdf(data) {
       throw unsupported(item, 'Özgün evrakı indirin');
     if (detected === 'zip' && (!item.udfModel || item.udfDiagnostics?.complete !== true))
       throw Object.assign(new Error('UDF eksik çözüldü'), { code: 'udf-incomplete' });
-    const fonts = ['zip', 'html', 'xml', 'text'].includes(detected)
+    // Metin evrakı Serif normal ve kalınla çizilir; UDF'nin yüzleri prepare'de belgeye göre yüklenir.
+    const fonts = ['html', 'xml', 'text'].includes(detected)
       ? { regular: await fontFile('LiberationSerif-Regular.ttf'), bold: await fontFile('LiberationSerif-Bold.ttf') } : {};
     signal.throwIfAborted();
     const made = await prepare(item, fonts, signal, (page, total) => {
@@ -221,6 +224,8 @@ async function start(message) {
   const signal = controller.signal;
   try {
     pdfMotoruYukle();
+    // Paket oluşturucu çıktının metnini pdf.js ile denetler.
+    pdfOkuyucuYukle();
     if (!Array.isArray(session.items) || session.items.length > 100 ||
       session.items.some(item => typeof item.id !== 'string' || !item.id ||
         !(item.bytes instanceof ArrayBuffer) || item.bytes.byteLength > 64 * 1024 * 1024))
@@ -233,6 +238,7 @@ async function start(message) {
     if (!Array.isArray(orderedIds) || orderedIds.length > 100 || new Set(orderedIds).size !== orderedIds.length ||
       orderedIds.some(id => !byId.has(id)))
       throw Object.assign(new Error('Sıralı evrak seçimi geçersiz'), { code: 'selection' });
+    // Kapak ve içindekiler Serif normal ve kalın ister; evrakların öteki yüzleri prepare'de eklenir.
     const fonts = { regular: await fontFile('LiberationSerif-Regular.ttf'),
       bold: await fontFile('LiberationSerif-Bold.ttf') };
     const items = [], conversionIssues = [];
@@ -306,7 +312,7 @@ async function metinCikar(bytes, budget, derinlik = 0, progress = () => {}, sour
     return metin;
   };
   if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46) {
-    const pdfjs = globalThis.DurusmaPaketiPDFJS;
+    const pdfjs = pdfOkuyucuYukle();
     const task = pdfjs.getDocument({ data: b.slice(), ...PDF_OKUMA });
     try {
       const doc = await task.promise;
@@ -446,7 +452,7 @@ async function pdfSayfalari(data) {
   if (!b || b.byteLength < 5 || b.byteLength > METIN_BYTE_SINIR || b[0] !== 0x25 || b[1] !== 0x50 || b[2] !== 0x44 || b[3] !== 0x46) sonuc = { code: 'pdf-invalid' };
   else {
     try {
-      task = globalThis.DurusmaPaketiPDFJS.getDocument({ data: b.slice(), ...PDF_OKUMA });
+      task = pdfOkuyucuYukle().getDocument({ data: b.slice(), ...PDF_OKUMA });
       const doc = await task.promise;
       const toplamSayfa = doc.numPages;
       if (!Number.isSafeInteger(toplamSayfa) || toplamSayfa < 1) throw textError('PDF sayfa sayısı geçersiz.', 'pdf-text');
@@ -475,8 +481,8 @@ async function pdfSayfalari(data) {
       }
       sonuc = { sayfalar, toplamSayfa, bosSayfa, kesildi,
         ...(hataSayfa ? { hataSayfa } : {}), ...(!sayfalar.length && hataSayfa ? { code: 'pdf-text' } : {}) };
-    } catch {
-      sonuc = { code: 'pdf-text' };
+    } catch (error) {
+      sonuc = { code: error?.code === 'document-runtime' ? 'document-runtime' : 'pdf-text' };
     } finally {
       try { await task?.destroy(); } catch { /* işçi iş bitince kapatılır */ }
     }

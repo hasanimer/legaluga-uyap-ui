@@ -188,6 +188,40 @@
     const runId = state.runId;
     if (dispatch({ type: 'CANCEL_REQUEST' })) { stopWorker(); revoke(); send('CANCEL', { runId }); }
   }
+  // UDF tamlığı ve ret nedenleri tek yerden çıkarılır. nedenler yalnız sabit sözlük kodlarıdır ve çerçeveden yalnız
+  // onlar çıkar; iletiler paket raporunun açıklamalarıdır. İkisi de belge metni veya öznitelik değeri taşımaz.
+  const UDF_ICERIK_KAYBI = new Set(['truncated', 'offset', 'unknown-element', 'image-unreadable', 'package-entry', 'uncovered-text', 'limit']);
+  const NEDEN_KALIBI = /^[a-z][a-z-]{0,31}$/;
+  // PDF dönüşümünde UDF okuma bütçesi; önizlemenin 8 sn'si büyük belgeyi zamanlamaya bağlı olarak keserdi.
+  const UDF_OKUMA_SURESI = 60000;
+  function udfTanisi(model) {
+    const c = model.sayac || {}, issues = Array.isArray(model.paketTani?.issues) ? model.paketTani.issues : [];
+    const complete = model.paketTani?.complete === true && !model.kesildi && !c.resimReddi && !c.ofsetSorunu && !c.bilinmeyen;
+    // Süre aşımı belgenin değil okumanın sorunudur; ayrı kodla bildirilir ve yeniden denenebilir.
+    const sure = model.kesildi === 'sure' || issues.some(x => x?.code === 'profile-timeout');
+    const nedenler = issues.map(x => x?.neden), iletiler = [...new Set(issues.map(x => x?.message))].slice(0, 3);
+    if (model.kesildi) {
+      nedenler.push('truncated');
+      iletiler.push(model.kesildi === 'sure' ? 'UDF okuma süresi doldu; belgenin tamamı çözülemedi. Tekrar deneyin.'
+        : 'UDF okuma sınırına ulaşıldı; belgenin tamamı çözülemedi.');
+    }
+    if (c.resimReddi) { nedenler.push('image-unreadable'); iletiler.push('UDF içinde çözülemeyen resim var.'); }
+    if (c.ofsetSorunu) { nedenler.push('offset'); iletiler.push('UDF metin konumları belge içeriğiyle uyuşmuyor.'); }
+    if (c.bilinmeyen) { nedenler.push('unknown-element'); if (!iletiler.length) iletiler.push('UDF içinde çözülemeyen belge öğesi var.'); }
+    const gecerli = [...new Set(nedenler.filter(x => typeof x === 'string' && NEDEN_KALIBI.test(x)))];
+    const kayip = gecerli.filter(x => UDF_ICERIK_KAYBI.has(x));
+    // İçerik kaybı nedeni önce gelir; sınırlı listede düzen nedenleri onu gizlemez.
+    return { complete, kayip: kayip.length > 0, sure, nedenler: [...kayip, ...gecerli.filter(x => !UDF_ICERIK_KAYBI.has(x))], iletiler };
+  }
+  // UdfHatasi.kod kullanıcıya gösterilen sabit koda çevrilir; ileti ve ayrıntı çerçeveden çıkmaz.
+  const UDF_HATA_KODU = { zip: 'udf-zip', xml: 'udf-xml', dtd: 'udf-xml', belirsiz: 'udf-xml', 'content-xml-yok': 'udf-xml',
+    desteklenmiyor: 'document-runtime', sure: 'udf-timeout' };
+  function udfHataKodu(error) {
+    if (error?.name !== 'UdfHatasi') return 'udf-incomplete';
+    // boyut paket sınırı da model bütçesi de olabilir; 40 MB iletisi yalnız paket için doğrudur.
+    if (error.kod === 'boyut') return error.ayrinti === 'paket' ? 'udf-size' : 'udf-budget';
+    return Object.hasOwn(UDF_HATA_KODU, error.kod) ? UDF_HATA_KODU[error.kod] : 'udf-incomplete';
+  }
   async function startWorker(message) {
     if (message.runId !== state.runId || state.phase !== 'running' || !Array.isArray(message.items) ||
         !Array.isArray(message.orderedIds) || worker) return;
@@ -200,22 +234,16 @@
     for (const item of items) {
       if (String(item.format).toLowerCase() !== 'udf') continue;
       try {
-        const model = await globalThis.UHD.udf.oku(new Blob([item.bytes], { type: 'application/octet-stream' }), { signal: parseSignal, paket: true });
+        const model = await globalThis.UHD.udf.oku(new Blob([item.bytes], { type: 'application/octet-stream' }),
+          { signal: parseSignal, paket: true, sure: UDF_OKUMA_SURESI });
         if (parseSignal.aborted || state.runId !== runId || state.phase !== 'running') return;
-        const c = model.sayac || {};
+        const c = model.sayac || {}, tani = udfTanisi(model);
         item.udfModel = model;
-        item.udfDiagnostics = { complete: model.paketTani?.complete === true && !model.kesildi && !c.resimReddi && !c.ofsetSorunu && !c.bilinmeyen,
+        item.udfDiagnostics = { complete: tani.complete,
           kesildi: model.kesildi || null, resimReddi: c.resimReddi || 0,
           ofsetSorunu: c.ofsetSorunu || 0, bilinmeyen: c.bilinmeyen || 0,
           issues: model.paketTani?.issues || [], referenceVerified: false };
-        if (!item.udfDiagnostics.complete) {
-          const reasons = [...new Set(item.udfDiagnostics.issues.map(x => x.message))].slice(0, 3);
-          if (model.kesildi) reasons.push('UDF okuma sınırına ulaşıldı; belgenin tamamı çözülemedi.');
-          if (c.resimReddi) reasons.push('UDF içinde çözülemeyen resim var.');
-          if (c.ofsetSorunu) reasons.push('UDF metin konumları belge içeriğiyle uyuşmuyor.');
-          if (c.bilinmeyen && !reasons.length) reasons.push('UDF içinde çözülemeyen belge öğesi var.');
-          udfFailures.push({ id: item.id, reason: reasons.join(' ') || 'UDF içeriği eksiksiz çözülemedi.' });
-        }
+        if (!tani.complete) udfFailures.push({ id: item.id, reason: tani.iletiler.join(' ') || 'UDF içeriği eksiksiz çözülemedi.' });
       } catch (err) {
         if (parseSignal.aborted) return;
         udfFailures.push({ id: item.id, reason: err?.message || 'UDF okunamadı.' });
@@ -429,13 +457,20 @@
       format: source.format, mime: typeof source.mime === 'string' ? source.mime.slice(0, 200) : '', bytes: source.bytes };
     (async () => {
       if (item.format === 'udf') {
-        const model = await globalThis.UHD.udf.oku(new Blob([item.bytes], { type: 'application/octet-stream' }), { signal: parse.signal, paket: true });
+        const model = await globalThis.UHD.udf.oku(new Blob([item.bytes], { type: 'application/octet-stream' }),
+          { signal: parse.signal, paket: true, sure: UDF_OKUMA_SURESI });
         if (finished || parse.signal.aborted || documentPdfJob !== job) return;
-        const c = model.sayac || {};
-        const complete = model.paketTani?.complete === true && !model.kesildi && !c.resimReddi && !c.ofsetSorunu && !c.bilinmeyen;
-        if (!complete) { finish({ code: 'udf-incomplete' }); return; }
+        // Süre aşımı udf-timeout; içerik kaybı varsa udf-incomplete, yalnız henüz çizilemeyen düzen varsa
+        // udf-unsupported; en çok 5 neden kodu gider.
+        const tani = udfTanisi(model);
+        if (tani.sure) { finish({ code: 'udf-timeout' }); return; }
+        if (!tani.complete) {
+          finish({ code: tani.kayip || !tani.nedenler.length ? 'udf-incomplete' : 'udf-unsupported',
+            ...(tani.nedenler.length ? { reasons: tani.nedenler.slice(0, 5) } : {}) });
+          return;
+        }
         item.udfModel = model;
-        item.udfDiagnostics = { complete, kesildi: null, resimReddi: 0, ofsetSorunu: 0, bilinmeyen: 0,
+        item.udfDiagnostics = { complete: true, kesildi: null, resimReddi: 0, ofsetSorunu: 0, bilinmeyen: 0,
           issues: model.paketTani?.issues || [], referenceVerified: false };
       }
       if (finished || parse.signal.aborted || documentPdfJob !== job) return;
@@ -454,8 +489,8 @@
       try { w.postMessage({ type: 'SINGLE_PDF', runId: jobId, item }, [item.bytes]); }
       catch { finish({ code: 'document-worker' }); }
     })().catch(error => {
-      if (finished) return;
-      finish({ code: item.format === 'udf' ? 'udf-incomplete' : /^[a-z][a-z0-9-]{0,40}$/.test(error?.code || '') ? error.code : 'document-convert' });
+      if (finished || error?.name === 'AbortError') return;
+      finish({ code: item.format === 'udf' ? udfHataKodu(error) : /^[a-z][a-z0-9-]{0,40}$/.test(error?.code || '') ? error.code : 'document-convert' });
     });
   }
   function receive(message) {
