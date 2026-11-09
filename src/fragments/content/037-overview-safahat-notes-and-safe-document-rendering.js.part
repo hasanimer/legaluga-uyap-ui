@@ -5,19 +5,19 @@
           hesapSatirlari.length ? hesapSatirlari.map(x => money(x, 'degerAlan', x.textAlan.trim()))
             : [money(ayrinti, 'alacakKalemToplamTutar', 'Alacak kalemleri toplamı'), money(ayrinti, 'alacakKalemFaizTutar', 'Alacak kalemleri faiz tutarı'),
               money(ayrinti, 'vekaletUcreti', 'Vekâlet ücreti'), money(ayrinti, 'takipSonrasiMasraf', 'Takip sonrası masraf'), money(ayrinti, 'tahsilHarci', 'Tahsil harcı')],
-          !hesapSatirlari.length ? el('div', { class: 'dp-summary-notice' }, 'Dosya Hesabı alınamadı. Dosya hesabının tamamı bu görünümde yer almıyor; UYAP’taki Dosya Hesabı ekranını kontrol edin.') : null)),
+          !hesapSatirlari.length ? el('div', { class: 'dp-summary-notice' }, izinKilidi.hesap || 'Dosya Hesabı alınamadı. Dosya hesabının tamamı bu görünümde yer almıyor; UYAP’taki Dosya Hesabı ekranını kontrol edin.') : null)),
         el('div', { class: 'dp-finance-side' },
           el('details', { class: 'dp-card dp-finance-followup' }, el('summary', null, 'Takip bilgileri'),
             bolum('Takip bilgileri',
             text('takibinTuruAciklama', 'Türü'), text('takibinSekliAciklama', 'Şekli'), text('takibinYoluAciklama', 'Yolu'),
             el('div', { class: 'dp-summary-row' }, el('span', { class: 'dp-k' }, 'Takibi kesinleşen borçlu: '),
-              el('span', { class: kesinN != null ? 'dp-v' : 'dp-v dp-muted' }, kesinN != null ? String(kesinN) : 'UYAP’tan alınamadı')))),
+              el('span', { class: kesinN != null ? 'dp-v' : 'dp-v dp-muted' }, kesinN != null ? String(kesinN) : izinKilidi.kesin || 'UYAP’tan alınamadı')))),
           el('div', { class: 'dp-card dp-finance-collection' }, el('h4', null, 'Tahsilat'),
           bolum('Tahsilat',
           t ? [money(t, 'toplamTahsilat', 'Toplam Tahsilat'), money(t, 'toplamreddiyat', 'Toplam Reddiyat'),
             money(t, 'haricen', 'Haricen'),
             money(t, 'toplamKalan', 'Tahsilat Kalanı (dosyada kalan para)', { class: 'dp-strong', title: 'Dosyaya yatırılıp henüz reddiyatı yapılmamış tutar' })]
-            : [money(ayrinti, 'yapilmisBorcTahsilati', 'Yapılmış Borç Tahsilatı'), el('div', { class: 'dp-muted' }, 'Tahsilat ve reddiyat bilgileri alınamadı.')],
+            : [money(ayrinti, 'yapilmisBorcTahsilati', 'Yapılmış Borç Tahsilatı'), el('div', { class: 'dp-muted' }, izinKilidi.tahsilat || 'Tahsilat ve reddiyat bilgileri alınamadı.')],
             el('div', { class: 'dp-summary-notice' }, 'Tahsilat Kalanı dosyaya yatırılıp henüz reddiyatı yapılmamış tutardır. Borç bakiyesini UYAP’taki Dosya Hesap Bilgileri’nden kontrol edin.'))))),
       el('div', { class: 'dp-summary-source' }, `UYAP’tan alındı: ${globalThis.UHD.fmtDate(fetchedAt)}. Resmî hesap için UYAP’taki Dosya Hesabı ekranını esas alın.`,
         vergiAktarDugmesi(rec, { tahsilat: t, icraVekaletUcreti: hesapSatirlari.length
