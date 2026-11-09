@@ -256,7 +256,7 @@
     },
     {
       "path": "src/extension/popup.css",
-      "sha256": "c0e2c659bf645dd7ed855bb5d8228a3345c47426c1c9fe2be5f9cf3d6806b8a3"
+      "sha256": "d1a86cfa9f5d6c326db29fa3175b45046c6ba0760b85c10f68ccf4c9ee291140"
     },
     {
       "path": "src/extension/popup.html",

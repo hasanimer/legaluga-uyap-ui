@@ -1,4 +1,6 @@
 html, body { margin: 0; }
-body { width: min(500px, 100vw); height: min(600px, 100dvh); overflow: hidden; background: #f5f7fb; }
+/* Araç çubuğu popup'ı küçük bir pencereyle açılıp içeriğe göre büyür; 100vw/100dvh o ilk pencereye göre hesaplanır ve
+   popup dar kalır. Boyut bu yüzden sabittir. */
+body { width: 500px; height: 600px; overflow: hidden; background: #f5f7fb; }
 @media (prefers-color-scheme: dark) { body { background: #0f1720; } }
 #app { height: 100%; }
