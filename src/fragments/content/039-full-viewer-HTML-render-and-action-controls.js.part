@@ -34,6 +34,13 @@
     const box = el('div', { class: 'box ekran', role: 'dialog', 'aria-modal': String(!beside), 'aria-label': `Dosya ekranı ${dosyaBasligi}`, tabindex: '-1' },
       el('div', { class: 'bar' }, el('b', { title: dosyaBasligi }, dosyaBasligi), siraBar, close), sekmeBar, govde);
     const viewer = el('div', { lang: 'tr', class: 'viewer' }, box);
+    // Ekranın onayları eklentinin kendi penceresinde sorulur; pencere açıkken ikinci bir onay açılmaz.
+    let onayAcik = false;
+    const onaySor = async o => {
+      if (onayAcik) return false;
+      onayAcik = true;
+      try { return await onayIste(viewer, o); } finally { onayAcik = false; }
+    };
     mountViewerExpand(box, close);
     let closed = false, aktif = null;
     const paneller = {};

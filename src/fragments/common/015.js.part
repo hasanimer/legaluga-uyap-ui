@@ -393,5 +393,56 @@
     return { root, input, toolbar, owns, focus: () => input.focus({ preventScroll: true }), destroy() { if (destroyed) return; destroyed = true; for (const off of listeners) off(); } };
   }
 
-  globalThis.UHD = { TURLER, taramaKapsami, kurulumGerekli, CBS, ILLER, BUYUKSEHIRLER, ilSirasi, adliyeOf, cbsIlleri, cbsKapsam, ilAdi, evrakKilidi, dosyaTurAdi, ORIGIN, BRAND, norm, tokens, nameKey, detectMyName, myKeys, isClient, passFilter, fileNoQuery, search, openPath, fmtNum, fmtDate, fmtTrDate, csvCell, csvDosyaNo, evrakKey, trDateTs, parseEvraklar, diffEvrak, unseenEvrak, sonEvrak, lastEvrak, personFiles, parseSafahat, checkBalanceSnapshot, checkBalanceStore, checkSafahatSnapshot, checkSafahatStore, safahatState, safahatFileKey, SAFAHAT_REFRESH_MS, SAFAHAT_LEASE_MS, sonIslemOf, fmtTL, humanKey, trTitle, cleanDurum, cleanBirim, vergiAktarimi, kunyeOf, toastPlan, openErrorPlan, htmlKodlamasi, ekleriYerlestir, evrakKategorileri, evrakSayim, evrakTeyit, evrakTeyitMetni, sayiIyelik, noteText, noteDisplay, noteEditor, evrakTakipAcik, BACKUP_APP, BACKUP_FORMAT, BACKUP_KEYS, checkBackup, todayIso, daysLeft, parseDurusma, upcomingDurusmalar, dosyaDurusmalari, durusmaGunu, durusmaOzeti, adliyeAdi, CAKISMA_DK, durusmaCakismalari, uyapDate, durusmaIcs, ihbarCevabiMi, bankaAdi, bankaUnvanAdi, bankaCevabi, bankaBelgeleri };
+  // Sayfa içi onay. Tarayıcının confirm() penceresi içerik betiğinden çağrılınca "avukat.uyap.gov.tr şunu diyor" başlığıyla
+  // çıkar ve UYAP'ın kendi uyarısı gibi görünür; ücret onayı ve veri silme gibi kararlar eklentinin kendi penceresinde
+  // sorulur. Pencere kap'ın içine eklenir ve stilini kendisi taşır: panelin gölge kökünde de dosya ekranında da aynı
+  // görünür. İlk odak Vazgeç'tedir (Enter yanlışlıkla onaylamaz); Esc, dışarı kapanma ve Vazgeç false döndürür.
+  const ONAY_CSS = `.uhd-onay{width:min(440px,90vw);box-sizing:border-box;border:1px solid var(--line2,var(--shell-line,#cfd6e4));border-radius:12px;padding:20px;background:var(--card,var(--shell-bg,#fff));color:var(--text,var(--shell-text,#1d2939));font:14px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;text-align:left}
+.uhd-onay::backdrop{background:#0007}
+.uhd-onay h3{margin:0 0 10px;font-size:16px;line-height:1.35;font-weight:650}
+.uhd-onay p{margin:0;color:var(--text2,var(--shell-text,#344054));white-space:pre-line;overflow-wrap:anywhere}
+.uhd-onay .uhd-onay-dugmeler{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin-top:18px}
+.uhd-onay button{min-height:36px;padding:6px 14px;border:1px solid var(--line2,var(--shell-line,#cfd6e4));border-radius:8px;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.uhd-onay button.uhd-onay-evet{border-color:var(--navy,var(--shell-accent,#0f817e));background:var(--navy,var(--shell-accent,#0f817e));color:#fff;font-weight:650}
+.uhd-onay button.uhd-onay-evet.tehlikeli{border-color:#b42318;background:#b42318;color:#fff}
+.uhd-onay button:focus-visible{outline:2px solid var(--focus,var(--shell-focus,#0b6663));outline-offset:2px}`;
+  let onaySayaci = 0;
+  function onayIste(kap, { baslik, ileti = '', onay = 'Devam et', vazgec = 'Vazgeç', tehlikeli = false } = {}) {
+    return new Promise(resolve => {
+      const belge = kap.ownerDocument || document;
+      const yap = (tag, attrs, ...kids) => {
+        const e = belge.createElement(tag);
+        for (const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, v);
+        e.append(...kids);
+        return e;
+      };
+      const kimlik = `uhd-onay-${++onaySayaci}`;
+      const hayir = yap('button', { type: 'button', class: 'uhd-onay-hayir' }, vazgec);
+      const evet = yap('button', { type: 'button', class: tehlikeli ? 'uhd-onay-evet tehlikeli' : 'uhd-onay-evet' }, onay);
+      const govde = ileti ? yap('p', { id: `${kimlik}-i` }, ileti) : null;
+      const pencere = yap('dialog', { class: 'uhd-onay', lang: 'tr', role: 'alertdialog', 'aria-labelledby': `${kimlik}-b`,
+        ...(govde ? { 'aria-describedby': `${kimlik}-i` } : {}) },
+      yap('style', null, ONAY_CSS), yap('h3', { id: `${kimlik}-b` }, baslik), ...(govde ? [govde] : []),
+      yap('div', { class: 'uhd-onay-dugmeler' }, hayir, evet));
+      let bitti = false;
+      const bitir = deger => {
+        if (bitti) return;
+        bitti = true;
+        try { pencere.close(); } catch { /* zaten kapalı */ }
+        pencere.remove();
+        resolve(deger);
+      };
+      hayir.addEventListener('click', () => bitir(false));
+      evet.addEventListener('click', () => bitir(true));
+      // Tuşlar pencerede kalır: sayfanın ve dosya ekranının kısayolları (Esc ile ekranı kapatma, ok tuşları) çalışmaz.
+      pencere.addEventListener('keydown', event => event.stopPropagation());
+      pencere.addEventListener('cancel', event => { event.preventDefault(); bitir(false); });
+      pencere.addEventListener('close', () => bitir(false));
+      kap.append(pencere);
+      pencere.showModal();
+      hayir.focus();
+    });
+  }
+
+  globalThis.UHD = { onayIste, TURLER, taramaKapsami, kurulumGerekli, CBS, ILLER, BUYUKSEHIRLER, ilSirasi, adliyeOf, cbsIlleri, cbsKapsam, ilAdi, evrakKilidi, dosyaTurAdi, ORIGIN, BRAND, norm, tokens, nameKey, detectMyName, myKeys, isClient, passFilter, fileNoQuery, search, openPath, fmtNum, fmtDate, fmtTrDate, csvCell, csvDosyaNo, evrakKey, trDateTs, parseEvraklar, diffEvrak, unseenEvrak, sonEvrak, lastEvrak, personFiles, parseSafahat, checkBalanceSnapshot, checkBalanceStore, checkSafahatSnapshot, checkSafahatStore, safahatState, safahatFileKey, SAFAHAT_REFRESH_MS, SAFAHAT_LEASE_MS, sonIslemOf, fmtTL, humanKey, trTitle, cleanDurum, cleanBirim, vergiAktarimi, kunyeOf, toastPlan, openErrorPlan, htmlKodlamasi, ekleriYerlestir, evrakKategorileri, evrakSayim, evrakTeyit, evrakTeyitMetni, sayiIyelik, noteText, noteDisplay, noteEditor, evrakTakipAcik, BACKUP_APP, BACKUP_FORMAT, BACKUP_KEYS, checkBackup, todayIso, daysLeft, parseDurusma, upcomingDurusmalar, dosyaDurusmalari, durusmaGunu, durusmaOzeti, adliyeAdi, CAKISMA_DK, durusmaCakismalari, uyapDate, durusmaIcs, ihbarCevabiMi, bankaAdi, bankaUnvanAdi, bankaCevabi, bankaBelgeleri };
 })();

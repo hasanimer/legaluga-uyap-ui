@@ -1,7 +1,7 @@
 // Arama arayüzü: hem eklenti popup'ında hem UYAP sayfasındaki yan panelde aynı kod kullanılır.
 (() => {
   if (globalThis.UHD.mountUI) return;
-  const { search, passFilter, fileNoQuery, fmtTrDate, fmtNum, fmtDate, norm, detectMyName, myKeys, isClient, nameKey, BRAND, csvCell, csvDosyaNo, unseenEvrak, trDateTs, lastEvrak, personFiles, trTitle, cleanDurum, cleanBirim, kunyeOf, evrakTakipAcik, CBS, ILLER, ilAdi, BACKUP_APP, BACKUP_FORMAT, BACKUP_KEYS, checkBackup, todayIso, daysLeft, upcomingDurusmalar, durusmaCakismalari, CAKISMA_DK, durusmaIcs } = globalThis.UHD;
+  const { onayIste, search, passFilter, fileNoQuery, fmtTrDate, fmtNum, fmtDate, norm, detectMyName, myKeys, isClient, nameKey, BRAND, csvCell, csvDosyaNo, unseenEvrak, trDateTs, lastEvrak, personFiles, trTitle, cleanDurum, cleanBirim, kunyeOf, evrakTakipAcik, CBS, ILLER, ilAdi, BACKUP_APP, BACKUP_FORMAT, BACKUP_KEYS, checkBackup, todayIso, daysLeft, upcomingDurusmalar, durusmaCakismalari, CAKISMA_DK, durusmaIcs } = globalThis.UHD;
   const LIMIT = 60;
   const RECENT_MAX = 10;
   const RUN_STALE_MS = 90000;
@@ -1937,7 +1937,7 @@
         }
         const data = checkBackup(value);
         const n = data.uhdIndex ? data.uhdIndex.records.length : 0;
-        if (!confirm(`Yedek yüklenecek${n ? ` (${fmtNum(n)} dosya)` : ''}. Bu bilgisayardaki eklenti verilerinin yerini alır. Devam edilsin mi?`)) return;
+        if (!(await onayIste(root, { baslik: 'Yedek yüklensin mi?', ileti: `Yedek yüklenecek${n ? ` (${fmtNum(n)} dosya)` : ''}. Bu bilgisayardaki eklenti verilerinin yerini alır.`, onay: 'Yedeği yükle', tehlikeli: true }))) return;
         await UHDStorage.replaceBackup(data);
         setNotice(`Yedek yüklendi${n ? `: ${fmtNum(n)} dosya` : ''}. Hata raporlama kapalıdır; isterseniz yeniden onay vererek açabilirsiniz. Güncel bilgiler için bir kez ${guncelleYeri} basmanız önerilir.`);
       } catch (e) {
@@ -2144,10 +2144,10 @@
       }).catch(() => {});
 
       const btnFull = el('button', { class: 'btn sm', title: 'Seçili kapsamdaki dosya listesini ve taraf bilgilerini baştan alır. Uzun sürebilir.' }, 'Baştan tara');
-      btnFull.addEventListener('click', () => {
-        if (confirm('Seçili tarama kapsamındaki dosyaların taraf bilgileri UYAP’tan baştan alınacak. Dosya sayısına göre uzun sürebilir; durdurursanız kaldığı yerden sürdürebilirsiniz. Devam edilsin mi?')) {
-          closeSettings(); setNotice(''); opts.onUpdate(true);
-        }
+      btnFull.addEventListener('click', async () => {
+        if (!(await onayIste(root, { baslik: 'Dosyalar baştan taransın mı?', ileti: 'Seçili tarama kapsamındaki dosyaların taraf bilgileri UYAP’tan baştan alınacak. Dosya sayısına göre uzun sürebilir; durdurursanız kaldığı yerden sürdürebilirsiniz.', onay: 'Baştan tara' }))) return;
+        if (running()) return;   // onay beklerken başka bir güncelleme başladı
+        closeSettings(); setNotice(''); opts.onUpdate(true);
       });
       btnFull.disabled = running();
       const btnExport = el('button', { class: 'btn sm', title: 'Tüm dosyaları taraflar, son evrak, sonraki duruşma ve notlarla Excel’de açılabilen dosya olarak indirir.' }, 'Excel’e aktar (CSV)');
@@ -2164,7 +2164,7 @@
       const btnClear = el('button', { class: 'btn sm danger', title: 'Eklentinin bu bilgisayarda sakladığı her şeyi siler.' }, 'Tüm verileri sil');
       btnClear.disabled = running();
       btnClear.addEventListener('click', async () => {
-        if (!confirm('Dosya listesi, duruşmalar, notlarınız, gizlenen dosyalar, son açılanlar, toplu indirme planları ve ayarlarınız bu bilgisayardan silinsin mi? Bu işlem geri alınamaz; UYAP’taki dosyalarınız ve indirilmiş ZIP dosyaları etkilenmez.')) return;
+        if (!(await onayIste(root, { baslik: 'Tüm veriler silinsin mi?', ileti: 'Dosya listesi, duruşmalar, notlarınız, gizlenen dosyalar, son açılanlar, toplu indirme planları ve ayarlarınız bu bilgisayardan silinir. Bu işlem geri alınamaz; UYAP’taki dosyalarınız ve indirilmiş ZIP dosyaları etkilenmez.', onay: 'Tüm verileri sil', tehlikeli: true }))) return;
         // İş sahipliği ve bütün veriler tek commit ile silinir; eski sekme tarama verilerini geri yazamaz.
         let result;
         try { result = await globalThis.UHDStorage.clearAppData(); }

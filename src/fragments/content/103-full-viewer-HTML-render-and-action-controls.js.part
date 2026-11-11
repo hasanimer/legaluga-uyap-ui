@@ -26,7 +26,8 @@
     });
     bulkNew.addEventListener('click', async () => {
       if (closed || zipRun || (!bulkJob && !bulkState) || !globalThis.navigator?.locks) return;
-      if (!confirm('Kaydedilmiş indirme planı sıfırlansın mı? İndirilmiş ZIP dosyaları bilgisayarınızda kalır. Sonraki indirme yukarıdaki kapsamla yeni bir plan oluşturur.')) return;
+      if (!(await onaySor({ baslik: 'Kaydedilmiş indirme planı sıfırlansın mı?', ileti: 'İndirilmiş ZIP dosyaları bilgisayarınızda kalır. Sonraki indirme yukarıdaki kapsamla yeni bir plan oluşturur.', onay: 'Planı sıfırla', tehlikeli: true }))) return;
+      if (closed || zipRun || (!bulkJob && !bulkState)) return;   // onay beklerken ekran kapandı ya da indirme başladı
       try {
         await globalThis.navigator.locks.request(`uhd-bulk-download:${rec.key}`, { ifAvailable: true }, async lock => {
           if (!lock) throw new Error('Bu dosyanın indirmesi başka bir sekmede sürüyor; plan sıfırlanmadı.');

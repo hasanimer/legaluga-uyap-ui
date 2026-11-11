@@ -1,6 +1,8 @@
         signal.throwIfAborted();
-        if (cost.charged && !confirm(`UYAP banka sorgusu için ${fmtTL(cost.cost)} ücret bildiriyor (${cost.chargedFiles} dosya). Sorguyu başlatmak istiyor musunuz?`)) {
+        if (cost.charged && !(await onaySor({ baslik: 'Ücretli banka sorgusu başlatılsın mı?', ileti: `UYAP banka sorgusu için ${fmtTL(cost.cost)} ücret bildiriyor (${cost.chargedFiles} dosya).`, onay: 'Ücretli sorguyu başlat' }))) {
+          signal.throwIfAborted();
           bankNotice = 'Ücretli sorgu iptal edildi; önceki kayıt korundu.'; return;
         }
+        signal.throwIfAborted();   // onay beklerken ekran kapandıysa ya da sorgu durdurulduysa istek gönderilmez
         bankNotice = 'Banka sorgulanıyor…'; bankDraw();
         // Ücretli işlemi withDosya ile tekrarlamayız: bir tıklama, tek sorgu isteği.
