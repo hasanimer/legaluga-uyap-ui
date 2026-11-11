@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "1bd7e3038fc39551d2f3836d50848b246f8cea17fd57fa13081ec0d33f94d4fe"
+      "sha256": "4b77b871bc42d9caee9b43397892468ddcd9f4b33cff1c12c668ab3e8af9913b"
     },
     {
       "path": "SECURITY.md",
@@ -288,7 +288,7 @@
     },
     {
       "path": "src/extension/telemetry.js",
-      "sha256": "b2d647f5c0e47182992d4472770cf3a8eb3964d32b3428ad7a4b67fc3f1b6eb6"
+      "sha256": "5dc8c991c88c28aa38d6af498590e065462365b349afce6dc3810e4c08583dce"
     },
     {
       "path": "src/extension/tiff.js",

@@ -1,14 +1,17 @@
 // Ham hata metni, UYAP yanıtı ve sayfa adresi bu sınırdan dışarı çıkmaz.
 (() => {
   if (globalThis.UHDReporter) return;
-  const FILES = new Set(['background.js', 'common.js', 'content.js', 'popup.js', 'options.js', 'onboarding.js', 'tabs.js', 'ui.js', 'udf.js', 'tiff.js', 'kunye-ayikla.js', 'atif-paneli.js']);
+  const FILES = new Set(['background.js', 'common.js', 'content.js', 'popup.js', 'options.js', 'onboarding.js', 'tabs.js', 'ui.js', 'udf.js', 'tiff.js', 'kunye-ayikla.js', 'atif-paneli.js',
+    'atif-ocr.js', 'banka-api.js', 'banka-takip.js', 'belge-pdf.js', 'durusma-paketi-bridge.js', 'durusma-paketi-metin.js', 'durusma-paketi-zip.js',
+    'evrak-indirme.js', 'evrak-indirme-motoru.js', 'evrak-zip.js', 'havuz-denetim.js', 'indirme-panel.js', 'ptt-report.js', 'storage.js',
+    'tebligat-barkod.js', 'tebligat-ptt.js', 'tebligat-ui.js', 'uyap-document-native.js', 'uyap-kapi.js', 'vault-crypto.js']);
   const TYPES = new Set(['Error', 'TypeError', 'ReferenceError', 'SyntaxError', 'RangeError', 'DOMException', 'Fatal', 'UdfHatasi', 'TiffHatasi']);
   const CODES = new Set(['PRTL_GNL_100026', 'PRTL_GNL_100063', 'giris-sayfasi', 'baska-oturum', 'safahat-art-arda',
     'havuz-zaman-asimi', 'havuz-baglanti', 'havuz-http', 'havuz-boyut', 'havuz-yonlendirme']);
   const OPERATIONS = Object.freeze({
     unhandled: 'Beklenmeyen uzantı hatası', scheduled: 'Zamanlı işlem hatası',
     update: 'Güncelleme hatası', 'file-open': 'Dosya açma hatası', 'evrak-open': 'Evrak açma hatası',
-    safahat: 'Safahat görüntüleme hatası', ozet: 'Dosya özeti hatası',
+    safahat: 'Safahat görüntüleme hatası', ozet: 'Dosya özeti hatası', 'ozet-kalan-kaydi': 'Dosya özeti kalan kaydı hatası',
     udf: 'UDF görüntüleme hatası', tiff: 'TIFF görüntüleme hatası', html: 'HTML evrak görüntüleme hatası', storage: 'Yerel depolama hatası',
     session: 'Oturum denetimi hatası', atif: 'Atıf tarama hatası', havuz: 'Künye havuzu hatası', test: 'Legaluga Sentry kurulum testi'
   });
