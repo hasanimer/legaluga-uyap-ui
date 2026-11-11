@@ -7,7 +7,9 @@ Eklenti, **Av. Hasan İmer Akın** tarafından meslektaşlarının ücretsiz kul
 
 Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lisansıyla** sunar. UYAP işlem motoru özel kaynaklıdır; tam eklenti mağazadan kurulur.
 
-> Bu rehber, **1.19.64** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+> Bu rehber, **1.19.65** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
+**1.19.65:** **PDF indir**, tablo, resim, üst/alt bilgi, filigran ve şablon alanı içeren UDF evrakı da PDF’e çevirir; yerleşim yaklaşık olabilir. Toplu indirmede UYAP hız koruması durdurduğunda o ana kadar alınan evraklar diske kaydedilir; boş dönen ya da 128 MiB’ı aşan evrak için **Bu evrakı atla ve sürdür** seçeneği çıkar; mola ve kalan süre İndirmeler panelinde ve dosya ekranında görünür.
+
 **1.19.64:** Toplu indirmede **Klasör düzeninde indir** seçeneği; UYAP ana sayfasında tanıtım kutularını gizleme ayarı ve Legaluga şeridi; UYAP penceresinde **Legaluga'da aç** ile Ödeme/Evrak Gönder geçişleri, Özet'te duruşma bilgisi. Takılan toplu indirme, Atıflar panelindeki geçici yeniden deneme hatası ve Vergi Takibi devrinin eşzamanlı alımlarda tek kullanımlık kalması düzeltildi; UYAP'ın dosya iznine uymayan veri artık gösterilmez.
 
 **1.19.63:** Duruşma paketinde UDF evraktan PDF üretimi yaklaşık 2,6 kat hızlandı; üretilen PDF dosyaları ~%53 küçüldü (#122).
