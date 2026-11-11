@@ -852,7 +852,7 @@
     },
     {
       "path": "tests/indirme-panel.test.js",
-      "sha256": "37e8ab1b309f88dce2d2233d6e88a6db277e43952434f53e82de9b9693c5098c"
+      "sha256": "9bb6d64a7831e73ea32d6848d472bc215ecce780a213d2383c061db77f4f424d"
     },
     {
       "path": "tests/onboarding-ui.test.js",

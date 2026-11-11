@@ -293,8 +293,8 @@ test('atlanan evrak sayısı ayrı not olarak görünür ve bildirilir; tamamlan
   assert.equal(h.field('skipped').hidden, true);
   h.update([{ ...state, saved: 300, partCount: 3, skipped: 2 }]);
   assert.equal(h.field('skipped').hidden, false);
-  assert.match(h.field('skipped').textContent, /^2 evrak güvenle eşleştirilemediği için atlandı; ZIP içinde yerine “İNDİRİLEMEDİ” notu var\./);
-  assert.match(h.field('live').textContent, /2 evrak güvenle eşleştirilemediği için atlandı/);
+  assert.match(h.field('skipped').textContent, /^2 evrak indirilemediği için atlandı; ZIP içinde yerine “İNDİRİLEMEDİ” notu var\./);
+  assert.match(h.field('live').textContent, /2 evrak indirilemediği için atlandı/);
   h.update([{ ...state, status: 'complete', phase: 'idle', saved: 10840, partCount: 109, skipped: 2 }]);
   assert.equal(h.field('status').textContent, 'Tamamlandı (eksik)');
   assert.equal(h.field('skipped').hidden, false);
