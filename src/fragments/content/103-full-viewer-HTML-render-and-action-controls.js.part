@@ -18,6 +18,12 @@
     zipKlasor.addEventListener('change', () => { Promise.resolve(globalThis.chrome?.storage?.local?.set?.({ uhdKlasorDuzeni: zipKlasor.checked })).catch(() => {}); zipSync(); });
     zipParts.addEventListener('change', () => { bulkChoice = true; zipSync(); });
     bulkResume.addEventListener('click', bulkDownload);
+    bulkSkip.addEventListener('click', () => {
+      const t = bulkTakilan();
+      if (closed || zipRun || !t || !downloads) return;
+      try { downloads.resume(rec.key, { skip: { jobId: t.jobId, cursor: t.cursor } }); }
+      catch (err) { zipMessage(err?.code === 'SOURCE_REQUIRED' ? 'Devam etmek için “Kaldığı yerden devam et”e basın.' : err.message, true); }
+    });
     bulkNew.addEventListener('click', async () => {
       if (closed || zipRun || (!bulkJob && !bulkState) || !globalThis.navigator?.locks) return;
       if (!confirm('Kaydedilmiş indirme planı sıfırlansın mı? İndirilmiş ZIP dosyaları bilgisayarınızda kalır. Sonraki indirme yukarıdaki kapsamla yeni bir plan oluşturur.')) return;

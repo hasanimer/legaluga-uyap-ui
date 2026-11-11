@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "4939b46b67ada231d1696cae2462f753dc8978c8e507080ed30fba6b8da21cf6"
+      "sha256": "f8e3ea0b2a09d8412ed72d18bf7ec5c21ca87b4cbe200c67692859d36a88c553"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -156,7 +156,7 @@
     },
     {
       "path": "src/extension/belge-pdf.js",
-      "sha256": "5a1f94b3d63dd967881fd13277c99a6b596835f5ae230801f518ab31e6c1600e"
+      "sha256": "7dcb23634f81ea855dbbb29d75a0f35217a52f8ba7377ad4ee9aa62285358e0f"
     },
     {
       "path": "src/extension/durusma-paketi-bootstrap.js",
@@ -184,7 +184,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-udf.js",
-      "sha256": "2f1b849513009d5df25f4fb8f431f47560a457877a61d617d00b108d3e1e7f13"
+      "sha256": "13170e0bc63ed620afe8046700c3079cb0b9f3ba748a204f3b68ada84a0385b9"
     },
     {
       "path": "src/extension/durusma-paketi-ui.js",
@@ -204,7 +204,7 @@
     },
     {
       "path": "src/extension/durusma-paketi.html",
-      "sha256": "1aaa45bdeb0f518c7eecba42871adfeca24beb35a4238b714ac92210176e25e7"
+      "sha256": "f3ca082818b2b77b691dff814ee5117271f5d36ba245751f972f4458c55e7eb7"
     },
     {
       "path": "src/extension/evrak-zip.js",
@@ -228,7 +228,7 @@
     },
     {
       "path": "src/extension/indirme-panel.js",
-      "sha256": "dda9f9d7fcbd9186db1e548f2481106b8a4b1306435084a3c044ed475a224425"
+      "sha256": "97d87a3b69b0f81ecb7e1471317dbc3dbab9efdf0e0bff6b13c3c8253ed4b948"
     },
     {
       "path": "src/extension/kunye-ayikla.js",
@@ -296,7 +296,7 @@
     },
     {
       "path": "src/extension/udf.js",
-      "sha256": "90654b5359bd73c660b00a86868e5272f07e758cfd9ad3a6d53c3e19440aee0b"
+      "sha256": "ec647eb7d81becd1aff13ef3941d697675d1554cdd5d7f25cf7ec01ff9a0bc76"
     },
     {
       "path": "src/extension/ui.js",
@@ -628,7 +628,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "48e867527acfa0d5ccdffb2a068c5daae1a20bb673cead4ddf02367caf4cd1e9"
+      "sha256": "9a1e257ca3df9004cb9bb1e643e4773a9eba81cd72886d0ac686d48a282923a3"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -764,7 +764,7 @@
     },
     {
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "bd3f34e5e71f2ef034c1df77f3c7ccf85b9209095019b659d7551e0fe6c51a68"
+      "sha256": "f7ce6adf0fd84893187ae9fd906f2dad5330b3c1401e13784d36110933475332"
     },
     {
       "path": "src/fragments/content/105-viewer-navigation-abort-epoch-boundary.js.part",
@@ -852,7 +852,7 @@
     },
     {
       "path": "tests/indirme-panel.test.js",
-      "sha256": "37e8ab1b309f88dce2d2233d6e88a6db277e43952434f53e82de9b9693c5098c"
+      "sha256": "9bb6d64a7831e73ea32d6848d472bc215ecce780a213d2383c061db77f4f424d"
     },
     {
       "path": "tests/onboarding-ui.test.js",

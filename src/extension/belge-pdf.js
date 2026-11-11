@@ -43,6 +43,7 @@
     'udf-model': 'UDF modeli geçersiz.',
     'udf-page': 'UDF sayfa ölçüleri geçersiz.',
     'udf-text-loss': 'UDF metni PDF’e eksiksiz aktarılamadı.',
+    'udf-image': 'UDF’deki bir resim PDF’e aktarılamadı.',
     'image-load': 'Resim açılamadı ya da bozuk.',
     'image-limit': 'Resim çözünürlüğü ya da bellek sınırı aşıldı.',
     'tiff-incomplete': 'TIFF’in tüm sayfaları eksiksiz dönüştürülemedi.',

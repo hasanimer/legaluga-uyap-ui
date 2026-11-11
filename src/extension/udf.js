@@ -213,13 +213,14 @@
   // özellikleri ayrı tanıyla bildirir. Dar profil dışındaki XML aynen reddedilir.
   // Süre, oku'nun başlangıcından sayılır: model ve profil aynı okuma bütçesini paylaşır.
   function paketProfili(kok, signal, { baslangic = performance.now(), sure = SINIR.sure } = {}) {
-    const issues = []; let unsupported = 0;
+    const issues = []; let unsupported = 0, yaklasik = 0;
     // Tanılarda belge metni/öznitelik değeri tutulmaz; yalnız özellik, yapısal konum ve sabit sözlükten neden vardır.
     const issue = (code, path, message, neden) => {
       unsupported++;
       if (issues.length < 20) issues.push({ code, path, message, neden });
     };
-    const result = () => ({ complete: unsupported === 0, unsupported, issues });
+    // yaklasik: metni etkilemeyen, yalnız görünümü değiştirebilecek tanınmayan özellik sayısı; belgeyi düşürmez.
+    const result = () => ({ complete: unsupported === 0, unsupported, issues, yaklasik });
     if (ad(kok) !== 'template') {
       issue('format-root', 'document', 'UDF belge yapısı kurulu Editör biçimiyle uyuşmuyor.', 'format'); return result();
     }
@@ -229,10 +230,16 @@
       pageformat: ['mediasizename', 'paperorientation', 'leftmargin', 'rightmargin', 'topmargin', 'bottommargin', 'headerfoffset', 'footerfoffset'],
       paragraph: [...font, 'alignment', 'leftindent', 'rightindent', 'firstlineindent', 'spaceabove', 'spacebefore', 'spacebelow', 'spaceafter', 'linespacing', 'tabset',
         'bulleted', 'numbered', 'listid', 'listlevel', 'bullettype', 'numbertype'],
-      content: [...font, 'startoffset', 'length'], tab: [...font, 'startoffset', 'length'],
+      content: [...font, 'startoffset', 'length', 'fieldname', 'fieldgroupname'],
+      field: [...font, 'startoffset', 'length', 'fieldname', 'fieldgroupname'],
+      tab: [...font, 'startoffset', 'length'], space: [...font, 'startoffset', 'length'],
       style: [...font, 'name', 'parent', 'description'],
-      pagebreak: ['startoffset', 'length'], 'page-break': ['startoffset', 'length'], br: [], linebreak: [], newline: [], space: []
+      pagebreak: ['startoffset', 'length'], 'page-break': ['startoffset', 'length'], br: [], linebreak: [], newline: [],
+      // Yapısal öğeler: çizici tabloyu, resmi, üst/alt bilgiyi ve filigranı modelden çizer. Öznitelikleri yalnız
+      // yerleşimi etkiler; metin kaybı havuz kapsama denetimiyle, çözülemeyen resim resimReddi ile yakalanır.
+      table: null, row: null, cell: null, image: null, header: null, footer: null, bgimage: null
     };
+    const YAPISAL = new Set(['table', 'row', 'cell', 'image', 'header', 'footer', 'bgimage']);
     // Havuz, gövde, özellik ve stil bölümleri yalnız kökte ve en çok birer kez bulunur; modelKur yalnız ilkini okur.
     // İkinci ya da başka yere konmuş havuzdaki metin hiçbir denetime girmeden düşmesin; satır içi content paragraftadır.
     const BOLUMLER = ['content', 'elements', 'properties', 'styles'], kokBolumleri = new Set();
@@ -282,14 +289,12 @@
           issue('profile-timeout', path, 'UDF özellik denetimi süre sınırını aştı.', 'limit'); return result();
         }
       }
-      const tag = ad(node), allowed = attrs[tag];
-      if (!allowed) {
-        const names = { table: 'Tablo', image: 'Resim', header: 'Üst bilgi', footer: 'Alt bilgi',
-          bgimage: 'Filigran', data: 'Şablon verisi', field: 'Şablon alanı' };
-        const nedenler = { table: 'table', image: 'image', header: 'header', footer: 'footer',
-          bgimage: 'watermark', data: 'template', field: 'template' };
-        issue('element', path, names[tag] ? `${names[tag]} düzeni bu UDF profilinde henüz desteklenmiyor.` :
-          'UDF desteklenmeyen bir belge öğesi içeriyor.', Object.hasOwn(nedenler, tag) ? nedenler[tag] : 'element');
+      const tag = ad(node), allowed = Object.hasOwn(attrs, tag) ? attrs[tag] : null;
+      // Şablon verisi (<data>) kökte durur; alan adları serbest olduğundan alt ağacı denetlenmez, değerleri modelde
+      // alanlara yerleşir. Başka yerdeki data bilinmeyen öğedir.
+      if (tag === 'data' && ust === 'template') continue;
+      if (!YAPISAL.has(tag) && !allowed) {
+        issue('element', path, 'UDF desteklenmeyen bir belge öğesi içeriyor.', 'element');
         // Bu özellik zaten belgeyi bloke eder; altındaki bilinmeyenleri çoğaltma.
         continue;
       }
@@ -305,9 +310,10 @@
       const arayuzStili = tag === 'style' && String(oz(node, 'name') || '').toLowerCase() === 'default';
       for (const attribute of node.attributes || []) {
         const key = attribute.localName.toLowerCase();
-        if (!allowed?.includes(key)) {
-          // Destek dışı öğenin alt özelliklerini ayrıca saymak aynı nedeni gereksiz çoğaltır.
-          if (allowed && !arayuzStili) issue('attribute', path, 'UDF desteklenmeyen bir biçim özelliği içeriyor.', 'attribute');
+        if (!allowed) continue;
+        if (!allowed.includes(key)) {
+          // Tanınmayan öznitelik metni düşürmez; yalnız görünüm özgünden ayrılabilir. Sayılır ve uyarıyla bildirilir.
+          if (!arayuzStili) yaklasik++;
           continue;
         }
         // Aile adı çizicideki gibi en çok 128 karakterdir; uzun ad worker'da her parçada yeniden işlenmesin.
@@ -346,8 +352,8 @@
             (!Number.isFinite(sayi(attribute.value)) || sayi(attribute.value) < 0 || sayi(attribute.value) > 144))
           issue('paragraph-spacing', path, 'UDF paragraf boşluğu geçersiz veya desteklenen aralığın dışında.', 'paragraph');
       }
-      if (tag === 'template' && oz(node, 'format_id') !== '1.8')
-        issue('format-version', path, 'UDF biçim sürümü henüz doğrulanmadı.', 'format');
+      // Eski biçim sürümleri aynı öğelerle okunur; sürüm farkı yalnız yaklaşık görünüm sayılır.
+      if (tag === 'template' && oz(node, 'format_id') !== '1.8') yaklasik++;
       if (tag === 'elements' && oz(node, 'resolver') && oz(node, 'resolver').toLowerCase() !== 'hvl-default')
         issue('body-style', path, 'UDF gövde stilinin yerleşimi henüz doğrulanmadı.', 'style');
       if (ad(node) === 'pageformat') {
@@ -366,7 +372,7 @@
         issue('alignment', path, 'UDF paragraf hizalaması geçersiz.', 'paragraph');
       // Ters push kaynak sırasını korur; konum değer veya belge metni taşımaz.
       for (let i = node.children.length - 1; i >= 0; i--) {
-        const child = node.children[i], childName = attrs[ad(child)] ? ad(child) : 'unsupported';
+        const child = node.children[i], childName = Object.hasOwn(attrs, ad(child)) ? ad(child) : 'unsupported';
         pending.push({ node: child, path: `${path}/${childName}[${i + 1}]`.slice(-256), depth: depth + 1, ust: tag });
       }
     }
