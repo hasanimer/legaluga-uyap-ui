@@ -2,11 +2,12 @@
 // sekmesinde simge popup yerine sayfadaki paneli açar (background.js); popup orada yalnız panel yanıt vermezse görünür.
 const { ORIGIN, openPath, mountUI, uyapTab, focusTab, unresponsive, requestUpdate, stopUpdateAll } = UHD;
 
-// UYAP sekmesi yoksa: UYAP açılır; istenen dosya ya da görünüm giriş yapıldıktan sonra kendiliğinden açılır (3 dk içinde).
+// UYAP sekmesi yoksa: UYAP açılır; oturum açıksa istenen dosya ya da görünüm kendiliğinden açılır; giriş gerekiyorsa
+// istek bırakılır, girişten sonra kullanıcı yeniden açar.
 function noTab(pending) {
   const ne = pending ? (pending.record ? 'dosya' : 'panel') : null;
   ui.setNotice(ne
-    ? `UYAP’ta açık sekme yok. “UYAP’ı aç”a basın; giriş yaptığınızda ${ne} kendiliğinden açılır.`
+    ? `UYAP’ta açık sekme yok. “UYAP’ı aç”a basın; oturumunuz açıksa ${ne} kendiliğinden açılır, giriş gerekirse girişten sonra yeniden açın.`
     : 'UYAP’ta açık sekme yok. “UYAP’ı aç”a basıp giriş yapın; sonra tekrar deneyin.', 'err', {
     label: 'UYAP’ı aç',
     fn: async () => {

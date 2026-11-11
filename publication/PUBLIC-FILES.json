@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "f8e3ea0b2a09d8412ed72d18bf7ec5c21ca87b4cbe200c67692859d36a88c553"
+      "sha256": "eae58066b7485320066b7c828955f149c0fb5f3743bd299d320807475ca7a362"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -264,7 +264,7 @@
     },
     {
       "path": "src/extension/popup.js",
-      "sha256": "94692041292f8610a98b46de003986fe44e454b5b6610ca0cb8ed2927fe4365b"
+      "sha256": "b7dc07d536055d4aeb375b0d41dbe39174870a37dff1394a81d2e9605e1ac023"
     },
     {
       "path": "src/extension/ptt-offscreen.html",
@@ -544,7 +544,7 @@
     },
     {
       "path": "src/fragments/common/013.js.part",
-      "sha256": "c240b37265b3a7717d5e4b4f607df192ac7496ecbdaac9551305ef3d8c2e4d64"
+      "sha256": "276cb0e7b22c8eeffa1ce3ea437f39f66b5abbf143377a96bd1ff7af190b0816"
     },
     {
       "path": "src/fragments/common/015.js.part",
@@ -592,7 +592,7 @@
     },
     {
       "path": "src/fragments/content/021-native-window-navigation-and-identity-guards.js.part",
-      "sha256": "45f2b4683b860b4572881987381a1f55cc21432aec9a652be5bc5e199d9431fd"
+      "sha256": "1ffcbe4868b6208ed85c874cc0d4566ced572349fdd7f906a29afb0ae9bac8be"
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
@@ -796,7 +796,7 @@
     },
     {
       "path": "src/fragments/content/118-viewer-list-loading-retry-and-error-controls.js.part",
-      "sha256": "4b315b8d561770d2166baba502895ee0abfd5993661930b741c7ed4f7bc64860"
+      "sha256": "f0f384ec5112395af178eef168ad8dce7ad28c6424da7d75d5bad4a4c68d8f5f"
     },
     {
       "path": "src/fragments/content/119-full-viewer-HTML-render-and-action-controls.js.part",
