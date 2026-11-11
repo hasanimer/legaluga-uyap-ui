@@ -636,7 +636,9 @@
       bulkResume.hidden = !savedPlan;
       bulkResume.textContent = bulkState?.persistentPending || bulkJob?.pendingDownload ? 'İndirme durumunu kontrol et' : 'Kaldığı yerden devam et';
       bulkResume.disabled = busy || !!bulkRead;
+      const atlaOdakta = shadowRoot.activeElement === bulkSkip;
       bulkSkip.hidden = !bulkTakilan();
+      if (atlaOdakta && bulkSkip.hidden) (bulkResume.hidden ? zipDurdur : bulkResume).focus();
       bulkSkip.disabled = busy || !!bulkRead;
       bulkNew.hidden = !bulkJob && !bulkState;
       bulkNew.disabled = busy || !!bulkRead || !!bulkState?.persistentPending || !!bulkJob?.pendingDownload;
@@ -666,12 +668,13 @@
     }
     function bulkEk() {
       if (!bulkState) return '';
-      if (bulkTakilan()) return ' Devam et aynı evrakı yeniden dener; “Bu evrakı atla ve sürdür” yerine ZIP’e “İNDİRİLEMEDİ” notu koyar.';
+      const t = bulkTakilan();
+      if (t) return ` Takılan evrak: ${[t.tur, t.tarih].filter(v => typeof v === 'string' && v).map(v => v.slice(0, 200)).join(' · ') || 'evrak'}. “Kaldığı yerden devam et” aynı evrakı yeniden dener; “Bu evrakı atla ve sürdür” bu evrakın yerine ZIP’e “İNDİRİLEMEDİ” notu koyar.`;
       if (bulkState.status !== 'running') return '';
       const mola = bulkState.phase === 'fetching' && Number.isSafeInteger(bulkState.restUntil) && bulkState.restUntil > Date.now()
         ? ` UYAP’a yük bindirmemek için kısa bir mola veriliyor; indirme ${new Date(bulkState.restUntil).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} civarında kendiliğinden sürer.` : '';
       const dk = Number.isSafeInteger(bulkState.etaMs) && bulkState.etaMs > 0 ? Math.ceil(bulkState.etaMs / 300000) * 5 : 0;
-      const kalan = !dk ? '' : ` Kalan süre: yaklaşık ${dk <= 5 ? '5 dakikadan az' : dk < 60 ? `${dk} dk` : `${Math.floor(dk / 60)} sa${dk % 60 ? ` ${dk % 60} dk` : ''}`}.`;
+      const kalan = !dk ? '' : ` Kalan süre: ${dk <= 5 ? '5 dakikadan az' : `yaklaşık ${dk < 60 ? `${dk} dk` : `${Math.floor(dk / 60)} sa${dk % 60 ? ` ${dk % 60} dk` : ''}`}`}.`;
       return mola + kalan;
     }
     function bulkWatch(states) {

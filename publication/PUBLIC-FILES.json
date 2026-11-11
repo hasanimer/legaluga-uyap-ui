@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "86701301833def72e5b229c53d55f3715246772247d3ed0373a7d124fab5766b"
+      "sha256": "f8e3ea0b2a09d8412ed72d18bf7ec5c21ca87b4cbe200c67692859d36a88c553"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -228,7 +228,7 @@
     },
     {
       "path": "src/extension/indirme-panel.js",
-      "sha256": "ebf472e30f38edea81c607b41f16d7235ceac6ebbb6912acd041ecd18c42072c"
+      "sha256": "97d87a3b69b0f81ecb7e1471317dbc3dbab9efdf0e0bff6b13c3c8253ed4b948"
     },
     {
       "path": "src/extension/kunye-ayikla.js",
@@ -628,7 +628,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "edc8c3601dc5d7e326d96e593202e283a8bba9a236a37a30df6bd519ef563d88"
+      "sha256": "9a1e257ca3df9004cb9bb1e643e4773a9eba81cd72886d0ac686d48a282923a3"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",

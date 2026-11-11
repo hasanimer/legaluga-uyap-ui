@@ -46,7 +46,7 @@
   // Kalan süre kaba bir tahmindir: 5 dakikaya yuvarlanır, kesin süre gibi gösterilmez.
   const remaining = value => {
     const minutes = Math.ceil(number(value) / 300000) * 5;
-    return minutes <= 5 ? '5 dakikadan az' : minutes < 60 ? `${minutes} dk` : `${Math.floor(minutes / 60)} sa${minutes % 60 ? ` ${minutes % 60} dk` : ''}`;
+    return minutes <= 5 ? '5 dakikadan az' : `yaklaşık ${minutes < 60 ? `${minutes} dk` : `${Math.floor(minutes / 60)} sa${minutes % 60 ? ` ${minutes % 60} dk` : ''}`}`;
   };
   const clock = value => new Date(value).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const STUCK = { bos: 'UYAP bu evrakı boş döndürüyor', buyuk: 'Bu evrak 128 MiB sınırını aşıyor' };
@@ -89,6 +89,8 @@
     // Motor, taze listede kimliği kesin doğrulanamayan evrakı yanlış belge indirmemek için atlar ve yerine not koyar.
     const skippedText = state => number(state.skipped) ? `${fmt(state.skipped)} evrak indirilemediği için atlandı; ZIP içinde yerine “İNDİRİLEMEDİ” notu var. Bu evrakları UYAP’ta elle açabilirsiniz.` : '';
     const stateError = state => literal(state.error, 400);
+    // Takılan evrakın iletisi kartta ve ekran okuyucu duyurusunda aynıdır; atlama seçeneğini de söyler.
+    const stuckText = state => { const t = stuck(state); return t ? `${STUCK[t.neden]}: ${[literal(t.tur, 200), literal(t.tarih, 40)].filter(Boolean).join(' · ') || 'evrak'}. Devam et yeniden dener; “Bu evrakı atla ve sürdür” ZIP’e bu evrakın yerine “İNDİRİLEMEDİ” notu koyar.` : ''; };
 
     function createRow(fileKey) {
       const titleId = `${key}-file-${rows.size + 1}-${++sequence}`;
@@ -126,7 +128,8 @@
           if (!destroyed && row.alive && row.pending?.token === token) row.issue = '';
         } catch (err) {
           if (!destroyed && row.alive && row.pending?.token === token) {
-            row.issue = err?.code === 'SOURCE_REQUIRED' ? 'Devam etmek için UYAP dosyasını açın; Toplu indir sekmesinden kaldığınız yerden devam edin.'
+            row.issue = err?.code === 'SOURCE_REQUIRED' ? name === 'skip' ? 'Atlamak için UYAP dosyasını açın; Toplu indir sekmesinde “Bu evrakı atla ve sürdür”e basın.'
+              : 'Devam etmek için UYAP dosyasını açın; Toplu indir sekmesinden kaldığınız yerden devam edin.'
               : literal(err?.message, 400) || 'İşlem tamamlanamadı. Tekrar deneyin.';
             announce(`${row.title.textContent}: ${row.issue}`);
           }
@@ -178,7 +181,7 @@
       row.duration.hidden = !number(state.elapsedMs);
       row.duration.textContent = `Etkin süre: ${elapsed(state.elapsedMs)}`;
       row.eta.hidden = state.status !== 'running' || !number(state.etaMs);
-      row.eta.textContent = row.eta.hidden ? '' : `Kalan süre: yaklaşık ${remaining(state.etaMs)}`;
+      row.eta.textContent = row.eta.hidden ? '' : `Kalan süre: ${remaining(state.etaMs)}`;
       const time = state.lastPart?.completedAt, date = Number.isSafeInteger(time) && time > 0 ? new Date(time) : null;
       row.last.hidden = !date || !Number.isFinite(date.getTime());
       row.last.textContent = row.last.hidden ? '' : `Son kayıt: ${date.toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}`;
@@ -190,8 +193,7 @@
       row.skipped.textContent = skippedText(state);
       row.skipped.hidden = !row.skipped.textContent;
       const takilan = stuck(state);
-      const message = row.issue || (takilan ? `${STUCK[takilan.neden]}: ${[literal(takilan.tur, 200), literal(takilan.tarih, 40)].filter(Boolean).join(' · ') || 'evrak'}. Devam et yeniden dener; atlarsanız ZIP’e bu evrakın yerine “İNDİRİLEMEDİ” notu konur.`
-        : stateError(state));
+      const message = row.issue || stuckText(state) || stateError(state);
       row.error.hidden = !message;
       row.error.textContent = message;
       const action = ['queued', 'running'].includes(state.status) ? 'pause' : 'resume';
@@ -207,7 +209,9 @@
       const downloadId = state.lastPart?.downloadId;
       row.folder.hidden = typeof showPart !== 'function' || !Number.isSafeInteger(downloadId) || downloadId < 0 || !state.id;
       row.folder.disabled = row.pending?.name === 'folder';
-      if (doc.activeElement === row.control && row.control.hidden) (row.folder.hidden ? row.open.hidden ? row.title : row.open : row.folder).focus();
+      const odak = doc.activeElement;
+      if (odak === row.control && row.control.hidden) (row.folder.hidden ? row.open.hidden ? row.title : row.open : row.folder).focus();
+      else if (odak === row.skip && row.skip.hidden) (!row.control.hidden ? row.control : !row.folder.hidden ? row.folder : !row.open.hidden ? row.open : row.title).focus();
     }
 
     function render(states) {
@@ -223,12 +227,13 @@
         if (state.status === 'queued') queued++;
         let row = rows.get(state.fileKey);
         if (!row) { row = createRow(state.fileKey); rows.set(state.fileKey, row); }
-        const stamp = JSON.stringify([state.status, state.phase, number(state.partCount), stateError(state), number(state.skipped), resting(state)]);
+        const sorun = stuckText(state) || stateError(state);
+        const stamp = JSON.stringify([state.status, state.phase, number(state.partCount), sorun, number(state.skipped), resting(state)]);
         const previous = row.state;
         row.state = state;
         if (previous && previous.status !== state.status && ['running', 'queued', 'complete'].includes(state.status)) row.issue = '';
         drawRow(row);
-        if (row.stamp && row.stamp !== stamp) announcements.push(`${row.title.textContent}: ${phaseText(state)}. ${fmt(state.saved)} / ${fmt(state.total)} evrak kaydedildi.${skippedText(state) ? ' ' + skippedText(state) : ''}${stateError(state) ? ' ' + stateError(state) : ''}`);
+        if (row.stamp && row.stamp !== stamp) announcements.push(`${row.title.textContent}: ${phaseText(state)}. ${fmt(state.saved)} / ${fmt(state.total)} evrak kaydedildi.${skippedText(state) ? ' ' + skippedText(state) : ''}${sorun ? ' ' + sorun : ''}`);
         row.stamp = stamp;
       }
       for (const [fileKey, row] of rows) if (!present.has(fileKey)) {
