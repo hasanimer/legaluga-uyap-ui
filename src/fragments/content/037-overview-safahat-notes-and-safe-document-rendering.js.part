@@ -116,8 +116,15 @@
           const text = inFlight = textarea.value.trim();
           if (!signal.aborted) message('Kaydediliyor…', false, 'saving');
           try {
-            await ui.saveNote(rec.key, text);
+            const onceki = saved;
+            await ui.saveNote(rec.key, text, { bildirimsiz: true });
             saved = text;
+            // Not boşaltılıp kaydedilince silinir: önceki metin (biçimiyle) geri yazılabilir; arada yeni not yazıldıysa ezilmez.
+            if (!text && onceki && typeof toast === 'function') toast('Not silindi.', 'ok', 12000, { label: 'Geri al', fn: async () => {
+              if (ui.getNote(rec.key)) return toast('Bu dosyaya yeni bir not yazılmış; silinen not geri yüklenmedi.', '', 8000, null, { id: 'not-silindi:' + rec.key });
+              try { await ui.saveNote(rec.key, onceki, { bildirimsiz: true }); }
+              catch { toast('Not geri yüklenemedi. Tekrar deneyin.', 'err', 8000, null, { id: 'not-silindi:' + rec.key }); }
+            } }, { id: 'not-silindi:' + rec.key });
             if (textarea.value.trim() === text) textarea.value = text;
             reload.hidden = true;
           } catch {

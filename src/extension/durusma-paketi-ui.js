@@ -262,8 +262,8 @@
     let instance;
     try { instance = worker = new Worker(chrome.runtime.getURL('durusma-paketi-worker.js')); }
     catch {
-      send('WORKER_FAILED', { runId, failures: [{ id: '', reason: 'PDF işçisi başlatılamadı.' }] });
-      dispatch({ type: 'ERROR', runId, message: 'PDF işçisi başlatılamadı.' }); return;
+      send('WORKER_FAILED', { runId, failures: [{ id: '', reason: 'PDF hazırlayıcı başlatılamadı.' }] });
+      dispatch({ type: 'ERROR', runId, message: 'PDF hazırlayıcı başlatılamadı.' }); return;
     }
     // Süre sınırı işçinin son ilerleme bildiriminden sayılır: çok sayfalı evrak ilerlerken kesilmez, takılan işçi durdurulur.
     const armTimer = () => {
@@ -301,7 +301,7 @@
     };
     instance.onerror = () => {
       if (worker !== instance) return;
-      stopWorker(); send('WORKER_FAILED', { runId, failures: [{ id: '', reason: 'PDF işçisi durdu.' }] });
+      stopWorker(); send('WORKER_FAILED', { runId, failures: [{ id: '', reason: 'PDF hazırlayıcı durdu.' }] });
       dispatch({ type: 'ERROR', runId, message: 'PDF hazırlanamadı.' });
     };
     const transfer = workItems.map(item => item.bytes).filter(bytes => bytes instanceof ArrayBuffer);
@@ -310,8 +310,8 @@
       instance.postMessage({ type: 'START', runId, orderedIds: workOrder,
         excludedIds: workExcluded.map(x => x.id) });
     } catch {
-      stopWorker(); send('WORKER_FAILED', { runId, failures: [{ id: '', reason: 'PDF işçisine evrak aktarılamadı.' }] });
-      dispatch({ type: 'ERROR', runId, message: 'PDF işçisine evrak aktarılamadı.' });
+      stopWorker(); send('WORKER_FAILED', { runId, failures: [{ id: '', reason: 'Evrak PDF hazırlayıcıya aktarılamadı.' }] });
+      dispatch({ type: 'ERROR', runId, message: 'Evrak PDF hazırlayıcıya aktarılamadı.' });
     }
   }
   function metinIsi(message) {
@@ -340,12 +340,12 @@
     textJob = { jobId, finish: bitir };
     zaman = setTimeout(() => bitir(null, 'Metin çıkarma süresi doldu; işlem durduruldu.'), 120000);
     try { w = new Worker(chrome.runtime.getURL('durusma-paketi-worker.js')); }
-    catch { bitir(null, 'Metin işçisi başlatılamadı.'); return; }
+    catch { bitir(null, 'Metin okuyucu başlatılamadı.'); return; }
     w.onmessage = e => { if (e.data?.type === 'TEXT_READY' && e.data.runId === jobId) bitir(e.data.texts, e.data.error); };
-    w.onerror = () => bitir(null, 'Metin işçisi durdu.');
-    w.onmessageerror = () => bitir(null, 'Metin işçisinin yanıtı okunamadı.');
+    w.onerror = () => bitir(null, 'Metin okuyucu durdu.');
+    w.onmessageerror = () => bitir(null, 'Metin okuyucunun yanıtı okunamadı.');
     try { w.postMessage({ type: 'TEXT', runId: jobId, items, ...(message.sourcesOnly === true ? { sourcesOnly: true } : {}) }, items.map(x => x.bytes)); }
-    catch { bitir(null, 'Metin işçisine evrak aktarılamadı.'); }
+    catch { bitir(null, 'Evrak metin okuyucuya aktarılamadı.'); }
   }
   // Atıflar (1.19.47): dosya ekranında açık tek PDF'in sayfa metinleri. Her iş kendi işçisinde ve süreyle sınırlıdır; yeni bir
   // metin işi, CANCEL_TEXT ya da panelin kapanması işçiyi durdurur (CANCEL_TEXT yanıt beklemez). Baytlar geri gönderilmez.

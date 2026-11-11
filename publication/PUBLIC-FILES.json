@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "4b77b871bc42d9caee9b43397892468ddcd9f4b33cff1c12c668ab3e8af9913b"
+      "sha256": "8f6d57f274dd6a97e23b2e40e062114fb2623da9c6c3961163708677a5f8e574"
     },
     {
       "path": "SECURITY.md",
@@ -28,7 +28,7 @@
     },
     {
       "path": "demo/common.js",
-      "sha256": "5fb77b12f52598b4e4ea0e2417fa4e6f637fb7eadb9ebe0ab0efe12976825238"
+      "sha256": "ba80906b58c90079dc63a658b30463fc39d1826de5955d0bd92e1ed1a0508c41"
     },
     {
       "path": "demo/demo.css",
@@ -52,7 +52,7 @@
     },
     {
       "path": "docs/PRIVACY.md",
-      "sha256": "e9b4376873ee6633b7d146aab3118a412f5444ff8f9843ac68c074b2bf91eb50"
+      "sha256": "138e40207f5c86bf2deead9d5bcbfb1d52fbb84f034ccfd16278e9a5757f7723"
     },
     {
       "path": "docs/images/01-uyap-baglantisi.png",
@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "9961ab4c3266983cfb71d8d126f01778580c2355cc0584ad57d8be1b635f9721"
+      "sha256": "f076324d91d3a325faf2607d6013598450d5e87021a66d0af79d4f4f17faa3c9"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -188,7 +188,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-ui.js",
-      "sha256": "d72eea3e4545c24a6388998964f48eb076deda255d5c7c8fab7fa6ab8f7b1bbb"
+      "sha256": "dcc660ad3c62783bad18073f91b588be27866d2368768b8390983d21c516511b"
     },
     {
       "path": "src/extension/durusma-paketi-worker.js",
@@ -240,7 +240,7 @@
     },
     {
       "path": "src/extension/onboarding.js",
-      "sha256": "af841a96022184022e54053e3fb74abece42b181c68a75a40e1ef3c60d0604d7"
+      "sha256": "bed10d34da77f8557d72c26df617b9db7541d717ecc34651189651ffb855d663"
     },
     {
       "path": "src/extension/options.css",
@@ -264,7 +264,7 @@
     },
     {
       "path": "src/extension/popup.js",
-      "sha256": "b7dc07d536055d4aeb375b0d41dbe39174870a37dff1394a81d2e9605e1ac023"
+      "sha256": "c34de489217bcd0daf1a2b9fea661348c2490547716a1a77d62329292926f79a"
     },
     {
       "path": "src/extension/ptt-offscreen.html",
@@ -288,7 +288,7 @@
     },
     {
       "path": "src/extension/telemetry.js",
-      "sha256": "5dc8c991c88c28aa38d6af498590e065462365b349afce6dc3810e4c08583dce"
+      "sha256": "58a0ada062dae5807aa29b572339d4f0fae630b15c7a4f649f1a602e9c55b16f"
     },
     {
       "path": "src/extension/tiff.js",
@@ -300,7 +300,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "9934d9199c73c444a4ebcc81e48aa4b3caf4122d4b67d089812b2b9e1912d1e3"
+      "sha256": "e2accce57340aabc965f949f74f9bc181b555e0ff9c52d242ffe0b4a877e797b"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -544,19 +544,19 @@
     },
     {
       "path": "src/fragments/common/013.js.part",
-      "sha256": "276cb0e7b22c8eeffa1ce3ea437f39f66b5abbf143377a96bd1ff7af190b0816"
+      "sha256": "753698b50f352c6b9c8d074948af38903d9c13520fc55dd9d7c5faf961b5f9de"
     },
     {
       "path": "src/fragments/common/015.js.part",
-      "sha256": "ba4e3140249e819bda07ccc7b7758b931b0c691db66d7720762163277db96cb1"
+      "sha256": "32414cc3e75c2dbecf23cfcf22a7a402c3e7e42550f785a3bd65a39a724ccb2b"
     },
     {
       "path": "src/fragments/content/001-bootstrap-shared-request-safety.js.part",
-      "sha256": "b37b577c1427b29f075c5fcf3c94b9fb00cf7ba363472324406d7cb25b313b09"
+      "sha256": "6f6c56f78163a9cb39cdc21481d2d4426331cb10673474def66e1f20b6d7aecd"
     },
     {
       "path": "src/fragments/content/003-bootstrap-shared-request-safety.js.part",
-      "sha256": "ab59dbac72c5da0cdca14043f8951ef041f7103596e40e8d56070413c73356c8"
+      "sha256": "33942f05db0bc79fb8a7977af99a37b45e26c8f0bed182fec159621f9ba0ec58"
     },
     {
       "path": "src/fragments/content/005-context-invalidation-and-progress-boundaries.js.part",
@@ -592,11 +592,11 @@
     },
     {
       "path": "src/fragments/content/021-native-window-navigation-and-identity-guards.js.part",
-      "sha256": "1ffcbe4868b6208ed85c874cc0d4566ced572349fdd7f906a29afb0ae9bac8be"
+      "sha256": "43a2feee27760e017d314e181982e82c8f0506d400f8bef5883ed7400f3d92c9"
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "b86e23ad27bcac6b3b07e51d9782168ecf70bc40989103ce15fbf19a57d6b504"
+      "sha256": "56eee050ec4e6cece3f8a10bac2ea8bc036261ee605cbf85cb0b5b001b974826"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -624,11 +624,11 @@
     },
     {
       "path": "src/fragments/content/037-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "ffe1e55ba4a3178e9d4b3c73c1d028329a4fb78ee1e32124676267841024189a"
+      "sha256": "db0e50704efbdb10ec95970e6911d9da21e571d1e669a81fdf79b2454fa14b74"
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "348a13cf18af190fc4546cd2fcf315efc476bd8ebac2b14b5a88591b655d4f5a"
+      "sha256": "ffdbe2a0cdb01980773095c75bd6f33a0070d3ebf3ef62562a7080afb2c09c0e"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -704,7 +704,7 @@
     },
     {
       "path": "src/fragments/content/073-bank-explicit-fee-consent-and-single-request-policy.js.part",
-      "sha256": "cca11a1ede7c39605b9ebfc854e577a4d4c63d8fa52d41d71e223cc5fc5c2788"
+      "sha256": "c8c1f07c1595f2312ca9ef7c30b0c7bb800c6f8957431ffad6daf7b436e7666a"
     },
     {
       "path": "src/fragments/content/075-bank-response-abort-and-closed-view-guard.js.part",
@@ -796,11 +796,11 @@
     },
     {
       "path": "src/fragments/content/118-viewer-list-loading-retry-and-error-controls.js.part",
-      "sha256": "f0f384ec5112395af178eef168ad8dce7ad28c6424da7d75d5bad4a4c68d8f5f"
+      "sha256": "62b5742b87009788c949f1d3f54cb7360031254a517ab9ee97198ae7a60afe90"
     },
     {
       "path": "src/fragments/content/119-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "a3f38b7294e5316f19c64b7b0bc6a0e24e3f870e270b84a19e482f4b496c8cdf"
+      "sha256": "a0e464a7cf2dcc35b786f66762a55fc3f68e5e11a2340028b12eb21963ec33f2"
     },
     {
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",
@@ -856,7 +856,7 @@
     },
     {
       "path": "tests/onboarding-ui.test.js",
-      "sha256": "473448bb582beae313e37775de8960e95ba8c5a4164266cdde42ccc32508d229"
+      "sha256": "b4d9a5bae81ee0bce4b021c11f40407bdb6b7bc39e6850bc9d9ca4c08aaaea02"
     },
     {
       "path": "tests/publication-boundary.test.js",
@@ -864,7 +864,7 @@
     },
     {
       "path": "tests/ui-downloads.test.js",
-      "sha256": "d3d9079ddb30c3ba557ee1b97f637d34bb066cb781d6c44399f951decf358d8e"
+      "sha256": "22eadf52cc9ce13a32d139d5c08639b9d3cb91ee07cd81b5f4fa77cac25e4d00"
     },
     {
       "path": "tests/eyp-paketi.test.js",

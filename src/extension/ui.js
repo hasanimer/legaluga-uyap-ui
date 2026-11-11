@@ -270,7 +270,7 @@
 .uhd footer{display:flex;flex-shrink:0;gap:6px;padding:8px 10px;background:var(--card);align-items:center;border-top:1px solid var(--line)}
 .uhd footer .stx{flex:1;min-width:0;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .uhd footer .stx.err{color:var(--red)}
-.uhd .downloads-toggle{white-space:nowrap;padding:6px}
+.uhd .downloads-toggle{white-space:nowrap;padding:6px 8px;flex:none}
 .uhd .download-area{flex:1;min-height:0;overflow:auto;padding:12px;overscroll-behavior:contain}
 .uhd .download-back{margin-bottom:12px}
 .uhd.downloads-open>.search,.uhd.downloads-open>.views,.uhd.downloads-open>.filters,.uhd.downloads-open>.notice,.uhd.downloads-open>.setup,.uhd.downloads-open>.results,.uhd.downloads-open>.settings,.uhd.downloads-open>.status,.uhd.downloads-open>footer{display:none!important}
@@ -284,8 +284,10 @@
 .uhd :is(input,select,textarea):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .uhd button,.uhd input,.uhd select,.uhd textarea{-webkit-tap-highlight-color:transparent}
 @media(prefers-reduced-motion:reduce){.uhd *{transition:none!important;scroll-behavior:auto!important}}
+@container (max-width:440px){.uhd .downloads-toggle .lbl{display:none}.uhd .downloads-toggle{padding:6px}}
 @container (max-width:400px){
   .uhd .results{padding:8px}.uhd .view{font-size:11px}.uhd .ib{width:28px}.uhd header strong{font-size:13px}.uhd .btn.sm.settings-toggle{padding:5px 7px}
+  .uhd .view.ftoggle .lbl{display:none}
   .uhd .settings .field{flex-direction:column;align-items:stretch;gap:4px;margin:10px 0}.uhd .settings .field select{width:100%;max-width:100%}
   .uhd .notice{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start}.uhd .notice>span{grid-column:1}.uhd .notice button:not(.dismiss){grid-column:1;justify-self:start}.uhd .notice .dismiss{grid-column:2;grid-row:1}
 }
@@ -298,6 +300,8 @@
     note: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
     hide: '<path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 4.2A10 10 0 0 1 12 4c7 0 10 8 10 8a17 17 0 0 1-3.2 4.3"/><path d="M6.6 6.6C3.8 8.4 2 12 2 12s3 8 10 8a9.7 9.7 0 0 0 5.4-1.6"/>',
     eye: '<path d="M2 12s3-8 10-8 10 8 10 8-3 8-10 8S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+    // UYAP’ta (dışarıda) aç: çerçeveden çıkan ok. Göz simgesi yalnız gizleme düğmesinde (üstü çizili) kullanılır.
+    external: '<path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/>',
     down: '<path d="M6 9l6 6 6-6"/>',
     up: '<path d="M18 15l-6-6-6 6"/>',
     sync: '<path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/>',
@@ -403,7 +407,9 @@
     const btnStop = el('button', { class: 'btn sm danger', hidden: true }, icon('stop'), el('span', null, 'Durdur'));
     const btnSettings = el('button', { class: 'btn sm settings-toggle', title: 'Ayarlar', 'aria-label': 'Ayarlar', 'aria-expanded': 'false' }, icon('gear'), 'Ayarlar');
     const hasDownloads = opts.mode === 'page' && opts.downloads && globalThis.UHDBulkPanel;
-    const btnDownloads = hasDownloads ? el('button', { class: 'btn sm downloads-toggle', title: 'İndirmeleri göster', 'aria-label': 'İndirmeleri göster', 'aria-expanded': 'false' }, '↓') : null;
+    const downloadCount = el('span', { class: 'dl-n', 'aria-hidden': 'true' }, '↓');
+    const btnDownloads = hasDownloads ? el('button', { class: 'btn sm downloads-toggle', title: 'İndirmeleri göster', 'aria-label': 'İndirmeleri göster', 'aria-expanded': 'false' },
+      downloadCount, el('span', { class: 'lbl' }, 'İndirmeler')) : null;
     const downloadArea = hasDownloads ? el('div', { class: 'download-area', hidden: true }) : null;
     const downloadText = el('span');
     const downloadProgress = el('progress', { max: 100, value: 0, 'aria-label': 'Diske kaydedilen evraklar' });
@@ -440,7 +446,7 @@
         const active = states.filter(state => ['running', 'queued'].includes(state.status) || state.status === 'paused' && state.phase !== 'idle' && !state.persistentPending);
         const state = active.find(item => item.status === 'running') || active[0];
         downloadMini.hidden = !state;
-        btnDownloads.textContent = active.length ? `↓ ${active.length}` : '↓';
+        downloadCount.textContent = active.length ? `↓ ${active.length}` : '↓';
         btnDownloads.title = active.length ? `İndirmeler: ${active.length} sürüyor veya sırada` : 'İndirmeleri göster';
         if (!state) return;
         const saved = Math.min(state.saved || 0, state.total || 0), total = state.total || 0;
@@ -486,6 +492,7 @@
     let editing = null;        // notu düzenlenen kayıt
     const noteDrafts = new Map();
     let manualNotice = false;
+    let undoNotice = false;    // görünen bildirim “Geri al” taşıyor: bilgi amaçlı bildirim onun yerine geçmez
     let goruldu = {};
     let gizli = {};            // aramada gösterilmeyecek dosyalar (uhdGizli): { key: { dosyaNo, birimAdi, at } }
     let allParties = new Set();// tüm tarafları gösterilen kartlar
@@ -532,10 +539,16 @@
 
     const pref = (k, d) => (prefs[k] === undefined ? d : prefs[k]);
     const cakismaTaramaAcik = () => pref('cakismaTarama', false) === true;
+    // Çakışma kontrolü kullanıcıya tek anahtardır: açmak bildirimi de açar. Eski "bildirme" seçimi (cakismaBildirim:
+    // false) okunmaya devam eder; kullanıcı kontrolü kendisi yeniden açana kadar bildirim gelmez.
+    const cakismaSessiz = () => cakismaTaramaAcik() && pref('cakismaBildirim', true) === false;
+    const cakismaYamasi = acik => (acik ? { cakismaTarama: true, cakismaBildirim: true } : { cakismaTarama: false });
+    // k bir nesneyse birden çok tercih tek yazmada kaydedilir.
     async function setPref(k, v) {
-      if (globalThis.UHDStorage) { prefs = await UHDStorage.patchPrefs({ [k]: v }); return; }
+      const yama = k && typeof k === 'object' ? k : { [k]: v };
+      if (globalThis.UHDStorage) { prefs = await UHDStorage.patchPrefs(yama); return; }
       const { uhdPrefs } = await chrome.storage.local.get('uhdPrefs');
-      prefs = { ...(uhdPrefs || {}), [k]: v };
+      prefs = { ...(uhdPrefs || {}), ...yama };
       await chrome.storage.local.set({ uhdPrefs: prefs });
     }
 
@@ -651,7 +664,9 @@
 
     function showNotice(text, kind, action, noticeKey) {
       notice.replaceChildren();
+      undoNotice = false;
       if (!text || (noticeKey && dismissedNotices.has(noticeKey))) { notice.hidden = true; return; }
+      undoNotice = !!(action && action.undo);
       notice.className = 'notice' + (kind === 'err' ? ' err' : '');
       notice.append(el('span', null, text));
       if (action) notice.append(el('button', { onclick: action.fn }, action.label));
@@ -659,6 +674,7 @@
       dismiss.addEventListener('click', () => {
         if (noticeKey) dismissedNotices.add(noticeKey);
         manualNotice = false;
+        undoNotice = false;
         setupScanNoticeId = null;
         notice.hidden = true;
         input.focus();
@@ -672,6 +688,14 @@
       manualNotice = !!text;
       if (text) showNotice(text, kind, action);
       else autoNotice();
+    }
+
+    // Bilgi amaçlı ya da kendiliğinden çıkan bildirim: “Geri al” sunan bildirimin yerine geçmez. Kullanıcı o bildirimi
+    // kapatınca, geri alınca ya da başka bir işlem yapınca (setNotice) yuva yeniden açılır.
+    function infoNotice(text, kind, action) {
+      if (undoNotice) return false;
+      setNotice(text, kind, action);
+      return true;
     }
 
     function autoNotice() {
@@ -815,7 +839,7 @@
         const n = activeFilterCount();
         const ft = el('button', { class: 'view ftoggle', 'data-view': 'filtreler', 'aria-expanded': String(filtersExpanded),
           title: n ? `Filtreler (${n} seçili)` : 'Filtreler', 'aria-label': n ? `Filtreler, ${n} seçili` : 'Filtreler' },
-          icon('filter'), n ? el('small', null, fmtNum(n)) : null);
+          icon('filter'), el('span', { class: 'lbl' }, 'Filtreler'), n ? el('small', null, fmtNum(n)) : null);
         ft.addEventListener('click', () => {
           filtersExpanded = !filtersExpanded;
           renderFilters();
@@ -1135,7 +1159,7 @@
       const u = unseenEvrak(r, goruldu);
       if (!u.length) return null;
       const seenBtn = el('button', { class: 'btn sm', 'data-focus': 'seen', title: 'Bu dosyadaki yeni evrakları görüldü say', 'aria-label': 'Yeni evrakları görüldü say' }, icon('check'));
-      seenBtn.addEventListener('click', e => { e.stopPropagation(); markSeen([r.key]); });
+      seenBtn.addEventListener('click', e => { e.stopPropagation(); markSeen([r.key], true); });
       // Görüntüleyicide Önceki/Sonraki bu kartın yeni evrakları arasında gezer (gösterilmeyenler dahil).
       const baglam = { ad: 'yeni', liste: u.map(y => ({ k: y.k, dosya: y.dosya || '' })) };
       const makeLine = y => {
@@ -1165,12 +1189,14 @@
     }
 
     // kadar verilirse görüldü zamanı o ana çekilir: o andan sonra bulunan evrak yeni kalır.
+    // Geri alma işlevini döndürür: undoable ise panel bildirimi “Geri al” ile sunar, değilse çağıran (dosya ekranı) sunar.
     async function markSeen(keys, undoable, kadar) {
       const prev = goruldu;
       const count = undoable ? records.filter(r => keys.includes(r.key)).reduce((n, r) => n + unseenEvrak(r, prev).length, 0) : 0;
       const next = { ...goruldu };
       const now = Date.now();
-      for (const k of keys) next[k] = kadar ? Math.max(next[k] || 0, kadar) : now;
+      const written = {};
+      for (const k of keys) written[k] = next[k] = kadar ? Math.max(next[k] || 0, kadar) : now;
       goruldu = next;
       computeYeni();
       renderFilters();
@@ -1179,11 +1205,11 @@
       await chrome.storage.local.set({ uhdEvrakGoruldu: next });
       // Geri al yalnız bu işlemin yazdığı anahtarları çevirir ve güncel haritadan başlar: arada başka kartta, popup'ta ya da
       // başka sekmede verilen görüldü işaretleri silinmez; sonradan yeniden işaretlenen anahtar da ezilmez.
-      if (count) setNotice(`${fmtNum(count)} evrak görüldü sayıldı.`, '', { label: 'Geri al', fn: async () => {
+      const undo = async () => {
         const { uhdEvrakGoruldu: stored } = await chrome.storage.local.get('uhdEvrakGoruldu');
         const cur = { ...(stored || goruldu) };
         for (const k of keys) {
-          if (cur[k] !== now) continue;
+          if (cur[k] !== written[k]) continue;
           if (k in prev) cur[k] = prev[k];
           else delete cur[k];
         }
@@ -1191,9 +1217,11 @@
         computeYeni();
         renderFilters();
         render();
-        setNotice('');
+        if (count) setNotice(''); else autoNotice();
         await chrome.storage.local.set({ uhdEvrakGoruldu: cur });
-      } });
+      };
+      if (count) setNotice(`${fmtNum(count)} evrak görüldü sayıldı.`, '', { label: 'Geri al', undo: true, fn: undo });
+      return undo;
     }
 
     // "Son evrak 12/09/2026 · Bilirkişi Raporu" (bağlı dosyadansa hangi dosya olduğu da).
@@ -1238,22 +1266,24 @@
     function cakismaKontrol() {
       const acik = cakismaTaramaAcik();
       const btn = el('button', { class: 'btn sm', 'data-action': 'cakisma-tarama', 'aria-pressed': String(acik),
-        title: acik ? 'Duruşma çakışma taramasını kapat' : 'Duruşma çakışma taramasını aç' }, acik ? 'Taramayı kapat' : 'Taramayı aç');
+        title: acik ? 'Duruşma çakışma kontrolünü ve bildirimini kapat' : 'Çakışan duruşmaları işaretle ve bildir' },
+        acik ? 'Çakışma kontrolünü kapat' : 'Çakışma kontrolünü aç');
       btn.addEventListener('click', async () => {
         btn.disabled = true;
         try {
-          await setPref('cakismaTarama', !acik);
+          await setPref(cakismaYamasi(!acik));
           computeDurusma(); renderFilters(); render(); autoNotice();
           list.querySelector('[data-action="cakisma-tarama"]')?.focus();
         } catch {
           prefs = { ...prefs, cakismaTarama: acik };
           computeDurusma(); renderFilters(); render();
-          setNotice('Çakışma taraması tercihi kaydedilemedi. Tekrar deneyin.', 'err');
+          setNotice('Çakışma kontrolü tercihi kaydedilemedi. Tekrar deneyin.', 'err');
           list.querySelector('[data-action="cakisma-tarama"]')?.focus();
         }
       });
       return el('div', { class: 'section', style: 'flex-wrap:wrap' },
-        el('div', null, el('b', null, 'Duruşma çakışma taraması'), el('div', null, acik ? 'Açık' : 'Kapalı')), btn);
+        el('div', null, el('b', null, 'Duruşma çakışma kontrolü'), el('div', null, !acik ? 'Kapalı'
+          : cakismaSessiz() ? 'Açık · bildirim kapalı. Bildirim için kapatıp yeniden açın.' : 'Açık · çakışmalar bildirilir')), btn);
     }
 
     const gunText = n => (n === 0 ? 'bugün' : n === 1 ? 'yarın' : `${n} gün sonra`);
@@ -1418,14 +1448,15 @@
 
     // Kart: 1) dosya no, durum ve tür etiketleri, simge düğmeleri 2) mahkeme 3) not 4) yakın duruşma ya da son işlem
     // 5) taraflar (tek satır) 6) yeni evrak ya da son evrak (tek satır) 7) Legaluga ile aç ve UYAP’tan aç. Karta tıklamak kartı
-    // seçer; dosya yalnız "UYAP’tan aç" ya da Enter ile açılır (açma ağır ve geri alınamaz bir işlemdir). Dolu birincil
-    // düğmeler yalnız seçili kartta durur.
+    // seçer; dosya yalnız "UYAP’tan aç" ya da Enter ile açılır (açma ağır ve geri alınamaz bir işlemdir). Kart başına tek
+    // dolu birincil düğme vardır ve yalnız seçili kartta durur: "Legaluga ile aç". "UYAP’tan aç" seçili kartta da
+    // çerçeveli kalır; yalnız Legaluga düğmesi olmayan kartta (hızlı bakış) tek eylem olduğu için dolu çizilir.
     // Hızlı bakış kartı: numara ve etiketler, mahkeme, not (salt okunur), taraflar, UYAP’tan aç. Evrak, Safahat, not
     // düzenleme ve gizleme UYAP'taki paneldedir.
     function quickItem(r, i, toks, keys, extra) {
       const st = stateOf(r);
       const open = el('button', { class: 'btn sm open' + (i === sel ? ' primary' : ''), 'data-focus': 'open', title: 'Dosyayı UYAP’ta Pencere Görünümü ile aç (Enter)' },
-        icon('eye'), el('span', null, 'UYAP’tan aç'));
+        icon('external'), el('span', null, 'UYAP’tan aç'));
       open.addEventListener('click', e => { e.stopPropagation(); openRecord(r); });
       const row = el('article', { class: 'item quick' + (st.cls ? ' ' + st.cls : '') + (i === sel ? ' sel' : ''), 'data-key': r.key, 'data-idx': String(i),
         'aria-current': i === sel ? 'true' : null, 'aria-label': `${r.dosyaNo} ${cleanBirim(r.birimAdi)}` },
@@ -1476,8 +1507,8 @@
         opts.onDosyaPanel(r, 'evrak', yeniBaglam(r));
       });
       const busyText = busy.get(r.key);
-      const open = el('button', { class: 'btn sm open' + (i === sel ? ' primary' : ''), 'data-focus': 'open', 'aria-busy': busyText ? 'true' : null,
-        title: 'Dosyayı UYAP’ta Pencere Görünümü ile aç (Enter)' }, icon('eye'), el('span', null, busyText || 'UYAP’tan aç'));
+      const open = el('button', { class: 'btn sm open' + (i === sel && !ekranBtn ? ' primary' : ''), 'data-focus': 'open', 'aria-busy': busyText ? 'true' : null,
+        title: 'Dosyayı UYAP’ta Pencere Görünümü ile aç (Enter)' }, icon('external'), el('span', null, busyText || 'UYAP’tan aç'));
       open.addEventListener('click', e => { e.stopPropagation(); openRecord(r); });
       const hasYeni = yeniMap.has(r.key);
       const son = !hasYeni && !filter.onlyDurusma ? sonLine(r) : null;
@@ -1512,8 +1543,8 @@
     // Karta tıklamanın artık dosyayı açmadığı bir kez söylenir.
     function kartIpucu() {
       if (pref('kartIpucu', false)) return;
-      setPref('kartIpucu', true).catch(() => {});
-      setNotice('Kart seçildi. Dosyayı açmak için “UYAP’tan aç” düğmesine ya da Enter’a basın.', '', { label: 'Tamam', fn: () => setNotice('') });
+      // İpucu bir “Geri al” bildirimi yüzünden gösterilemediyse hakkı tüketilmez; sonraki kart seçiminde yeniden denenir.
+      if (infoNotice('Kart seçildi. Dosyayı açmak için “UYAP’tan aç” düğmesine ya da Enter’a basın.', '', { label: 'Tamam', fn: () => setNotice('') })) setPref('kartIpucu', true).catch(() => {});
     }
 
     // Seçim odaktan ayrı çizilir. Fare imleci seçimi değiştirmez; ↑ ↓ ile seçilince ekran okuyucuya kısa özet okunur.
@@ -1525,7 +1556,8 @@
         const on = k === sel;
         row.classList.toggle('sel', on);
         if (on) row.setAttribute('aria-current', 'true'); else row.removeAttribute('aria-current');
-        for (const b of row.querySelectorAll('.ifoot .open, .ifoot [data-focus="ekran"]')) b.classList.toggle('primary', on);
+        const ekran = row.querySelector('.ifoot [data-focus="ekran"]');
+        for (const b of row.querySelectorAll('.ifoot .open, .ifoot [data-focus="ekran"]')) b.classList.toggle('primary', on && (!ekran || b === ekran));
       });
       if (scroll) rows[sel].scrollIntoView({ block: 'nearest' });
       const r = current[sel];
@@ -1636,11 +1668,19 @@
           } };
           if (filter.onlyNew && !res.tokens.length) {
             text = evrakTracked ? 'Son güncellemeden bu yana yeni evrak yok.' : 'Evrak takibi henüz açılmadı.';
-            action = !evrakTracked ? { label: 'Takibi ayarla', fn: openSettings }
+            action = !evrakTracked ? { label: 'Takibi ayarla', fn: () => openSettingsAt('evrakTakip') }
               : { label: 'Güncelle', fn: () => { setNotice(''); opts.onUpdate(false); } };
           }
           const box = el('div', { class: 'empty' }, el('strong', null, text),
             res.tokens.length ? el('p', null, 'Adın bir bölümünü veya dosya numarasını deneyin. Türkçe karakter kullanmanız gerekmez.') : null);
+          // Arama gizlenen dosyalarla eşleşiyorsa söylenir: gizlenen dosya iz bırakmadan kaybolmasın.
+          const gizliEslesen = res.tokens.length && Object.keys(gizli).length
+            ? search(records, q, { myName: myName(), notes, filter, yeni: yeniMap, vekilAra: pref('vekilAra', true), limit: Infinity }).items.filter(x => gizli[x.key]) : [];
+          if (gizliEslesen.length) {
+            const goster = el('button', { class: 'btn', 'data-gizli-goster': '' }, gizliEslesen.length === 1 ? 'Gizlemeyi kaldır' : 'Gizlemeleri kaldır');
+            goster.addEventListener('click', async () => { await unhideFiles(gizliEslesen.map(x => x.key)); input.focus(); });   // düğme yeniden çizimde kalkar; odak panelde kalsın
+            box.append(el('p', { class: 'gizli-eslesme' }, `Gizlediğiniz ${fmtNum(gizliEslesen.length)} dosya bu aramayla eşleşiyor.`), goster);
+          }
           if (action) {
             const b = el('button', { class: 'btn' }, action.label);
             b.addEventListener('click', action.fn);
@@ -1761,9 +1801,12 @@
       opts.onOpen(r);
     }
 
-    async function saveNote(key, text) {
+    // Boş metin notu siler. Silinen not “Geri al” ile önceki metniyle (biçim işaretleri dahil) geri yazılır; arada aynı
+    // dosyaya yeni not yazıldıysa o not ezilmez. bildirimsiz: geri almayı çağıran ekran kendi sunar (dosya ekranı).
+    async function saveNote(key, text, { bildirimsiz = false } = {}) {
       const before = notes;
       const next = { ...notes };
+      const onceki = notes[key] || '';
       text = text.trim();
       if (text) next[key] = text; else delete next[key];
       notes = next;
@@ -1771,6 +1814,13 @@
       try {
         const saved = await globalThis.UHDStorage.mergeNote(key, text);
         if (notes === next) { notes = saved; render(); }
+        if (!text && onceki && !bildirimsiz) setNotice('Not silindi.', '', { label: 'Geri al', undo: true, fn: async () => {
+          if (notes[key]) return setNotice('Bu dosyaya yeni bir not yazılmış; silinen not geri yüklenmedi.');
+          // Veriler bu arada silindiyse (başka sekmede “Tüm verileri sil”) dosya artık yoktur; not geri yazılmaz.
+          if (!records.some(r => r.key === key)) return setNotice('Dosya artık listede yok; silinen not geri yüklenmedi.');
+          setNotice('');
+          await saveNote(key, onceki);
+        } });
       } catch (error) {
         if (notes === next) { notes = before; render(); }
         setNotice('Not kaydedilemedi. Lütfen yeniden deneyin.', 'err');
@@ -1863,12 +1913,13 @@
       gizli = { ...gizli, [r.key]: { dosyaNo: r.dosyaNo, birimAdi: r.birimAdi, at: Date.now() } };
       await chrome.storage.local.set({ uhdGizli: gizli });
       render();
-      setNotice(`${r.dosyaNo} ${cleanBirim(r.birimAdi)} aramalarda gösterilmeyecek.`, '', { label: 'Geri al', fn: () => unhideFile(r.key) });
+      setNotice(`${r.dosyaNo} ${cleanBirim(r.birimAdi)} aramalarda gösterilmeyecek.`, '', { label: 'Geri al', undo: true, fn: () => unhideFile(r.key) });
     }
 
-    async function unhideFile(key) {
+    const unhideFile = key => unhideFiles([key]);
+    async function unhideFiles(keys) {
       const next = { ...gizli };
-      delete next[key];
+      for (const key of keys) delete next[key];
       gizli = next;
       await chrome.storage.local.set({ uhdGizli: next });
       setNotice('');
@@ -1878,7 +1929,8 @@
 
     // ------------------------------------------------ yedek
 
-    function backupPassword(repeat) {
+    // dene verilirse parola pencere kapanmadan sınanır: hata pencerenin içinde gösterilir, kullanıcı yeniden yazar.
+    function backupPassword(repeat, dene) {
       return new Promise(resolve => {
         const id = `uhd-backup-${crypto.randomUUID()}`;
         const { BACKUP_PASSWORD_MIN_LENGTH: minLength, BACKUP_PASSWORD_MAX_LENGTH: maxLength } = UHDVaultCrypto;
@@ -1903,11 +1955,23 @@
         dialog.addEventListener('keydown', event => event.stopPropagation());
         dialog.addEventListener('cancel', event => { event.preventDefault(); done(null); });
         dialog.addEventListener('close', () => done(null));
-        form.addEventListener('submit', event => {
+        let deniyor = false;
+        form.addEventListener('submit', async event => {
           event.preventDefault();
+          if (deniyor) return;
           if (password.value.length < minLength || password.value.length > maxLength) { error.textContent = `Parola ${minLength}–${maxLength} karakter olmalı.`; return; }
           if (again && password.value !== again.value) { error.textContent = 'Parolalar aynı değil.'; return; }
-          done(password.value);
+          if (!dene) { done(password.value); return; }
+          deniyor = true; error.textContent = 'Yedek açılıyor…';
+          let sonuc;
+          try { sonuc = await dene(password.value); }
+          catch (e) {
+            if (ended) return;
+            error.textContent = e?.message || 'Yedek açılamadı.';
+            password.value = ''; password.focus();
+            return;
+          } finally { deniyor = false; }
+          done({ sonuc });
         });
         dialog.showModal(); password.focus();
       });
@@ -1932,8 +1996,9 @@
         if (file.size > 70 * 1024 * 1024) throw new Error('Yedek 70 MiB dosya sınırını aşıyor.');
         let value = JSON.parse(await file.text());
         if (value?.encrypted === true || value?.format === 2) {
-          const password = await backupPassword(false); if (password === null) return;
-          value = await UHDVaultCrypto.decryptBackup(value, password);
+          const sifreli = value;
+          const acilan = await backupPassword(false, parola => UHDVaultCrypto.decryptBackup(sifreli, parola)); if (acilan === null) return;
+          value = acilan.sonuc;
         }
         const data = checkBackup(value);
         const n = data.uhdIndex ? data.uhdIndex.records.length : 0;
@@ -1976,6 +2041,16 @@
       settings.scrollTop = 0;
       autoNotice();
       settings.querySelector('button:not([hidden]),input:not([type=file]),select')?.focus();
+    }
+
+    // Ayarlar’ı açar, verilen tercihe (data-pref) kaydırıp odaklar. Tercih çizilmediyse Ayarlar en üstten açık kalır.
+    function openSettingsAt(hedef) {
+      openSettings();
+      if (settings.hidden) return;   // yükleme bitmedi ya da kurulum açık
+      const odak = settings.querySelector(`[data-pref="${hedef}"]`);
+      if (!odak) return;
+      odak.focus({ preventScroll: true });
+      (odak.closest('label, .field') || odak).scrollIntoView({ block: 'center' });
     }
 
     function closeSettings() {
@@ -2048,12 +2123,12 @@
         s.starting = true; s.error = ''; syncCbsScan();
         try {
           const res = await opts.onCbsScan({ ilKodu: Number(s.ilKodu), birimId: s.birimId });
-          if (!res?.ok) throw new Error(res?.error || 'CBS taraması başlatılamadı.');
-          setNotice('CBS taraması başladı. İlerlemeyi durum satırından takip edebilir; Durdur ve Sürdür ile yönetebilirsiniz.');
-        } catch (error) { s.error = error.message || 'CBS taraması başlatılamadı.'; }
+          if (!res?.ok) throw new Error(res?.error || 'Savcılık taraması başlatılamadı.');
+          setNotice('Savcılık taraması başladı. İlerlemeyi durum satırından takip edebilir; Durdur ve Sürdür ile yönetebilirsiniz.');
+        } catch (error) { s.error = error.message || 'Savcılık taraması başlatılamadı.'; }
         finally { s.starting = false; syncCbsScan(); }
       });
-      return el('div', { class: 'box' }, el('b', null, 'CBS’yi bir kez tara'),
+      return el('div', { class: 'box' }, el('b', null, 'Savcılık dosyalarını bir kez tara'),
         el('div', { class: 'field' }, el('span', null, 'İl'), il),
         el('div', { class: 'field' }, el('span', null, 'Başsavcılık'), birim), el('div', { class: 'row' }, scan, retry), hint);
     }
@@ -2071,6 +2146,18 @@
         sel.addEventListener('change', async () => { await setPref(key, sel.value); if (onChange) onChange(sel.value); });
         return el('div', { class: 'field' }, el('span', null, label), sel);
       };
+
+      // Duruşmalarım’daki düğmeyle aynı anahtar: kontrol ve bildirim birlikte açılır, birlikte kapanır.
+      const cakismaKutu = el('input', { type: 'checkbox', 'data-pref': 'cakismaTarama' });
+      cakismaKutu.checked = cakismaTaramaAcik();
+      cakismaKutu.addEventListener('change', async () => {
+        try { await setPref(cakismaYamasi(cakismaKutu.checked)); }
+        catch { cakismaKutu.checked = cakismaTaramaAcik(); return setNotice('Çakışma kontrolü tercihi kaydedilemedi. Tekrar deneyin.', 'err'); }
+        computeDurusma(); renderFilters(); autoNotice(); refreshSettings();
+      });
+      const cakismaSecim = el('label', { class: 'check' }, cakismaKutu, el('div', null, el('div', null, 'Duruşma çakışmalarını kontrol et ve bildir'),
+        el('div', { class: 'hint' }, `Aynı gün farklı mahkemelerdeki iki duruşma arasında aynı adliyede ${CAKISMA_DK.ayniAdliye} dakikadan, başka adliyede ${CAKISMA_DK.ayriAdliye / 60} saatten az varsa uyarır. Aynı mahkemedeki ve saati belli olmayan duruşmalar sayılmaz. Duruşmalarım’daki düğme de bu ayarı değiştirir.`
+          + (cakismaSessiz() ? ' Bildirim daha önce kapatılmış; kutuyu kapatıp yeniden işaretlerseniz bildirilir.' : ''))));
 
       const scanTypes = globalThis.UHD.taramaKapsami(prefs).turler.map(t => t.kod);
       const scanChecks = globalThis.UHD.TURLER.map(t => {
@@ -2168,9 +2255,9 @@
         // İş sahipliği ve bütün veriler tek commit ile silinir; eski sekme tarama verilerini geri yazamaz.
         let result;
         try { result = await globalThis.UHDStorage.clearAppData(); }
-        catch { setNotice('Yerel veriler silinemedi; hiçbir veri silinmedi. Yeniden deneyin.'); return; }
-        if (result?.pending) { setNotice('Devam eden bir toplu indirme var. İndirmeyi durdurup parça kaydı bitince yeniden deneyin; hiçbir veri silinmedi.'); return; }
-        if (!result?.cleared) { setNotice('Yerel veriler silinemedi; hiçbir veri silinmedi. Yeniden deneyin.'); return; }
+        catch { setNotice('Yerel veriler silinemedi; hiçbir veri silinmedi. Yeniden deneyin.', 'err'); return; }
+        if (result?.pending) { setNotice('Devam eden bir toplu indirme var. İndirmeyi durdurup parça kaydı bitince yeniden deneyin; hiçbir veri silinmedi.', 'err'); return; }
+        if (!result?.cleared) { setNotice('Yerel veriler silinemedi; hiçbir veri silinmedi. Yeniden deneyin.', 'err'); return; }
         closeSettings();
         setNotice('Tüm yerel veriler silindi.');
       });
@@ -2180,7 +2267,7 @@
         const b = el('button', { class: 'btn sm', title: 'Dosya yeniden arama sonuçlarında görünür' }, 'Aramalarda göster');
         b.addEventListener('click', () => unhideFile(k));
         return el('div', { class: 'gz' }, el('span', { title: `${g.dosyaNo} ${g.birimAdi}` }, `${g.dosyaNo} · ${cleanBirim(g.birimAdi)}`), b);
-      }) : el('div', { class: 'hint' }, 'Gizlenen dosya yok. Bir dosyayı kartındaki göz simgesiyle aramalardan çıkarabilirsiniz.'));
+      }) : el('div', { class: 'hint' }, 'Gizlenen dosya yok. Bir dosyayı, kartının sağ üstündeki üstü çizili göz düğmesiyle aramalardan çıkarabilirsiniz.'));
 
       const back = el('button', { class: 'btn sm', hidden: optionsPage }, icon('back'), 'Geri');
       back.addEventListener('click', closeSettings);
@@ -2268,14 +2355,17 @@
           pref('savcilik', 'otomatik') !== 'kapali' ? kapsamYazi : null,
           el('div', { class: 'hint' }, 'UYAP savcılık dosyalarını il il ve başsavcılık başsavcılık verir; Güncelle seçilen illerin bütün başsavcılıklarını sizin yerinize sorgular, büyükşehirler önce. Her başsavcılık için açık ve kapalı dosyalar ayrı sorgulanır (İstanbul’da 11 başsavcılık, 22 istek). UYAP savcılık dosyalarında taraf ve safahat vermez; evrak, Cumhuriyet savcısı inceleme talebinizi onaylayınca görünür.')),
 
-        el('h3', null, 'UYAP'),
+        el('h3', null, 'Bildirimler'),
         el('div', { class: 'box' },
           check('durusmaBildirim', true, 'Yaklaşan duruşmaları hatırlat', 'Bugün ve yarınki duruşmaları bildirir. Duruşmalar ekranına her zaman ulaşabilirsiniz.', () => autoNotice()),
-          check('cakismaBildirim', true, 'Duruşma çakışmalarını bildir', `Tarama varsayılan olarak kapalıdır; Duruşmalarım bölümünden açılır. Tarama açıkken aynı gün farklı mahkemelerdeki iki duruşma arasında aynı adliyede ${CAKISMA_DK.ayniAdliye} dakikadan, başka adliyede ${CAKISMA_DK.ayriAdliye / 60} saatten az varsa uyarır. Aynı mahkemedeki ve saati belli olmayan duruşmalar sayılmaz.`, () => autoNotice()),
-          check('duyuruBildirim', true, 'Duyuruları bildirim olarak göster', 'Kesinti duyurusu UYAP Ana Sayfa’da, diğer duyurular sağ altta görünür. Metnin tamamını okuyabilirsiniz. × ile, sayfada boş bir yere tıklayarak ya da asistandan dosya açarak kapanır; başka bir ekrana geçince gizlenir.'),
+          cakismaSecim,
+          check('duyuruBildirim', true, 'Duyuruları bildirim olarak göster', 'Kesinti duyurusu UYAP Ana Sayfa’da, diğer duyurular sağ altta görünür. Metnin tamamını okuyabilirsiniz. × ile, sayfada boş bir yere tıklayarak ya da asistandan dosya açarak kapanır; başka bir ekrana geçince gizlenir.')),
+
+        el('h3', null, 'UYAP bağlantısı ve koruma'),
+        el('div', { class: 'box' },
           check('oturumAcik', false, 'UYAP oturumunu koru', 'Varsayılan kapalıdır. Açıkken, siz işlem yapmasanız da eklenti belirli aralıklarla UYAP’a küçük bir okuma isteği gönderir. İşlem koruması bunu da durdurur.'),
           el('div', { class: 'row' }, (() => {
-            const korumaBirak = el('button', { type: 'button', class: 'btn sm' }, 'Otomatik işlemleri elle aç');
+            const korumaBirak = el('button', { type: 'button', class: 'btn sm' }, 'Otomatik işlemleri yeniden aç');
             korumaBirak.addEventListener('click', async () => {
               try {
                 const res = await chrome.runtime.sendMessage({ type: 'uhd-uyap-koruma-birak' });
@@ -2291,10 +2381,9 @@
         el('h3', null, 'Veriler'),
         el('div', { class: 'box' },
           el('div', { class: 'row' }, btnExport, btnBackup, btnRestore, fileIn),
-          el('div', { class: 'hint' }, 'Yerel kayıtlar ve banka takip özetleri AES-256-GCM ile şifrelenir ve bu Chrome profilinde otomatik açılır. Banka kaydında banka adları, sorgu tarihi, borçlu adı ve kısa talep/cevap kanıtları tutulur; kimlik numarası, belge metni ve ham UYAP yanıtı saklanmaz. Anahtar aynı profilde tutulduğundan tüm profil ele geçirilirse koruma sınırlıdır. JSON yedeği ayrıca sizin belirlediğiniz parolayla şifrelenir; parolayı güvenli bir yerde saklayın. Hata raporlama onayı yedekten geri yüklenmez. CSV çıktısı şifresizdir ve dosya bilgileri içerir; güvenli bir yerde saklayın.'),
+          el('div', { class: 'hint' }, 'Şifreli yedek dosya listesini, notları, duruşmaları ve ayarları içerir; belirlediğiniz parolayla şifrelenir. CSV çıktısı şifresizdir; güvenli bir yerde saklayın.'),
           el('div', { style: 'margin-top:10px' }, `Gizlenen dosyalar (${fmtNum(gz.length)})`),
-          gzBox,
-          el('div', { class: 'row' }, btnClear)),
+          gzBox),
 
         el('h3', null, 'Hata raporlama'),
         el('div', { class: 'box' },
@@ -2311,6 +2400,12 @@
             el('a', { href: BRAND.site, target: '_blank', rel: 'noopener' }, 'legaluga.com'),
             el('a', { href: 'https://github.com/hasanimer/legaluga-uyap-ui/blob/main/docs/PRIVACY.md', target: '_blank', rel: 'noopener' }, 'Gizlilik politikası'),
             el('a', { href: 'https://github.com/hasanimer/legaluga-uyap-ui', target: '_blank', rel: 'noopener' }, 'Arayüz kaynakları'))),
+
+        // Yıkıcı işlem yedekleme düğmelerinden ayrı, en sonda durur.
+        el('h3', null, 'Verileri sil'),
+        el('div', { class: 'box' },
+          el('div', { class: 'hint' }, 'Eklentinin bu bilgisayarda sakladığı dosya listesi, notlar ve ayarlar silinir; geri alınamaz. UYAP’taki dosyalarınız etkilenmez.'),
+          el('div', { class: 'row' }, btnClear)),
         el('p', { class: 'hint author-note' }, 'Bu eklenti, Av. Hasan İmer Akın tarafından meslektaşlarının ücretsiz kullanımı için geliştirilmiştir. Arayüz ve genel araçlar açık kaynaklıdır. ',
           el('a', { href: 'https://github.com/hasanimer/legaluga-uyap-ui/issues', target: '_blank', rel: 'noopener' }, 'Öneri ve hata bildirimi')));
       if (optionsPage) for (const h of settings.querySelectorAll('h3')) h.setAttribute('aria-level', '2');
