@@ -129,8 +129,9 @@
     const bulkStatus = el('p', { class: 'dp-muted', 'data-zip': 'bulk-status', role: 'status' });
     const bulkResume = el('button', { type: 'button', class: 'chip', hidden: true, 'data-zip': 'devam' }, 'Kaldığı yerden devam et');
     const bulkNew = el('button', { type: 'button', class: 'chip', hidden: true, 'data-zip': 'yeni' }, 'Yeni indirme planı');
+    const bulkSkip = el('button', { type: 'button', class: 'chip', hidden: true, 'data-zip': 'atla' }, 'Bu evrakı atla ve sürdür');
     const bulkCard = el('div', { class: 'dp-card', hidden: true, 'data-zip': 'bulk' }, el('h4', null, 'Kaydedilmiş indirme'), bulkStatus,
-      el('div', { class: 'ti-eylem' }, bulkResume, bulkNew));
+      el('div', { class: 'ti-eylem' }, bulkResume, bulkSkip, bulkNew));
     const zipStatus = el('div', { class: 'ek-zip-status', role: 'status', 'aria-live': 'polite' });
     const zipProgress = el('progress', { hidden: true, max: 1, value: 0, 'aria-label': 'ZIP için indirilen evraklar' });
     const indirPanel = el('div', { class: 'dp-body ti', tabindex: '0' },
@@ -635,6 +636,8 @@
       bulkResume.hidden = !savedPlan;
       bulkResume.textContent = bulkState?.persistentPending || bulkJob?.pendingDownload ? 'İndirme durumunu kontrol et' : 'Kaldığı yerden devam et';
       bulkResume.disabled = busy || !!bulkRead;
+      bulkSkip.hidden = !bulkTakilan();
+      bulkSkip.disabled = busy || !!bulkRead;
       bulkNew.hidden = !bulkJob && !bulkState;
       bulkNew.disabled = busy || !!bulkRead || !!bulkState?.persistentPending || !!bulkJob?.pendingDownload;
       zipTekrar.disabled = !!zipRun || !!bankRun || !!paketSession || !!bankaOkuma || !!tebligatRead || !!listeBekliyor;
@@ -654,7 +657,22 @@
       const atlanan = bulkState ? bulkState.skipped : (Array.isArray(bulkJob?.parts) ? bulkJob.parts : [])
         .reduce((sum, part) => sum + (Array.isArray(part?.skipped) ? part.skipped.length : 0), 0);
       return Number.isSafeInteger(atlanan) && atlanan > 0
-        ? `${fmtNum(atlanan)} evrak güvenle eşleştirilemediği için atlandı; ZIP içinde yerine “İNDİRİLEMEDİ” notu var. Bu evrakları UYAP’ta elle açabilirsiniz.` : '';
+        ? `${fmtNum(atlanan)} evrak indirilemediği için atlandı; ZIP içinde yerine “İNDİRİLEMEDİ” notu var. Bu evrakları UYAP’ta elle açabilirsiniz.` : '';
+    }
+    // Motor, kalıcı olarak alınamayan evrakı (boş dönen ya da 128 MiB’ı aşan) özetinde bildirir; atlama yalnız onun için sunulur.
+    function bulkTakilan() {
+      const t = bulkState?.status === 'error' ? bulkState.stuck : null;
+      return t && typeof t.jobId === 'string' && t.jobId && Number.isSafeInteger(t.cursor) && t.cursor >= 0 && ['bos', 'buyuk'].includes(t.neden) ? t : null;
+    }
+    function bulkEk() {
+      if (!bulkState) return '';
+      if (bulkTakilan()) return ' Devam et aynı evrakı yeniden dener; “Bu evrakı atla ve sürdür” yerine ZIP’e “İNDİRİLEMEDİ” notu koyar.';
+      if (bulkState.status !== 'running') return '';
+      const mola = bulkState.phase === 'fetching' && Number.isSafeInteger(bulkState.restUntil) && bulkState.restUntil > Date.now()
+        ? ` UYAP’a yük bindirmemek için kısa bir mola veriliyor; indirme ${new Date(bulkState.restUntil).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} civarında kendiliğinden sürer.` : '';
+      const dk = Number.isSafeInteger(bulkState.etaMs) && bulkState.etaMs > 0 ? Math.ceil(bulkState.etaMs / 300000) * 5 : 0;
+      const kalan = !dk ? '' : ` Kalan süre: yaklaşık ${dk <= 5 ? '5 dakikadan az' : dk < 60 ? `${dk} dk` : `${Math.floor(dk / 60)} sa${dk % 60 ? ` ${dk % 60} dk` : ''}`}.`;
+      return mola + kalan;
     }
     function bulkWatch(states) {
       if (closed) return;
@@ -668,7 +686,7 @@
       const stage = { waiting: 'Kuyrukta', fetching: 'Evrak alınıyor', packing: 'ZIP hazırlanıyor', saving: 'Diske kaydediliyor' }[bulkState.phase];
       const result = bulkState.status === 'complete' ? 'İndirme tamamlandı.' : bulkState.status === 'error' ? bulkState.error :
         bulkState.status === 'paused' && !active ? 'Duraklatıldı. Kaldığı yerden devam edebilirsiniz.' : stage || 'İndirme sürüyor';
-      zipMessage(`${result} ${fmtNum(bulkState.saved)}/${fmtNum(bulkState.total)} evrak kaydedildi · ${fmtNum(bulkState.inPart)} evrak bu parçada.${bulkAtlanan() ? ` ${bulkAtlanan()}` : ''}`, bulkState.status === 'error');
+      zipMessage(`${result} ${fmtNum(bulkState.saved)}/${fmtNum(bulkState.total)} evrak kaydedildi · ${fmtNum(bulkState.inPart)} evrak bu parçada.${bulkEk()}${bulkAtlanan() ? ` ${bulkAtlanan()}` : ''}`, bulkState.status === 'error');
       const signature = `${bulkState.id}|${bulkState.saved}|${bulkState.partCount}|${bulkState.status}`;
       if (!active && signature !== bulkFinished) { bulkFinished = signature; bulkLoad(true); }
       zipSync();

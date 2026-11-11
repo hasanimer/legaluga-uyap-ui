@@ -43,6 +43,13 @@
     const seconds = Math.floor(number(value) / 1000), minutes = Math.floor(seconds / 60), hours = Math.floor(minutes / 60);
     return hours ? `${hours} sa ${minutes % 60} dk` : minutes ? `${minutes} dk ${seconds % 60} sn` : `${seconds} sn`;
   };
+  // Kalan süre kaba bir tahmindir: 5 dakikaya yuvarlanır, kesin süre gibi gösterilmez.
+  const remaining = value => {
+    const minutes = Math.ceil(number(value) / 300000) * 5;
+    return minutes <= 5 ? '5 dakikadan az' : minutes < 60 ? `${minutes} dk` : `${Math.floor(minutes / 60)} sa${minutes % 60 ? ` ${minutes % 60} dk` : ''}`;
+  };
+  const clock = value => new Date(value).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const STUCK = { bos: 'UYAP bu evrakı boş döndürüyor', buyuk: 'Bu evrak 128 MiB sınırını aşıyor' };
   const bytes = value => value >= 1024 * 1024 ? `${(value / (1024 * 1024)).toLocaleString('tr-TR', { maximumFractionDigits: 1 })} MiB`
     : value >= 1024 ? `${(value / 1024).toLocaleString('tr-TR', { maximumFractionDigits: 1 })} KiB` : `${fmt(value)} B`;
 
@@ -73,10 +80,14 @@
     container.append(root);
     const announce = text => { if (!destroyed && text) live.textContent = text; };
     const pausing = state => state.status === 'paused' && state.phase !== 'idle' && !state.persistentPending;
-    const phaseText = state => pausing(state) ? 'Duraklatılıyor…' : state.status === 'running' || state.status === 'queued' ? phases[state.phase] || labels[state.status]
+    // Mola: motor UYAP’a yük bindirmemek için evrak aralarında bekler; iş takılmış görünmesin diye açıkça yazılır.
+    const resting = state => state.status === 'running' && state.phase === 'fetching' && Number.isSafeInteger(state.restUntil) && state.restUntil > Date.now();
+    const stuck = state => state.status === 'error' && state.stuck && Object.hasOwn(STUCK, state.stuck.neden) &&
+      typeof state.stuck.jobId === 'string' && state.stuck.jobId && Number.isSafeInteger(state.stuck.cursor) && state.stuck.cursor >= 0 ? state.stuck : null;
+    const phaseText = state => pausing(state) ? 'Duraklatılıyor…' : resting(state) ? 'Mola veriliyor' : state.status === 'running' || state.status === 'queued' ? phases[state.phase] || labels[state.status]
       : state.status === 'complete' && number(state.skipped) ? 'Tamamlandı (eksik)' : labels[state.status] || 'Durum bekleniyor';
     // Motor, taze listede kimliği kesin doğrulanamayan evrakı yanlış belge indirmemek için atlar ve yerine not koyar.
-    const skippedText = state => number(state.skipped) ? `${fmt(state.skipped)} evrak güvenle eşleştirilemediği için atlandı; ZIP içinde yerine “İNDİRİLEMEDİ” notu var. Bu evrakları UYAP’ta elle açabilirsiniz.` : '';
+    const skippedText = state => number(state.skipped) ? `${fmt(state.skipped)} evrak indirilemediği için atlandı; ZIP içinde yerine “İNDİRİLEMEDİ” notu var. Bu evrakları UYAP’ta elle açabilirsiniz.` : '';
     const stateError = state => literal(state.error, 400);
 
     function createRow(fileKey) {
@@ -91,20 +102,22 @@
       const received = el('span', data('received'));
       const measured = el('span', data('bytes'));
       const duration = el('span', data('elapsed'));
+      const eta = el('span', data('eta'));
       const last = el('span', data('last'));
       const current = el('p', data('current', { class: 'bdp-current' }));
       const skipped = el('p', data('skipped', { class: 'bdp-current', hidden: true }));
       const error = el('p', data('error', { class: 'bdp-error', hidden: true }));
       const control = el('button', data('control', { type: 'button' }));
+      const skip = el('button', data('skip', { type: 'button', hidden: true }), 'Bu evrakı atla ve sürdür');
       const open = el('button', data('open', { type: 'button', hidden: typeof openFile !== 'function' }), 'Dosyayı aç');
       const folder = el('button', data('folder', { type: 'button', hidden: true }), 'Son parçayı klasörde göster');
       const card = el('div', data('job', { class: 'bdp-card', role: 'listitem', 'data-file-key': fileKey, 'aria-labelledby': titleId }),
         el('div', { class: 'bdp-top' }, el('div', { class: 'bdp-file' }, title, court), status),
         el('div', { class: 'bdp-saved' }, saved, percent), progress,
-        el('div', { class: 'bdp-meta' }, parts, received, measured, duration, last), current, skipped, error,
-        el('div', { class: 'bdp-actions' }, control, open, folder));
-      const row = { card, title, court, status, saved, percent, progress, parts, received, measured, duration, last, current, skipped, error,
-        control, open, folder, state: null, pending: null, issue: '', stamp: '', alive: true };
+        el('div', { class: 'bdp-meta' }, parts, received, measured, duration, eta, last), current, skipped, error,
+        el('div', { class: 'bdp-actions' }, control, skip, open, folder));
+      const row = { card, title, court, status, saved, percent, progress, parts, received, measured, duration, eta, last, current, skipped, error,
+        control, skip, open, folder, state: null, pending: null, issue: '', stamp: '', alive: true };
       const call = async (name, fn) => {
         if (destroyed || !row.alive || row.pending?.name === name) return;
         const token = {}; row.pending = { name, token }; row.issue = ''; drawRow(row);
@@ -126,6 +139,12 @@
         if (destroyed || !row.alive || control.hidden || control.disabled || !state) return;
         const name = ['queued', 'running'].includes(state.status) ? 'pause' : 'resume';
         if (typeof manager[name] === 'function') return call(name, () => manager[name](fileKey));
+      });
+      // Atlama yalnız motorun bildirdiği evrak için ve o evrakın kimliğiyle istenir; motor eşleşmeyi yeniden doğrular.
+      skip.addEventListener('click', () => {
+        const target = row.state && stuck(row.state);
+        if (destroyed || !row.alive || skip.hidden || skip.disabled || !target || typeof manager.resume !== 'function') return;
+        return call('skip', () => manager.resume(fileKey, { skip: { jobId: target.jobId, cursor: target.cursor } }));
       });
       open.addEventListener('click', () => !destroyed && !open.hidden && !open.disabled && call('open', () => openFile(fileKey)));
       folder.addEventListener('click', () => {
@@ -158,15 +177,21 @@
       row.measured.textContent = `Bu parça: ${bytes(number(state.partBytes))}`;
       row.duration.hidden = !number(state.elapsedMs);
       row.duration.textContent = `Etkin süre: ${elapsed(state.elapsedMs)}`;
+      row.eta.hidden = state.status !== 'running' || !number(state.etaMs);
+      row.eta.textContent = row.eta.hidden ? '' : `Kalan süre: yaklaşık ${remaining(state.etaMs)}`;
       const time = state.lastPart?.completedAt, date = Number.isSafeInteger(time) && time > 0 ? new Date(time) : null;
       row.last.hidden = !date || !Number.isFinite(date.getTime());
       row.last.textContent = row.last.hidden ? '' : `Son kayıt: ${date.toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}`;
       const current = literal(state.currentTitle);
       row.current.hidden = !current || !['running', 'queued'].includes(state.status);
-      row.current.textContent = current ? `Evrak: ${current}` : '';
+      row.current.textContent = resting(state) ? `UYAP’a yük bindirmemek için kısa bir mola veriliyor; indirme ${clock(state.restUntil)} civarında kendiliğinden sürer.`
+        : current ? `Evrak: ${current}` : '';
+      if (resting(state)) row.current.hidden = false;
       row.skipped.textContent = skippedText(state);
       row.skipped.hidden = !row.skipped.textContent;
-      const message = row.issue || stateError(state);
+      const takilan = stuck(state);
+      const message = row.issue || (takilan ? `${STUCK[takilan.neden]}: ${[literal(takilan.tur, 200), literal(takilan.tarih, 40)].filter(Boolean).join(' · ') || 'evrak'}. Devam et yeniden dener; atlarsanız ZIP’e bu evrakın yerine “İNDİRİLEMEDİ” notu konur.`
+        : stateError(state));
       row.error.hidden = !message;
       row.error.textContent = message;
       const action = ['queued', 'running'].includes(state.status) ? 'pause' : 'resume';
@@ -175,6 +200,9 @@
       row.control.textContent = pausing(state) ? 'Duraklatılıyor…' : row.pending?.name === action ? action === 'pause' ? 'Duraklatılıyor…' : 'Başlatılıyor…'
         : action === 'pause' ? 'Duraklat' : 'Devam et';
       row.control.setAttribute('aria-label', `${label}: ${action === 'pause' ? 'indirmeyi duraklat' : 'indirmeye devam et'}`);
+      row.skip.hidden = !takilan;
+      row.skip.disabled = row.pending?.name === 'skip' || row.pending?.name === 'resume';
+      row.skip.setAttribute('aria-label', `${label}: alınamayan evrakı atla ve indirmeyi sürdür`);
       row.open.disabled = row.pending?.name === 'open';
       const downloadId = state.lastPart?.downloadId;
       row.folder.hidden = typeof showPart !== 'function' || !Number.isSafeInteger(downloadId) || downloadId < 0 || !state.id;
@@ -195,7 +223,7 @@
         if (state.status === 'queued') queued++;
         let row = rows.get(state.fileKey);
         if (!row) { row = createRow(state.fileKey); rows.set(state.fileKey, row); }
-        const stamp = JSON.stringify([state.status, state.phase, number(state.partCount), stateError(state), number(state.skipped)]);
+        const stamp = JSON.stringify([state.status, state.phase, number(state.partCount), stateError(state), number(state.skipped), resting(state)]);
         const previous = row.state;
         row.state = state;
         if (previous && previous.status !== state.status && ['running', 'queued', 'complete'].includes(state.status)) row.issue = '';
@@ -204,7 +232,7 @@
         row.stamp = stamp;
       }
       for (const [fileKey, row] of rows) if (!present.has(fileKey)) {
-        if ([row.control, row.open, row.folder].includes(doc.activeElement)) heading.focus();
+        if ([row.control, row.skip, row.open, row.folder].includes(doc.activeElement)) heading.focus();
         row.alive = false; row.card.remove(); rows.delete(fileKey);
       }
       count.textContent = `${fmt(rows.size)} indirme${running ? ` · ${fmt(running)} sürüyor` : ''}${queued ? ` · ${fmt(queued)} sırada` : ''}`;

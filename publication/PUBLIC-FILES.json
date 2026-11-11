@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "4939b46b67ada231d1696cae2462f753dc8978c8e507080ed30fba6b8da21cf6"
+      "sha256": "86701301833def72e5b229c53d55f3715246772247d3ed0373a7d124fab5766b"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -228,7 +228,7 @@
     },
     {
       "path": "src/extension/indirme-panel.js",
-      "sha256": "dda9f9d7fcbd9186db1e548f2481106b8a4b1306435084a3c044ed475a224425"
+      "sha256": "ebf472e30f38edea81c607b41f16d7235ceac6ebbb6912acd041ecd18c42072c"
     },
     {
       "path": "src/extension/kunye-ayikla.js",
@@ -628,7 +628,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "48e867527acfa0d5ccdffb2a068c5daae1a20bb673cead4ddf02367caf4cd1e9"
+      "sha256": "edc8c3601dc5d7e326d96e593202e283a8bba9a236a37a30df6bd519ef563d88"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -764,7 +764,7 @@
     },
     {
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "bd3f34e5e71f2ef034c1df77f3c7ccf85b9209095019b659d7551e0fe6c51a68"
+      "sha256": "f7ce6adf0fd84893187ae9fd906f2dad5330b3c1401e13784d36110933475332"
     },
     {
       "path": "src/fragments/content/105-viewer-navigation-abort-epoch-boundary.js.part",
