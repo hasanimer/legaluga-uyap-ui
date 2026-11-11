@@ -669,7 +669,7 @@
   // zaten sürüyorsa Güncelle sunulmaz.
   function openErrorPlan(kind, { repeat = false, updating = false } = {}) {
     let actions;
-    if (kind === 'oturum') actions = ['giris'];
+    if (kind === 'oturum') actions = [];   // oturum kapanınca eklenti girişe götürmez, isteği de saklamaz
     else if (kind === 'secenek' || kind === 'bulunamadi') actions = ['guncelle', 'kunye'];
     else actions = repeat ? ['tekrar', 'guncelle'] : ['tekrar'];
     if (updating) actions = actions.filter(a => a !== 'guncelle');

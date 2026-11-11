@@ -45,6 +45,17 @@
     const track = node => { controls.push(node); return node; };
     const changed = () => { if (!busy) savedPrefs = null; };
     const hint = text => el('p', { class: 'setup-hint' }, text);
+    // Kısayol sabit yazılmaz: atanmış kısayol arka plandan okunur; atanmamışsa ya da okunamazsa satır hiç görünmez.
+    const kisayolIpucu = () => {
+      const satir = hint('');
+      satir.hidden = true;
+      Promise.resolve().then(() => chrome.runtime.sendMessage({ type: 'uhd-shortcut' })).then(r => {
+        if (!r || typeof r.shortcut !== 'string' || !r.shortcut) return;
+        satir.textContent = `Paneli UYAP’ta ${r.shortcut} kısayoluyla açıp kapatabilirsiniz.`;
+        satir.hidden = false;
+      }).catch(() => {});
+      return satir;
+    };
     const group = (title, ...children) => el('fieldset', { class: 'setup-card' }, el('legend', null, title), ...children);
     const focus = () => { if (!destroyed) heading?.focus(); };
     const showError = text => {
@@ -224,7 +235,7 @@
           ? el('p', null, el('strong', null, draft.savcilik === 'otomatik' ? 'Ek iller: ' : 'İller: '), draft.savcilikIller.map(code => ILLER[code - 1]).join(', ')) : null)),
       hint('“Kurulumu tamamla” seçimlerinizi kaydeder. “Kaydet ve taramayı başlat” seçtiğiniz kapsamı tarar; oturum henüz açık değilse giriş yaptığınızda otomatik başlar.'),
       hint('Tema, bildirimler, otomatik güncelleme ve diğer tercihler varsayılan değerleriyle başlar. Hepsini daha sonra Ayarlar’dan değiştirebilirsiniz.'),
-      hint('Paneli UYAP’ta Alt+Shift+D kısayoluyla açıp kapatabilirsiniz.')];
+      kisayolIpucu()];
     }
 
     async function finish(startScan) {

@@ -1543,8 +1543,8 @@
     // Karta tıklamanın artık dosyayı açmadığı bir kez söylenir.
     function kartIpucu() {
       if (pref('kartIpucu', false)) return;
-      setPref('kartIpucu', true).catch(() => {});
-      infoNotice('Kart seçildi. Dosyayı açmak için “UYAP’tan aç” düğmesine ya da Enter’a basın.', '', { label: 'Tamam', fn: () => setNotice('') });
+      // İpucu bir “Geri al” bildirimi yüzünden gösterilemediyse hakkı tüketilmez; sonraki kart seçiminde yeniden denenir.
+      if (infoNotice('Kart seçildi. Dosyayı açmak için “UYAP’tan aç” düğmesine ya da Enter’a basın.', '', { label: 'Tamam', fn: () => setNotice('') })) setPref('kartIpucu', true).catch(() => {});
     }
 
     // Seçim odaktan ayrı çizilir. Fare imleci seçimi değiştirmez; ↑ ↓ ile seçilince ekran okuyucuya kısa özet okunur.
@@ -1678,7 +1678,7 @@
             ? search(records, q, { myName: myName(), notes, filter, yeni: yeniMap, vekilAra: pref('vekilAra', true), limit: Infinity }).items.filter(x => gizli[x.key]) : [];
           if (gizliEslesen.length) {
             const goster = el('button', { class: 'btn', 'data-gizli-goster': '' }, gizliEslesen.length === 1 ? 'Gizlemeyi kaldır' : 'Gizlemeleri kaldır');
-            goster.addEventListener('click', () => unhideFiles(gizliEslesen.map(x => x.key)));
+            goster.addEventListener('click', async () => { await unhideFiles(gizliEslesen.map(x => x.key)); input.focus(); });   // düğme yeniden çizimde kalkar; odak panelde kalsın
             box.append(el('p', { class: 'gizli-eslesme' }, `Gizlediğiniz ${fmtNum(gizliEslesen.length)} dosya bu aramayla eşleşiyor.`), goster);
           }
           if (action) {
@@ -1816,6 +1816,8 @@
         if (notes === next) { notes = saved; render(); }
         if (!text && onceki && !bildirimsiz) setNotice('Not silindi.', '', { label: 'Geri al', undo: true, fn: async () => {
           if (notes[key]) return setNotice('Bu dosyaya yeni bir not yazılmış; silinen not geri yüklenmedi.');
+          // Veriler bu arada silindiyse (başka sekmede “Tüm verileri sil”) dosya artık yoktur; not geri yazılmaz.
+          if (!records.some(r => r.key === key)) return setNotice('Dosya artık listede yok; silinen not geri yüklenmedi.');
           setNotice('');
           await saveNote(key, onceki);
         } });

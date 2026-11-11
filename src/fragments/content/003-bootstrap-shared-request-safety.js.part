@@ -42,7 +42,7 @@
   const UYAP_REQUEST_INTERVAL = 1200;
   const UYAP_REQUEST_LOCK = 'legaluga-uyap-request-v1', UYAP_REQUEST_STATE = 'uhdUyapRequestGate';
   const UYAP_KORUMA = 'uhdUyapKoruma';
-  const UYAP_KORUMA_MESAJ = 'UYAP koruması nedeniyle otomatik işlemler duraklatıldı. Kendiliğinden devam etmez. UYAP ekranını kontrol edin, sonra “Otomatik işlemleri yeniden aç”a basın (Ayarlar → UYAP).';
+  const UYAP_KORUMA_MESAJ = 'UYAP koruması nedeniyle otomatik işlemler duraklatıldı. Kendiliğinden devam etmez. UYAP ekranını kontrol edin, sonra “Otomatik işlemleri yeniden aç”a basın (Ayarlar → UYAP bağlantısı ve koruma).';
   const uyapBulkSignals = new WeakSet();
   function uyapBulk(signal) { if (signal) uyapBulkSignals.add(signal); return signal; }
   const uyapProtectionHtml = text => /^\s*(?:<!doctype\s+html|<(?:html|head|body|form|script|iframe|div)\b)/i.test(text) &&

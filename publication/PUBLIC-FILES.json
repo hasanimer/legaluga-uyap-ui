@@ -28,7 +28,7 @@
     },
     {
       "path": "demo/common.js",
-      "sha256": "2d009c65a5153b8dd313ae10662976685eec91be339f97873f3eaa7602359d56"
+      "sha256": "ba80906b58c90079dc63a658b30463fc39d1826de5955d0bd92e1ed1a0508c41"
     },
     {
       "path": "demo/demo.css",
@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "ddcf2349f08dd3e02d67984a74f3bb97e75e8ee5712c869869f5f6670238ea32"
+      "sha256": "f076324d91d3a325faf2607d6013598450d5e87021a66d0af79d4f4f17faa3c9"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -240,7 +240,7 @@
     },
     {
       "path": "src/extension/onboarding.js",
-      "sha256": "a2214c29923a827a1b66fbe7fc22be5536140121bd5ece9382bbb75679cddee6"
+      "sha256": "bed10d34da77f8557d72c26df617b9db7541d717ecc34651189651ffb855d663"
     },
     {
       "path": "src/extension/options.css",
@@ -300,7 +300,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "7389717a7650ec21ad0aad4506d1dcbd6f01cc7136fc5a30857383a400c242b0"
+      "sha256": "e2accce57340aabc965f949f74f9bc181b555e0ff9c52d242ffe0b4a877e797b"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -556,7 +556,7 @@
     },
     {
       "path": "src/fragments/content/003-bootstrap-shared-request-safety.js.part",
-      "sha256": "048ea9890c46a473165c08533ca65b3f03ca24da65678b3dbf32309ff5860d3f"
+      "sha256": "33942f05db0bc79fb8a7977af99a37b45e26c8f0bed182fec159621f9ba0ec58"
     },
     {
       "path": "src/fragments/content/005-context-invalidation-and-progress-boundaries.js.part",
@@ -856,7 +856,7 @@
     },
     {
       "path": "tests/onboarding-ui.test.js",
-      "sha256": "41f582e6619161a1cc2a67eb84b1f4ae0e42fbf7f22cd66433835ac46066e3a1"
+      "sha256": "b4d9a5bae81ee0bce4b021c11f40407bdb6b7bc39e6850bc9d9ca4c08aaaea02"
     },
     {
       "path": "tests/publication-boundary.test.js",

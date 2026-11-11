@@ -63,11 +63,11 @@ const SORULMAYAN = { tema: 'auto', panelSabit: true, acilisSekme: 'yok', evrakTa
   otoGuncelle: 'kapali', durusmaBildirim: true, cakismaBildirim: true, duyuruBildirim: true, oturumAcik: false, hataRaporu: false };
 const all = root => [root, ...root.kids.filter(child => child instanceof Node).flatMap(all)];
 
-function harness({ prefs = {}, hasFiles = false, stored = prefs, fallback = false, patch, set, onConnection, onOpenUyap, onComplete } = {}) {
+function harness({ shortcut = 'Alt+Shift+D', prefs = {}, hasFiles = false, stored = prefs, fallback = false, patch, set, onConnection, onOpenUyap, onComplete } = {}) {
   const document = {};
   const el = (tag, attrs, ...kids) => { const node = new Node(tag, attrs, document); node.append(...kids); return node; };
   const h = { writes: [], callbacks: [], store: plain(stored), document };
-  const context = { chrome: { storage: { local: {
+  const context = { chrome: { runtime: { sendMessage: async () => ({ shortcut }) }, storage: { local: {
     async get() { return { uhdPrefs: plain(h.store) }; },
     async set(value) {
       h.writes.push(plain(value.uhdPrefs));
@@ -245,7 +245,8 @@ test('ilk kurulum güvenli varsayılanları gösterir ve tamamlanana kadar ayar 
   for (const key of Object.keys(SORULMAYAN)) assert.equal(h.field(key), undefined, key + ' kurulumda sorulmaz');
   assert.doesNotMatch(h.root.textContent, /Sentry|çakışma/i);
   assert.match(h.root.textContent, /Hepsini daha sonra Ayarlar’dan değiştirebilirsiniz/);
-  assert.equal(h.root.textContent.split('Alt+Shift+D').length - 1, 1, 'kısayol son adımda bir kez anılır');
+  for (let i = 0; i < 10; i++) await Promise.resolve();
+  assert.equal(h.root.textContent.split('Alt+Shift+D').length - 1, 1, 'atanmış kısayol son adımda bir kez anılır');
   assert.match(h.root.textContent, /İlk kurulum · 2 \/ 2/);
   assert.equal(h.writes.length, 0);
   await h.button('Kurulumu tamamla').click();
@@ -456,4 +457,14 @@ test('kurulumdaki savcılık seçenekleri Ayarlar’daki yazımla aynıdır', ()
   assert.deepEqual(options.map(([value]) => value), ['kapali', 'otomatik', 'secili', 'tum']);
   for (const [value, label] of options) assert.ok(settings.includes(`['${value}', '${label}']`), label);
   assert.doesNotMatch(h.root.textContent, /uzun sürebilir\)|dosyalarını tarama/);
+});
+
+test('son adımdaki kısayol satırı atanmış kısayolu gösterir; kısayol atanmamışsa satır görünmez', async () => {
+  for (const [shortcut, beklenen] of [['Ctrl+Shift+L', /Ctrl\+Shift\+L kısayoluyla/], ['', null]]) {
+    const h = harness({ shortcut });
+    await h.next();
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+    assert.doesNotMatch(h.root.textContent, /Alt\+Shift\+D/, 'kısayol sabit yazılmaz');
+    if (beklenen) assert.match(h.root.textContent, beklenen); else assert.doesNotMatch(h.root.textContent, /kısayoluyla/);
+  }
 });
