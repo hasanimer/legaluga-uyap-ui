@@ -83,11 +83,25 @@
       resmiAramaMi: () => globalThis.UHDAtifPaneli.idareDosyasi(rec),
       motorKabi: viewer, kopru: () => globalThis.UHD.durusmaPaketiBridge, mesgulMu: () => bankBusy() }) || null;
     goruldu.addEventListener('click', () => {
-      if (ui && typeof ui.markSeen === 'function') ui.markSeen([rec.key], o.baglam && o.baglam.kadar);
-      if (okuma) okuma.kuyruk[okuma.i].goruldu = true;
+      // ui.markSeen geri alma işlevini verir: yalnız bu tıklamanın yazdığı görüldü zamanını önceki değerine çevirir.
+      const geriAl = ui && typeof ui.markSeen === 'function' ? ui.markSeen([rec.key], o.baglam && o.baglam.kadar) : null;
+      const sira = okuma ? okuma.kuyruk[okuma.i] : null;
+      if (sira) sira.goruldu = true;
       goruldu.disabled = true;
       gorulduYazi.textContent = 'Görüldü sayıldı';
-      announce(`${rec.dosyaNo} dosyasındaki yeni evraklar görüldü sayıldı.`);
+      const ileti = `${rec.dosyaNo} dosyasındaki yeni evraklar görüldü sayıldı.`;
+      if (!geriAl || typeof geriAl.then !== 'function' || typeof toast !== 'function') return announce(ileti);
+      toast(ileti, 'ok', 12000, { label: 'Geri al', fn: async () => {
+        try {
+          const cevir = await geriAl;
+          if (typeof cevir !== 'function') return;
+          await cevir();
+        } catch { return toast('Görüldü işareti geri alınamadı. Tekrar deneyin.', 'err', 8000, null, { id: 'goruldu:' + rec.key }); }
+        if (sira) sira.goruldu = false;
+        goruldu.disabled = false;
+        gorulduYazi.textContent = 'Bu dosyadaki yeni evrakları görüldü say';
+        announce(`${rec.dosyaNo} dosyasındaki evraklar yeniden yeni sayılıyor.`);
+      } }, { id: 'goruldu:' + rec.key });
     });
     const onizleme = el('div', { class: 'ek-onizleme', tabindex: '-1' }, onbar);
     const gruplar = el('div', { class: 'ek-gruplar', role: 'group', 'aria-label': 'Evrak grubu' });

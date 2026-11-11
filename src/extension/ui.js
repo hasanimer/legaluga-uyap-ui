@@ -492,6 +492,7 @@
     let editing = null;        // notu düzenlenen kayıt
     const noteDrafts = new Map();
     let manualNotice = false;
+    let undoNotice = false;    // görünen bildirim “Geri al” taşıyor: bilgi amaçlı bildirim onun yerine geçmez
     let goruldu = {};
     let gizli = {};            // aramada gösterilmeyecek dosyalar (uhdGizli): { key: { dosyaNo, birimAdi, at } }
     let allParties = new Set();// tüm tarafları gösterilen kartlar
@@ -663,7 +664,9 @@
 
     function showNotice(text, kind, action, noticeKey) {
       notice.replaceChildren();
+      undoNotice = false;
       if (!text || (noticeKey && dismissedNotices.has(noticeKey))) { notice.hidden = true; return; }
+      undoNotice = !!(action && action.undo);
       notice.className = 'notice' + (kind === 'err' ? ' err' : '');
       notice.append(el('span', null, text));
       if (action) notice.append(el('button', { onclick: action.fn }, action.label));
@@ -671,6 +674,7 @@
       dismiss.addEventListener('click', () => {
         if (noticeKey) dismissedNotices.add(noticeKey);
         manualNotice = false;
+        undoNotice = false;
         setupScanNoticeId = null;
         notice.hidden = true;
         input.focus();
@@ -684,6 +688,14 @@
       manualNotice = !!text;
       if (text) showNotice(text, kind, action);
       else autoNotice();
+    }
+
+    // Bilgi amaçlı ya da kendiliğinden çıkan bildirim: “Geri al” sunan bildirimin yerine geçmez. Kullanıcı o bildirimi
+    // kapatınca, geri alınca ya da başka bir işlem yapınca (setNotice) yuva yeniden açılır.
+    function infoNotice(text, kind, action) {
+      if (undoNotice) return false;
+      setNotice(text, kind, action);
+      return true;
     }
 
     function autoNotice() {
@@ -1147,7 +1159,7 @@
       const u = unseenEvrak(r, goruldu);
       if (!u.length) return null;
       const seenBtn = el('button', { class: 'btn sm', 'data-focus': 'seen', title: 'Bu dosyadaki yeni evrakları görüldü say', 'aria-label': 'Yeni evrakları görüldü say' }, icon('check'));
-      seenBtn.addEventListener('click', e => { e.stopPropagation(); markSeen([r.key]); });
+      seenBtn.addEventListener('click', e => { e.stopPropagation(); markSeen([r.key], true); });
       // Görüntüleyicide Önceki/Sonraki bu kartın yeni evrakları arasında gezer (gösterilmeyenler dahil).
       const baglam = { ad: 'yeni', liste: u.map(y => ({ k: y.k, dosya: y.dosya || '' })) };
       const makeLine = y => {
@@ -1177,12 +1189,14 @@
     }
 
     // kadar verilirse görüldü zamanı o ana çekilir: o andan sonra bulunan evrak yeni kalır.
+    // Geri alma işlevini döndürür: undoable ise panel bildirimi “Geri al” ile sunar, değilse çağıran (dosya ekranı) sunar.
     async function markSeen(keys, undoable, kadar) {
       const prev = goruldu;
       const count = undoable ? records.filter(r => keys.includes(r.key)).reduce((n, r) => n + unseenEvrak(r, prev).length, 0) : 0;
       const next = { ...goruldu };
       const now = Date.now();
-      for (const k of keys) next[k] = kadar ? Math.max(next[k] || 0, kadar) : now;
+      const written = {};
+      for (const k of keys) written[k] = next[k] = kadar ? Math.max(next[k] || 0, kadar) : now;
       goruldu = next;
       computeYeni();
       renderFilters();
@@ -1191,11 +1205,11 @@
       await chrome.storage.local.set({ uhdEvrakGoruldu: next });
       // Geri al yalnız bu işlemin yazdığı anahtarları çevirir ve güncel haritadan başlar: arada başka kartta, popup'ta ya da
       // başka sekmede verilen görüldü işaretleri silinmez; sonradan yeniden işaretlenen anahtar da ezilmez.
-      if (count) setNotice(`${fmtNum(count)} evrak görüldü sayıldı.`, '', { label: 'Geri al', fn: async () => {
+      const undo = async () => {
         const { uhdEvrakGoruldu: stored } = await chrome.storage.local.get('uhdEvrakGoruldu');
         const cur = { ...(stored || goruldu) };
         for (const k of keys) {
-          if (cur[k] !== now) continue;
+          if (cur[k] !== written[k]) continue;
           if (k in prev) cur[k] = prev[k];
           else delete cur[k];
         }
@@ -1203,9 +1217,11 @@
         computeYeni();
         renderFilters();
         render();
-        setNotice('');
+        if (count) setNotice(''); else autoNotice();
         await chrome.storage.local.set({ uhdEvrakGoruldu: cur });
-      } });
+      };
+      if (count) setNotice(`${fmtNum(count)} evrak görüldü sayıldı.`, '', { label: 'Geri al', undo: true, fn: undo });
+      return undo;
     }
 
     // "Son evrak 12/09/2026 · Bilirkişi Raporu" (bağlı dosyadansa hangi dosya olduğu da).
@@ -1528,7 +1544,7 @@
     function kartIpucu() {
       if (pref('kartIpucu', false)) return;
       setPref('kartIpucu', true).catch(() => {});
-      setNotice('Kart seçildi. Dosyayı açmak için “UYAP’tan aç” düğmesine ya da Enter’a basın.', '', { label: 'Tamam', fn: () => setNotice('') });
+      infoNotice('Kart seçildi. Dosyayı açmak için “UYAP’tan aç” düğmesine ya da Enter’a basın.', '', { label: 'Tamam', fn: () => setNotice('') });
     }
 
     // Seçim odaktan ayrı çizilir. Fare imleci seçimi değiştirmez; ↑ ↓ ile seçilince ekran okuyucuya kısa özet okunur.
@@ -1785,9 +1801,12 @@
       opts.onOpen(r);
     }
 
-    async function saveNote(key, text) {
+    // Boş metin notu siler. Silinen not “Geri al” ile önceki metniyle (biçim işaretleri dahil) geri yazılır; arada aynı
+    // dosyaya yeni not yazıldıysa o not ezilmez. bildirimsiz: geri almayı çağıran ekran kendi sunar (dosya ekranı).
+    async function saveNote(key, text, { bildirimsiz = false } = {}) {
       const before = notes;
       const next = { ...notes };
+      const onceki = notes[key] || '';
       text = text.trim();
       if (text) next[key] = text; else delete next[key];
       notes = next;
@@ -1795,6 +1814,11 @@
       try {
         const saved = await globalThis.UHDStorage.mergeNote(key, text);
         if (notes === next) { notes = saved; render(); }
+        if (!text && onceki && !bildirimsiz) setNotice('Not silindi.', '', { label: 'Geri al', undo: true, fn: async () => {
+          if (notes[key]) return setNotice('Bu dosyaya yeni bir not yazılmış; silinen not geri yüklenmedi.');
+          setNotice('');
+          await saveNote(key, onceki);
+        } });
       } catch (error) {
         if (notes === next) { notes = before; render(); }
         setNotice('Not kaydedilemedi. Lütfen yeniden deneyin.', 'err');
@@ -1887,7 +1911,7 @@
       gizli = { ...gizli, [r.key]: { dosyaNo: r.dosyaNo, birimAdi: r.birimAdi, at: Date.now() } };
       await chrome.storage.local.set({ uhdGizli: gizli });
       render();
-      setNotice(`${r.dosyaNo} ${cleanBirim(r.birimAdi)} aramalarda gösterilmeyecek.`, '', { label: 'Geri al', fn: () => unhideFile(r.key) });
+      setNotice(`${r.dosyaNo} ${cleanBirim(r.birimAdi)} aramalarda gösterilmeyecek.`, '', { label: 'Geri al', undo: true, fn: () => unhideFile(r.key) });
     }
 
     const unhideFile = key => unhideFiles([key]);

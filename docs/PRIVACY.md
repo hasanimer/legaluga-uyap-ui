@@ -72,7 +72,7 @@ Uzantının JavaScript kodu paket içindedir; uzantıda çalıştırılmak üzer
 
 ## Saklama, silme ve sınırlı kullanım
 
-Yerel kayıtlar, kullanıcı bunları silene veya profil/uzantı kaldırılana kadar bu profilde bulunabilir. **Ayarlar → Tüm verileri sil**, uzantının yerel kullanıcı kayıtlarını temizler; cihazınıza indirdiğiniz dosyaları, dışa aktardığınız yedekleri ve önceden gönderilmiş Sentry raporlarını silmez.
+Yerel kayıtlar, kullanıcı bunları silene veya profil/uzantı kaldırılana kadar bu profilde bulunabilir. **Ayarlar → Verileri sil → Tüm verileri sil**, uzantının yerel kullanıcı kayıtlarını temizler; cihazınıza indirdiğiniz dosyaları, dışa aktardığınız yedekleri ve önceden gönderilmiş Sentry raporlarını silmez.
 
 Veriler satılmaz; reklam, kullanıcı profili oluşturma, kredi vermeye uygunluk veya ürünün tek amacıyla ilgisiz amaçlar için kullanılmaz. Geliştiriciye gerçek dava belgesi, HAR, giriş bilgisi veya kimlik/finansal bilgi içeren dosyaları göndermeyin. Destek örneklerini kurgusal verilerle hazırlayın. Özel güvenlik bildirimi için [SECURITY.md](../SECURITY.md) içindeki iletişim yolunu kullanın.
 
