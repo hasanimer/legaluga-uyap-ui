@@ -525,7 +525,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
   let panel, ui, launch, introTip, pinButton, shadowRoot, focusBeforePanel, announcementEl, notificationArea, liveRegion, alertRegion, welcomeHost, welcomeShadow;
   let pagePrefs = {};
   let prefsLoaded = false, prefsRevision = 0, pinSaving = false, panelEpoch = 0, outsideCloseTimer = null;
-  let launcherIntroSeen = false, launcherIntroPending = false;
+  let launcherIntroSeen = false, launcherIntroPending = false, launchShortcut = '';
   let accessMenuHeading = null, accessMenuOpen = false, accessMenuTimer = null;
   // panelWanted: kullanıcı paneli açık istiyor. Evrak görüntüleyici, dosya paneli ya da erişilebilirlik menüsü
   // paneli geçici gizler; bunlar kapanınca panel geri gelir. Yalnız kullanıcının kapatması (×, sekme, Esc,
@@ -1204,7 +1204,13 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     introTip = el('div', { lang: 'tr', class: 'launch-tip', role: 'status', hidden: true },
       el('strong', null, 'Legaluga Asistan burada'), introText, introDone);
     chrome.runtime.sendMessage({ type: 'uhd-shortcut' }).then(r => {
-      if (r && r.shortcut) introText.textContent = `UYAP dosyalarınızda aramak için sağ kenardaki sekmeye tıklayın ya da ${r.shortcut} tuşlarına basın.`;
+      if (!r || !r.shortcut || contextGone) return;
+      introText.textContent = `UYAP dosyalarınızda aramak için sağ kenardaki sekmeye tıklayın ya da ${r.shortcut} tuşlarına basın.`;
+      // Kısayol ipucunda ve erişilebilir adda da görünür; atanmamışsa yazılmaz.
+      launchShortcut = ` (${r.shortcut})`;
+      launch.title = BRAND.name + ' · Dosyalarınızda ara' + launchShortcut;
+      launch.setAttribute('aria-keyshortcuts', r.shortcut);
+      launch.setAttribute('aria-label', BRAND.name + (panel.hidden ? ' panelini aç' : ' panelini kapat') + launchShortcut);
     }).catch(() => {});
     introDone.addEventListener('click', dismissLauncherIntro);
     panel = el('div', { lang: 'tr', class: 'panel', id: 'legaluga-search-panel', role: 'dialog', 'aria-label': BRAND.name, 'aria-modal': 'false', hidden: true });
@@ -1367,7 +1373,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     ui.refreshStatus();
     if (wasHidden) focusBeforePanel = before;
     launch.setAttribute('aria-expanded', 'true');
-    launch.setAttribute('aria-label', BRAND.name + ' panelini kapat');
+    launch.setAttribute('aria-label', BRAND.name + ' panelini kapat' + launchShortcut);
     if (focus) ui.focus();
   }
 
@@ -1396,7 +1402,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     panel.hidden = true;
     leavePanelMode();
     launch.setAttribute('aria-expanded', 'false');
-    launch.setAttribute('aria-label', BRAND.name + ' panelini aç');
+    launch.setAttribute('aria-label', BRAND.name + ' panelini aç' + launchShortcut);
     syncOverlays();
     if (restoreFocus && !overlayOpen()) {
       const previous = focusBeforePanel;

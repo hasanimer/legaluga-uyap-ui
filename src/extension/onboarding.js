@@ -1,4 +1,7 @@
 // İlk kurulum tercihleri, kullanıcı tamamlayana kadar yalnız bu ekranda tutulur.
+// Kurulum yalnız taramaya başlamak için gerekenleri sorar: kapsam ve vekil adı. DEFAULTS'taki öbür tercihler
+// sorulmadan varsayılan (ya da önceden kayıtlı) değeriyle yazılır; hepsi Ayarlar'dan değiştirilir.
+// Seçenek yazımı Ayarlar'daki yazımla aynı tutulur.
 (() => {
   const { el, TURLER, ILLER, norm } = globalThis.UHD;
   const DEFAULTS = {
@@ -8,10 +11,11 @@
   };
   const OPTIONS = {
     taramaDurum: [['tum', 'Açık ve kapalı dosyalar'], ['acik', 'Yalnız açık dosyalar'], ['kapali', 'Yalnız kapalı dosyalar']],
-    savcilik: [['kapali', 'Savcılık dosyalarını tarama'], ['otomatik', 'Dosyalarımın bulunduğu iller'], ['secili', 'Yalnız seçtiğim iller'], ['tum', 'Tüm iller (uzun sürebilir)']],
-    tema: [['auto', 'Sistemle aynı'], ['light', 'Açık'], ['dark', 'Koyu']],
-    acilisSekme: [['yok', 'Hiçbiri'], ['evrak', 'Evrak'], ['taraf', 'Taraf bilgileri']],
-    otoGuncelle: [['kapali', 'Kapalı'], ['6s', '6 saatte bir'], ['gunluk', 'Günde bir']]
+    savcilik: [['kapali', 'Savcılık dosyalarını arama'], ['otomatik', 'Dosyalarımın bulunduğu iller'], ['secili', 'Yalnız seçtiğim iller'], ['tum', 'Tüm iller (yavaş)']],
+    // Kurulumda sorulmaz; yalnız kayıtlı değerin geçerli olduğunu doğrulamak için tutulur.
+    tema: [['auto'], ['light'], ['dark']],
+    acilisSekme: [['yok'], ['evrak'], ['taraf']],
+    otoGuncelle: [['kapali'], ['6s'], ['gunluk']]
   };
   const labelOf = (key, value) => OPTIONS[key].find(([code]) => code === value)?.[1] || value;
 
@@ -53,12 +57,6 @@
       busy = value;
       form.setAttribute('aria-busy', String(value));
       for (const control of controls) control.disabled = value || finished || (step === 0 && checking);
-    };
-    const checkbox = (key, label, description) => {
-      const input = track(el('input', { type: 'checkbox', name: key, 'data-pref': key }));
-      input.checked = draft[key];
-      input.addEventListener('change', () => { draft[key] = input.checked; changed(); });
-      return el('label', { class: 'setup-choice' }, input, el('span', null, el('span', null, label), description ? hint(description) : null));
     };
     const select = (key, label, description, onChange) => {
       const input = track(el('select', { name: key, 'data-pref': key }, OPTIONS[key].map(([value, text]) => el('option', { value }, text))));
@@ -215,29 +213,18 @@
       nameInput = name;
       name.value = draft.myName;
       name.addEventListener('input', () => { draft.myName = name.value; nameEdited = true; changed(); });
-      return [group('Görünüm ve dosya açma',
+      return [group('Vekil adı',
         el('label', { class: 'setup-field' }, 'Vekil adınız', name,
-          hint('İlk UYAP bağlantısında hesabınızın adı otomatik alınır. Bu adın vekil olduğu taraflar “Müvekkil” olarak gösterilir. Gerekirse değiştirebilir veya birden fazla adı virgülle ayırabilirsiniz.')),
-        select('tema', 'Tema'), checkbox('panelSabit', 'UYAP panelini sabit tut', 'Panel UYAP’ın yanına yerleşir ve siz kapatıncaya kadar açık kalır.'),
-        select('acilisSekme', 'Dosya açılınca geçilecek sekme')),
-      group('Güncelleme',
-        checkbox('evrakTakip', 'Yeni evrakları bul', 'Her açık dosya için ek UYAP isteği yapılır; tarama uzayabilir.'),
-        checkbox('safahatTakipOptIn', 'Son işlemi (safahat) kartta göster', 'Son elle çekilip kaydedilen safahattan en yeni işlemi gösterir. Tarama safahat sorgusu yapmaz; Safahat sekmesindeki düğmeyle güncellenir.'),
-        select('otoGuncelle', 'Otomatik güncelleme', 'Yalnız UYAP sekmesi açıkken çalışır.')),
-      group('Bildirimler ve oturum',
-        checkbox('durusmaBildirim', 'Yaklaşan duruşmaları hatırlat', 'Bugün ve yarınki duruşmalar için bildirim gösterir.'),
-        checkbox('cakismaBildirim', 'Duruşma çakışmalarını bildir', 'Çakışma taramasını Duruşmalarım bölümünden açtığınızda uyarılar gösterilir.'),
-        checkbox('duyuruBildirim', 'UYAP duyurularını göster'),
-        checkbox('oturumAcik', 'UYAP oturumunu koru', 'Varsayılan kapalıdır. Açılırsa eklenti, siz işlem yapmasanız da aralıklarla UYAP’a küçük bir okuma isteği gönderir.')),
-      group('Hata raporlama', checkbox('hataRaporu', 'Teknik hata raporlarını Sentry’ye gönder',
-        'Varsayılan olarak kapalıdır. Açıldığında hata türü, işlem, uzantı sürümü ve kod satırı gönderilir. Dosya numarası, kişi adı, evrak, hata metni, sayfa adresi ve oturum bilgileri gönderilmez. Sentry bağlantısı ağ adresinizi görür; rapora kullanıcı bilgisi eklenmez.')),
+          hint('İlk UYAP bağlantısında hesabınızın adı otomatik alınır. Bu adın vekil olduğu taraflar “Müvekkil” olarak gösterilir. Gerekirse değiştirebilir veya birden fazla adı virgülle ayırabilirsiniz.'))),
       group('Tarama seçiminiz', el('div', { class: 'setup-summary' },
         el('p', null, el('strong', null, 'Dosya türleri: '), draft.taramaTurleri.length ? TURLER.filter(type => draft.taramaTurleri.includes(type.kod)).map(type => type.ad).join(', ') : 'Yalnız savcılık'),
         el('p', null, el('strong', null, 'Dosya durumu: '), labelOf('taramaDurum', draft.taramaDurum)),
         el('p', null, el('strong', null, 'Savcılık: '), labelOf('savcilik', draft.savcilik)),
         ['secili', 'otomatik'].includes(draft.savcilik) && draft.savcilikIller.length
           ? el('p', null, el('strong', null, draft.savcilik === 'otomatik' ? 'Ek iller: ' : 'İller: '), draft.savcilikIller.map(code => ILLER[code - 1]).join(', ')) : null)),
-      hint('“Kurulumu tamamla” seçimlerinizi kaydeder. “Kaydet ve taramayı başlat” seçtiğiniz kapsamı tarar; oturum henüz açık değilse giriş yaptığınızda otomatik başlar. Ayarları daha sonra değiştirebilirsiniz.')];
+      hint('“Kurulumu tamamla” seçimlerinizi kaydeder. “Kaydet ve taramayı başlat” seçtiğiniz kapsamı tarar; oturum henüz açık değilse giriş yaptığınızda otomatik başlar.'),
+      hint('Tema, bildirimler, otomatik güncelleme ve diğer tercihler varsayılan değerleriyle başlar. Hepsini daha sonra Ayarlar’dan değiştirebilirsiniz.'),
+      hint('Paneli UYAP’ta Alt+Shift+D kısayoluyla açıp kapatabilirsiniz.')];
     }
 
     async function finish(startScan) {

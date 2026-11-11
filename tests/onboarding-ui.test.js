@@ -58,6 +58,9 @@ class Node {
   focus() { this.document.activeElement = this; }
   remove() { if (this.parentNode) this.parentNode.kids = this.parentNode.kids.filter(child => child !== this); this.parentNode = null; }
 }
+// Kurulumda sorulmayan tercihler ve yeni kullanıcıda yazılan varsayılanları.
+const SORULMAYAN = { tema: 'auto', panelSabit: true, acilisSekme: 'yok', evrakTakip: false, safahatTakipOptIn: false,
+  otoGuncelle: 'kapali', durusmaBildirim: true, cakismaBildirim: true, duyuruBildirim: true, oturumAcik: false, hataRaporu: false };
 const all = root => [root, ...root.kids.filter(child => child instanceof Node).flatMap(all)];
 
 function harness({ prefs = {}, hasFiles = false, stored = prefs, fallback = false, patch, set, onConnection, onOpenUyap, onComplete } = {}) {
@@ -167,10 +170,8 @@ test('bağlantı olmadan seçilen taslak ve elle girilen ad ilk bağlantıda kor
   await h.field('taramaDurum').choose('acik');
   await h.next();
   await h.field('myName').fill('Elle seçilen vekil');
-  await h.field('tema').choose('dark');
   h.api.setConnection({ ready: true, status: 'ready', name: 'UYAP hesabı' });
   assert.equal(h.field('myName').value, 'Elle seçilen vekil');
-  assert.equal(h.field('tema').value, 'dark');
   await h.button('Kaydet ve taramayı başlat').click();
   assert.equal(h.callbacks[0].startScan, true);
   assert.equal(h.callbacks[0].prefs.taramaDurum, 'acik');
@@ -239,16 +240,18 @@ test('ilk kurulum güvenli varsayılanları gösterir ve tamamlanana kadar ayar 
   assert.equal(h.nodes().filter(node => node.attrs['data-il'] != null).length, 81);
   assert.equal(h.writes.length, 0);
   await h.next();
-  for (const key of ['evrakTakip', 'safahatTakipOptIn', 'hataRaporu']) assert.equal(h.field(key).checked, false);
-  for (const key of ['panelSabit', 'durusmaBildirim', 'cakismaBildirim', 'duyuruBildirim']) assert.equal(h.field(key).checked, true);
-  assert.equal(h.field('oturumAcik').checked, false);
-  assert.equal(h.field('tema').value, 'auto');
-  assert.equal(h.field('otoGuncelle').value, 'kapali');
-  assert.equal(h.field('acilisSekme').value, 'yok');
-  assert.match(h.root.textContent, /Sentry bağlantısı ağ adresinizi görür/);
+  // Son adım yalnız vekil adını sorar; öbür tercihler sorulmadan varsayılanıyla yazılır ve Ayarlar'dan değiştirilir.
+  assert.deepEqual(h.nodes().filter(node => node.attrs['data-pref'] != null).map(node => node.attrs['data-pref']), ['myName']);
+  for (const key of Object.keys(SORULMAYAN)) assert.equal(h.field(key), undefined, key + ' kurulumda sorulmaz');
+  assert.doesNotMatch(h.root.textContent, /Sentry|çakışma/i);
+  assert.match(h.root.textContent, /Hepsini daha sonra Ayarlar’dan değiştirebilirsiniz/);
+  assert.equal(h.root.textContent.split('Alt+Shift+D').length - 1, 1, 'kısayol son adımda bir kez anılır');
+  assert.match(h.root.textContent, /İlk kurulum · 2 \/ 2/);
   assert.equal(h.writes.length, 0);
   await h.button('Kurulumu tamamla').click();
   assert.equal(h.writes.length, 1);
+  for (const [key, value] of Object.entries(SORULMAYAN)) assert.equal(h.store[key], value, key + ' varsayılanı korunur');
+  assert.equal(h.store.hataRaporu, false, 'hata raporlama açık onay olmadan açılmaz');
   assert.equal(h.store.kurulumTamamlandi, true);
   assert.equal(h.store.kurulumSurumu, 1);
   assert.equal(h.store.unrelated, 'korunsun');
@@ -319,8 +322,6 @@ test('il araması Türkçe adları bulur ve adımlar arasında taslak seçimler 
   await h.city(6).click();
   await h.next();
   await h.field('myName').fill('  Örnek Hesap  ');
-  await h.field('tema').choose('dark');
-  await h.field('evrakTakip').click();
   await h.button('Geri').click();
   assert.equal(h.type('0').checked, false);
   assert.equal(h.field('taramaDurum').value, 'acik');
@@ -329,15 +330,13 @@ test('il araması Türkçe adları bulur ve adımlar arasında taslak seçimler 
   assert.equal(h.city(34).checked, true);
   await h.next();
   assert.equal(h.field('myName').value, '  Örnek Hesap  ');
-  assert.equal(h.field('tema').value, 'dark');
-  assert.equal(h.field('evrakTakip').checked, true);
   assert.equal(h.writes.length, 0);
   await h.button('Kaydet ve taramayı başlat').click();
   assert.equal(h.store.myName, 'Örnek Hesap');
   assert.equal(h.store.kurulumVekilBekliyor, false);
   assert.deepEqual(h.store.savcilikIller, [6, 34]);
-  assert.equal(h.store.tema, 'dark');
-  assert.equal(h.store.evrakTakip, true);
+  assert.equal(h.store.tema, 'auto');
+  assert.equal(h.store.evrakTakip, false);
   assert.equal(h.store.taramaTurleri.includes('0'), false);
 });
 
@@ -351,12 +350,11 @@ test('mevcut tercihleri devralır ve doğrudan storage kaydında diğer tercihle
   assert.equal(h.type('1').checked, false);
   assert.equal(h.city(34).checked, true);
   await h.next();
-  assert.equal(h.field('tema').value, 'light');
   assert.equal(h.field('myName').value, 'Vekil Adı');
-  assert.equal(h.field('hataRaporu').checked, true);
-  assert.equal(h.field('oturumAcik').checked, false);
   await h.button('Kurulumu tamamla').click();
   assert.equal(h.writes.length, 1);
+  // Kurulumda sorulmayan kayıtlı tercihler varsayılana döndürülmez.
+  for (const key of ['tema', 'evrakTakip', 'safahatTakipOptIn', 'hataRaporu', 'oturumAcik']) assert.equal(h.store[key], prefs[key], key);
   assert.equal(h.store.siralama, 'newest');
   assert.equal(h.store.vekilAra, false);
   assert.deepEqual(h.store.taramaTurleri, ['2']);
@@ -368,18 +366,16 @@ test('kaydetme hatasında taslağı korur ve başarılı kayıttan sonra taramay
   await h.type('2').click();
   await h.next();
   await h.field('myName').fill('Seçili Vekil');
-  await h.field('durusmaBildirim').click();
   await h.button('Kaydet ve taramayı başlat').click();
   assert.match(h.error().textContent, /Ayarlar kaydedilemedi/);
   assert.equal(h.callbacks.length, 0);
   assert.equal(h.field('myName').value, 'Seçili Vekil');
-  assert.equal(h.field('durusmaBildirim').checked, false);
   assert.equal(h.button('Kaydet ve taramayı başlat').disabled, false);
   await h.button('Kaydet ve taramayı başlat').click();
   assert.equal(h.writes.length, 2);
   assert.equal(h.callbacks.length, 1);
   assert.equal(h.store.myName, 'Seçili Vekil');
-  assert.equal(h.store.durusmaBildirim, false);
+  assert.equal(h.store.durusmaBildirim, true);
   assert.equal(h.store.taramaTurleri.includes('2'), false);
 });
 
@@ -421,12 +417,10 @@ test('tarama kabul hatasından sonra düzenlenen seçim yeniden kaydedilir; ilk 
   await h.button('Kaydet ve taramayı başlat').click();
   assert.equal(h.api.isSaving(), true);
   await h.field('myName').fill('Düzenlenen vekil');
-  await h.field('tema').choose('dark');
   assert.equal(h.api.isSaving(), true);
   await h.button('Kaydet ve taramayı başlat').click();
   assert.equal(h.writes.length, 2);
   assert.equal(h.callbacks[1].prefs.myName, 'Düzenlenen vekil');
-  assert.equal(h.callbacks[1].prefs.tema, 'dark');
   assert.equal(h.api.isSaving(), false);
 });
 
@@ -444,18 +438,22 @@ test('form gönderimi kaydetmeden ilk adımdan ilerler ve ikinci adımda yalnız
 });
 
 
-test('sabit panel tercihi varsayılan açık gelir; kullanıcının açık ve kapalı seçimleri korunur', async () => {
+test('sabit panel tercihi kurulumda sorulmaz; varsayılan açık yazılır, kayıtlı açık ve kapalı seçim korunur', async () => {
   for (const value of [undefined, false, true]) {
     const prefs = value === undefined ? {} : { panelSabit: value };
     const h = harness({ prefs });
     await h.next();
-    assert.equal(h.field('panelSabit').checked, value !== false);
+    assert.equal(h.field('panelSabit'), undefined);
     await h.button('Kurulumu tamamla').click();
     assert.equal(h.store.panelSabit, value !== false);
   }
+});
+
+test('kurulumdaki savcılık seçenekleri Ayarlar’daki yazımla aynıdır', () => {
   const h = harness();
-  await h.next();
-  await h.field('panelSabit').click();
-  await h.button('Kurulumu tamamla').click();
-  assert.equal(h.store.panelSabit, false, 'varsayılan sabitleme kurulumda kapatılabilir');
+  const settings = read('ui.js');
+  const options = h.field('savcilik').kids.map(option => [option.attrs.value, option.textContent]);
+  assert.deepEqual(options.map(([value]) => value), ['kapali', 'otomatik', 'secili', 'tum']);
+  for (const [value, label] of options) assert.ok(settings.includes(`['${value}', '${label}']`), label);
+  assert.doesNotMatch(h.root.textContent, /uzun sürebilir\)|dosyalarını tarama/);
 });
