@@ -14,11 +14,11 @@ Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lis
 
 **1.19.62:** UYAP’ın kendi evrak ekranında açık evrak UDF ise Legaluga araçlarında **UDF olarak indir** görünür; UYAP’ın yüklediği özgün `.udf` dosyası yeniden istenmeden bu cihazdan kaydedilir. Türü belirsiz evrakta önce içeriğe bakılır, UDF değilse indirilmez. Legaluga görüntüleyicisinde de UYAP türünü veya adını bildirmese bile UDF olarak açılan evrakta **UDF olarak indir** çıkar.
 
-**1.19.61:** **Legaluga ile aç** yeniden evrak listesini ve evrakları getirir. 1.19.59 ve 1.19.60'ta Evrak sekmesi, evrak açma, arama, Güncelle ve indirme UYAP'a istek göndermeden **UYAP kapısı kapandı** hatasıyla duruyordu; **Otomatik işlemleri elle aç** bunu düzeltmiyordu. Güncellemeden sonra UYAP sekmesini yenileyin.
+**1.19.61:** **Legaluga ile aç** yeniden evrak listesini ve evrakları getirir. 1.19.59 ve 1.19.60'ta Evrak sekmesi, evrak açma, arama, Güncelle ve indirme UYAP'a istek göndermeden **UYAP kapısı kapandı** hatasıyla duruyordu; **Otomatik işlemleri yeniden aç** bunu düzeltmiyordu. Güncellemeden sonra UYAP sekmesini yenileyin.
 
 **1.19.60:** Metin katmanı olmayan PDF, TIFF ve resimde Atıflar paneli **Taranmış belgede atıfı ara** düğmesini gösterir. Okuma yalnız bu düğmeyle, bu cihazda, paketlenmiş Türkçe modelle ve en çok 12 sayfayla yapılır. Görüntü ve metin makineden çıkmaz; sonuç yalnız o sayfa görünümünün belleğinde tutulur.
 
-**1.19.59:** UYAP indirme ve işlem koruması (403/429/503, Retry-After, PRTL_GNL_1-1 veya doğrulama sayfası) bütün sekmelerdeki otomatik UYAP isteklerini durdurur; süre dolunca kendiliğinden devam etmez. Ayarlardaki **Otomatik işlemleri elle aç** yalnız kilidi kaldırır. İndirme ve sorgular tek kuyrukta, önceki sürümden yavaş aralıkla gider. **UYAP oturumunu koru** varsayılan olarak kapalıdır.
+**1.19.59:** UYAP indirme ve işlem koruması (403/429/503, Retry-After, PRTL_GNL_1-1 veya doğrulama sayfası) bütün sekmelerdeki otomatik UYAP isteklerini durdurur; süre dolunca kendiliğinden devam etmez. Ayarlardaki **Otomatik işlemleri yeniden aç** yalnız kilidi kaldırır. İndirme ve sorgular tek kuyrukta, önceki sürümden yavaş aralıkla gider. **UYAP oturumunu koru** varsayılan olarak kapalıdır.
 
 **1.19.54:** UYAP, HTTP `200` yanıtında `PRTL_GNL_1-1` güvenlik engeli bildirdiğinde tarama ve otomatik oturum yoklaması durur. Kontrol noktası bu Chrome profilinde şifreli saklanır; kısıtlama kalktığında **Sürdür** ile devam edebilirsiniz. Aynı sekme ve oturumda başarıyla alınmış mahkeme liste kapsamları ve sayfaları atlanır. Yeni sekme, sayfa yenilemesi veya yeni oturumda dosya kimliklerini tazelemek için listeler yeniden alınır; güvenlik nedeniyle duraklamış iş kendiliğinden başlamaz.
 
@@ -83,7 +83,7 @@ Müvekkil etiketi, ayarlardaki vekil adıyla dosyanın taraf/vekil kaydının e�
 | **Tebligat sorgusu** | Seçilebilir tebligat zarfları, içerik ve barkod, eşleşen mazbatanın olayları ve isteğe bağlı resmî hizmet sorgusu. |
 | **Safahat** | Son kaydedilmiş işlem listesi ve kullanıcı düğmeyle başlattığında güncel UYAP kaydı. |
 | **Notlar / Toplu indir** | Dosyaya ait notlar ve seçtiğiniz evrakların özgün biçimleriyle indirilmesi. |
-| **Duruşma paketi hazırla** | Evrak sekmesindeki liste ve önizlemeyle belge seçimi, sıra düzenleme ve PDF paketi hazırlama. |
+| **Duruşma paketi (deneme)** | Evrak sekmesindeki liste ve önizlemeyle belge seçimi, sıra düzenleme ve PDF paketi hazırlama. |
 
 Masaüstünde **Özet** ana pencereye sığacak şekilde düzenlenir; uzun hesap veya taraf listeleri kendi bölümlerinde kaydırılır. Taraflar Davacı, Davalı, Sanık, Müşteki gibi UYAP sıfatlarına göre ayrı gruplarda gösterilir; vekiller ilgili tarafın satırında kalır. Dar ekranda bölümler alt alta yerleşir. Tutarlar UYAP'tan geldiği gibi gösterilir; eklenti dosya borcu hesaplamaz.
 

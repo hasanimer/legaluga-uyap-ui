@@ -263,8 +263,8 @@
       "source": "content.js",
       "order": 3,
       "path": "src/fragments/content/003-bootstrap-shared-request-safety.js.part",
-      "sha256": "ab59dbac72c5da0cdca14043f8951ef041f7103596e40e8d56070413c73356c8",
-      "bytes": 9801,
+      "sha256": "098ecbf9eaa41619a7f513395ed8b77fcd32db64dd81754c33f6582e0072d9aa",
+      "bytes": 9542,
       "purpose": "bootstrap-shared-request-safety"
     },
     {
@@ -407,7 +407,7 @@
       "source": "content.js",
       "order": 39,
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "348a13cf18af190fc4546cd2fcf315efc476bd8ebac2b14b5a88591b655d4f5a",
+      "sha256": "0ceb1a8a2cdd4eac0278e5333cc0eb112ba39b68a72ebdc03b06b9bddc2dcfd4",
       "bytes": 59735,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },

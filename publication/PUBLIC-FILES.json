@@ -20,7 +20,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "4b77b871bc42d9caee9b43397892468ddcd9f4b33cff1c12c668ab3e8af9913b"
+      "sha256": "18e74d7750caefe4e607ba5f24c49eb27ce5493d10cf396f82a4e812562cfb0f"
     },
     {
       "path": "SECURITY.md",
@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "9961ab4c3266983cfb71d8d126f01778580c2355cc0584ad57d8be1b635f9721"
+      "sha256": "3c6b2f9d7e287e670a3cf457d0faa91b6521a54f0299617824ca7c800980547d"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -188,7 +188,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-ui.js",
-      "sha256": "d72eea3e4545c24a6388998964f48eb076deda255d5c7c8fab7fa6ab8f7b1bbb"
+      "sha256": "51c553aa0bdc6b76c0e6953989b4e49b7c442dd34a8e240b6b99ba88e1b1c21e"
     },
     {
       "path": "src/extension/durusma-paketi-worker.js",
@@ -300,7 +300,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "9934d9199c73c444a4ebcc81e48aa4b3caf4122d4b67d089812b2b9e1912d1e3"
+      "sha256": "9adb990af7baed64a0703c360f70544ebd9f577c6c75ce1f5cd388e5b142a341"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -556,7 +556,7 @@
     },
     {
       "path": "src/fragments/content/003-bootstrap-shared-request-safety.js.part",
-      "sha256": "ab59dbac72c5da0cdca14043f8951ef041f7103596e40e8d56070413c73356c8"
+      "sha256": "098ecbf9eaa41619a7f513395ed8b77fcd32db64dd81754c33f6582e0072d9aa"
     },
     {
       "path": "src/fragments/content/005-context-invalidation-and-progress-boundaries.js.part",
@@ -628,7 +628,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "348a13cf18af190fc4546cd2fcf315efc476bd8ebac2b14b5a88591b655d4f5a"
+      "sha256": "0ceb1a8a2cdd4eac0278e5333cc0eb112ba39b68a72ebdc03b06b9bddc2dcfd4"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",

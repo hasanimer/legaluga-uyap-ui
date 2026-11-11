@@ -5,7 +5,7 @@
     const previous = (o.sira && o.sira.previous) || shadowRoot.activeElement || document.activeElement;
     const { udf, tiff } = globalThis.UHD;
     const cbs = rec.yargiTuru === CBS.kod;   // UYAP savcılık dosyalarında safahat vermez
-    const SEKMELER = nativeDocument ? [['evrak', 'Evrak']] : [['ozet', 'Özet'], ['evrak', 'Evrak'], rec.yargiTuru === '2' && ['banka', 'Banka sorgusu'], ['tebligat', 'Tebligat sorgusu'], !cbs && ['safahat', 'Safahat'], ['notlar', 'Notlar'], ['indir', 'Toplu İndir'], ['paket', 'Duruşma paketi hazırla']].filter(Boolean);
+    const SEKMELER = nativeDocument ? [['evrak', 'Evrak']] : [['ozet', 'Özet'], ['evrak', 'Evrak'], rec.yargiTuru === '2' && ['banka', 'Banka sorgusu'], ['tebligat', 'Tebligat sorgusu'], !cbs && ['safahat', 'Safahat'], ['notlar', 'Notlar'], ['indir', 'Toplu İndir'], ['paket', 'Duruşma paketi (deneme)']].filter(Boolean);
     const kimlik = `ek${++ekranSayac}`;
     let tebligatUi = null;
     const beside = besideDock();

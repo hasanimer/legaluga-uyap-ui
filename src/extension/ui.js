@@ -1641,6 +1641,14 @@
           }
           const box = el('div', { class: 'empty' }, el('strong', null, text),
             res.tokens.length ? el('p', null, 'Adın bir bölümünü veya dosya numarasını deneyin. Türkçe karakter kullanmanız gerekmez.') : null);
+          // Arama gizlenen dosyalarla eşleşiyorsa söylenir: gizlenen dosya iz bırakmadan kaybolmasın.
+          const gizliEslesen = res.tokens.length && Object.keys(gizli).length
+            ? search(records, q, { myName: myName(), notes, filter, yeni: yeniMap, vekilAra: pref('vekilAra', true), limit: Infinity }).items.filter(x => gizli[x.key]) : [];
+          if (gizliEslesen.length) {
+            const goster = el('button', { class: 'btn', 'data-gizli-goster': '' }, gizliEslesen.length === 1 ? 'Gizlemeyi kaldır' : 'Gizlemeleri kaldır');
+            goster.addEventListener('click', () => unhideFiles(gizliEslesen.map(x => x.key)));
+            box.append(el('p', { class: 'gizli-eslesme' }, `Gizlediğiniz ${fmtNum(gizliEslesen.length)} dosya bu aramayla eşleşiyor.`), goster);
+          }
           if (action) {
             const b = el('button', { class: 'btn' }, action.label);
             b.addEventListener('click', action.fn);
@@ -1866,9 +1874,10 @@
       setNotice(`${r.dosyaNo} ${cleanBirim(r.birimAdi)} aramalarda gösterilmeyecek.`, '', { label: 'Geri al', fn: () => unhideFile(r.key) });
     }
 
-    async function unhideFile(key) {
+    const unhideFile = key => unhideFiles([key]);
+    async function unhideFiles(keys) {
       const next = { ...gizli };
-      delete next[key];
+      for (const key of keys) delete next[key];
       gizli = next;
       await chrome.storage.local.set({ uhdGizli: next });
       setNotice('');
@@ -1878,7 +1887,8 @@
 
     // ------------------------------------------------ yedek
 
-    function backupPassword(repeat) {
+    // dene verilirse parola pencere kapanmadan sınanır: hata pencerenin içinde gösterilir, kullanıcı yeniden yazar.
+    function backupPassword(repeat, dene) {
       return new Promise(resolve => {
         const id = `uhd-backup-${crypto.randomUUID()}`;
         const { BACKUP_PASSWORD_MIN_LENGTH: minLength, BACKUP_PASSWORD_MAX_LENGTH: maxLength } = UHDVaultCrypto;
@@ -1903,11 +1913,23 @@
         dialog.addEventListener('keydown', event => event.stopPropagation());
         dialog.addEventListener('cancel', event => { event.preventDefault(); done(null); });
         dialog.addEventListener('close', () => done(null));
-        form.addEventListener('submit', event => {
+        let deniyor = false;
+        form.addEventListener('submit', async event => {
           event.preventDefault();
+          if (deniyor) return;
           if (password.value.length < minLength || password.value.length > maxLength) { error.textContent = `Parola ${minLength}–${maxLength} karakter olmalı.`; return; }
           if (again && password.value !== again.value) { error.textContent = 'Parolalar aynı değil.'; return; }
-          done(password.value);
+          if (!dene) { done(password.value); return; }
+          deniyor = true; error.textContent = 'Yedek açılıyor…';
+          let sonuc;
+          try { sonuc = await dene(password.value); }
+          catch (e) {
+            if (ended) return;
+            error.textContent = e?.message || 'Yedek açılamadı.';
+            password.value = ''; password.focus();
+            return;
+          } finally { deniyor = false; }
+          done({ sonuc });
         });
         dialog.showModal(); password.focus();
       });
@@ -1932,8 +1954,9 @@
         if (file.size > 70 * 1024 * 1024) throw new Error('Yedek 70 MiB dosya sınırını aşıyor.');
         let value = JSON.parse(await file.text());
         if (value?.encrypted === true || value?.format === 2) {
-          const password = await backupPassword(false); if (password === null) return;
-          value = await UHDVaultCrypto.decryptBackup(value, password);
+          const sifreli = value;
+          const acilan = await backupPassword(false, parola => UHDVaultCrypto.decryptBackup(sifreli, parola)); if (acilan === null) return;
+          value = acilan.sonuc;
         }
         const data = checkBackup(value);
         const n = data.uhdIndex ? data.uhdIndex.records.length : 0;
@@ -2048,12 +2071,12 @@
         s.starting = true; s.error = ''; syncCbsScan();
         try {
           const res = await opts.onCbsScan({ ilKodu: Number(s.ilKodu), birimId: s.birimId });
-          if (!res?.ok) throw new Error(res?.error || 'CBS taraması başlatılamadı.');
-          setNotice('CBS taraması başladı. İlerlemeyi durum satırından takip edebilir; Durdur ve Sürdür ile yönetebilirsiniz.');
-        } catch (error) { s.error = error.message || 'CBS taraması başlatılamadı.'; }
+          if (!res?.ok) throw new Error(res?.error || 'Savcılık taraması başlatılamadı.');
+          setNotice('Savcılık taraması başladı. İlerlemeyi durum satırından takip edebilir; Durdur ve Sürdür ile yönetebilirsiniz.');
+        } catch (error) { s.error = error.message || 'Savcılık taraması başlatılamadı.'; }
         finally { s.starting = false; syncCbsScan(); }
       });
-      return el('div', { class: 'box' }, el('b', null, 'CBS’yi bir kez tara'),
+      return el('div', { class: 'box' }, el('b', null, 'Savcılık dosyalarını bir kez tara'),
         el('div', { class: 'field' }, el('span', null, 'İl'), il),
         el('div', { class: 'field' }, el('span', null, 'Başsavcılık'), birim), el('div', { class: 'row' }, scan, retry), hint);
     }
@@ -2168,9 +2191,9 @@
         // İş sahipliği ve bütün veriler tek commit ile silinir; eski sekme tarama verilerini geri yazamaz.
         let result;
         try { result = await globalThis.UHDStorage.clearAppData(); }
-        catch { setNotice('Yerel veriler silinemedi; hiçbir veri silinmedi. Yeniden deneyin.'); return; }
-        if (result?.pending) { setNotice('Devam eden bir toplu indirme var. İndirmeyi durdurup parça kaydı bitince yeniden deneyin; hiçbir veri silinmedi.'); return; }
-        if (!result?.cleared) { setNotice('Yerel veriler silinemedi; hiçbir veri silinmedi. Yeniden deneyin.'); return; }
+        catch { setNotice('Yerel veriler silinemedi; hiçbir veri silinmedi. Yeniden deneyin.', 'err'); return; }
+        if (result?.pending) { setNotice('Devam eden bir toplu indirme var. İndirmeyi durdurup parça kaydı bitince yeniden deneyin; hiçbir veri silinmedi.', 'err'); return; }
+        if (!result?.cleared) { setNotice('Yerel veriler silinemedi; hiçbir veri silinmedi. Yeniden deneyin.', 'err'); return; }
         closeSettings();
         setNotice('Tüm yerel veriler silindi.');
       });
@@ -2275,7 +2298,7 @@
           check('duyuruBildirim', true, 'Duyuruları bildirim olarak göster', 'Kesinti duyurusu UYAP Ana Sayfa’da, diğer duyurular sağ altta görünür. Metnin tamamını okuyabilirsiniz. × ile, sayfada boş bir yere tıklayarak ya da asistandan dosya açarak kapanır; başka bir ekrana geçince gizlenir.'),
           check('oturumAcik', false, 'UYAP oturumunu koru', 'Varsayılan kapalıdır. Açıkken, siz işlem yapmasanız da eklenti belirli aralıklarla UYAP’a küçük bir okuma isteği gönderir. İşlem koruması bunu da durdurur.'),
           el('div', { class: 'row' }, (() => {
-            const korumaBirak = el('button', { type: 'button', class: 'btn sm' }, 'Otomatik işlemleri elle aç');
+            const korumaBirak = el('button', { type: 'button', class: 'btn sm' }, 'Otomatik işlemleri yeniden aç');
             korumaBirak.addEventListener('click', async () => {
               try {
                 const res = await chrome.runtime.sendMessage({ type: 'uhd-uyap-koruma-birak' });
