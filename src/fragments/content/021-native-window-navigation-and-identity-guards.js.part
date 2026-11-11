@@ -43,6 +43,11 @@
   // Dosya açma hatasının türü: iletiyi ve sunulacak eylemleri belirler (bkz. openErrorPlan).
   const kindErr = (msg, kind) => Object.assign(new Error(msg), { kind });
   const openErrorKind = e => e.kind || (e instanceof Fatal ? 'oturum' : e instanceof Blocked ? 'dogrulama' : 'gecici');
+  // Oturum kapalıyken açma isteği saklanmaz ve girişten sonra kendiliğinden yinelenmez.
+  const OTURUM_KAPALI_ILETI = 'UYAP oturumu kapalı. Giriş yaptıktan sonra dosyayı yeniden açın.';
+  const veriGelmedi = e => !(e instanceof Fatal) && !(e instanceof Blocked) &&
+    (['baglanti', 'zaman'].includes(e?.kind) || (e?.uyap === true && e.status >= 500 && e.status <= 599));
+  const dosyaSorgulamaYenile = () => location.assign('/dosya-sorgulama');
   let lastOpenError = null;   // { key, kind }: aynı dosyada aynı hata ikinci kez gelirse Güncelle de önerilir
   function openErrorActions(plan, rec, opts) {
     const act = {
@@ -60,11 +65,6 @@
         if (!b) return;
         b.textContent = say;
         setTimeout(() => { if (b.isConnected) b.textContent = b.dataset.label; }, 1800);
-      } },
-      // Giriş sayfasına gidilir; dosya, girişten sonraki ilk sayfada kendiliğinden açılır (bekleyen açma, 3 dk).
-      giris: { label: 'Girişe git', fn: async () => {
-        await chrome.storage.local.set({ uhdPending: { record: rec, at: Date.now(), opts } });
-        location.assign('/giris');
       } }
     };
     return plan.map(a => act[a]).filter(Boolean);

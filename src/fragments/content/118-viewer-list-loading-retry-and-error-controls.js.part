@@ -4,6 +4,15 @@
           if (tekrarIstek && !zipState) zipMessage('Evrak listesi hazır. ZIP olarak indirebilirsiniz.');
         } catch (err) {
           if (closed || (err && err.name === 'AbortError')) return;
+          // UYAP'tan veri gelmedi (ağ hatası, zaman aşımı ya da UYAP sunucu hatası): yeniden bağlanma denenmez, sayfa
+          // Dosya Sorgulama adresine yenilenir; dosya kendiliğinden yeniden açılmaz. Süren güncelleme ya da indirme
+          // varken sayfa yenilenmez. Oturum, güvenlik doğrulaması ve koruma hataları bu yola girmez.
+          if (veriGelmedi(err) && !job && !zipRun) {
+            log('Evrak listesi için UYAP’tan veri gelmedi; Dosya Sorgulama yenileniyor:', err.message);
+            toast('UYAP’tan veri gelmedi; Dosya Sorgulama sayfası yenileniyor…', 'busy', 0, null, { id: 'acma' });
+            dosyaSorgulamaYenile();
+            return;
+          }
           listeHata = err.message || 'Bilinmeyen hata';
           zipMessage(`Evrak listesi alınamadı: ${listeHata}`, true);
           zipTekrar.hidden = false;

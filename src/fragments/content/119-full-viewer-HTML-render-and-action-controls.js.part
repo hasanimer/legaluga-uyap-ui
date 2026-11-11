@@ -129,6 +129,7 @@
     // ← → evrak sekmesinde evraklar arasında gezer. Sekme çubuğunda, listede, yazı alanında, değiştirici tuşla ya da
     // yakınlaştırılmış belge yatay kaydırılabilirken (odak belgedeyken) oklar kendi işine bırakılır.
     const onKey = ev => {
+      if (onayAcik) return;   // açık onay penceresi tuşları kendisi alır; Esc dosya ekranını kapatmaz
       // Yerel yedek parola penceresi açıkken Escape ve Tab onun doğal davranışını izler.
       if (shadowRoot.querySelector('.backup-password')?.open || bankReplyPopup?.open) return;
       // Atıf menüsü, seçim bağlantısı veya paneli açıkken Esc önce onu kapatır; ekran açık kalır.
@@ -174,20 +175,21 @@
     const devamEden = () => zipRun?.managed ? '\nParçalı indirme arka planda sürer; UYAP sekmesini açık tutun.' : zipRun || paketRun || bankRun || bankaOkuma || tebligatRead ? '\nDevam eden indirme, sorgu veya okuma da durdurulur.' : '';
     close.addEventListener('click', () => done());
     // Ödeme ↗ / Evrak Gönder ↗: dosya UYAP'ta açılıp ilgili sekmeye geçilir (gotoTab). Süren iş varsa önce sorulur.
-    for (const b of uyapIslemleri ? uyapIslemleri.querySelectorAll('button') : []) b.addEventListener('click', () => {
+    for (const b of uyapIslemleri ? uyapIslemleri.querySelectorAll('button') : []) b.addEventListener('click', async () => {
       if (closed) return;
       const devam = devamEden();
-      if (devam && !confirm(`Dosya UYAP’ta açılacak ve bu ekran kapanacak.${devam}`)) return;
+      if (devam && !(await onaySor({ baslik: 'Dosya UYAP’ta açılsın mı?', ileti: `Dosya UYAP’ta açılacak ve bu ekran kapanacak.${devam}`, onay: 'UYAP’ta aç' }))) return;
+      if (closed) return;
       const sekme = b.getAttribute('data-uyap-sekme');
       closeDosyaEkrani(false);
       openFile(rec, false, false, { sekme });
     });
-    viewer.addEventListener('click', ev => {
+    viewer.addEventListener('click', async ev => {
       if (ev.target !== viewer || closed) return;
       ev.preventDefault();
       ev.stopPropagation();
       const devam = devamEden();
-      if (confirm(`Dosya ekranını kapatmak istiyor musunuz?\nAçık evrak, okuma konumu ve bu ekrandaki geçici sonuçlar kapanır.${devam}`)) done();
+      if (await onaySor({ baslik: 'Dosya ekranını kapatmak istiyor musunuz?', ileti: `Açık evrak, okuma konumu ve bu ekrandaki geçici sonuçlar kapanır.${devam}`, onay: 'Kapat' }) && !closed) done();
     });
     document.addEventListener('keydown', onKey, true);
     if (!beside) hidePanel();
