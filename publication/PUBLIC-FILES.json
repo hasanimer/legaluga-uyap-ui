@@ -296,7 +296,7 @@
     },
     {
       "path": "src/extension/telemetry.js",
-      "sha256": "5dc8c991c88c28aa38d6af498590e065462365b349afce6dc3810e4c08583dce"
+      "sha256": "8fa8513e6cab9a601f6c36973a51c8c1c778ef8ea9baeab7cff765bae1cfc4ca"
     },
     {
       "path": "src/extension/tiff.js",
