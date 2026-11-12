@@ -4,6 +4,9 @@ import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 export const sha = value => createHash('sha256').update(value).digest('hex');
+// Açık depoya hiçbir klasörde eklenemeyecek tam motor dosyaları ve karışık birleşik dosyalar (demo/common.js taklidi hariç).
+// Özel depodaki tests/yayin-siniri.test.js her özel tam dosyanın bu listede olduğunu doğrular.
+export const PRIVATE_ENGINE_FILES = Object.freeze(['content.js','background.js','common.js','banka-api.js','banka-takip.js','tebligat-barkod.js','tebligat-ptt.js','ptt-content.js','danistay-content.js','evrak-indirme.js','evrak-indirme-motoru.js','uyap-document-main.js','uyap-document-native.js','havuz-denetim.js','ptt-main.js','ptt-offscreen.js','ptt-report.js','uyap-kapi.js']);
 export function validate(root) {
   const inventory = JSON.parse(fs.readFileSync(path.join(root,'publication/PUBLIC-FILES.json'),'utf8'));
   if (inventory.schema!==1 || !Array.isArray(inventory.files)) throw Error('Açık dosya envanteri geçersiz.');
@@ -19,9 +22,9 @@ export function validate(root) {
       if (item.isDirectory()) {walk(path.join(dir,item.name),name+'/');continue;}
       if (!expected.has(name)) throw Error('Envanter dışı dosya: '+name);
       if (/\.(har|pdf|xlsx|pem|key|p12|pfx|zip|map)$/i.test(name) || /(^|\/)(\.env(?:\..*)?|core|private|\.private)(\/|$)/i.test(name)) throw Error('Özel veri/çıktı yolu: '+name);
-      if (/^(content|background|common|banka-api|banka-takip|tebligat-barkod|tebligat-ptt|ptt-content|danistay-content|evrak-indirme|evrak-indirme-motoru|uyap-document-main|uyap-document-native)\.js$/.test(path.posix.basename(name)) && name!=='demo/common.js') throw Error('Tam motor dosyası açık depoya eklenemez: '+name);
+      if (PRIVATE_ENGINE_FILES.includes(path.posix.basename(name)) && name!=='demo/common.js') throw Error('Tam motor dosyası açık depoya eklenemez: '+name);
       const bytes = fs.readFileSync(path.join(dir,item.name));
-      if (expected.get(name) && sha(bytes)!==expected.get(name)) throw Error('Envanter hash uyuşmazlığı: '+name);
+      if (expected.get(name) && sha(bytes)!==expected.get(name)) throw Error('Envanter hash uyuşmazlığı: '+name+' (beklenen '+expected.get(name)+', bulunan '+sha(bytes)+'). Değişiklik kasıtlıysa envanteri yenileyin: özel depoda node scripts/update-hashes.mjs, açık depoda publication/PUBLIC-FILES.json.');
       if (/\.(js|mjs|part)$/.test(name) && !name.startsWith('src/extension/vendor/')) {
         const text = bytes.toString('utf8');
         if (/\.ajx(?:[?"'`\s]|$)/i.test(text)) throw Error('UYAP endpoint adaptörü açık kaynakta: '+name);

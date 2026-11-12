@@ -148,7 +148,7 @@
     },
     {
       "path": "scripts/validate-public.mjs",
-      "sha256": "e072ff7ef60e22572df455d32a0ee51cc56e9e6a68e5e90c7a6b573a5cd96d61"
+      "sha256": "d39d9b2a66ce31392eb9eb575db90d99258cff2850393cd4a1a012a407c06dcc"
     },
     {
       "path": "src/extension/atif-ocr.js",
@@ -868,7 +868,7 @@
     },
     {
       "path": "tests/publication-boundary.test.js",
-      "sha256": "ee16cead8a15d8fc08a6e5a2679cf0521607255d6d8257faca5f845dc3a510b8"
+      "sha256": "1532f338143489b0287e224eea3830e5174bab1c2bb3ca0b66dc1f579b738c1d"
     },
     {
       "path": "tests/satir-sonu.test.js",

@@ -17,12 +17,14 @@ test('açık kaynak envanteri bilinmeyen dosya ve değiştirilmiş kaynağı red
   try{
     assert.equal(validate(dir).ok,true);fs.writeFileSync(path.join(dir,'extra.js'),'extra');
     assert.throws(()=>validate(dir),/Envanter dışı/);fs.unlinkSync(path.join(dir,'extra.js'));
-    fs.writeFileSync(path.join(dir,'safe.js'),'tampered');assert.throws(()=>validate(dir),/hash uyuşmazlığı/);
+    fs.writeFileSync(path.join(dir,'safe.js'),'tampered');
+    const beklenen=createHash('sha256').update('const demo=1;').digest('hex'),bulunan=createHash('sha256').update('tampered').digest('hex');
+    assert.throws(()=>validate(dir),e=>/hash uyuşmazlığı: safe\.js/.test(e.message)&&e.message.includes('beklenen '+beklenen)&&e.message.includes('bulunan '+bulunan)&&e.message.includes('node scripts/update-hashes.mjs'));
   }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
 test('özel motor dosyası ve gerçek ağ kayıtlarının yolları açık kapsama alınamaz',async()=>{
   const {validate}=await import('../scripts/validate-public.mjs');
-  for(const name of ['content.js','uyap-document-main.js','src/extension/uyap-document-native.js','evrak-indirme-motoru.js','danistay-content.js','session.har','secret.key','src/extension/content.js','src/extension/danistay-content.js','src/fragments/background.js','docs/nested/banka-api.js']){
+  for(const name of ['content.js','uyap-document-main.js','src/extension/uyap-document-native.js','evrak-indirme-motoru.js','danistay-content.js','session.har','secret.key','src/extension/content.js','src/extension/danistay-content.js','src/fragments/background.js','docs/nested/banka-api.js','havuz-denetim.js','src/extension/ptt-main.js','ptt-offscreen.js','src/extension/ptt-report.js','uyap-kapi.js']){
     const dir=fixture(name);try{assert.throws(()=>validate(dir),/Özel veri|Tam motor/);}finally{fs.rmSync(dir,{recursive:true,force:true});}
   }
 });
