@@ -80,31 +80,18 @@
     globalThis.UHDUyapKorumaDurdu = true;
     uyapKorumaYaziyor = true;
     try {
-      const saved = (await chrome.storage.local.get(UYAP_REQUEST_STATE))[UYAP_REQUEST_STATE];
-      await chrome.storage.local.set({
-        [UYAP_KORUMA]: { durdu: true, neden: UYAP_KORUMA_MESAJ },
-        [UYAP_REQUEST_STATE]: { nextAt: Number.isFinite(saved?.nextAt) ? saved.nextAt : 0, durdu: true }
-      });
+      // Koruma yalnız bu kayıtta tutulur; okumadan tek yazım arada yazılan başka bir kaydı ezmez.
+      await chrome.storage.local.set({ [UYAP_KORUMA]: { durdu: true, neden: UYAP_KORUMA_MESAJ } });
       globalThis.UHDUyapKapiIstemci?.koru(UYAP_KORUMA_MESAJ);
     } catch { /* bellek bayrağı bu sekmeyi yine durdurur */ }
     finally { uyapKorumaYaziyor = false; }
   }
-  async function uyapKorumaBirak() {
-    globalThis.UHDUyapKorumaDurdu = false;
-    try {
-      const saved = (await chrome.storage.local.get(UYAP_REQUEST_STATE))[UYAP_REQUEST_STATE];
-      await chrome.storage.local.set({
-        [UYAP_KORUMA]: { durdu: false, neden: '' },
-        [UYAP_REQUEST_STATE]: { nextAt: Number.isFinite(saved?.nextAt) ? saved.nextAt : 0, durdu: false }
-      });
-    } catch { /* service worker da açar */ }
-    try { globalThis.UHDUyapKapiIstemci?.temizle(); } catch { /* açılış iş başlatmaz */ }
-  }
+  // Kilidi yalnız service worker açar (uhd-uyap-koruma-birak). Sekme yankıda yalnız bellek bayrağını izler; depolamaya ve kapıya
+  // yazmaz ki geç gelen bir açılış yankısı arada yazılan yeni korumayı silmesin.
   if (chrome.storage?.onChanged?.addListener) {
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== 'local' || !changes[UYAP_KORUMA]) return;
-      if (changes[UYAP_KORUMA].newValue?.durdu === true) { globalThis.UHDUyapKorumaDurdu = true; return; }
-      if (globalThis.UHDUyapKorumaDurdu === true) void uyapKorumaBirak();
+      globalThis.UHDUyapKorumaDurdu = changes[UYAP_KORUMA].newValue?.durdu === true;
     });
   }
   function uyapResponseGate(res) {
@@ -122,10 +109,13 @@
     if (!navigator.locks?.request) throw new Blocked('UYAP istek kuyruğu kullanılamıyor. Chrome’u güncelleyip sayfayı yenileyin.');
     return navigator.locks.request(UYAP_REQUEST_LOCK, signal ? { signal } : {}, async () => {
       if (signal?.aborted) throw new DOMException('Durduruldu.', 'AbortError');
-      const saved = (await chrome.storage.local.get(UYAP_REQUEST_STATE))[UYAP_REQUEST_STATE];
+      // Koruma yalnız UYAP_KORUMA’da tutulur; kapı kaydı yalnız istek zamanını taşır, istek sonunda yazılırken arada yazılan
+      // korumayı ezemez. Koruma kaydı hiç yazılmamışsa eski sürümün kapı kaydındaki durdu da sayılır.
+      const saved = await chrome.storage.local.get([UYAP_REQUEST_STATE, UYAP_KORUMA]);
+      const gate = saved[UYAP_REQUEST_STATE], koruma = saved[UYAP_KORUMA];
       const state = {
-        nextAt: Number.isFinite(saved?.nextAt) ? saved.nextAt : 0,
-        durdu: saved?.durdu === true
+        nextAt: Number.isFinite(gate?.nextAt) ? gate.nextAt : 0,
+        durdu: koruma ? koruma.durdu === true : gate?.durdu === true
       };
       if (state.durdu || globalThis.UHDUyapKorumaDurdu === true) throw uyapKorumaHatasi();
       if (state.nextAt > Date.now()) await uyapWait(state.nextAt - Date.now(), signal);
@@ -144,7 +134,7 @@
         const finishedAt = Date.now(), bulk = signal && uyapBulkSignals.has(signal);
         state.nextAt = bulk && completed ? Math.max(finishedAt, startedAt + UYAP_REQUEST_INTERVAL)
           : finishedAt + (bulk ? UYAP_REQUEST_INTERVAL : DELAY);
-        const kayit = { [UYAP_REQUEST_STATE]: state };
+        const kayit = { [UYAP_REQUEST_STATE]: { nextAt: state.nextAt } };
         if (state.durdu) {
           kayit[UYAP_KORUMA] = { durdu: true, neden: UYAP_KORUMA_MESAJ };
           globalThis.UHDUyapKorumaDurdu = true;
@@ -154,9 +144,17 @@
       }
     });
   }
+  // Worker kapısının koruma reddi porttan düz Error (name 'Blocked', durdu) olarak gelir. Tarama, beklemeler ve paneller
+  // korumayı Blocked örneğiyle tanıdığı için ret bu tek sınırda Blocked’a çevrilir; sekmede doğan Blocked ve iptal olduğu gibi geçer.
   async function uyapRequest(signal, request) {
     const istemci = globalThis.UHDUyapKapiIstemci;
     const icinde = !!(signal && typeof signal === 'object' && globalThis.UHDUyapKapiIcinde?.has(signal));
-    if (istemci && !icinde) return istemci.toplu(signal, () => uyapRequestKilit(signal, request));
+    if (istemci && !icinde) {
+      if (globalThis.UHDUyapKorumaDurdu === true) throw uyapKorumaHatasi();
+      return istemci.toplu(signal, () => uyapRequestKilit(signal, request)).catch(err => {
+        if (!(err instanceof Blocked) && (err?.durdu === true || err?.name === 'Blocked')) throw Object.assign(uyapKorumaHatasi(), { cause: err });
+        throw err;
+      });
+    }
     return uyapRequestKilit(signal, request);
   }
