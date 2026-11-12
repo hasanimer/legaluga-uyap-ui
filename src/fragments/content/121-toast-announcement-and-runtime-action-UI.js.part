@@ -316,18 +316,29 @@
 
   // ---------------------------------------------------------------- Mesajlar
 
+  // Asenkron yanıt her durumda gönderilir: iş reddederse gönderen gerçek hatayı alır, “sekme yanıt vermedi”ye düşmez.
+  function yanitla(soz, send, hataYaniti) {
+    soz.then(value => { try { send(value); } catch { /* ileti kanalı kapandı */ } }, error => {
+      if (invalidated(error)) stopInvalidatedContext();
+      else { globalThis.UHDReporter?.report(error, 'unhandled'); console.error('Legaluga ileti işleme hatası:', error); }
+      try { send(hataYaniti); } catch { /* ileti kanalı kapandı */ }
+    });
+    return true;
+  }
+
   chrome.runtime.onMessage.addListener((msg, sender, send) => {
     if (!msg || typeof msg.type !== 'string') return;
     if (msg.type === 'uhd-ping') send({ ok: true });
     else if (msg.type === 'uhd-open') { openFile(msg.record); send({ ok: true }); }
     else if (msg.type === 'uhd-open-evrak') { openEvrak(msg.record, msg.key, msg.group, msg.baglam); send({ ok: true }); }
     else if (msg.type === 'uhd-dosya-panel') { openDosyaPanel(msg.record, msg.tab, msg.baglam); send({ ok: true }); }
-    else if (msg.type === 'uhd-stop') { stopUpdate().then(() => send({ ok: true })); return true; }
-    else if (msg.type === 'uhd-update') { startUpdate(msg.full).then(send); return true; }
-    else if (msg.type === 'uhd-setup-connection') { setupConnection({ manual: msg.manual === true }).then(send); return true; }
+    else if (msg.type === 'uhd-stop') return yanitla(stopUpdate().then(() => ({ ok: true })), send, { ok: false, error: 'Durdurma tamamlanamadı. Tekrar deneyin.' });
+    else if (msg.type === 'uhd-update') return yanitla(startUpdate(msg.full), send, { ok: false, error: 'Güncelleme başlatılamadı. Tekrar deneyin.' });
+    else if (msg.type === 'uhd-setup-connection') return yanitla(setupConnection({ manual: msg.manual === true }), send,
+      { ok: false, ready: false, status: 'error', error: 'UYAP bağlantısı doğrulanamadı. Yeniden deneyin.' });
     else if (msg.type === 'uhd-setup-resume') { scheduled(() => maybeResume(false)); send({ ok: true }); }
-    else if (msg.type === 'uhd-cbs-directory') { startCbsDirectory(msg.ilKodu).then(send); return true; }
-    else if (msg.type === 'uhd-cbs-scan') { startCbsScan(msg.scope).then(send); return true; }
+    else if (msg.type === 'uhd-cbs-directory') return yanitla(startCbsDirectory(msg.ilKodu), send, { ok: false, error: 'Başsavcılık listesi alınamadı.' });
+    else if (msg.type === 'uhd-cbs-scan') return yanitla(startCbsScan(msg.scope), send, { ok: false, error: 'Savcılık taraması başlatılamadı.' });
     else if (msg.type === 'uhd-panel') send({ ok: panelCommand(msg.action, msg.view) });
   });
 

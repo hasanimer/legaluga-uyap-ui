@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "3f84d56f7934fb37b75de437edcf6fa062c45d1765dcf4e82a1b224d6fe9ab15"
+      "sha256": "928174d542f594cb8f97255b9fdf6fd252ae8c4490ba4eb86b582d626d175aa9"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -188,7 +188,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-ui.js",
-      "sha256": "dcc660ad3c62783bad18073f91b588be27866d2368768b8390983d21c516511b"
+      "sha256": "800b67ce4deaea631aa4e4758077f940c7082340e9e151406f92cfd2502d4ed6"
     },
     {
       "path": "src/extension/durusma-paketi-worker.js",
@@ -200,7 +200,7 @@
     },
     {
       "path": "src/extension/durusma-paketi.css",
-      "sha256": "40d1264eaf7f9c24cf5ca49031178061542d141b98811c57c1e1efb3c524a977"
+      "sha256": "5bf3bce5e879f0f0272784cdc0062e0015b0e90b29785b2369b6e262898960e5"
     },
     {
       "path": "src/extension/durusma-paketi.html",
@@ -276,7 +276,7 @@
     },
     {
       "path": "src/extension/storage.js",
-      "sha256": "5bfe897761718bc60de2cfeb7e853dd397c3d1e0147d8042b6ac0d8abcdba0a7"
+      "sha256": "e5b8b90f01cf9877a9aa561408714b7b9ff46e4d42583d30a2e3da45b99d5371"
     },
     {
       "path": "src/extension/tabs.js",
@@ -300,7 +300,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "7da082dd6c238b003ee4142f69999e0bbf99c392075ade9ff8187b0c73bdb81a"
+      "sha256": "7cb0a41524ea922c8c0f40f70db92c7fcefb7b73a540ef5c1c8f46f7d74dfc2a"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -556,7 +556,7 @@
     },
     {
       "path": "src/fragments/content/003-bootstrap-shared-request-safety.js.part",
-      "sha256": "33942f05db0bc79fb8a7977af99a37b45e26c8f0bed182fec159621f9ba0ec58"
+      "sha256": "991df6eb5dcb92a036e78603cba0b83258c87b5b2827a093c034e75f8f619e9d"
     },
     {
       "path": "src/fragments/content/005-context-invalidation-and-progress-boundaries.js.part",
@@ -804,7 +804,7 @@
     },
     {
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",
-      "sha256": "e82bc1aa68187d89fde1f74ae8da8f0307dadefc1ab28f9d1ca8a6d4cd5f71bf"
+      "sha256": "f82de2a83a04ea14f3bec03399038436280902383bc7449964d920dab5a9cdbd"
     },
     {
       "path": "src/fragments/content/123-panel-command-action-boundary.js.part",

@@ -600,15 +600,6 @@
     if (transport) { if (state.phase === 'running') cancel(); stopDocumentPdfJob(); stopTextJob(); stopWorker(); revoke(); send('CLOSE'); transport.close?.(); }
   });
   window.addEventListener('pagehide', () => { stopDocumentPdfJob(); stopTextJob(); stopWorker(); revoke(); transport?.close?.(); });
-  const darkMq = window.matchMedia?.('(prefers-color-scheme: dark)');
-  let tema = 'auto';
-  const applyTheme = () => { document.documentElement.dataset.theme = tema === 'dark' || tema === 'light' ? tema : (darkMq?.matches ? 'dark' : 'light'); };
-  darkMq?.addEventListener?.('change', applyTheme);
-  applyTheme();
-  try {
-    chrome.storage.local.get('uhdPrefs').then(({ uhdPrefs }) => { tema = uhdPrefs?.tema || 'auto'; applyTheme(); }).catch(() => {});
-    chrome.storage.onChanged.addListener(ch => { if (ch.uhdPrefs) { tema = ch.uhdPrefs.newValue?.tema || 'auto'; applyTheme(); } });
-  } catch {}
   globalThis.UHD.durusmaPaketiUI = { connect, receive };
   render();
 })();

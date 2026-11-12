@@ -263,8 +263,8 @@
       "source": "content.js",
       "order": 3,
       "path": "src/fragments/content/003-bootstrap-shared-request-safety.js.part",
-      "sha256": "33942f05db0bc79fb8a7977af99a37b45e26c8f0bed182fec159621f9ba0ec58",
-      "bytes": 9728,
+      "sha256": "991df6eb5dcb92a036e78603cba0b83258c87b5b2827a093c034e75f8f619e9d",
+      "bytes": 10143,
       "purpose": "bootstrap-shared-request-safety"
     },
     {
@@ -759,8 +759,8 @@
       "source": "content.js",
       "order": 121,
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",
-      "sha256": "e82bc1aa68187d89fde1f74ae8da8f0307dadefc1ab28f9d1ca8a6d4cd5f71bf",
-      "bytes": 18211,
+      "sha256": "f82de2a83a04ea14f3bec03399038436280902383bc7449964d920dab5a9cdbd",
+      "bytes": 19132,
       "purpose": "toast-announcement-and-runtime-action-UI"
     },
     {
