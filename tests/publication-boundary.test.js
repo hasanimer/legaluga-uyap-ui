@@ -32,3 +32,11 @@ test('adı genel görünen dosyanın içindeki servis adaptörü de reddedilir',
   const {validate}=await import('../scripts/validate-public.mjs');const dir=fixture('helper.js',"fetch('/synthetic."+'ajx'+"')");
   try{assert.throws(()=>validate(dir),/endpoint adaptörü/);}finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('sürüm manifest, package.json, README ve gizlilik politikasında aynı',()=>{
+  const read=name=>fs.readFileSync(path.join(__dirname,'..',name),'utf8');
+  const version=JSON.parse(read('src/extension/manifest.json')).version;
+  assert.match(version,/^\d+\.\d+\.\d+$/);
+  assert.equal(JSON.parse(read('package.json')).version,version,'package.json');
+  assert.equal(read('README.md').match(/^> Bu rehber, \*\*([\d.]+)\*\* paketinin/m)?.[1],version,'README.md');
+  assert.equal(read('docs/PRIVACY.md').match(/^Son güncelleme: .* · \*\*([\d.]+)\*\* sürümü için/m)?.[1],version,'docs/PRIVACY.md');
+});

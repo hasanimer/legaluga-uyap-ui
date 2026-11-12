@@ -65,6 +65,6 @@ Sentetik doğrulamada atıf tekilleştirme, UDF metin eşleme, HTML sandbox sın
 
 Satır sonları LF'dir; `.editorconfig` düzenleyiciyi buna ayarlar, `tests/satir-sonu.test.js` CR içeren dosyayı reddeder. Yalnız `src/extension/vendor/` altında özgün baytları doğrulanamayan dört üçüncü taraf dosyası (`UTIF.js`, `UTIF.LICENSE`, iki `FONTKIT-*.LICENSE`) CRLF kalır.
 
-`scripts/build-sentry.mjs` ve `scripts/build-hearing-vendor.mjs` mevcut vendor üretiminin bakım betikleridir; varsayılan demo/test akışında çalışmazlar. Gerekli üretim bağımlılıkları özel derleme ortamında sürüm sabitlemesiyle yönetilir. Vendor yenilemesi lisansları, paket içi yolları, hash envanterini ve MV3 kısıtlarını birlikte gözden geçirmeyi gerektirir.
+`scripts/build-sentry.mjs` ve `scripts/build-hearing-vendor.mjs` vendor üretiminin tek bakım betikleridir; varsayılan demo/test akışında çalışmazlar. Gerekli üretim bağımlılıkları özel derleme ortamında sürüm sabitlemesiyle yönetilir. Betikler paketleri ve yolları kendi konumlarından çözüp `src/extension/vendor/` altına yazar; `--check` ile yazmadan geçici klasöre üretip depodaki baytlarla karşılaştırır. Vendor yenilemesi lisansları, paket içi yolları, hash envanterini ve MV3 kısıtlarını birlikte gözden geçirmeyi gerektirir.
 
 Gerçek isim, dosya numarası, HAR, oturum verisi veya dava belgesi içeren örnekleri eklemeyin. README görselleri sentetik verilerle hazırlanır; çalışma kaynaklarının ve özel servislerin sınırlarını değiştirmez.

@@ -56,7 +56,7 @@
     },
     {
       "path": "docs/DEVELOPMENT.md",
-      "sha256": "3b4156ad8cf98f379888ea2a239eb9ccd9ed1d0c2a5e8455de08ff8dc7624c81"
+      "sha256": "de923b7520c4fda83f2c23e5864fef36ff68f2b1a0bb00e45f906889b8aec9d2"
     },
     {
       "path": "docs/PRIVACY.md",
@@ -128,11 +128,11 @@
     },
     {
       "path": "scripts/build-hearing-vendor.mjs",
-      "sha256": "50b81ce1111723416aa93c39512ccaccc63bbae98cbebd950632998826fb7e3b"
+      "sha256": "9b4667c482478905810eaa71de891050bb5acaa8715eff5b15453052d256de7c"
     },
     {
       "path": "scripts/build-sentry.mjs",
-      "sha256": "78bb31231a58d04501bfd0b08d98d99e3e200e5500675286f35aa6345a1fb5da"
+      "sha256": "6bfe2d363f2b1427b45e86cf2efb42d1bfaefe963138da9d6df76a265793048a"
     },
     {
       "path": "scripts/hearing-pdfjs-compat.mjs",
@@ -868,7 +868,7 @@
     },
     {
       "path": "tests/publication-boundary.test.js",
-      "sha256": "1532f338143489b0287e224eea3830e5174bab1c2bb3ca0b66dc1f579b738c1d"
+      "sha256": "18ff16a78ac70e5a9c6a876d655e5ff0bd1be75deedd83731179964738a3f4cf"
     },
     {
       "path": "tests/satir-sonu.test.js",
