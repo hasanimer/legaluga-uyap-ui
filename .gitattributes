@@ -1,4 +1,5 @@
 # Exact source bytes and fragment hashes must survive Windows/Linux checkouts.
-* -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+* -text whitespace=blank-at-eol,blank-at-eof,space-before-tab
 # Fragments can intentionally end inside an indented statement or import list.
 *.part -whitespace
+# Sources use LF (see .editorconfig); a CR at end of line is reported as a whitespace error.

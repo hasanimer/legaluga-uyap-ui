@@ -63,6 +63,8 @@ Sentetik doğrulamada atıf tekilleştirme, UDF metin eşleme, HTML sandbox sın
 3. Parça değiştiyse `FRAGMENTS.json` içindeki SHA256 ve bayt sayısını; eklenen/değişen dosyalar için `PUBLIC-FILES.json` envanterini güncelleyin. Kaynak ve envanteri aynı commit'e alın.
 4. `npm test` ve `npm run validate` kontrollerini tamamlayın; değişikliği pull request olarak önerin. UYAP entegrasyonu gerekiyorsa tam paket özel depoda ayrıca doğrulanır ve yeni açık kaynak commit'ine sabitlenir.
 
+Satır sonları LF'dir; `.editorconfig` düzenleyiciyi buna ayarlar, `tests/satir-sonu.test.js` CR içeren dosyayı reddeder. Yalnız `src/extension/vendor/` altında özgün baytları doğrulanamayan dört üçüncü taraf dosyası (`UTIF.js`, `UTIF.LICENSE`, iki `FONTKIT-*.LICENSE`) CRLF kalır.
+
 `scripts/build-sentry.mjs` ve `scripts/build-hearing-vendor.mjs` mevcut vendor üretiminin bakım betikleridir; varsayılan demo/test akışında çalışmazlar. Gerekli üretim bağımlılıkları özel derleme ortamında sürüm sabitlemesiyle yönetilir. Vendor yenilemesi lisansları, paket içi yolları, hash envanterini ve MV3 kısıtlarını birlikte gözden geçirmeyi gerektirir.
 
 Gerçek isim, dosya numarası, HAR, oturum verisi veya dava belgesi içeren örnekleri eklemeyin. README görselleri sentetik verilerle hazırlanır; çalışma kaynaklarının ve özel servislerin sınırlarını değiştirmez.
