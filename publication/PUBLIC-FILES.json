@@ -276,7 +276,7 @@
     },
     {
       "path": "src/extension/storage.js",
-      "sha256": "5bfe897761718bc60de2cfeb7e853dd397c3d1e0147d8042b6ac0d8abcdba0a7"
+      "sha256": "e5b8b90f01cf9877a9aa561408714b7b9ff46e4d42583d30a2e3da45b99d5371"
     },
     {
       "path": "src/extension/tabs.js",

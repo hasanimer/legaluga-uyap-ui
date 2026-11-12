@@ -41,7 +41,7 @@
     let queue = Promise.resolve(), revision = 0, keyRecord;
     const ownRevisions = new Set();
     const transact = task => {
-      const result = queue.then(async () => { await ready; return task(); });
+      const result = queue.then(async () => { await hazir(); return task(); });
       queue = result.catch(() => {}); return result;
     };
     async function keyStore() {
@@ -63,11 +63,11 @@
         let record = await run('readonly', store => store.get('local'));
         const saved = await native.get(null);
         if (!record) {
-          if (Object.values(saved).some(UHDVaultCrypto.isEnvelope)) throw new Error('Şifreli verinin anahtarı bulunamadı. Veri sıfırlanmadı; aynı Chrome profiline dönün.');
+          if (Object.values(saved).some(UHDVaultCrypto.isEnvelope)) throw Object.assign(new Error('Şifreli verinin anahtarı bulunamadı. Veri sıfırlanmadı; aynı Chrome profiline dönün.'), { kalici: true });
           record = { id: crypto.randomUUID(), key: await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']) };
           await run('readwrite', store => store.add(record, 'local'));
         }
-        if (!(record.key instanceof CryptoKey) || record.key.extractable || record.key.algorithm.name !== 'AES-GCM' || record.key.algorithm.length !== 256) throw new Error('Şifreleme anahtarı geçersiz.');
+        if (!(record.key instanceof CryptoKey) || record.key.extractable || record.key.algorithm.name !== 'AES-GCM' || record.key.algorithm.length !== 256) throw Object.assign(new Error('Şifreleme anahtarı geçersiz.'), { kalici: true });
         keyRecord = record;
         revision = Number.isSafeInteger(saved[REV]) ? saved[REV] : 0;
         const replacement = {};
@@ -76,18 +76,38 @@
         // Göç varken her zarf tam doğrulanır; yoksa yalnız biçim/anahtar kimliği. Her read() ve write() ön kontrolü AES-GCM ile doğrular.
         for (const [name, value] of Object.entries(saved)) if (validKey(name)) {
           if (!UHDVaultCrypto.isEnvelope(value)) replacement[name] = await UHDVaultCrypto.seal(record.key, record.id, name, value);
-          else if (legacy) await UHDVaultCrypto.open(record.key, record.id, name, value);
-          else if (value.version !== 1 || value.keyId !== record.id) throw new Error('Yerel veri anahtarı veya biçimi uyuşmuyor. Veriler değiştirilmedi.');
+          else if (legacy) await UHDVaultCrypto.open(record.key, record.id, name, value).catch(error => { throw Object.assign(error, { kalici: true }); });
+          else if (value.version !== 1 || value.keyId !== record.id) throw Object.assign(new Error('Yerel veri anahtarı veya biçimi uyuşmuyor. Veriler değiştirilmedi.'), { kalici: true });
         }
         if (Object.keys(replacement).length) await commit(replacement);
       } finally { db.close(); }
     }
-    const ready = Promise.resolve().then(async () => {
-      await chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' });
-      await keyStore();
-    });
-    // Bekleyen istekler aynı hatayı alır; eski veriye düz metin geri dönüşü yok.
-    ready.catch(() => {});
+    // Bekleyen istekler aynı hatayı alır; eski veriye düz metin geri dönüşü yok. Bütünlük hatası (kalici) worker boyunca kapalı kalır;
+    // geçici G/Ç hatasında kuyruktaki ilk istek, son denemeden 5 sn sonra açılışı yeniden dener (keyStore tekrar çalıştırılabilir).
+    let ready, sonDeneme = 0, acilisHatasi = null, raporlanacak = null;
+    const baslat = () => {
+      sonDeneme = Date.now(); acilisHatasi = null;
+      ready = Promise.resolve().then(async () => {
+        await chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' });
+        await keyStore();
+      }).then(() => {
+        // Rapor izni kasadadır: açılış hatası ancak sonraki başarılı açılışta, yalnız tür ve satırla bir kez raporlanır.
+        const rapor = raporlanacak;
+        raporlanacak = null;
+        // Raporlama yan etkidir: fırlatırsa başarılı açılış reddedilmiş sayılıp yeniden denenmeden kapanmamalı.
+        if (rapor) try { globalThis.UHDReporter?.report(rapor, 'storage'); } catch { /* rapor açılışı kesmez */ }
+      }, error => {
+        acilisHatasi = { error, kalici: error?.kalici === true }; raporlanacak ??= error;
+        console.warn('Legaluga şifreli depolama açılamadı:', String(error?.name || 'Error'), acilisHatasi.kalici ? '(kalıcı)' : '(yeniden denenecek)');
+        throw error;
+      });
+      ready.catch(() => {});
+    };
+    const hazir = () => {
+      if (acilisHatasi && !acilisHatasi.kalici && Date.now() - sonDeneme >= 5000) baslat();
+      return ready;
+    };
+    baslat();
     async function commit(values) {
       revision = Math.max(revision + 1, Date.now() * 1000);
       ownRevisions.add(revision);
@@ -404,7 +424,9 @@
     const trusted = sender => sender.id === chrome.runtime.id && (String(sender.url || '').startsWith(chrome.runtime.getURL('')) || (sender.frameId === 0 && String(sender.url || '').startsWith('https://avukat.uyap.gov.tr/')));
     chrome.runtime.onMessage.addListener((message, sender, reply) => {
       if (message?.type !== 'uhd-storage' || !trusted(sender)) return;
-      broker(message.operation, message.args).then(result => reply({ ok: true, ...result }), error => reply({ ok: false, error: error?.code === 'storage-size' ? 'Şifreli depolama işlemi 32 MiB sınırını aşıyor. Mevcut veriler değiştirilmedi.' : 'Şifreli depolama açılamadı veya yazılamadı. Veriler sıfırlanmadı; aynı Chrome profilinde tekrar deneyin.' }));
+      broker(message.operation, message.args).then(result => reply({ ok: true, ...result }), error => reply({ ok: false, error: error?.code === 'storage-size' ? 'Şifreli depolama işlemi 32 MiB sınırını aşıyor. Mevcut veriler değiştirilmedi.'
+        : acilisHatasi && error === acilisHatasi.error && !acilisHatasi.kalici ? 'Şifreli depolama geçici olarak açılamadı. Veriler sıfırlanmadı; birkaç saniye sonra yeniden deneyin.'
+          : 'Şifreli depolama açılamadı veya yazılamadı. Veriler sıfırlanmadı; aynı Chrome profilinde tekrar deneyin.' }));
       return true;
     });
     rawListen((changes, area) => {
