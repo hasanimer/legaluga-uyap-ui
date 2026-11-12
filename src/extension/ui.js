@@ -549,8 +549,17 @@
       const yama = k && typeof k === 'object' ? k : { [k]: v };
       if (globalThis.UHDStorage) { prefs = await UHDStorage.patchPrefs(yama); return; }
       const { uhdPrefs } = await chrome.storage.local.get('uhdPrefs');
-      prefs = { ...(uhdPrefs || {}), ...yama };
-      await chrome.storage.local.set({ uhdPrefs: prefs });
+      const next = { ...(uhdPrefs || {}), ...yama };
+      await chrome.storage.local.set({ uhdPrefs: next });
+      prefs = next;
+    }
+    // Ayar denetimleri tercihi bununla yazar: kayıt reddedilirse denetim geri alınır, kullanıcı hatayı görür.
+    // Eklenti güncellenince eski paneldeki kayıt "context invalidated" ile düşer; bu hata yutulmaz ki sayfadaki
+    // unhandledrejection işleyicisi paneli durdurup “Yenile”yi göstersin. Kullanıcıya yanlış “kaydedilemedi” gösterilmez.
+    const baglamGitti = error => /context invalidated|Extension context/i.test(String(error?.message || error));
+    async function tercihYaz(yama, geriAl, ileti = 'Tercih kaydedilemedi. Tekrar deneyin.') {
+      try { await setPref(yama); return true; }
+      catch (error) { if (baglamGitti(error)) throw error; if (geriAl) geriAl(); setNotice(ileti, 'err'); return false; }
     }
 
     function syncSetup() {
@@ -1640,7 +1649,8 @@
       sortSelect.value = pref('siralama', 'relevance');
       sortSelect.addEventListener('change', async () => {
         sel = 0; shownLimit = LIMIT;
-        await setPref('siralama', sortSelect.value);
+        // Kayıt hatasında yeniden çizim kayıtlı sıralamayı geri getirir.
+        await tercihYaz({ siralama: sortSelect.value }, null, 'Sıralama tercihi kaydedilemedi. Tekrar deneyin.');
         render(); list.querySelector('.sort')?.focus();
       });
       if (!res.tokens.length && !res.total && filter.durum === 'all' && !hasTurFilter() && !filter.onlyClient && !filter.onlyNew) {
@@ -1798,7 +1808,8 @@
 
     async function openRecord(r) {
       recent = [r.key, ...recent.filter(k => k !== r.key)].slice(0, RECENT_MAX);
-      await chrome.storage.local.set({ uhdRecent: recent });
+      // Son açılanlar listesi yazılamazsa dosya yine açılır. Yazım açılıştan önce başlar: popup açılışın sonunda kapanır.
+      (async () => chrome.storage.local.set({ uhdRecent: recent }))().catch(() => {});
       opts.onOpen(r);
     }
 
@@ -1910,19 +1921,29 @@
 
     // ------------------------------------------------ gizlenen dosyalar
 
+    // Yazılamazsa bellek, arada başka değişiklik gelmediyse önceki hâline döner: görünüm depoyla ayrışmaz.
     async function hideFile(r) {
-      gizli = { ...gizli, [r.key]: { dosyaNo: r.dosyaNo, birimAdi: r.birimAdi, at: Date.now() } };
-      await chrome.storage.local.set({ uhdGizli: gizli });
+      const onceki = gizli, next = { ...gizli, [r.key]: { dosyaNo: r.dosyaNo, birimAdi: r.birimAdi, at: Date.now() } };
+      gizli = next;
+      try { await chrome.storage.local.set({ uhdGizli: next }); }
+      catch {
+        if (gizli === next) gizli = onceki;
+        return setNotice('Dosya gizlenemedi. Tekrar deneyin.', 'err');
+      }
       render();
       setNotice(`${r.dosyaNo} ${cleanBirim(r.birimAdi)} aramalarda gösterilmeyecek.`, '', { label: 'Geri al', undo: true, fn: () => unhideFile(r.key) });
     }
 
     const unhideFile = key => unhideFiles([key]);
     async function unhideFiles(keys) {
-      const next = { ...gizli };
+      const onceki = gizli, next = { ...gizli };
       for (const key of keys) delete next[key];
       gizli = next;
-      await chrome.storage.local.set({ uhdGizli: next });
+      try { await chrome.storage.local.set({ uhdGizli: next }); }
+      catch {
+        if (gizli === next) gizli = onceki;
+        return setNotice('Dosya yeniden gösterilemedi. Tekrar deneyin.', 'err');
+      }
       setNotice('');
       if (!settings.hidden) renderSettings();
       render();
@@ -2139,12 +2160,18 @@
       const check = (key, def, label, hint, onChange) => {
         const box = el('input', { type: 'checkbox', 'data-pref': key });
         box.checked = !!pref(key, def);
-        box.addEventListener('change', async () => { await setPref(key, box.checked); if (onChange) onChange(box.checked); });
+        box.addEventListener('change', async () => {
+          if (!(await tercihYaz({ [key]: box.checked }, () => { box.checked = !!pref(key, def); }))) return;
+          if (onChange) onChange(box.checked);
+        });
         return el('label', { class: 'check' }, box, el('div', null, el('div', null, label), hint ? el('div', { class: 'hint' }, hint) : null));
       };
       const select = (key, def, label, options, onChange) => {
         const sel = el('select', { 'aria-label': label, 'data-pref': key }, options.map(([v, t]) => el('option', { value: v, selected: pref(key, def) === v }, t)));
-        sel.addEventListener('change', async () => { await setPref(key, sel.value); if (onChange) onChange(sel.value); });
+        sel.addEventListener('change', async () => {
+          if (!(await tercihYaz({ [key]: sel.value }, () => { sel.value = pref(key, def); }))) return;
+          if (onChange) onChange(sel.value);
+        });
         return el('div', { class: 'field' }, el('span', null, label), sel);
       };
 
@@ -2189,7 +2216,10 @@
       if (!names.length && detected) tags.append(el('span', { class: 'tag auto', title: 'Dosyalarda en çok vekil olarak geçen ad' }, `${trTitle(detected)} (otomatik)`));
       for (const n of names) {
         const x = el('button', { title: 'Çıkar', 'aria-label': `${n} adını çıkar` }, '×');
-        x.addEventListener('click', async () => { await setPref('myName', myNames().filter(v => v !== n).join(', ')); renderSettings(); render(); });
+        x.addEventListener('click', async () => {
+          if (!(await tercihYaz({ myName: myNames().filter(v => v !== n).join(', ') }, null, 'Vekil adı kaydedilemedi. Tekrar deneyin.'))) return;
+          renderSettings(); render();
+        });
         tags.append(el('span', { class: 'tag' }, trTitle(n), x));
       }
       const nameIn = el('input', { type: 'text', placeholder: 'Ad Soyad', 'aria-label': 'Müvekkilleri ayırmak için vekil adı', autocomplete: 'off', spellcheck: 'false' });
@@ -2199,7 +2229,8 @@
         // Otomatik bulunan ad da kalıcı etikete dönüşür; aynı ad iki kez eklenmez.
         const guncel = myNames();
         const base = guncel.length ? guncel : (detected ? [detected] : []);
-        await setPref('myName', (base.some(x => nameKey(x) === nameKey(v)) ? base : [...base, v]).join(', '));
+        const yama = { myName: (base.some(x => nameKey(x) === nameKey(v)) ? base : [...base, v]).join(', ') };
+        if (!(await tercihYaz(yama, null, 'Vekil adı kaydedilemedi. Tekrar deneyin.'))) return;   // yazılan ad kutuda kalır
         renderSettings();
         render();
       };
@@ -2211,7 +2242,9 @@
       const ekIller = () => (Array.isArray(prefs.savcilikIller) ? prefs.savcilikIller : []).map(Number).filter(n => Number.isInteger(n) && n >= 1 && n <= ILLER.length);
       const ilTags = el('div', { class: 'tags' }, ekIller().map(n => {
         const x = el('button', { title: 'Çıkar', 'aria-label': `${ILLER[n - 1]} ilini çıkar` }, '×');
-        x.addEventListener('click', async () => { await setPref('savcilikIller', ekIller().filter(v => v !== n)); renderSettings(); });
+        x.addEventListener('click', async () => {
+          if (await tercihYaz({ savcilikIller: ekIller().filter(v => v !== n) }, null, 'İl seçimi kaydedilemedi. Tekrar deneyin.')) renderSettings();
+        });
         return el('span', { class: 'tag' }, ILLER[n - 1], x);
       }));
       const ilSec = el('select', { 'aria-label': 'Eklenecek il', 'data-pref': 'savcilikIlSec' }, el('option', { value: '' }, 'İl seçin'),
@@ -2220,7 +2253,7 @@
       ilEkle.addEventListener('click', async () => {
         const n = Number(ilSec.value);
         if (!n) return;
-        if (!ekIller().includes(n)) await setPref('savcilikIller', [...ekIller(), n]);
+        if (!ekIller().includes(n) && !(await tercihYaz({ savcilikIller: [...ekIller(), n] }, null, 'İl seçimi kaydedilemedi. Tekrar deneyin.'))) return;
         renderSettings();
       });
       // Bir sonraki Güncelle'de aranacak iller (başsavcılık rehberi varsa kayıtlardan hesaplanır).
@@ -2466,16 +2499,18 @@
       // Yürüten sekme yok: duraklamış işi doğrudan iptal et (popup'ta açık UYAP sekmesi olmayabilir).
       const pending = pendingJob, priorProgress = progress;
       if (!pending?.id) return;
-      const { uhdScanEpoch: epoch } = await chrome.storage.local.get('uhdScanEpoch');
-      await globalThis.UHDStorage.stopScan({ jobId: pending.id, epoch, owner: priorProgress?.owner ?? null,
-        running: !!priorProgress?.running, beat: priorProgress?.beat ?? null, stop: false });
+      try {
+        const { uhdScanEpoch: epoch } = await chrome.storage.local.get('uhdScanEpoch');
+        await globalThis.UHDStorage.stopScan({ jobId: pending.id, epoch, owner: priorProgress?.owner ?? null,
+          running: !!priorProgress?.running, beat: priorProgress?.beat ?? null, stop: false });
+      } catch { setNotice('Güncelleme iptal edilemedi. Tekrar deneyin.', 'err'); }
     });
     btnSettings.addEventListener('click', () => {
       if (hasDownloads && !downloadArea.hidden) { showDownloads(false); openSettings(); return; }
       return opts.onSettings ? opts.onSettings() : settings.hidden ? openSettings() : closeSettings();
     });
     btnTheme.addEventListener('click', async () => {
-      await setPref('tema', TEMA[temaAyari()].sonraki);
+      if (!(await tercihYaz({ tema: TEMA[temaAyari()].sonraki }, null, 'Tema tercihi kaydedilemedi. Tekrar deneyin.'))) return;
       applyTheme();
       say(`Tema: ${TEMA[temaAyari()].ad}.`);
     });

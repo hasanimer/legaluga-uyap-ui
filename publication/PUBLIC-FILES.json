@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "274442f34833ed7115e006e2caab13a5a3c63f9b5bad597bc94086420032780b"
+      "sha256": "928174d542f594cb8f97255b9fdf6fd252ae8c4490ba4eb86b582d626d175aa9"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -300,7 +300,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "7da082dd6c238b003ee4142f69999e0bbf99c392075ade9ff8187b0c73bdb81a"
+      "sha256": "7cb0a41524ea922c8c0f40f70db92c7fcefb7b73a540ef5c1c8f46f7d74dfc2a"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -804,7 +804,7 @@
     },
     {
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",
-      "sha256": "e82bc1aa68187d89fde1f74ae8da8f0307dadefc1ab28f9d1ca8a6d4cd5f71bf"
+      "sha256": "f82de2a83a04ea14f3bec03399038436280902383bc7449964d920dab5a9cdbd"
     },
     {
       "path": "src/fragments/content/123-panel-command-action-boundary.js.part",
