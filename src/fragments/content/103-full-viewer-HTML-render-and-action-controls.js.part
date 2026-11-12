@@ -50,11 +50,13 @@
       if (zipRun.managed) { downloads.pause(rec.key); return; }
       zipRun.ac.abort();
       if (zipRun.packing) zipRun.packAc.abort();
+      zipRun.durduruluyor?.();
       if (zipRun.bulk && zipRun.saving && bulkJob) chrome.runtime.sendMessage({ type: 'uhd-download-cancel', fileKey: rec.key, jobId: bulkJob.id }).catch(() => {});
       zipMessage(zipRun.packing ? 'ZIP hazırlama veya kaydetme durduruluyor.' : zipRun.bulk ? 'Durduruluyor; bu parçada alınmış evraklar kaydedilecek. Tamamlanan parçadan devam edebilirsiniz.' : 'Durduruluyor; alınmış evraklar eksik ZIP olarak hazırlanacak.');
       zipSync();
     });
-    zipPanel.addEventListener('click', () => { done(); showPanel(); ui.showDownloads?.(); });
+    // Tek ZIP bu ekrana bağlıdır: ekran kapanırsa indirme durur. Sürerken panel dosya ekranının yanında açılır.
+    zipPanel.addEventListener('click', () => { if (!zipRun || zipRun.managed) done(); showPanel(); ui.showDownloads?.(); });
     paketHazirla.addEventListener('click', paketHazirlaBasla);
     paketDurdur.addEventListener('click', () => { if (!paketSession) return; paketKapat(); paketDurum.textContent = 'Durduruldu; PDF oluşturulmadı.'; });
     paketSiraGor.addEventListener('click', () => paketSiraGoster());
