@@ -11,6 +11,10 @@
       "sha256": "bede150cfe43a8a63032e73f7d2d1063b37fd899f3d3f8068087268dd0495f29"
     },
     {
+      "path": ".git-blame-ignore-revs",
+      "sha256": "b53182e89c0c29a3d5e55dbd51670a72a0faea4581aeda8af07324a6f48a2253"
+    },
+    {
       "path": ".github/workflows/public-ui.yml",
       "sha256": "724b5bd898dc5c4126265746977c07a3d1147a2d64b8bad4ad7e223d8b2e802c"
     },
