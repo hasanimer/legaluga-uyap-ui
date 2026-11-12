@@ -15,6 +15,65 @@
       }
     }) : null;
   globalThis.UHDBulkDownloads = downloadManager;
+  // Tek ZIP indirmesi (parçasız) motor kaydına girmez. Panelin İndirmeler listesinde görünsün diye yalnız bu sekmenin
+  // belleğinde izlenir: evrak baytı tutulmaz, sayfa yenilenince listeden kalkar. Panel, motorun ve bu izleyicinin
+  // kayıtlarını birlikte listeler; tek ZIP kartının anahtarı "zip:" ile başlar ve motorun dosya anahtarlarıyla çakışmaz.
+  const zipJobs = new Map(), downloadListeners = new Set(), ZIP_HISTORY = 20;
+  const downloadStates = () => [...(downloadManager ? downloadManager.list() : []),
+    ...Array.from(zipJobs.values(), job => ({ ...job.state, rec: { ...job.state.rec } }))];
+  const downloadEmit = () => {
+    if (!downloadListeners.size) return;
+    const states = downloadStates();
+    for (const listener of downloadListeners) { try { listener(states); } catch { /* Bir pencere öbürünü durdurmaz. */ } }
+  };
+  const zipTracker = {
+    begin({ rec, total, stop }) {
+      const key = 'zip:' + rec.key, startedAt = Date.now();
+      const job = { stop, state: { kind: 'zip', key, id: '', fileKey: rec.key,
+        rec: { dosyaNo: String(rec.dosyaNo || ''), birimAdi: String(rec.birimAdi || '') },
+        status: 'running', phase: 'fetching', saved: 0, total: total || 0, missing: 0, skipped: 0, inPart: 0, partCount: 0,
+        partBytes: 0, currentTitle: '', error: '', stopping: false, elapsedMs: 0, updatedAt: startedAt } };
+      zipJobs.delete(key);
+      zipJobs.set(key, job);
+      const finished = [...zipJobs.values()].filter(item => !item.stop);
+      for (const item of finished.slice(0, Math.max(0, zipJobs.size - ZIP_HISTORY))) zipJobs.delete(item.state.key);
+      downloadEmit();
+      const yaz = patch => {
+        if (zipJobs.get(key) !== job) return false;
+        const now = Date.now();
+        Object.assign(job.state, patch, { elapsedMs: now - startedAt, updatedAt: now });
+        return true;
+      };
+      return {
+        update(patch) { if (job.stop && yaz(patch)) downloadEmit(); },
+        // remove: indirme parçalı indirmeye devredildi; kart motorun kaydıyla gösterilir.
+        end(patch = {}) {
+          if (!job.stop) return;
+          job.stop = null;
+          if (patch.remove) { if (zipJobs.get(key) === job) zipJobs.delete(key); }
+          else yaz({ phase: 'idle', currentTitle: '', ...patch, stopping: false });
+          downloadEmit();
+        }
+      };
+    }
+  };
+  globalThis.UHDZipDownloads = zipTracker;
+  const downloadView = downloadManager ? {
+    list: downloadStates,
+    subscribe(listener) {
+      if (typeof listener !== 'function') throw new TypeError('İndirme dinleyicisi fonksiyon olmalı.');
+      downloadListeners.add(listener);
+      try { listener(downloadStates()); } catch { /* İlk çizim hatası işi etkilemez. */ }
+      return () => downloadListeners.delete(listener);
+    },
+    pause(key) {
+      const job = zipJobs.get(key);
+      if (job) { job.stop?.(); return; }
+      return downloadManager.pause(key);
+    },
+    resume: (key, options) => downloadManager.resume(key, options)
+  } : null;
+  downloadManager?.subscribe(downloadEmit);
   async function openDownload(fileKey) {
     const { uhdIndex } = await chrome.storage.local.get('uhdIndex');
     const rec = uhdIndex?.records?.find(item => item.key === fileKey);
@@ -1233,7 +1292,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     ui = mountUI(panel, {
       mode: 'page',
       prefsRead,
-      downloads: downloadManager,
+      downloads: downloadView,
       openDownload,
       showDownloadPart,
       isVisible: () => !!panel && !panel.hidden,

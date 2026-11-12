@@ -343,8 +343,8 @@
       "source": "content.js",
       "order": 23,
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "56eee050ec4e6cece3f8a10bac2ea8bc036261ee605cbf85cb0b5b001b974826",
-      "bytes": 107822,
+      "sha256": "a979540575d30d378beda905562bbb57583546cc0e5ef3d18d3265dd6f98d5cd",
+      "bytes": 110963,
       "purpose": "page-shell-full-CSS-docking-and-panel-controls"
     },
     {
@@ -679,8 +679,8 @@
       "source": "content.js",
       "order": 103,
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "f0ae448fd896f8b71cb781a53be3bec2770c447a8c88040a4f6330d92c534a21",
-      "bytes": 35618,
+      "sha256": "7a22e1f7c5e1c37590721fa594c3e2f489859770cf8c077bf99d535b01fa7576",
+      "bytes": 35804,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {

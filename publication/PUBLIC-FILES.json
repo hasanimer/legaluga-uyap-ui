@@ -108,7 +108,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "f076324d91d3a325faf2607d6013598450d5e87021a66d0af79d4f4f17faa3c9"
+      "sha256": "3f84d56f7934fb37b75de437edcf6fa062c45d1765dcf4e82a1b224d6fe9ab15"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -228,7 +228,7 @@
     },
     {
       "path": "src/extension/indirme-panel.js",
-      "sha256": "97d87a3b69b0f81ecb7e1471317dbc3dbab9efdf0e0bff6b13c3c8253ed4b948"
+      "sha256": "5889e670b2cf48d9c4a9448253893c9cbac1099cc6ed930cb3b9265c4a14f026"
     },
     {
       "path": "src/extension/kunye-ayikla.js",
@@ -300,7 +300,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "e2accce57340aabc965f949f74f9bc181b555e0ff9c52d242ffe0b4a877e797b"
+      "sha256": "7da082dd6c238b003ee4142f69999e0bbf99c392075ade9ff8187b0c73bdb81a"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -596,7 +596,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "56eee050ec4e6cece3f8a10bac2ea8bc036261ee605cbf85cb0b5b001b974826"
+      "sha256": "a979540575d30d378beda905562bbb57583546cc0e5ef3d18d3265dd6f98d5cd"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -764,7 +764,7 @@
     },
     {
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "f0ae448fd896f8b71cb781a53be3bec2770c447a8c88040a4f6330d92c534a21"
+      "sha256": "7a22e1f7c5e1c37590721fa594c3e2f489859770cf8c077bf99d535b01fa7576"
     },
     {
       "path": "src/fragments/content/105-viewer-navigation-abort-epoch-boundary.js.part",

@@ -438,7 +438,7 @@
     }
     if (hasDownloads) {
       downloadArea.append(el('button', { type: 'button', class: 'btn sm download-back', onclick: () => showDownloads(false) }, '‹ Dosyalara dön'));
-      downloadArea.append(el('p', { class: 'hint' }, 'Dosya penceresini ve paneli kapatabilirsiniz. UYAP sayfası yenilenirse indirme yeniden bağlanır; kaydedilmiş ZIP parçaları tekrar indirilmez. Sekmeyi kapatırsanız dosyadan kaldığınız yerden devam edebilirsiniz.'));
+      downloadArea.append(el('p', { class: 'hint' }, 'Parçalı indirmede dosya penceresini ve paneli kapatabilirsiniz. UYAP sayfası yenilenirse indirme yeniden bağlanır; kaydedilmiş ZIP parçaları tekrar indirilmez. Sekmeyi kapatırsanız dosyadan kaldığınız yerden devam edebilirsiniz. Tek ZIP indirmesi sürerken dosya penceresini kapatmayın; kapanırsa indirme durur ve ZIP oluşturulmaz.'));
       globalThis.UHDBulkPanel.mount(downloadArea, { manager: opts.downloads, openFile: opts.openDownload, showPart: opts.showDownloadPart });
       btnDownloads.addEventListener('click', () => showDownloads(downloadArea.hidden));
       downloadMini.addEventListener('click', () => showDownloads());
@@ -451,8 +451,9 @@
         if (!state) return;
         const saved = Math.min(state.saved || 0, state.total || 0), total = state.total || 0;
         const phase = state.status === 'paused' ? 'Duraklatılıyor…' : { waiting: 'Sırada', fetching: 'Evraklar alınıyor', packing: 'ZIP hazırlanıyor', saving: 'Diske kaydediliyor' }[state.phase] || 'İndiriliyor';
-        downloadText.textContent = `${state.rec?.dosyaNo || 'Dosya'} · ${phase} · ${saved.toLocaleString('tr-TR')}/${total.toLocaleString('tr-TR')} kaydedildi${state.inPart ? ` · ${state.inPart} evrak bu parçada` : ''}`;
+        downloadText.textContent = `${state.rec?.dosyaNo || 'Dosya'} · ${phase} · ${saved.toLocaleString('tr-TR')}/${total.toLocaleString('tr-TR')} ${state.kind === 'zip' ? 'alındı' : 'kaydedildi'}${state.inPart ? ` · ${state.inPart} evrak bu parçada` : ''}`;
         downloadProgress.value = total ? Math.floor(100 * saved / total) : 0;
+        downloadProgress.setAttribute('aria-label', state.kind === 'zip' ? 'Alınan evraklar' : 'Diske kaydedilen evraklar');
       });
     }
     // Eklenti yenilendiğinde eski content script UYAP sekmesinde kalabilir.
