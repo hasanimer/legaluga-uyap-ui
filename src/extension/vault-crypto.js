@@ -3,7 +3,10 @@
 (() => {
   'use strict';
   const APP = 'legaluga-uyap-asistani', ITERATIONS = 600000, MAX_BYTES = 48 * 1024 * 1024;
-  const BACKUP_PASSWORD_MIN_LENGTH = 6, BACKUP_PASSWORD_MAX_LENGTH = 1024;
+  // Okunabilen yinelemeler açık listedir: yazma değeri değişse de eski yedekler başlıktaki değerle açılır.
+  const BACKUP_ITERATIONS = new Set([600000]);
+  // Yazma ve okuma alt sınırı ayrıdır: yeni yedeğin sınırı yükselse de eski kısa parolalı yedek açılır.
+  const BACKUP_PASSWORD_MIN_LENGTH = 6, BACKUP_PASSWORD_OPEN_MIN_LENGTH = 6, BACKUP_PASSWORD_MAX_LENGTH = 1024;
   const enc = new TextEncoder(), dec = new TextDecoder('utf-8', { fatal: true });
   const b64 = bytes => {
     if (typeof bytes.toBase64 === 'function') return bytes.toBase64();
@@ -57,25 +60,29 @@
     if (!decoded || typeof decoded.exists !== 'boolean') throw new Error('Şifreli yerel veri bozuk.');
     return decoded;
   }
-  async function derive(password, salt) {
-    if (typeof password !== 'string' || password.length < BACKUP_PASSWORD_MIN_LENGTH || password.length > BACKUP_PASSWORD_MAX_LENGTH) throw new Error(`Yedek parolası ${BACKUP_PASSWORD_MIN_LENGTH}–${BACKUP_PASSWORD_MAX_LENGTH} karakter olmalı.`);
+  function checkPassword(password, min) {
+    if (typeof password !== 'string' || password.length < min || password.length > BACKUP_PASSWORD_MAX_LENGTH) throw new Error(`Yedek parolası ${min}–${BACKUP_PASSWORD_MAX_LENGTH} karakter olmalı.`);
+  }
+  async function derive(password, salt, iterations) {
     const bytes = enc.encode(password);
     try {
       const base = await crypto.subtle.importKey('raw', bytes, 'PBKDF2', false, ['deriveKey']);
-      return await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: ITERATIONS, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+      return await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
     } finally { bytes.fill(0); }
   }
-  const backupContext = value => `${APP}|backup|2|AES-256-GCM|PBKDF2-SHA-256|${ITERATIONS}|${value.salt}`;
+  const backupContext = value => `${APP}|backup|2|AES-256-GCM|PBKDF2-SHA-256|${value.iterations}|${value.salt}`;
   async function encryptBackup(value, password) {
-    const salt = random(16), key = await derive(password, salt);
+    checkPassword(password, BACKUP_PASSWORD_MIN_LENGTH);
+    const salt = random(16), key = await derive(password, salt, ITERATIONS);
     const header = { app: APP, format: 2, encrypted: true, algorithm: 'AES-256-GCM', kdf: 'PBKDF2-SHA-256', iterations: ITERATIONS, salt: b64(salt) };
     return { ...header, ...await encrypt(key, value, backupContext(header)) };
   }
   async function decryptBackup(value, password) {
-    if (!value || value.app !== APP || value.format !== 2 || value.encrypted !== true || value.algorithm !== 'AES-256-GCM' || value.kdf !== 'PBKDF2-SHA-256' || value.iterations !== ITERATIONS) throw new Error('Şifreli yedek biçimi desteklenmiyor.');
+    if (!value || value.app !== APP || value.format !== 2 || value.encrypted !== true || value.algorithm !== 'AES-256-GCM' || value.kdf !== 'PBKDF2-SHA-256' || !BACKUP_ITERATIONS.has(value.iterations)) throw new Error('Şifreli yedek biçimi desteklenmiyor.');
     const salt = un64(value.salt, 16);
     if (salt.length !== 16) throw new Error('Şifreli yedek biçimi geçersiz.');
-    const key = await derive(password, salt);
+    checkPassword(password, BACKUP_PASSWORD_OPEN_MIN_LENGTH);
+    const key = await derive(password, salt, value.iterations);
     try { return await decrypt(key, value, backupContext(value)); }
     catch { throw new Error('Yedek açılamadı. Parola yanlış veya dosya bozulmuş; mevcut veriler değiştirilmedi.'); }
   }

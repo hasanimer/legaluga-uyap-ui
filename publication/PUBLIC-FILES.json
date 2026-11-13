@@ -304,7 +304,7 @@
     },
     {
       "path": "src/extension/vault-crypto.js",
-      "sha256": "c8e4fa5a4fb231f7c0929c17c054408c6b4ef7316fe9bb9736588c454d7e8579"
+      "sha256": "2b9886737c8f68167d2bedd78c68a73868a7414868ae306d75db8add526c3dab"
     },
     {
       "path": "src/extension/vendor/FONTKIT-APACHE-2.0.LICENSE",
@@ -736,7 +736,7 @@
     },
     {
       "path": "tests/crypto-invariants.test.js",
-      "sha256": "b79a02c89f1039afdd635c9d5d17956146061eef8643bd3e8405c922e34b625b"
+      "sha256": "81612712b504691c8681eced9958a28d70558b834d573bf204df6d2e7bdc4afb"
     },
     {
       "path": "tests/demo-consistency.test.js",
@@ -773,6 +773,10 @@
     {
       "path": "tests/zip-yardimci.js",
       "sha256": "0ed52faa36a48583b8afe9625e9d0acc7839ebd2cb60024f4bd0d9ecdceddd4c"
+    },
+    {
+      "path": "tests/fixtures/yedek-v2.json",
+      "sha256": "52c33a9eca0c44eb53bb8b327d9e6ee767cdb173b0316d6b882e6e75b0d5ea86"
     },
     {
       "path": "src/extension/vendor/tesseract/UPSTREAM.md",
