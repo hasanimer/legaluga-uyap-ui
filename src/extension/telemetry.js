@@ -7,7 +7,7 @@
     'tebligat-barkod.js', 'tebligat-ptt.js', 'tebligat-ui.js', 'uyap-document-native.js', 'uyap-kapi.js', 'vault-crypto.js']);
   const TYPES = new Set(['Error', 'TypeError', 'ReferenceError', 'SyntaxError', 'RangeError', 'DOMException', 'Fatal', 'UdfHatasi', 'TiffHatasi']);
   const CODES = new Set(['PRTL_GNL_100026', 'PRTL_GNL_100063', 'giris-sayfasi', 'baska-oturum', 'safahat-art-arda',
-    'havuz-zaman-asimi', 'havuz-baglanti', 'havuz-http', 'havuz-boyut', 'havuz-yonlendirme']);
+    'havuz-zaman-asimi', 'havuz-baglanti', 'havuz-http', 'havuz-boyut', 'havuz-yonlendirme', 'kapi-kapandi', 'kapi-hata']);
   const OPERATIONS = Object.freeze({
     unhandled: 'Beklenmeyen uzantı hatası', scheduled: 'Zamanlı işlem hatası',
     update: 'Güncelleme hatası', 'file-open': 'Dosya açma hatası', 'evrak-open': 'Evrak açma hatası',
