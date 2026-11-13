@@ -791,32 +791,8 @@
       "source": "content.js",
       "order": 129,
       "path": "src/fragments/content/129-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "c677661d2944019a9701b61c55a6d8859fe62fe5daa15fa88a9c430a63ab5e3d",
-      "bytes": 223,
-      "purpose": "session-protection-lifecycle-and-visible-safety-gates"
-    },
-    {
-      "source": "content.js",
-      "order": 131,
-      "path": "src/fragments/content/131-session-before-request-current-activity-guard.js.part",
-      "sha256": "44dcce6bae7d392a6f2b9129af3608cd49a3e82f593daad2470361d12b69e50a",
-      "bytes": 112,
-      "purpose": "session-before-request-current-activity-guard"
-    },
-    {
-      "source": "content.js",
-      "order": 133,
-      "path": "src/fragments/content/133-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "3fb972502d1262fc8df633f585fec783058ddfdf4f246f03834a4ee30341b2b0",
-      "bytes": 45,
-      "purpose": "session-protection-lifecycle-and-visible-safety-gates"
-    },
-    {
-      "source": "content.js",
-      "order": 135,
-      "path": "src/fragments/content/135-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "ad2e4665edd15697ce833595363eb113a251101c67fa4df34844819f0be4287c",
-      "bytes": 756,
+      "sha256": "7378521d274ffb3cfa509b8a896c78fcdbf32eec96966e36a3c2a9df89fb1552",
+      "bytes": 1911,
       "purpose": "session-protection-lifecycle-and-visible-safety-gates"
     }
   ]

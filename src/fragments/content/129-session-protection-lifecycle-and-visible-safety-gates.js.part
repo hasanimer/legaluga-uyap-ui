@@ -4,3 +4,30 @@
     const controller = new AbortController();
     sessionPingController = controller;
     try {
+      if (typeof uyapOtomasyonDurdu === 'function' && await uyapOtomasyonDurdu()) return;
+      // Yeni sekme veya yenileme de saklanan güvenlik duraklamasını ilk istekten önce görür.
+      const scanStateRevision = sessionScanStateRevision;
+      let scanState;
+      try { scanState = await chrome.storage.local.get('uhdJob'); }
+      catch { return; }   // Durum okunamıyorsa UYAP isteği gönderme.
+      // Okuma beklerken gelen daha yeni duraklatma/sürdürme bildirimi eski yanıtla ezilmez.
+      if (scanStateRevision === sessionScanStateRevision)
+        sessionScanBlocked = scanState.uhdJob?.paused === 'dogrulama';
+      if (!canProtect() || sessionPingController !== controller || controller.signal.aborted) return;
+      await oturumYoklamaIstegi(controller.signal,
+        () => sessionPingController === controller && !controller.signal.aborted && canProtect());
+      // Yanıt kullanılmaz veya saklanmaz.
+    } catch { /* Sonraki aralıkta yeniden denenir. */ }
+    finally { if (sessionPingController === controller) sessionPingController = null; }
+  }
+  if (typeof sessionRequestHooks !== 'undefined') sessionRequestHooks = {
+    invalidate: abortSessionPing, preferencesChanged: sessionPreferencesChanged
+  };
+  setInterval(() => { void sessionPing(); }, YOKLAMA_MS);
+  window.addEventListener('storage', event => {
+    if (event.key === 'loginState') { sessionRevision++; sessionLoginState = null; abortSessionPing(); }
+  });
+  window.addEventListener('offline', abortSessionPing);
+  window.addEventListener('pagehide', () => { sessionDisposed = true; abortSessionPing(); });
+  window.addEventListener('pageshow', () => { sessionDisposed = false; });
+})();
