@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const read = name => fs.readFileSync(path.join(__dirname, '..', name.startsWith('demo/') ? name : 'src/extension/' + name), 'utf8');
+const read = name => fs.readFileSync(path.join(__dirname, '../src/extension', name), 'utf8');
 const plain = value => JSON.parse(JSON.stringify(value));
 
 class Node {
@@ -76,7 +76,8 @@ function harness({ shortcut = 'Alt+Shift+D', prefs = {}, hasFiles = false, store
     }
   } } } };
   vm.createContext(context);
-  vm.runInContext(read('demo/common.js'), context);
+  // Açık depoda common.js'in demo taklidi yüklenir; tam depo gerçek common.js yolunu LEGALUGA_COMMON_JS ile verir.
+  vm.runInContext(fs.readFileSync(process.env.LEGALUGA_COMMON_JS || path.join(__dirname, '../demo/common.js'), 'utf8'), context);
   context.UHD.el = el;
   if (!fallback) context.UHDStorage = { async patchPrefs(value) {
     h.writes.push(plain(value));

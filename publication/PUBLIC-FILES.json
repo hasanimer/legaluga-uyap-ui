@@ -860,11 +860,11 @@
     },
     {
       "path": "tests/indirme-panel.test.js",
-      "sha256": "9bb6d64a7831e73ea32d6848d472bc215ecce780a213d2383c061db77f4f424d"
+      "sha256": "e79c0fce9fbe58e26c6e65e34fc24c95f3b3278f95a5910eb9f68f7a289f4fd2"
     },
     {
       "path": "tests/onboarding-ui.test.js",
-      "sha256": "d998080669b80c6d369fd907e593568bdf85ffa22e0ced1f053a83c6ce986e4f"
+      "sha256": "5c86d38cc4aba910cd4ec52ddc5a1adb40c389270c7abfead1036694eff4b6a5"
     },
     {
       "path": "tests/publication-boundary.test.js",
@@ -876,7 +876,7 @@
     },
     {
       "path": "tests/ui-downloads.test.js",
-      "sha256": "22eadf52cc9ce13a32d139d5c08639b9d3cb91ee07cd81b5f4fa77cac25e4d00"
+      "sha256": "b51ce40adb54f7a764e156a818a9e57a61d8b3b7e8a07e9bcc0c4d1bb8e388d7"
     },
     {
       "path": "tests/eyp-paketi.test.js",
