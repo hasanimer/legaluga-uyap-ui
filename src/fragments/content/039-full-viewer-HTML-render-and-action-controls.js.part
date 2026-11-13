@@ -203,7 +203,7 @@
     let kaynak = nativeDocument ? null : o.kaynak || null;   // { dosyaId, list }
     let listeHazirlandi = false, listeBekliyor = null, listeHata = '';   // evrak listesi bütün sekmeler arasında paylaşılır
     let tum = [], yeni = null, grup = 'son20', gorunen = [], sira = -1, simdiki = null, simdikiOge = null, gezEpoch = 0, gecikme = null, gezAc = null;
-    let kategorili = false, tarihArtan = false, evrakOdak = null, aramaImza = '';
+    let kategorili = false, tarihArtan = false, evrakOdak = null, aramaImza = '', aramaZaman = null;
     let teyit = null, teyitAlim = null, teyitHata = '', teyitAcik = false, teyitDugme = null, teyitOzet = null;
     const acikKategoriler = new Set(), aramadaKapali = new Set(), kategoriDom = new Map(), kategoriKokleri = [];
     // Ana evrakın ekleri kapalı başlar; Yeni listesindeki ana evrakın ekleri açık (yeniAcilanEk: ekranda bir kez açılanlar). Açık olanlar
@@ -330,7 +330,8 @@
     // Son 20: en yeni 20 evrak ve ekleri.
     const son20 = () => { let n = 0; return tum.filter(x => (x.ana ? n <= 20 : ++n <= 20)); };
     const grupListesi = g => (g === 'yeni' ? yeni || [] : g === 'son20' ? son20() : tum);
-    const aranan = x => norm([x.tur, x.ana || x.yetimEk ? 'ek' : '', x.ana ? x.ana.tur : '', x.dosya, fmtTrDate(x.onay), x.no, x.gonderen].filter(Boolean).join(' '));
+    // Aranan metin öğe başına bir kez kurulur; listeKur öğeleri yeniden ürettiği için liste yenilenince önbellek kendiliğinden boşalır.
+    const arananlar = new WeakMap(), aranan = x => arananlar.get(x) ?? arananlar.set(x, norm([x.tur, x.ana || x.yetimEk ? 'ek' : '', x.ana ? x.ana.tur : '', x.dosya, fmtTrDate(x.onay), x.no, x.gonderen].filter(Boolean).join(' '))).get(x);
     function suz() {
       const t = norm(ara.value).split(/\s+/).filter(Boolean);
       const imza = t.join(' ');

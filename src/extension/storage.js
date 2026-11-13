@@ -8,8 +8,12 @@
   const listeners = new Set(), cache = new Map(), REV = '__uhdVaultRevision', NOT_KEPT = Symbol('not-kept');
   let pendingGets = 0;
   const MAX_MESSAGE = 32 * 1024 * 1024;
+  // Sınır UTF-8 bayttır. JSON metninin her UTF-16 birimi 1-3 bayt tutar (eşsiz vekil JSON'da kaçışlanır): uzunluk
+  // sınırı aşıyorsa ya da üç katı sınırda kalıyorsa sonuç kesindir, metin yalnız aradaki uzunluklarda kodlanıp ölçülür.
   const checkMessage = value => {
-    if (new TextEncoder().encode(JSON.stringify(value)).length > MAX_MESSAGE) throw Object.assign(new Error('Şifreli depolama işlemi 32 MiB sınırını aşıyor. Mevcut veriler değiştirilmedi.'), { code: 'storage-size' });
+    const json = JSON.stringify(value);
+    if (json.length > MAX_MESSAGE || (json.length * 3 > MAX_MESSAGE && new TextEncoder().encode(json).length > MAX_MESSAGE))
+      throw Object.assign(new Error('Şifreli depolama işlemi 32 MiB sınırını aşıyor. Mevcut veriler değiştirilmedi.'), { code: 'storage-size' });
   };
   const validKey = key => typeof key === 'string' && /^(?:uhd[A-Za-z0-9_]*|ubh_[A-Za-z0-9_]*)$/.test(key) && key.length < 96;
   const keysOf = value => value == null ? null : typeof value === 'string' ? [value] : Array.isArray(value) ? value : Object.keys(value);

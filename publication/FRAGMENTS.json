@@ -335,8 +335,8 @@
       "source": "content.js",
       "order": 21,
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "e09a4a7c89212a5a60b4868f5fdc48e6ecfc2d75a49fc413ceea020bf884038e",
-      "bytes": 109486,
+      "sha256": "c357aca0b3e858e28059a26827d2d70efdab7dfd3525524db36add2011ef45ad",
+      "bytes": 109952,
       "purpose": "page-shell-full-CSS-docking-and-panel-controls"
     },
     {
@@ -359,7 +359,7 @@
       "source": "content.js",
       "order": 27,
       "path": "src/fragments/content/029-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "df423c7d83f15274d928f5ee4a5cbf38cea7c5579c9cf2a69da17459348a0c46",
+      "sha256": "81ad2320b3bf06fe10e68ab110cdf7df6786be230b535d8d0b827038076e9022",
       "bytes": 9581,
       "purpose": "overview-safahat-notes-and-safe-document-rendering"
     },
@@ -399,8 +399,8 @@
       "source": "content.js",
       "order": 37,
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "c3b73f343313c7c35b8f71b030d6dccf1bad25cad7a7e72634b9f2cc64ad7bd2",
-      "bytes": 61918,
+      "sha256": "1ede43f14420130dbb504e40627e10f749007c10475ac351f76464407b354547",
+      "bytes": 62159,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -551,8 +551,8 @@
       "source": "content.js",
       "order": 75,
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "7a22e1f7c5e1c37590721fa594c3e2f489859770cf8c077bf99d535b01fa7576",
-      "bytes": 35804,
+      "sha256": "9d1ebf3a647a15548e587202fc2c275cb1778c42d1ced823d3c77b2c08978a96",
+      "bytes": 36454,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -567,8 +567,8 @@
       "source": "content.js",
       "order": 79,
       "path": "src/fragments/content/118-viewer-list-loading-retry-and-error-controls.js.part",
-      "sha256": "c4ef4aa4db5bcbedd47a74a13725eb767438d23f4c20a61c8dce191814c185ec",
-      "bytes": 15315,
+      "sha256": "5157a408cc99aba4ac934f06eaf652eefb73e3f23ad0f24ad4ec99cd9115b2de",
+      "bytes": 15341,
       "purpose": "viewer-list-loading-retry-and-error-controls"
     },
     {
