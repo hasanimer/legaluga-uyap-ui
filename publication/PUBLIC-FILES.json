@@ -8,7 +8,7 @@
     },
     {
       "path": ".gitattributes",
-      "sha256": "bede150cfe43a8a63032e73f7d2d1063b37fd899f3d3f8068087268dd0495f29"
+      "sha256": "b5eed873f658dbe8352dab09dcdeecf77dd1bc2e8c75fcc17148317b822c8002"
     },
     {
       "path": ".git-blame-ignore-revs",
@@ -52,7 +52,7 @@
     },
     {
       "path": "docs/DEVELOPMENT.md",
-      "sha256": "de923b7520c4fda83f2c23e5864fef36ff68f2b1a0bb00e45f906889b8aec9d2"
+      "sha256": "f928610675552d1db346f566bf30ec48d7005bb97fe5c8b9a0481002333fbe2c"
     },
     {
       "path": "docs/PRIVACY.md",
@@ -813,6 +813,14 @@
     {
       "path": "tests/common-taklidi.js",
       "sha256": "1729f3c82cf59ea317f0b4027fc4d690ce826533f08768f7012d70016bfc503f"
+    },
+    {
+      "path": "tests/parca-sinirlari.js",
+      "sha256": "a1715111dddcc599c021e78d36deb7356e8bbb467bd3eaee5af0ca9968aafac4"
+    },
+    {
+      "path": "tests/parca-sinirlari.test.js",
+      "sha256": "adffb1c38f94b104b79f85af89ded0faba433bf6cdd7e0d4a1330c4b5be362d5"
     }
   ]
 }
