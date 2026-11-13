@@ -17,7 +17,7 @@
 .bdp-court{font-size:12px;color:var(--muted,var(--shell-muted,#667085));overflow-wrap:anywhere}
 .bdp-state{font-size:12px;font-weight:600;padding:3px 7px;border-radius:6px;background:var(--grey-bg,var(--shell-soft,#f5f7fb));overflow-wrap:anywhere}
 .bdp-card[data-status=running] .bdp-state{background:var(--soft,var(--shell-soft,#f5f7fb));color:var(--accent-text,var(--shell-accent,#0b6663))}
-.bdp-card[data-status=complete] .bdp-state{background:var(--green-bg,var(--shell-success-bg,#e7f6ef));color:var(--green,var(--shell-success,#12805c))}
+.bdp-card[data-status=complete] .bdp-state{background:var(--green-bg,var(--shell-success-bg,#ecfdf3));color:var(--green,var(--shell-success,#12805c))}
 .bdp-card[data-status=error] .bdp-state{background:var(--err-bg,var(--shell-error-bg,#fdecea));color:var(--red,var(--shell-error,#b42318))}
 .bdp-saved{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:10px 0 4px;font-size:13px;font-weight:600}
 .bdp progress{display:block;width:100%;height:9px;accent-color:var(--focus,var(--shell-accent,#0b6663));margin:0 0 8px}

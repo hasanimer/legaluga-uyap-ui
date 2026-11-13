@@ -551,7 +551,7 @@
 .viewer .ek-onizleme .docbar button{min-height:32px;padding:5px 9px}
 @container ekran (max-width:460px){.viewer .ek-onbar .gezinme{width:100%;justify-content:space-between}.viewer .ek-belge-eylemler{width:100%}.viewer .ek-belge-eylemler :is(a,button){flex:1 0 auto;white-space:nowrap}.viewer .ek-oge{padding:9px}.viewer .ek-onizleme .docbar{padding:8px 12px}}
 @media(prefers-contrast:more){.viewer .ek-oge.on{border-color:var(--shell-text)}.viewer .ek-arama{border-color:var(--shell-muted)}}
-@media(forced-colors:active){.viewer :is(.chip.on,[role=tab].on,[aria-pressed=true]),.panel .panel-pin[aria-pressed=true]{background:Highlight!important;border-color:Highlight!important;color:HighlightText!important}.viewer .ek-oge.on{outline:2px solid Highlight!important;outline-offset:-2px!important}}
+@media(forced-colors:active){.viewer :is(.chip.on,[role=tab].on,[aria-pressed=true]),.panel .panel-pin[aria-pressed=true]{background:Highlight!important;border-color:Highlight!important;color:HighlightText!important}.viewer .ek-oge.on{outline:2px solid Highlight!important;outline-offset:-2px!important}.viewer .ek-ogeler:focus-visible .ek-oge.on.odak{outline:6px double Highlight!important;outline-offset:-6px!important}}
 .viewer .dp-baslik{margin:14px 0 6px;font-size:13px}
 .viewer .bar .ek-sira button{padding:6px 10px}
 .viewer .bar .ek-sira button:disabled{opacity:.45;cursor:default}

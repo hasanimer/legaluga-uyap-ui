@@ -24,7 +24,7 @@ test('yanlış anahtar, kayıt adı, anahtar kimliği ve değişmiş şifreli ve
   await assert.rejects(vault.open(k,'demo-key','demo-record',{...sealed,data:bytes.toString('base64')}));
 });
 
-// Altın vektör: sentetik içerik ve bilinen parolayla bugünkü biçimde şifrelenmiş yedek dosyası, indirildiği baytlarla.
+// Altın vektör: sentetik içerik ve bilinen parolayla bugünkü biçimde şifrelenmiş yedek; indirilen JSON gövdesi, dosya kuralı gereği sonda LF eklenmiştir.
 const yedekMetni = fs.readFileSync(path.join(__dirname,'fixtures','yedek-v2.json'),'utf8'), yedek = JSON.parse(yedekMetni);
 const parola = 'sentetik-altin-vektor';
 const acik = {app:'legaluga-uyap-asistani',format:1,version:'0.0.0',exportedAt:'2026-01-01T00:00:00.000Z',

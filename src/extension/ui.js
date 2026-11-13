@@ -1994,7 +1994,8 @@
     function backupPassword(repeat, dene) {
       return new Promise(resolve => {
         const id = `uhd-backup-${crypto.randomUUID()}`;
-        const { BACKUP_PASSWORD_MIN_LENGTH: minLength, BACKUP_PASSWORD_MAX_LENGTH: maxLength } = UHDVaultCrypto;
+        // Açma penceresi okuma alt sınırını kullanır: yeni yedeğin sınırı yükselse de eski kısa parolalı yedek açılır.
+        const minLength = repeat ? UHDVaultCrypto.BACKUP_PASSWORD_MIN_LENGTH : UHDVaultCrypto.BACKUP_PASSWORD_OPEN_MIN_LENGTH, maxLength = UHDVaultCrypto.BACKUP_PASSWORD_MAX_LENGTH;
         const dialog = el('dialog', { class: 'backup-password', 'aria-labelledby': id });
         const password = el('input', { type: 'password', autocomplete: repeat ? 'new-password' : 'current-password', minlength: String(minLength), maxlength: String(maxLength), required: true, 'data-backup-password': 'main' });
         const again = repeat ? el('input', { type: 'password', autocomplete: 'new-password', minlength: String(minLength), maxlength: String(maxLength), required: true, 'data-backup-password': 'again' }) : null;

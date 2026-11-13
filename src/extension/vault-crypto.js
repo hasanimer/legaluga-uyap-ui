@@ -86,7 +86,7 @@
     try { return await decrypt(key, value, backupContext(value)); }
     catch { throw new Error('Yedek açılamadı. Parola yanlış veya dosya bozulmuş; mevcut veriler değiştirilmedi.'); }
   }
-  const api = { MAX_BYTES, ITERATIONS, BACKUP_PASSWORD_MIN_LENGTH, BACKUP_PASSWORD_MAX_LENGTH, isEnvelope, seal, open, encryptBackup, decryptBackup };
+  const api = { MAX_BYTES, ITERATIONS, BACKUP_PASSWORD_MIN_LENGTH, BACKUP_PASSWORD_OPEN_MIN_LENGTH, BACKUP_PASSWORD_MAX_LENGTH, isEnvelope, seal, open, encryptBackup, decryptBackup };
   globalThis.UHDVaultCrypto = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })();

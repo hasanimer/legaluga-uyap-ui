@@ -1,6 +1,7 @@
-// Panel (ui.js) ve sayfa kabuğu (content.js PAGE_CSS) CSS'inin erişilebilirlik sözleşmesi: tema simgelerinden metin/zemin
-// kontrastı (WCAG 2 göreli parlaklık), zorunlu renk kipinde (Windows Yüksek Karşıtlık) seçili durumlar, azaltılmış hareket
-// tercihi ve koyu temada simgeden gelen vurgu rengi. CSS üretimdeki şablon metninden gerçek marka renkleriyle kurulur.
+// Panel (ui.js), sayfa kabuğu (content.js PAGE_CSS) ve indirme paneli (indirme-panel.js, simgesiz hex yedekleri) CSS'inin
+// erişilebilirlik sözleşmesi: tema simgelerinden metin/zemin kontrastı (WCAG 2 göreli parlaklık), zorunlu renk kipinde
+// (Windows Yüksek Karşıtlık) seçili durumlar, azaltılmış hareket tercihi ve koyu temada simgeden gelen vurgu rengi. CSS
+// üretimdeki şablon metninden gerçek marka renkleriyle kurulur.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -114,6 +115,19 @@ test('koyu temada vurgu rengi elle yazılmaz; kurallar rengi tema simgesinden al
   assert.deepEqual(elle, []);
 });
 
+// İndirme paneli (indirme-panel.js) panelin ya da sayfa kabuğunun simgelerini okur; ikisi de yoksa (açık deponun tek başına
+// demo sayfası) hex yedekleriyle boyanır. Kendi metin ve zemin rengini taşıyan her kural yedekleriyle de AA'yı karşılar.
+test('indirme paneli: simgeler tanımlı değilken hex yedekli metin/zemin çiftleri WCAG AA kontrastını karşılar', () => {
+  const ciftler = kurallar(require('../src/extension/indirme-panel.js').CSS).filter(r => !r.kosul).map(r => {
+    const b = bildirimler(r.govde);
+    return { ad: r.secici, metin: renk(b.get('color'), new Map()), arka: renk(b.get('background-color') ?? b.get('background'), new Map()) };
+  }).filter(c => c.metin && c.arka);
+  assert.ok(ciftler.some(c => c.ad === '.bdp-card[data-status=complete] .bdp-state'), 'tamamlanan iş rozeti sınanmalı');
+  const dusuk = ciftler.map(c => ({ ...c, oran: kontrast(c.metin, c.arka) })).filter(c => !(c.oran >= 4.5))
+    .map(c => `${c.ad}: ${c.metin} / ${c.arka} = ${c.oran.toFixed(2)}:1 (en az 4.5:1)`);
+  assert.deepEqual(dusuk, []);
+});
+
 // Zorunlu renk kipinde zemin, kenar ve gölge renkleri sistem paletine zorlanır (box-shadow kalkar); seçim yalnız bu renklerle
 // gösteriliyorsa kaybolur. Durum kuralı: son bileşiği .on/.sel ya da aria-pressed/aria-selected=true olup bunlardan birini
 // boyayan kural. Kapsayan kural aynı kökten (.uhd, .viewer, .panel) başlar ve son bileşiği durum kuralınınkinin alt kümesidir.
@@ -161,3 +175,20 @@ for (const [ad, liste] of [['panel', PANEL], ['sayfa kabuğu', SAYFA]]) {
     assert.deepEqual(eksik, []);
   });
 }
+
+// Evrak ağacı klavye imlecini (aria-activedescendant) .odak sınıfıyla gösterir; halkayı listenin :focus-visible kuralı çizer.
+// Zorunlu renk kipinde seçimi outline ile gösteren !important kural bu halkanın yerine geçer: imleç seçili öğeye gelince halka
+// kaybolmasın diye seçili ve imleçteki öğe .odak ile birleşik, çizgisi (outline biçimi, kalınlığı ya da rengi) ayrışan bir kural alır.
+test('sayfa kabuğu: zorunlu renk kipinde imleçteki seçili öğe yalnız seçili olandan ayrışır', () => {
+  const zorunlu = SAYFA.filter(r => r.kosul === '@media(forced-colors:active)');
+  const cizgi = r => { const b = bildirimler(r.govde); return ['outline', 'outline-style', 'outline-width', 'outline-color'].map(o => b.get(o) ?? '').join('|'); };
+  const imlecli = r => r.secici.includes(':focus-visible') && parcalar(bilesikler(r.secici).at(-1)).has('.odak');
+  const halkalar = SAYFA.filter(r => !r.kosul && imlecli(r) && cizgi(r) !== '|||');
+  const secimler = zorunlu.filter(r => !imlecli(r) && DURUM.test(bilesikler(r.secici).at(-1)) && cizgi(r) !== '|||'
+    && halkalar.some(h => bilesikler(h.secici)[0] === bilesikler(r.secici)[0]));
+  assert.ok(halkalar.length && secimler.length, 'imleç halkası ya da seçimi outline ile gösteren zorunlu renk kuralı bulunamadı');
+  for (const s of secimler) {
+    const birlesik = zorunlu.filter(r => imlecli(r) && kapsar(s.secici, r.secici));
+    assert.ok(birlesik.some(r => cizgi(r) !== '|||' && cizgi(r) !== cizgi(s)), `${s.secici}: .odak ile birleşik, çizgisi ayrışan zorunlu renk kuralı yok`);
+  }
+});

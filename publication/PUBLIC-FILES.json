@@ -48,11 +48,11 @@
     },
     {
       "path": "demo/panel.css",
-      "sha256": "d65a288d49a0e33705d80d28e22044786284f8c924ba931cc48577d9b60f221f"
+      "sha256": "42596a6772908c4ee9cb230a8c94e11c1d8247f1f06a13cb17497724dd2ce5f7"
     },
     {
       "path": "docs/DEVELOPMENT.md",
-      "sha256": "d9ccfff9ea1670c629d40d9fde90c4bce49a4f7d0b449e71d23cbe2fd7d6823b"
+      "sha256": "fe7f79d4d5bc5a90a57a2c8b5a1032961c6f1126bd23772f44bd9f7cefdeeee9"
     },
     {
       "path": "docs/PRIVACY.md",
@@ -112,7 +112,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "5d2b289a246573c50921202e77e8986f554a6e20363f2eccd75bd50da0b0dbf6"
+      "sha256": "a15a24c279e9835c092489d571a83581106d04ccccf3296492a8865161ad5d9d"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -228,7 +228,7 @@
     },
     {
       "path": "src/extension/indirme-panel.js",
-      "sha256": "5889e670b2cf48d9c4a9448253893c9cbac1099cc6ed930cb3b9265c4a14f026"
+      "sha256": "c2c8ee0c9a70436880954b71685bbe5c2763b938d74cf25f6cc216666cf252da"
     },
     {
       "path": "src/extension/kunye-ayikla.js",
@@ -300,11 +300,11 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "4e96ef368764b5c0c7648f2568e363dad52bff2cc47a141311718ef0dc8c98a7"
+      "sha256": "08db1b60c603ad0e1ab2709b75b05f452d1742f702ebbcd2a914708ef1196319"
     },
     {
       "path": "src/extension/vault-crypto.js",
-      "sha256": "2b9886737c8f68167d2bedd78c68a73868a7414868ae306d75db8add526c3dab"
+      "sha256": "254b74e9b4fb74c2e912106c74bafd8d23ac34b0e72a34ebef298e9bec19a9f1"
     },
     {
       "path": "src/extension/vendor/FONTKIT-APACHE-2.0.LICENSE",
@@ -592,7 +592,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "ed7e9f1bd311d610a46aba1edf540105ae725c6ce6e2a7064dc19c744e05798e"
+      "sha256": "c357aca0b3e858e28059a26827d2d70efdab7dfd3525524db36add2011ef45ad"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -700,7 +700,7 @@
     },
     {
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "13a48453f5d6e48e60ae3873dd5e71b4e437d0aaae48cfc540bde1a3b0902538"
+      "sha256": "9d1ebf3a647a15548e587202fc2c275cb1778c42d1ced823d3c77b2c08978a96"
     },
     {
       "path": "src/fragments/content/105-viewer-document-load-and-list-ready.js.part",
@@ -736,7 +736,7 @@
     },
     {
       "path": "tests/crypto-invariants.test.js",
-      "sha256": "81612712b504691c8681eced9958a28d70558b834d573bf204df6d2e7bdc4afb"
+      "sha256": "5b081e7c52fd601787d90d1ba13fdaaf83db2bedef91fae77a9d21df7d3881d1"
     },
     {
       "path": "tests/demo-consistency.test.js",
@@ -768,7 +768,7 @@
     },
     {
       "path": "tests/erisilebilirlik.test.js",
-      "sha256": "a9faff0644da6612f18e0f9692af70c182c913acc0442312f5c827d617adbebb"
+      "sha256": "e8866db0320675fa51ff0d9afb52992b1e282cd84e4c46c76899e1dad0af4c06"
     },
     {
       "path": "tests/eyp-paketi.test.js",
