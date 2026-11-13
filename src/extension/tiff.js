@@ -280,8 +280,8 @@
         sonRenk = c; boy += k;
       };
       while ((boff >>> 3) < son) {
-        if (kirli) { b1 = farkBul(pline, pn, a0 + (a0 == 0 ? 0 : 1), 1 - clr); b2 = farkBul(pline, pn, b1, clr); kirli = false; }
-        const bit = fo == 1 ? (data[boff >>> 3] >>> (7 - (boff & 7))) & 1 : fo == 2 ? (data[boff >>> 3] >>> (boff & 7)) & 1 : 0;
+        if (kirli) { b1 = farkBul(pline, pn, a0 + (a0 === 0 ? 0 : 1), 1 - clr); b2 = farkBul(pline, pn, b1, clr); kirli = false; }
+        const bit = fo === 1 ? (data[boff >>> 3] >>> (7 - (boff & 7))) & 1 : fo === 2 ? (data[boff >>> 3] >>> (boff & 7)) & 1 : 0;
         boff++;
         if (++kodBoy > 100) return 1;   // hata, büyük olasılıkla G3
         kod = kodBoy <= enUzun ? (kod << 1) | bit : 0;   // 0 hiçbir kodla eşleşmez
@@ -289,7 +289,7 @@
           const dl = lens[clr][kod];
           if (dl !== YOK) {
             kod = 1; kodBoy = 0; len += dl;
-            if (dl < 64) { ekle(len, clr); a0 += len; clr = 1 - clr; len = 0; if (--toRead == 0) modH = false; kirli = true; }
+            if (dl < 64) { ekle(len, clr); a0 += len; clr = 1 - clr; len = 0; if (--toRead === 0) modH = false; kirli = true; }
             else korumaDenetle();   // uzun ek kod dizisinde de süre sınırı işler
           }
         } else if (kod === 0b10001) { kod = 1; kodBoy = 0; ekle(b2 - a0, clr); a0 = b2; kirli = true; }   // 0001: geçiş
@@ -298,7 +298,7 @@
           const a1 = b1 + dmap[kod];
           ekle(a1 - a0, clr); a0 = a1; kod = 1; kodBoy = 0; clr = 1 - clr; kirli = true;
         }
-        if (boy == w && !modH) {
+        if (boy === w && !modH) {
           // _writeBits yalnız 1 bitlerini yazar: siyah koşular aynı bit adreslerine yazılır.
           const taban = toff * 8 + y * bipl;
           for (let i = 0; i < n; i += 2) if (line[i + 1] === 1)

@@ -195,7 +195,7 @@
   }
 
   function wrapLines(font, value, width, size) {
-      let words = str(value).split(/\s+/);
+      const words = str(value).split(/\s+/);
       const lines = [];
       let line = '';
       while (words.length) {
