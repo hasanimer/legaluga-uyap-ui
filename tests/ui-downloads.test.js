@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const read = name => fs.readFileSync(path.join(__dirname, '..', name.startsWith('demo/') ? name : 'src/extension/' + name), 'utf8');
+const read = name => fs.readFileSync(path.join(__dirname, '../src/extension', name), 'utf8');
 // Kurulum testinin sentetik düğümleri; test kayıtları ve harness'i çalıştırılmaz.
 const domSource = fs.readFileSync(path.join(__dirname, 'onboarding-ui.test.js'), 'utf8').split('function harness(')[0];
 const plain = value => JSON.parse(JSON.stringify(value));
@@ -89,7 +89,8 @@ function harness({ mode = 'page', states = [], downloads = true, panel = true } 
       getManifest: () => ({ version: '1.19.29' }), sendMessage: async () => ({}) },
       storage: { local: { get: async () => plain(storage), set: async values => Object.assign(storage, plain(values)), remove: async () => {} },
         onChanged: { addListener() {} } } } });
-  vm.runInContext(read('demo/common.js'), context);
+  // Açık depoda common.js'in demo taklidi yüklenir; tam depo gerçek common.js yolunu LEGALUGA_COMMON_JS ile verir.
+  vm.runInContext(fs.readFileSync(process.env.LEGALUGA_COMMON_JS || path.join(__dirname, '../demo/common.js'), 'utf8'), context);
   if (panel) vm.runInContext(read('indirme-panel.js'), context);
   vm.runInContext(read('ui.js'), context);
   const container = document.createElement('main');

@@ -161,9 +161,12 @@
     const copy = (node, target) => {
       if (node.nodeType === 3) { target.append(node.textContent); plain.push(node.textContent); return; }
       if (node.nodeType !== 1) return;
+      // SVG ve MathML öğelerinin tagName'i küçük harflidir ('svg', 'style', 'script'); büyük harfli listelere takılmazlar.
+      // HTML ad alanı dışındaki her öğe, içindeki stil ve betik metni gövdeye düşmesin diye duyuruyu aktarılamaz kılar.
+      if (node.namespaceURI !== 'http://www.w3.org/1999/xhtml') { unsupported = true; return; }
       const tag = node.tagName;
       if (['SCRIPT', 'STYLE', 'TEMPLATE', 'NOSCRIPT'].includes(tag)) return;
-      if (['IFRAME', 'OBJECT', 'EMBED', 'FORM', 'INPUT', 'BUTTON', 'VIDEO', 'AUDIO', 'CANVAS', 'SVG'].includes(tag)) { unsupported = true; return; }
+      if (['IFRAME', 'OBJECT', 'EMBED', 'FORM', 'INPUT', 'BUTTON', 'VIDEO', 'AUDIO', 'CANVAS'].includes(tag)) { unsupported = true; return; }
       if (!allowed.has(tag)) { for (const child of node.childNodes) copy(child, target); return; }
       const item = el(tag.toLowerCase());
       if (tag === 'A') {
