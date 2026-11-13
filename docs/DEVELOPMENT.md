@@ -26,7 +26,7 @@ legaluga-uyap-ui/
 
 `src/extension/` içindeki dosyalar tam pakette köke yazılır. Örneğin `src/extension/options.html` paket içinde `options.html`, vendor dosyaları `vendor/...` olur. HTML, worker ve betiklerin göreli bağlantıları bu yüzden aynı dizin düzeninde tutulur. Bu klasörü tek başına Chrome'a yüklemek özel motoru sağlamaz.
 
-`src/fragments/` içindeki `.part` dosyaları bağımsız JavaScript modülleri değildir; kimi parça bir ifadenin ortasında başlayabilir veya bitebilir. [FRAGMENTS.json](../publication/FRAGMENTS.json) açık parçaların sırasını, kaynağını ve SHA256 değerini listeler. Özel derlemede açık ve özel parçalar araya karakter eklenmeden birleştirilir.
+`src/fragments/` içindeki `.part` dosyaları bağımsız JavaScript modülleri değildir; yine de her parça tek başına ya da fonksiyon gövdesi olarak derlenir ve satır sonuyla biter. Bugünkü istisnalar [tests/parca-sinirlari.js](../tests/parca-sinirlari.js) içindedir ve yalnız kısalır. [FRAGMENTS.json](../publication/FRAGMENTS.json) açık parçaların sırasını, kaynağını ve SHA256 değerini listeler. Özel derlemede açık ve özel parçalar araya karakter eklenmeden birleştirilir.
 
 [contracts.json](../publication/contracts.json) arayüz ve motor arasındaki bağlantıları tanımlar. [PUBLIC-FILES.json](../publication/PUBLIC-FILES.json) yayımlanmasına izin verilen tüm dosyaları listeler. Envanter dışındaki dosyalar, tam motor dosyaları, gerçek ağ kayıtları ve anahtar dosyaları doğrulamadan geçmez. Envanter kendi hash'ini içermez.
 

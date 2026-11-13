@@ -1,3 +1,0 @@
-      const ac = gezAc = new AbortController();
-      const gecerli = () => ep === gezEpoch && !closed;
-      const ilkKaynak = kaynak, ilkListe = kaynak.list;

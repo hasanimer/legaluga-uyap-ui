@@ -1,4 +1,10 @@
-
+        if (closed) return;
+        const url = URL.createObjectURL(new Blob([doc.blob], { type: 'application/octet-stream' }));
+        const a = el('a', { href: url, download: zipTools.documentName(rec, x, documentExtension(doc)) });
+        box.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+      } catch (err) { if (!closed && err?.name !== 'AbortError') paketDurum.append(el('p', { class: 'dp-err' }, `Özgün evrak indirilemedi: ${err.message}`)); }
+      finally { if (paketOzgunAc === ac) paketOzgunAc = null; }
+    }
     function paketSonucGoster(bytes, atlanan, adet) {
       paketSonucBirak();
       const url = paketSonucUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
@@ -43,3 +49,8 @@
       }
       if (faz === 'cancelled') { paketKapat(); paketDurum.textContent = 'Durduruldu; PDF oluşturulmadı.'; }
     }
+function paketHazirlaBasla() {
+      const sirali = paketSirasi();
+      if (!sirali.length || mesgul('paket', 'paketKosu', 'zip', 'banka', 'bankaOkuma', 'tebligat', 'belgePdf') || closed || !kaynak || kaynak.list.kilit) return;
+      const frame = el('iframe', { title: 'Duruşma paketi hazırlayıcı', class: 'paket-motor', tabindex: '-1', 'aria-hidden': 'true' });
+      viewer.append(frame);

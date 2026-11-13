@@ -1,0 +1,88 @@
+    async function yukle(ep, hedef) {
+      const ac = gezAc = new AbortController();
+      const gecerli = () => ep === gezEpoch && !closed;
+      const ilkKaynak = kaynak, ilkListe = kaynak.list;
+      try {
+        let e = null, doc = null;
+        const bul = () => (hedef.ekIndis != null ? ekBul(kaynak.list, hedef) : evrakBul(kaynak.list, hedef.k, hedef.dosya));
+        try { e = bul(); } catch { e = null; }
+        if (e) {
+          try { doc = await evrakOkuma.getir(e, ac.signal); }
+          catch (err) { if (err instanceof Fatal || err instanceof Blocked || err?.name === 'AbortError' || ['zaman', 'belgeYok', 'baglanti'].includes(err?.kind)) throw err; }
+        }
+        if (!doc) {
+          // Kimlikler eskimiş olabilir: liste bir kez yenilenir.
+          if (!gecerli()) return;
+          const yenilenen = await evrakOkuma.yenile(ac.signal);
+          if (!gecerli()) return;
+          // Başka sekme tam kaynağı yenilediyse geç yanıt onu ezmez; hedef güncel listeden doğrulanır.
+          if (kaynak === ilkKaynak && kaynak.list === ilkListe) kaynak.list = yenilenen;
+          if (kaynak.list.kilit) { listeHazir(); return; }
+          e = bul();
+          doc = await evrakOkuma.getir(e, ac.signal);
+        }
+        if (!gecerli()) return;
+        log('Evrak açılıyor:', e.tur);
+        goster(e, doc);
+      } catch (err) {
+        if (!gecerli() || (err && err.name === 'AbortError')) return;
+        if (yeni && yeni.length && ayni(yeni[yeni.length - 1], hedef)) gorulduGoster();   // en eski yeni evrak açılamasa da
+        log('Evrak açılamadı:', err.message);
+        const openUyap = el('button', { type: 'button', class: 'dp-go' }, 'Dosyayı UYAP’ta aç (Evrak sekmesi)');
+        openUyap.addEventListener('click', () => { closeDosyaEkrani(false); openFile(rec, false, false, { sekme: 'evrak' }); });
+        icerik(el('div', { class: 'msg' }, el('p', { class: 'dp-err' }, `Evrak açılamadı: ${err.message}`), el('div', { class: 'dp-actions' }, openUyap)));
+      } finally { if (gezAc === ac) gezAc = null; }
+    }
+
+    // Liste hazır: genel açılış Son 20 ile başlar; belge yalnız evrak seçilince istenir.
+    // Karttaki belirli evrak bağlantısı ve Sırayla oku açık okuma eylemleri olarak korunur.
+    function listeHazir() {
+      listeHazirlandi = true;
+      listeKur();
+      bankaCiz();
+      // Savcı onayı yok ya da UYAP bu dosyada evrak görüntülemeye izin vermiyor (yetki kilidi): UYAP'ın iletisi gösterilir,
+      // "Bu dosyada evrak yok" denmez.
+      if (kaynak && kaynak.list.kilit) {
+        grup = 'tumu';
+        suz(); gruplariCiz(); listeyiCiz(); konumYaz();
+        icerik(el('div', { class: 'msg', role: 'status' }, el('p', null, `UYAP: ${kaynak.list.kilit}`),
+          el('p', { class: 'dp-muted' }, kaynak.list.kilitTuru === 'yetki'
+            ? 'UYAP bu dosyanın evrak listesini göstermiyor; eklenti de evrakı listelemez ve indirmez.'
+            : 'Cumhuriyet savcısı inceleme talebinizi onaylayınca evrak burada görünür.')));
+        return;
+      }
+      const ilkOge = o.ilk ? oge(evrakKey(o.ilk.e) || '', o.ilk.e.dosyaGrubu, o.ilk.e) : null;
+      const okumaIstegi = o.sira && Array.isArray(o.sira.kuyruk) && Number.isInteger(o.sira.i) && o.sira.i >= 0 && o.sira.i < o.sira.kuyruk.length;
+      const sirayla = !!okumaIstegi && !!yeni?.length;
+      grup = sirayla ? 'yeni' : ilkOge && !son20().some(x => ayni(x, ilkOge)) ? 'tumu' : 'son20';
+      kategorili = grup === 'tumu';
+      suz();
+      gruplariCiz();
+      if (ilkOge) {
+        sira = gorunen.findIndex(x => ayni(x, ilkOge));
+        simdikiOge = gorunen[sira] || ilkOge;
+        listeyiCiz(); secimiCiz(aktif === 'evrak' || aktif === 'paket'); konumYaz();
+        goster(o.ilk.e, o.ilk.doc);
+      } else if (gorunen.length) {
+        listeyiCiz();
+        konumYaz();
+        if (sirayla) sec(0, true, true);
+        else icerik(el('div', { class: 'msg', role: 'status' }, 'Önizlemek için listeden bir evrak seçin.'));
+      } else {
+        listeyiCiz(); konumYaz();
+        // UYAP kayıt verdi ama hiçbiri gösterilemiyorsa "evrak yok" denmez; teyit nedeni söyler.
+        icerik(el('div', { class: 'msg' }, el('p', null, teyitBos() || 'Bu dosyada evrak yok.')));
+      }
+    }
+    function listeAl() {
+      if (listeBekliyor) return listeBekliyor;
+      if (closed) return Promise.resolve();
+      const tekrarIstek = !!listeHata;
+      listeHata = '';
+      if (!zipState) zipTekrar.hidden = true;
+      if (tekrarIstek) zipMessage('Evrak listesi UYAP’tan alınıyor…');
+      listeDurum.hidden = false;
+      listeDurum.textContent = 'Evrak listesi UYAP’tan alınıyor…';
+      icerik(null);
+      listeBekliyor = (async () => {
+        try {
