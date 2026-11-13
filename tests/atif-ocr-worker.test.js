@@ -111,13 +111,14 @@ test('Tesseract için geçici window taklidi geri alınır; metinsiz PDF çizimi
 // Uzantı sayfaları (popup, Ayarlar, Duruşma Paketi, görünmeyen PTT belgesi), service worker ve işçileri için yönerge
 // bazlı izin listesi; her yönerge yalnız burada yazılı değerleri taşır. Betik yalnız paketten (WebAssembly derlemesi
 // dahil). Ağ: paket, Tesseract çekirdeğinin gömülü wasm'ı (data:), künye havuzu, Sentry alım adresi ve görünmeyen PTT
-// sorgusu. Çerçeve: Duruşma Paketi'nin blob PDF önizlemesi ve resmî PTT formu. Kaynaklar yalnız kökendir, yol taşımaz.
+// sorgusu. Çerçeve yalnız resmî PTT formu (görünmez Duruşma Paketi çerçevesi önizleme göstermez). Kaynaklar yalnız
+// kökendir, yol taşımaz.
 // İçerik betikleri bu politikaya tabi değildir.
 const CSP_IZINLERI = {
   'script-src': ["'self'", "'wasm-unsafe-eval'"],
   'object-src': ["'self'"],
   'connect-src': ["'self'", 'data:', 'https://legaluga.com', 'https://o4511620723703808.ingest.de.sentry.io', 'https://www.ptt.gov.tr'],
-  'frame-src': ['blob:', 'https://www.ptt.gov.tr'],
+  'frame-src': ['https://www.ptt.gov.tr'],
   'base-uri': ["'none'"],
   'form-action': ["'none'"]
 };

@@ -62,12 +62,12 @@ Sentetik doğrulamada atıf tekilleştirme, UDF metin eşleme, HTML sandbox sın
 
 - `script-src 'self' 'wasm-unsafe-eval'` ve `object-src 'self'`: betik ve WebAssembly yalnız paketten.
 - `connect-src`: paket (`'self'`), Tesseract çekirdeğinin gömülü wasm'ı (`data:`; çekirdek onu önce `fetch` ile okur), künye havuzu (`https://legaluga.com`), Sentry alım adresi ve PTT (`https://www.ptt.gov.tr`). Kaynaklar yalnız kökendir, yol yazılmaz.
-- `frame-src`: Duruşma Paketi'nin `blob:` PDF önizlemesi ve görünmeyen PTT belgesindeki resmî form. Chrome, uzantı kökenli `chrome-extension:` ve `blob:` çerçevelerini bu yönergeden muaf tutar; yönerge fiilen uzantı dışı adresleri sınırlar.
+- `frame-src`: yalnız görünmeyen PTT belgesindeki resmî form; Duruşma Paketi görünmez motordur, önizleme çerçevesi yoktur. Chrome, uzantı kökenli `chrome-extension:` ve `blob:` çerçevelerini bu yönergeden muaf tutar; yönerge fiilen uzantı dışı adresleri sınırlar.
 - `base-uri 'none'` ve `form-action 'none'`: sayfalarda `<base>` yoktur; formlar betikle işlenir ve varsayılan gönderimi durdurur.
 
 Politika **içerik betiklerini kapsamaz**. UYAP, PTT ve Danıştay sayfalarına yalıtılmış dünyada eklenen içerik betikleri (evrak görüntüleme dahil) ne bu politikaya ne de o sayfanın CSP'sine tabidir: yaptıkları `fetch` ve sayfaya ekledikleri çerçeve sayfanın `connect-src`/`frame-src`'sinden geçmez; oradaki sınır eklenti kodunun kendisidir. Sayfanın CSP'sine yalnız ana dünyada (`"world": "MAIN"`) çalışan `uyap-document-main.js` ve `ptt-main.js` tabidir. HTML evrakın gösterildiği çerçevenin kendi CSP'si (`default-src 'none'`) ayrıca geçerlidir.
 
-`default-src` bilerek henüz yazılmadı: DOM'lu sayfalarda (popup, Ayarlar, Duruşma Paketi) resim, yazı tipi, medya ve stil yüklemeleri bu politikayla sınırlanmaz; "evrak ağa çıkmaz" bu sayfalarda tarayıcı kuralı değil kod özelliğidir. Gezinme (bağlantı, `window.open`, `location`) ise CSP ile sınırlanamaz; `default-src` yazılsa da açık kalır. `default-src 'self'` için panellerdeki satır içi `style` öznitelikleri ile `data:`/`blob:` kaynakları envanterlenmeli ve her ekran gerçek Chrome'da denenmelidir; bu ayrı bir adımdır.
+`default-src` bilerek henüz yazılmadı: DOM'lu sayfalarda (popup, Ayarlar) resim, yazı tipi, medya ve stil yüklemeleri bu politikayla sınırlanmaz; "evrak ağa çıkmaz" bu sayfalarda tarayıcı kuralı değil kod özelliğidir. Gezinme (bağlantı, `window.open`, `location`) ise CSP ile sınırlanamaz; `default-src` yazılsa da açık kalır. `default-src 'self'` için panellerdeki satır içi `style` öznitelikleri ile `data:`/`blob:` kaynakları envanterlenmeli ve her ekran gerçek Chrome'da denenmelidir; bu ayrı bir adımdır.
 
 ## Katkı akışı
 

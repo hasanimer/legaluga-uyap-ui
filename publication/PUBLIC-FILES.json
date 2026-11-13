@@ -52,7 +52,7 @@
     },
     {
       "path": "docs/DEVELOPMENT.md",
-      "sha256": "32b1c8c470be500d6a8a296a4ebdaa160ab0766efea90d3c93286c054cdfee6e"
+      "sha256": "d9ccfff9ea1670c629d40d9fde90c4bce49a4f7d0b449e71d23cbe2fd7d6823b"
     },
     {
       "path": "docs/PRIVACY.md",
@@ -236,7 +236,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "762101cde645eed4de5f262f41e772b8702405660a4f9b154e44b2cc40f2d366"
+      "sha256": "64b26d7ccb06ba6311099a031197f2ab24c5972402dd62c69023053943dd4265"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -732,7 +732,7 @@
     },
     {
       "path": "tests/atif-ocr-worker.test.js",
-      "sha256": "4a84d68ec5f539c8574a4522fc093f92df797b3004b96c212ca38e35591f596b"
+      "sha256": "62ba83e578a66227049199a72f263d243da24d0583f0cfc253a1842cf594d06a"
     },
     {
       "path": "tests/crypto-invariants.test.js",
