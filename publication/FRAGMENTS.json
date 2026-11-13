@@ -687,41 +687,9 @@
       "source": "content.js",
       "order": 105,
       "path": "src/fragments/content/105-viewer-navigation-abort-epoch-boundary.js.part",
-      "sha256": "a84c4a4cfb6acbe9a2b393cb32751fba9856aa9e1a31510c1d3205dce7a31361",
-      "bytes": 160,
+      "sha256": "1adc6e61a54981e9d9e04219a223eb1be4c48dd1496fecfa371657eb1a7b79e4",
+      "bytes": 2073,
       "purpose": "viewer-navigation-abort-epoch-boundary"
-    },
-    {
-      "source": "content.js",
-      "order": 107,
-      "path": "src/fragments/content/107-viewer-read-fatal-CAPTCHA-abort-guard.js.part",
-      "sha256": "2ecdd862602577bac0cbb61b34338b1649f55aa863c7ed3b833acecf136af3ea",
-      "bytes": 176,
-      "purpose": "viewer-read-fatal-CAPTCHA-abort-guard"
-    },
-    {
-      "source": "content.js",
-      "order": 109,
-      "path": "src/fragments/content/109-viewer-refresh-current-epoch-guard.js.part",
-      "sha256": "90a0dd89378d6954df414d509adab1bf5ed3ec0b86e397cda4e1781b757f048e",
-      "bytes": 34,
-      "purpose": "viewer-refresh-current-epoch-guard"
-    },
-    {
-      "source": "content.js",
-      "order": 111,
-      "path": "src/fragments/content/111-viewer-refresh-epoch-source-lock-guard.js.part",
-      "sha256": "4a488da51c831cd986fd3bc3f5743ec8e0e78192c42e8656e5d8c814002f0da2",
-      "bytes": 315,
-      "purpose": "viewer-refresh-epoch-source-lock-guard"
-    },
-    {
-      "source": "content.js",
-      "order": 113,
-      "path": "src/fragments/content/113-viewer-loaded-render-and-error-action-controls.js.part",
-      "sha256": "f4c2c835f8e67ff4152c055f9958553b964212451d9faa1048053935be4d55d8",
-      "bytes": 823,
-      "purpose": "viewer-loaded-render-and-error-action-controls"
     },
     {
       "source": "content.js",
