@@ -53,13 +53,6 @@
       return mode === 'include' ? own || !!parent : !own && !parent;
     });
   }
-  const crcTable = new Uint32Array(256);
-  for (let i = 0; i < crcTable.length; i++) {
-    let n = i;
-    for (let j = 0; j < 8; j++) n = (n & 1) ? 0xedb88320 ^ (n >>> 1) : n >>> 1;
-    crcTable[i] = n >>> 0;
-  }
-
   function truncate(value, maxBytes) {
     let result = '', length = 0;
     for (const char of value) {
@@ -186,12 +179,14 @@
     if (signal && signal.aborted) throw new DOMException('ZIP oluşturma durduruldu.', 'AbortError');
   }
 
+  // CRC-32, içerik betiğinde bu dosyadan önce yüklenen ZIP okuyucusundan (DurusmaPaketiZip) gelir; akış parça parça sürdürülür.
   async function crc32(blob, signal) {
     throwIfAborted(signal);
+    const { crc32: append } = globalThis.DurusmaPaketiZip;
     const reader = blob.stream().getReader();
     const cancel = () => { reader.cancel().catch(() => {}); };
     if (signal) signal.addEventListener('abort', cancel, { once: true });
-    let crc = UINT32_MAX, count = 0, sinceYield = 0;
+    let crc = 0, count = 0, sinceYield = 0;
     try {
       for (;;) {
         throwIfAborted(signal);
@@ -201,14 +196,14 @@
         count += value.byteLength;
         sinceYield += value.byteLength;
         if (count > blob.size) throw new Error('Evrak boyutu okuma sırasında değişti.');
-        for (let i = 0; i < value.length; i++) crc = (crc >>> 8) ^ crcTable[(crc ^ value[i]) & 0xff];
+        crc = append(value, crc);
         if (sinceYield >= 1024 * 1024) {
           sinceYield = 0;
           await new Promise(resolve => setTimeout(resolve, 0));
         }
       }
       if (count !== blob.size) throw new Error('Evrak eksik okundu.');
-      return (crc ^ UINT32_MAX) >>> 0;
+      return crc;
     } finally {
       if (signal) signal.removeEventListener('abort', cancel);
       try { await reader.cancel(); } catch { /* Okuma hatasını değiştirme. */ }
