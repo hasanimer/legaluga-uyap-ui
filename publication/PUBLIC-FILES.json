@@ -112,7 +112,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "87edab3e0ae7c2447ee49a495175c580a77c1e200d599c212235ea4a1c2d6e7f"
+      "sha256": "5d2b289a246573c50921202e77e8986f554a6e20363f2eccd75bd50da0b0dbf6"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -300,7 +300,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "6c73fdbb6fcf72f785dd03f7bc59780607f070afdd1fff08357eba5b92146200"
+      "sha256": "6c0aa355f4f8d5dbc3f4bd34d31bad7d9bb8ac2a8a7657be337ce7c653fcc701"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -592,7 +592,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "e09a4a7c89212a5a60b4868f5fdc48e6ecfc2d75a49fc413ceea020bf884038e"
+      "sha256": "ed7e9f1bd311d610a46aba1edf540105ae725c6ce6e2a7064dc19c744e05798e"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -765,6 +765,10 @@
     {
       "path": "tests/ui-downloads.test.js",
       "sha256": "c6dd8223668d6c79b12ec7584d970e7e9369d65f8472a78b9cb6fcab53acbbf1"
+    },
+    {
+      "path": "tests/erisilebilirlik.test.js",
+      "sha256": "a9faff0644da6612f18e0f9692af70c182c913acc0442312f5c827d617adbebb"
     },
     {
       "path": "tests/eyp-paketi.test.js",

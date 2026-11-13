@@ -10,7 +10,7 @@
 .uhd{--navy:${BRAND.primary};--navy2:${BRAND.primaryDark};--deep:${BRAND.deep};--soft:${BRAND.soft};--bord:${BRAND.border};--focus:${BRAND.focus};
   --shadow:0 2px 8px #182b4010;--accent-text:#0b6663;
   --bg:#f5f7fb;--card:#fff;--text:#1d2939;--text2:#344054;--muted:#667085;--line:#e3e8f2;--line2:#cfd6e4;
-  --green:#12805c;--green-bg:#e7f6ef;--grey:#98a2b3;--grey-bg:#eef0f3;--amber:#b54708;--amber-bg:#fef0c7;--blue:#356b91;--blue-bg:#edf4f8;--red:#b42318;
+  --green:#12805c;--green-bg:#ecfdf3;--grey:#98a2b3;--grey-bg:#f2f4f7;--amber:#b54708;--amber-bg:#fef0c7;--blue:#356b91;--blue-bg:#edf4f8;--red:#b42318;
   --note-bg:#fffbea;--note-bd:#f2c94c;--note-red:#b42318;--ev-bg:#f0f5ff;--ev-bd:#528bff;--ev-tx:#1849a9;--warn-bg:#fff4e5;--warn-tx:#7a4b00;
   --tur-bg:#f3efff;--tur-tx:#5b3cc4;--err-bg:#fdecea;--err-tx:#8a1f17;--mark:#ffe58a;
   font:13px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;color:var(--text);background:var(--bg);
@@ -20,7 +20,7 @@
   --green:#4fd1a5;--green-bg:#0f2e25;--grey:#667085;--grey-bg:#25303c;--amber:#f5b04c;--amber-bg:#33260f;--blue:#86b7da;--blue-bg:#1b2d3d;--red:#f97066;
   --note-bg:#2b2716;--note-bd:#b38f1f;--note-red:#ff9292;--ev-bg:#16233a;--ev-bd:#528bff;--ev-tx:#9ec1ff;--warn-bg:#33270f;--warn-tx:#f5c26b;
   --tur-bg:#261e3f;--tur-tx:#c9bbff;--err-bg:#3a1714;--err-tx:#f7a8a1;--mark:#6b5a12;color-scheme:dark}
-.uhd[data-theme=dark] :is(.onboard b,.ib:hover,.ib.on,.pmore,.pname:hover,.lnk:hover,.rolein:not(.other),.dayhead:not(.today),.durrow .t,.tag:not(.auto)){color:#7fd6cc}
+.uhd[data-theme=dark] :is(.onboard b,.ib:hover,.ib.on,.pmore,.pname:hover,.lnk:hover,.rolein:not(.other),.dayhead:not(.today),.durrow .t,.tag:not(.auto)){color:var(--accent-text)}
 .uhd *{box-sizing:border-box}
 .uhd [hidden]{display:none!important}
 .uhd :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
@@ -139,7 +139,7 @@
 .uhd .item .ib{width:28px;height:28px}
 .uhd .item .ifoot .btn.sm{min-height:28px;padding:3px 9px}
 .uhd .client{font-size:12px;color:var(--deep)}
-.uhd[data-theme=dark] .client{color:#7fd6cc}
+.uhd[data-theme=dark] .client{color:var(--accent-text)}
 .uhd .client b{font-weight:600}
 .uhd .parties{margin-top:2px;font-size:12px;color:var(--text2);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .uhd .parties.all{display:block}
@@ -151,7 +151,7 @@
 .uhd .pline .rol{flex:none;color:var(--muted)}
 .uhd .pline .pname{flex:0 1 auto;min-width:3em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .uhd .pline .pname.mv{font-weight:600;color:var(--deep)}
-.uhd[data-theme=dark] .pline .pname.mv{color:#7fd6cc}
+.uhd[data-theme=dark] .pline .pname.mv{color:var(--accent-text)}
 .uhd .note-line{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;width:100%;margin-top:3px;padding:3px 8px;border:0;border-left:3px solid var(--note-bd);
   background:var(--note-bg);border-radius:0 6px 6px 0;font-size:12px;line-height:1.45;color:var(--text);text-align:left;white-space:pre-line;overflow-wrap:anywhere;cursor:text}
 .uhd .pname{border:0;background:none;padding:0;color:inherit;cursor:pointer;text-align:left;border-bottom:1px dotted transparent}
@@ -194,14 +194,14 @@
 .uhd .person,.uhd .durhead{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:12px;color:var(--text2)}
 .uhd .person .top{display:flex;align-items:center;gap:8px}
 .uhd .person .top b{font-size:15px;color:var(--deep);flex:1;min-width:0;overflow-wrap:anywhere}
-.uhd[data-theme=dark] .person .top b{color:#7fd6cc}
+.uhd[data-theme=dark] .person .top b{color:var(--accent-text)}
 .uhd .person .kind{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
 .uhd .person .sum{margin-top:4px}
 .uhd .person .warn{margin-top:6px;padding:5px 8px;border-radius:6px;background:var(--warn-bg);color:var(--warn-tx)}
 .uhd .person .hint,.uhd .durhead .hint{margin-top:6px;color:var(--muted);font-size:11px}
 .uhd .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
 .uhd .dayhead{display:flex;justify-content:space-between;align-items:baseline;padding:8px 4px 5px;font-size:12px;font-weight:700;color:var(--deep)}
-.uhd[data-theme=dark] .dayhead{color:#7fd6cc}
+.uhd[data-theme=dark] .dayhead{color:var(--accent-text)}
 .uhd .dayhead.today{color:var(--red)}
 .uhd .dayhead small{font-weight:400;color:var(--muted)}
 .uhd .durrow{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px}
@@ -256,7 +256,7 @@
 .uhd .settings .top h1{flex:1;margin:0;font-size:18px}
 .uhd .tags{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
 .uhd .tag{display:inline-flex;align-items:center;gap:4px;max-width:100%;overflow-wrap:anywhere;padding:2px 4px 2px 9px;border-radius:12px;background:var(--soft);color:var(--deep);font-size:12px}
-.uhd[data-theme=dark] .tag{color:#7fd6cc}
+.uhd[data-theme=dark] .tag{color:var(--accent-text)}
 .uhd .tag.auto{background:var(--grey-bg);color:var(--muted);padding-right:9px}
 .uhd .tag button{flex:none;border:0;background:none;cursor:pointer;color:inherit;padding:0 2px;line-height:1;font-size:14px}
 .uhd .gz{display:flex;align-items:center;gap:8px;padding:4px 0;border-top:1px solid var(--line)}
@@ -282,6 +282,7 @@
 .uhd :is(input,select,textarea):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .uhd button,.uhd input,.uhd select,.uhd textarea{-webkit-tap-highlight-color:transparent}
 @media(prefers-reduced-motion:reduce){.uhd *{transition:none!important;scroll-behavior:auto!important}}
+@media(forced-colors:active){.uhd :is(.chip.on,.view.on,.settings-toggle.on,.ib.on,.note-format[aria-pressed="true"]){background:Highlight!important;border-color:Highlight!important;color:HighlightText!important}.uhd .item.sel{outline:2px solid Highlight!important}}
 @container (max-width:440px){.uhd .downloads-toggle .lbl{display:none}.uhd .downloads-toggle{padding:6px}}
 @container (max-width:400px){
   .uhd .results{padding:8px}.uhd .view{font-size:11px}.uhd .ib{width:28px}.uhd header strong{font-size:13px}.uhd .btn.sm.settings-toggle{padding:5px 7px}
