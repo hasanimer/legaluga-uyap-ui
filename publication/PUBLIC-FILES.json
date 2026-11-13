@@ -164,7 +164,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-bootstrap.js",
-      "sha256": "a912f68e5226f460eb45aeab787f3016673ced43feed4cb46a12aff55a4e60d9"
+      "sha256": "ab14138c19b50c5fdad3e0af477897b8693147123ef6b1dfc3b744d91d40e3c6"
     },
     {
       "path": "src/extension/durusma-paketi-bridge.js",
@@ -192,7 +192,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-ui.js",
-      "sha256": "1ad634d5f0662caa89d84023038885f20a992aaf8531b6b4a26e290c4b54de74"
+      "sha256": "bdb4be633223bbd2180faa9254cd221e0592cd854a59ef45481af1b4f3e1f014"
     },
     {
       "path": "src/extension/durusma-paketi-worker.js",
@@ -203,12 +203,8 @@
       "sha256": "06ef4227715a767e1c4c9fef91a82a1021e0c4a9be0f46bd5655db08bc723880"
     },
     {
-      "path": "src/extension/durusma-paketi.css",
-      "sha256": "6423fd489a016bd434628bd23c03b2f7611901af22fe97a6aadecb7036e62651"
-    },
-    {
       "path": "src/extension/durusma-paketi.html",
-      "sha256": "2c2625f94e8a5edfa0a85b32298b348281745493201982fcbcb1d0d204bded8a"
+      "sha256": "41a946a8562bca04158858f2baa96af047aae7beda83b22c6c211f9c08a566ee"
     },
     {
       "path": "src/extension/evrak-zip.js",
