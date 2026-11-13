@@ -10,4 +10,4 @@
   if (window.__uhdLoaded) return;
   window.__uhdLoaded = true;
 
-  const { onayIste, taramaKapsami, kurulumGerekli, CBS, cbsKapsam, ilSirasi, ilAdi, evrakKilidi, dosyaTurAdi, norm, openPath, parseEvraklar, diffEvrak, sonEvrak, evrakKey, trDateTs, parseDurusma, uyapDate, evrakTakipAcik, parseSafahat, sonIslemOf, fmtTL, cleanBirim, cleanDurum, lastEvrak, kunyeOf, toastPlan, openErrorPlan, htmlKodlamasi, ekleriYerlestir, evrakKategorileri, evrakSayim, evrakTeyit, evrakTeyitMetni, fmtTrDate, fmtNum, ihbarCevabiMi, bankaAdi, dosyaDurusmalari, durusmaOzeti } = globalThis.UHD;
+  const { onayIste, taramaKapsami, kurulumGerekli, CBS, cbsKapsam, ilSirasi, ilAdi, evrakKilidi, dosyaTurAdi, norm, openPath, parseEvraklar, diffEvrak, sonEvrak, evrakKey, trDateTs, parseDurusma, uyapDate, evrakTakipAcik, parseSafahat, sonIslemOf, fmtTL, cleanBirim, cleanDurum, lastEvrak, kunyeOf, toastPlan, openErrorPlan, htmlKodlamasi, ekleriYerlestir, evrakKategorileri, evrakSayim, evrakTeyit, evrakTeyitMetni, fmtTrDate, fmtNum, ihbarCevabiMi, bankaAdi, dosyaDurusmalari, durusmaOzeti, TARAF_V, TARAMA_BAYAT_MS: STALE_MS } = globalThis.UHD;

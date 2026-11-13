@@ -89,8 +89,8 @@ function harness({ mode = 'page', states = [], downloads = true, panel = true } 
       getManifest: () => ({ version: '1.19.29' }), sendMessage: async () => ({}) },
       storage: { local: { get: async () => plain(storage), set: async values => Object.assign(storage, plain(values)), remove: async () => {} },
         onChanged: { addListener() {} } } } });
-  // Açık depoda common.js'in demo taklidi yüklenir; tam depo gerçek common.js yolunu LEGALUGA_COMMON_JS ile verir.
-  vm.runInContext(fs.readFileSync(process.env.LEGALUGA_COMMON_JS || path.join(__dirname, '../demo/common.js'), 'utf8'), context);
+  // Açık depoda common.js açık parçalardan stub'larla kurulur; tam depo gerçek common.js yolunu LEGALUGA_COMMON_JS ile verir.
+  vm.runInContext(require('./common-taklidi.js').commonKaynagi(), context);
   if (panel) vm.runInContext(read('indirme-panel.js'), context);
   vm.runInContext(read('ui.js'), context);
   const container = document.createElement('main');

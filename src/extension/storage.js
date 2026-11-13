@@ -176,7 +176,7 @@
         const saved = (await read(['uhdPrefs', 'uhdIndex', 'uhdJob', 'uhdProgress'])).data;
         if (globalThis.UHD.kurulumGerekli(saved.uhdPrefs, saved.uhdIndex)) return { data: { ok: false, error: 'Önce kurulum seçimlerini kaydedin.' }, revision };
         if (saved.uhdJob?.setupPending && !saved.uhdJob.stop) return { data: { ok: true, pending: true, id: saved.uhdJob.id }, revision };
-        if (saved.uhdJob || (saved.uhdProgress?.running && Date.now() - (saved.uhdProgress.beat || 0) < 90000))
+        if (saved.uhdJob || globalThis.UHD.taramaCanli(saved.uhdProgress, Date.now()))
           return { data: { ok: false, error: 'Devam eden veya yarıda kalan güncellemeyi önce tamamlayın ya da iptal edin.' }, revision };
         const prefs = saved.uhdPrefs || {}, scope = globalThis.UHD.taramaKapsami(prefs);
         const savcilikIller = Array.isArray(prefs.savcilikIller) ? [...prefs.savcilikIller] : [];
@@ -269,7 +269,7 @@
         if ((saved.uhdScanEpoch ?? null) !== (args.epoch ?? null) ||
             (current?.id ?? null) !== (args.expectedJobId ?? null) || (!args.job && (!current || current.stop)))
           return { data: null, revision };
-        if (progress?.running && progress.owner && Date.now() - (progress.beat || 0) < 90000 &&
+        if (globalThis.UHD.taramaCanli(progress, Date.now()) && progress.owner &&
             progress.owner !== args.owner && progress.owner !== args.previousOwner)
           return { data: null, revision };
         if ((Object.hasOwn(args, 'expectedPaused') && (current?.paused ?? null) !== args.expectedPaused) ||
@@ -282,7 +282,7 @@
         const saved = (await read(['uhdJob', 'uhdProgress', 'uhdScanEpoch'], false)).data, job = saved.uhdJob;
         if (!job?.setupPending || job.stop || job.id !== args?.id ||
             (saved.uhdScanEpoch ?? null) !== (args?.epoch ?? null) ||
-            (saved.uhdProgress?.running && Date.now() - (saved.uhdProgress.beat || 0) < 90000))
+            globalThis.UHD.taramaCanli(saved.uhdProgress, Date.now()))
           return { data: false, revision };
         await write({ uhdJob: { ...job, paused: 'dogrulama' }, uhdProgress: { running: false, paused: true, error: true, setupPending: true, jobId: job.id,
           text: String(args.text || 'İlk tarama bağlantıyı bekliyor.') } });

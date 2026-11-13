@@ -331,10 +331,7 @@
 
   chrome.runtime.onMessage.addListener((msg, sender, send) => {
     if (!msg || typeof msg.type !== 'string') return;
-    if (msg.type === 'uhd-ping') send({ ok: true });
-    else if (msg.type === 'uhd-open') { openFile(msg.record); send({ ok: true }); }
-    else if (msg.type === 'uhd-open-evrak') { openEvrak(msg.record, msg.key, msg.group, msg.baglam); send({ ok: true }); }
-    else if (msg.type === 'uhd-dosya-panel') { openDosyaPanel(msg.record, msg.tab, msg.baglam); send({ ok: true }); }
+    if (msg.type === 'uhd-open') { openFile(msg.record); send({ ok: true }); }
     else if (msg.type === 'uhd-stop') return yanitla(stopUpdate().then(() => ({ ok: true })), send, { ok: false, error: 'Durdurma tamamlanamadı. Tekrar deneyin.' });
     else if (msg.type === 'uhd-update') return yanitla(startUpdate(msg.full), send, { ok: false, error: 'Güncelleme başlatılamadı. Tekrar deneyin.' });
     else if (msg.type === 'uhd-setup-connection') return yanitla(setupConnection({ manual: msg.manual === true }), send,

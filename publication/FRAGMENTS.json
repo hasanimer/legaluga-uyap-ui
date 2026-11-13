@@ -7,8 +7,8 @@
       "source": "common.js",
       "order": 1,
       "path": "src/fragments/common/001.js.part",
-      "sha256": "c0e3d2e71cf1ef4dbedf040ebabfa09739ccf4b7c3bf501e9a2ccc73e9122853",
-      "bytes": 17213,
+      "sha256": "edc7ff115a84b0834e6d9c2a74fcc9a725c7fdb270920c7597574dd59c9e5031",
+      "bytes": 17808,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
@@ -55,16 +55,16 @@
       "source": "common.js",
       "order": 13,
       "path": "src/fragments/common/013.js.part",
-      "sha256": "276cb0e7b22c8eeffa1ce3ea437f39f66b5abbf143377a96bd1ff7af190b0816",
-      "bytes": 19914,
+      "sha256": "3bb7cb8da6b1de4571a3154328423431e41c328e515eecd1fd17aecaf77bda8b",
+      "bytes": 18142,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
       "source": "common.js",
       "order": 15,
       "path": "src/fragments/common/015.js.part",
-      "sha256": "ba4e3140249e819bda07ccc7b7758b931b0c691db66d7720762163277db96cb1",
-      "bytes": 32863,
+      "sha256": "9bd67c971a3577d76dd480845b5ed0694faab7e304e35a5e0ea3e1754b65644a",
+      "bytes": 32859,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
@@ -255,8 +255,8 @@
       "source": "content.js",
       "order": 1,
       "path": "src/fragments/content/001-bootstrap-shared-request-safety.js.part",
-      "sha256": "b37b577c1427b29f075c5fcf3c94b9fb00cf7ba363472324406d7cb25b313b09",
-      "bytes": 1348,
+      "sha256": "2a0c08616b75a7f579dc0cf891542add3baeeef0fecbba78deb5843deb0119a9",
+      "bytes": 1384,
       "purpose": "bootstrap-shared-request-safety"
     },
     {
@@ -759,8 +759,8 @@
       "source": "content.js",
       "order": 121,
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",
-      "sha256": "219db9ae8a58ca82a6a3591fcebd06b5a70d19334db519cbd0a2970b0e7bd898",
-      "bytes": 19141,
+      "sha256": "f08c52796d98981a24712ccfb3b1b28e781f6c5942ac403fe7503614552007cd",
+      "bytes": 18842,
       "purpose": "toast-announcement-and-runtime-action-UI"
     },
     {

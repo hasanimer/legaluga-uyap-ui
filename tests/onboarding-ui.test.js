@@ -76,8 +76,8 @@ function harness({ shortcut = 'Alt+Shift+D', prefs = {}, hasFiles = false, store
     }
   } } } };
   vm.createContext(context);
-  // Açık depoda common.js'in demo taklidi yüklenir; tam depo gerçek common.js yolunu LEGALUGA_COMMON_JS ile verir.
-  vm.runInContext(fs.readFileSync(process.env.LEGALUGA_COMMON_JS || path.join(__dirname, '../demo/common.js'), 'utf8'), context);
+  // Açık depoda common.js açık parçalardan stub'larla kurulur; tam depo gerçek common.js yolunu LEGALUGA_COMMON_JS ile verir.
+  vm.runInContext(require('./common-taklidi.js').commonKaynagi(), context);
   context.UHD.el = el;
   if (!fallback) context.UHDStorage = { async patchPrefs(value) {
     h.writes.push(plain(value));
