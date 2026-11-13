@@ -688,7 +688,9 @@
       const surum = dizinSurum;
       dizinOkuma = chrome.storage.local.get('uhdIndex').then(v => {
         dizinOkuma = null;
-        if (surum !== dizinSurum) return dizinBayat ? dizinTazele() : undefined;
+        // Araya olay girdi: görünür panel bayat dizini yeniden okur; görünmeyen panel okumaz, sonraki gösterime bırakır.
+        // O durumda bekleyen işler (markSeen, showView) eldeki dizinle sürer; görünüm sonraki gösterimde tazelenir.
+        if (surum !== dizinSurum) return dizinBayat && !gorunmuyor() ? dizinTazele() : undefined;
         dizinBayat = false;
         setIndex(v.uhdIndex);
         renderFilters();
@@ -2655,17 +2657,20 @@
       // Dosya ekranındaki "Bu dosyadaki yeni evrakları görüldü say".
       markSeen: (keys, kadar) => dizinTazeyken(() => markSeen(keys, false, kadar)),
       // Popup'taki özet satırından gelen istek: 'hearings' duruşmalar (7 gün), 'hearings-today' bugünküler,
-      // 'hearings-cakisma' çakışanlar, 'new' yeni evrak, diğerleri dosyalar.
-      showView: name => dizinTazeyken(() => {
-        if (hasDownloads && !downloadArea.hidden) showDownloads(false);
-        if (name === 'hearings' || name === 'hearings-today' || name === 'hearings-cakisma') {
-          showDurusmalar(name === 'hearings-today' ? 'today' : name === 'hearings-cakisma' ? 'cakisma' : 'week');
-          return;
-        }
-        input.value = '';
-        switchView(name === 'new' ? 'new' : 'files');
-        input.focus();
-      })
+      // 'hearings-cakisma' çakışanlar, 'new' yeni evrak, diğerleri dosyalar. Dizin tazelenirken arama kutusuna yazılan silinmez.
+      showView(name) {
+        const arama = input.value;
+        return dizinTazeyken(() => {
+          if (hasDownloads && !downloadArea.hidden) showDownloads(false);
+          if (name === 'hearings' || name === 'hearings-today' || name === 'hearings-cakisma') {
+            showDurusmalar(name === 'hearings-today' ? 'today' : name === 'hearings-cakisma' ? 'cakisma' : 'week');
+            return;
+          }
+          if (input.value === arama) input.value = '';
+          switchView(name === 'new' ? 'new' : 'files');
+          input.focus();
+        });
+      }
     };
   }
 
