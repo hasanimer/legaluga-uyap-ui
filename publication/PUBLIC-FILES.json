@@ -16,7 +16,7 @@
     },
     {
       "path": ".github/workflows/public-ui.yml",
-      "sha256": "724b5bd898dc5c4126265746977c07a3d1147a2d64b8bad4ad7e223d8b2e802c"
+      "sha256": "d7b9c52ed066a6c55f8f848ecf2c7735b94884d05d088f0b424b8dbac390dd35"
     },
     {
       "path": ".gitignore",
@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "d018fa426ead3250bc608a5b4c2dce1303bc9a39a1e17ffaf4540ead76b2b6b8"
+      "sha256": "fcf99692bf4e27c2690df91da8dc198bb21b07a5f03e6ff553cd44f221b9b826"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -184,7 +184,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-pdf.js",
-      "sha256": "934ac56b427beeec3b71362aa660f47b3a08a6936d99b270fb1aba7fcb82c0c7"
+      "sha256": "4b2cb9841af14936a5d4bd81f216e440d0de0f3b1e82f70e006a46ae015976d9"
     },
     {
       "path": "src/extension/durusma-paketi-tiff.js",
@@ -200,7 +200,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-worker.js",
-      "sha256": "8912fc870247d897d7d4a99dc548b9079dd9ce760d0ac4fcc37baf8f38835607"
+      "sha256": "9dbd8e5b12bb0b358b01ad4e09e1dffb0d9b8e8d28f29327393e3bea17177f50"
     },
     {
       "path": "src/extension/durusma-paketi-zip.js",
@@ -300,15 +300,15 @@
     },
     {
       "path": "src/extension/tiff.js",
-      "sha256": "f8c0e0a027e5af1636661504d466b4269cb6b062cded238b477db5ef5d651dfc"
+      "sha256": "f1c45871ef3297dc33441b1fb618ccad5a156b208611e7be637d87b57e1abceb"
     },
     {
       "path": "src/extension/udf.js",
-      "sha256": "fcae74bc0cd0027172ea69af13a31ae63b882cf5975e1d6fcd4d5ed9ccec2e81"
+      "sha256": "b7fc21c544622541a0f26894939846a6702f0638b80ce8744f9bf359be49540e"
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "7cb0a41524ea922c8c0f40f70db92c7fcefb7b73a540ef5c1c8f46f7d74dfc2a"
+      "sha256": "def0f0ae224d26e4ec57ac9926b6f976a1277a11862f1367d4fbe88fce407d3b"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -668,7 +668,7 @@
     },
     {
       "path": "src/fragments/content/051-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "c8d2468dc45efe01ac2127813ff506acdcb3a146efa661c41e368662a55045f5"
+      "sha256": "0ad50587465e8352e8736b84b90ece15b9facde29a2cae120d4b3ab44aff9c49"
     },
     {
       "path": "src/fragments/content/053-full-viewer-HTML-render-and-action-controls.js.part",

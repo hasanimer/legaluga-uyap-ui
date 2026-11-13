@@ -496,7 +496,7 @@
     let undoNotice = false;    // görünen bildirim “Geri al” taşıyor: bilgi amaçlı bildirim onun yerine geçmez
     let goruldu = {};
     let gizli = {};            // aramada gösterilmeyecek dosyalar (uhdGizli): { key: { dosyaNo, birimAdi, at } }
-    let allParties = new Set();// tüm tarafları gösterilen kartlar
+    const allParties = new Set();// tüm tarafları gösterilen kartlar
     let pendingJob = null;     // yarıda kalmış güncelleme işi (uhdJob)
     let person = null;         // açık müvekkil kartı: { name }
     let personLimit = LIMIT;   // müvekkil kartında gösterilen dosya sayısı (ana listenin sayfasından ayrı)

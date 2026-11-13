@@ -724,7 +724,7 @@
       const duzey = kistir(Number.isFinite(tamsayi(oz(p, 'ListLevel'))) ? tamsayi(oz(p, 'ListLevel')) : 0, 0, 8);
       const id = oz(p, 'ListId');
       // ListId yoksa ardışık aynı türdeki maddeler tek liste sayılır.
-      let anahtar = id != null && id !== '' ? 'id:' + id : (oncekiListe && oncekiListe.startsWith('anon:' + tur) ? oncekiListe : `anon:${tur}:${s.paragraf}`);
+      const anahtar = id != null && id !== '' ? 'id:' + id : (oncekiListe && oncekiListe.startsWith('anon:' + tur) ? oncekiListe : `anon:${tur}:${s.paragraf}`);
       oncekiListe = anahtar;
       if (!listeler.has(anahtar)) listeler.set(anahtar, new Array(9).fill(0));
       const sayac = listeler.get(anahtar);

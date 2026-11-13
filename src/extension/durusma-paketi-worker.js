@@ -258,7 +258,7 @@ async function start(message) {
           message: error?.message || 'Evrak dönüştürülemedi' });
       }
     }
-    if (conversionIssues.length && !items.length) throw { issues: conversionIssues };
+    if (conversionIssues.length && !items.length) throw Object.assign(new Error('Seçilen evrakların hiçbiri dönüştürülemedi'), { issues: conversionIssues });
     const reason = issue => {
       const title = byId.get(issue.id)?.title || issue.id;
       return String(issue.message || '').startsWith(`${title}: `) ? issue.message.slice(title.length + 2) : issue.message;

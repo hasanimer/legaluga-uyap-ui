@@ -18,8 +18,8 @@
     }
     // Sorgu ve kanıt özeti şifreli kasada; kimlik, belge metni ve geçici UYAP kimlikleri yalnız bellekte.
     const bankChecks = globalThis.UHDBankChecks, bankAPI = globalThis.UHDBankAPI;
-    let bankCard = null, bankRun = null, bankSubjects = {}, bankBorrowers = [], bankSelected = '', bankNotice = '';
-    const bankRequests = new Map();
+    let bankCard = null, bankRun = null, bankBorrowers = [], bankSelected = '', bankNotice = '';
+    const bankSubjects = {}, bankRequests = new Map();
     let bankRequestsChecked = false;
     const bankKey = x => JSON.stringify([x.k, x.dosya]);
     const bankMainGroup = group => !group || group === rec.dosyaNo ||
