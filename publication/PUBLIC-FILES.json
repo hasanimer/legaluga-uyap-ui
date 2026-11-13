@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "ccd0136d9ab60d8f162ef40d21d643e3a14b5adcee98900c83794db94322b0ec"
+      "sha256": "b9931d44e341d37751f5048157bb3ce0d8f5b80567d9410f9c05e1b65c51bc6a"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -636,7 +636,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "ffdbe2a0cdb01980773095c75bd6f33a0070d3ebf3ef62562a7080afb2c09c0e"
+      "sha256": "c3b73f343313c7c35b8f71b030d6dccf1bad25cad7a7e72634b9f2cc64ad7bd2"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -644,7 +644,7 @@
     },
     {
       "path": "src/fragments/content/043-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "8c278d5596d0ce20e24a4598c878db869a1d6d6e5eb74c01d58bd0a56e554897"
+      "sha256": "0ee17a9b0e8bef6d74dc700149332781a34ef2ac85b6a1c9a1172bcc11b7c0db"
     },
     {
       "path": "src/fragments/content/044-original-document-download-action-and-link-render.js.part",
@@ -660,7 +660,7 @@
     },
     {
       "path": "src/fragments/content/048-package-frame-and-start-action-controls.js.part",
-      "sha256": "6e7b5a25725bbd54e24e14581d4ee5a678254252b88a479b9d8bc2cca227421f"
+      "sha256": "8dc3e604612824b6e7d297e82d635167872bd6ddefc7387c0e35e78da15d67ac"
     },
     {
       "path": "src/fragments/content/050-package-frame-and-start-action-controls.js.part",
@@ -668,7 +668,7 @@
     },
     {
       "path": "src/fragments/content/051-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "0ad50587465e8352e8736b84b90ece15b9facde29a2cae120d4b3ab44aff9c49"
+      "sha256": "e64489638d5e34e90cb4ccac4abe9c52385700897dae60245fec183fe0476c1b"
     },
     {
       "path": "src/fragments/content/053-full-viewer-HTML-render-and-action-controls.js.part",

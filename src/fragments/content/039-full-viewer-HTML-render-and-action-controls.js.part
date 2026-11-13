@@ -217,6 +217,18 @@
     let bulkState = null, bulkOff = null, bulkFinished = '';
     let paketSession = null, paketRun = null, belgePdfRun = null;
     let paketMod = false, paketSecili = [], paketSira = 'eski', paketSonucUrl = null, paketOzgunAc = null;
+    // Aynı anda tek uzun UYAP işi: kapılar kendilerini durduran işleri mesgul(...) ile adla sayar; koşu nesneleri ve kimlik
+    // karşılaştırmaları yerinde kalır. Adlar yazıldığı sırayla okunur, ilk süren işte durulur (|| zinciri gibi).
+    // zip, banka, paket, bankaOkuma ve tebligat her kapıda; kapıya göre eklenenler:
+    //   teyitMesgul (Yenile, Tam listeyi al)                                  tebligatListe, liste
+    //   zipSync (ZIP, Kalanları tekrar dene, devam, atla, yeni plan)          liste, belgePdf
+    //   paketYaz (PDF hazırla)                                                belgePdf
+    //   paketHazirlaBasla, bankaOku                                           paketKosu, belgePdf
+    //   bankBusy (banka düğmeleri, PDF indir, tebligat okuma, atıf taraması)  paketKosu, belgePdf, teyit
+    //   bulkDownload, zipDownload                                             belgePdf
+    const isler = { zip: () => zipRun, banka: () => bankRun, paket: () => paketSession, paketKosu: () => paketRun, bankaOkuma: () => bankaOkuma,
+      tebligat: () => tebligatRead, tebligatListe: () => tebligatList, liste: () => listeBekliyor, belgePdf: () => belgePdfRun, teyit: () => teyitAlim };
+    const mesgul = (...adlar) => adlar.some(ad => !!isler[ad]());
     const PAKET_MAX = 100;
     const paketAnahtar = x => x.k + '\n' + x.dosya;
     // Pakete alınabilen: anahtarı olan evrak; ek ise UYAP'ın verdiği kendi kimliğiyle.
@@ -263,7 +275,7 @@
       teyit = evrakTeyit(kaynak.list, tum);
       teyitCiz();
     }
-    const teyitMesgul = () => !!zipRun || !!bankRun || !!paketSession || !!bankaOkuma || !!tebligatRead || !!tebligatList || !!listeBekliyor;
+    const teyitMesgul = () => mesgul('zip', 'banka', 'paket', 'bankaOkuma', 'tebligat', 'tebligatListe', 'liste');
     const teyitBos = () => (teyit ? evrakTeyitMetni(teyit).bos : '') || '';
     function teyitDurumu() {
       evrakYenile.disabled = teyitMesgul();
@@ -635,7 +647,7 @@
       const count = zipTypesCiz().length;
       if (bulkTools && !bulkChoice) zipParts.checked = count > bulkTools.PART_ENTRIES;
       const needsFullList = !!(kaynak?.list.morePages || kaynak?.list.scopeUnknown) && !['son20', 'gorunen'].includes(zipKapsam);
-      const busy = !!zipRun || !!bankRun || !!paketSession || !!bankaOkuma || !!tebligatRead || !!listeBekliyor || !!belgePdfRun;
+      const busy = mesgul('zip', 'banka', 'paket', 'bankaOkuma', 'tebligat', 'liste', 'belgePdf');
       const savedPlan = bulkState ? bulkState.saved < bulkState.total : !!bulkJob && bulkJob.cursor < bulkJob.targets.length;
       zipIndir.disabled = busy || !!bulkRead || !zipTools || !!kaynak?.list.kilit || (!!kaynak && !count && !needsFullList) || (!!zipParts.checked && (!!bulkJob || !!bulkState));
       const action = zipParts.checked ? 'Parçalı indir' : 'ZIP olarak indir';
@@ -663,7 +675,7 @@
       bulkSkip.disabled = busy || !!bulkRead;
       bulkNew.hidden = !bulkJob && !bulkState;
       bulkNew.disabled = busy || !!bulkRead || !!bulkState?.persistentPending || !!bulkJob?.pendingDownload;
-      zipTekrar.disabled = !!zipRun || !!bankRun || !!paketSession || !!bankaOkuma || !!tebligatRead || !!listeBekliyor;
+      zipTekrar.disabled = busy;   // tıklama zipDownload'a varır: ZIP düğmesini durduran işler (PDF dönüşümü dahil) bunu da durdurur
       zipDurdur.hidden = !zipRun;
       zipDurdur.disabled = !!zipRun?.ac.signal.aborted || (zipRun?.managed && bulkState?.status === 'paused');
       teyitDurumu();
