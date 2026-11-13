@@ -82,6 +82,8 @@
         "belge-pdf.js",
         "ui.js",
         "onboarding.js",
+        "ana-sayfa.js",
+        "uyap-dosya-penceresi.js",
         "content.js",
         "uyap-document-native.js"
       ],

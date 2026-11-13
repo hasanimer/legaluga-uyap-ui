@@ -6,7 +6,7 @@ import {fileURLToPath} from 'node:url';
 export const sha = value => createHash('sha256').update(value).digest('hex');
 // Açık depoya hiçbir klasörde eklenemeyecek tam motor dosyaları ve karışık birleşik dosyalar (demo/common.js taklidi hariç).
 // Özel depodaki tests/yayin-siniri.test.js her özel tam dosyanın bu listede olduğunu doğrular.
-export const PRIVATE_ENGINE_FILES = Object.freeze(['content.js','background.js','common.js','banka-api.js','banka-takip.js','tebligat-barkod.js','tebligat-ptt.js','ptt-content.js','danistay-content.js','evrak-indirme.js','evrak-indirme-motoru.js','uyap-document-main.js','uyap-document-native.js','havuz-denetim.js','ptt-main.js','ptt-offscreen.js','ptt-report.js','uyap-kapi.js']);
+export const PRIVATE_ENGINE_FILES = Object.freeze(['content.js','background.js','common.js','banka-api.js','banka-takip.js','tebligat-barkod.js','tebligat-ptt.js','ptt-content.js','danistay-content.js','evrak-indirme.js','evrak-indirme-motoru.js','uyap-document-main.js','uyap-document-native.js','havuz-denetim.js','ptt-main.js','ptt-offscreen.js','ptt-report.js','uyap-kapi.js','ana-sayfa.js','uyap-dosya-penceresi.js']);
 export function validate(root) {
   const inventory = JSON.parse(fs.readFileSync(path.join(root,'publication/PUBLIC-FILES.json'),'utf8'));
   if (inventory.schema!==1 || !Array.isArray(inventory.files)) throw Error('Açık dosya envanteri geçersiz.');

@@ -148,7 +148,7 @@
     },
     {
       "path": "scripts/validate-public.mjs",
-      "sha256": "d39d9b2a66ce31392eb9eb575db90d99258cff2850393cd4a1a012a407c06dcc"
+      "sha256": "4bb8420e6cce8168e5641ed28c6a297787c015e569bbc55fb982282a1c5a62c8"
     },
     {
       "path": "src/extension/atif-ocr.js",
@@ -244,7 +244,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "e5c91a071df66a41c0da09ca9b8d3e613980dc2060a9021edb2e4d566efbbac6"
+      "sha256": "7c7c8ed76247afeb282379fd0a97cac171d1fcfeeb498b1747dbee5c24433a7b"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -296,7 +296,7 @@
     },
     {
       "path": "src/extension/telemetry.js",
-      "sha256": "8fa8513e6cab9a601f6c36973a51c8c1c778ef8ea9baeab7cff765bae1cfc4ca"
+      "sha256": "59274dfc4d18d2963e47c69557cc06a908b65638595b409fda2104118ff50375"
     },
     {
       "path": "src/extension/tiff.js",
