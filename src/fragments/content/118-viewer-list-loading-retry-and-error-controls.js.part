@@ -128,7 +128,7 @@
       closed = true;
       bankReplyClose(false);
       bankViewed.clear();
-      clearTimeout(gecikme);
+      clearTimeout(gecikme); clearTimeout(aramaZaman);
       listeAc.abort();
       notlarAc.abort();
       safahatAc.abort();

@@ -88,19 +88,25 @@
       sira = gorunen.findIndex(x => ayni(x, simdikiOge));
       gruplariCiz(); listeyiCiz(); if (sira >= 0) secimiCiz(true); konumYaz();
     }
-    const aramaUygula = () => {
+    // Büyük grupta (ARAMA_ESIGI satırdan çok) yazarken çizim ARAMA_GECIKMESI ms bekler, art arda tuşlar tek çizimde birleşir; küçük
+    // grupta ve Temizle'de arama hemen uygulanır. ↓ ve Enter bekleyen aramayı hemen çizer; kapanış zamanlayıcıyı siler.
+    const ARAMA_ESIGI = 1000, ARAMA_GECIKMESI = 80;
+    const aramaUygula = (bekle = false) => {
       araTemizle.hidden = !ara.value;
+      clearTimeout(aramaZaman); aramaZaman = null;
+      if (bekle && grupListesi(grup).length > ARAMA_ESIGI) { aramaZaman = setTimeout(aramaUygula, ARAMA_GECIKMESI); return; }
       suz();
       sira = gorunen.findIndex(x => ayni(x, simdikiOge));
       listeyiCiz(); konumYaz();
     };
-    ara.addEventListener('input', aramaUygula);
+    ara.addEventListener('input', () => aramaUygula(true));
     araTemizle.addEventListener('click', () => {
       ara.value = '';
       aramaUygula();
       ara.focus({ preventScroll: true });
     });
     ara.addEventListener('keydown', ev => {
+      if ((ev.key === 'ArrowDown' || ev.key === 'Enter') && aramaZaman) aramaUygula();
       if (ev.key === 'ArrowDown' && gorunen.length) { ev.preventDefault(); ogeler.focus({ preventScroll: true }); odakSync(true); }
     });
     evrakYenile.addEventListener('click', () => { if (!nativeDocument) return kaynak ? tamListeAl() : listeAl(); });
