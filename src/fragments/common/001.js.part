@@ -29,6 +29,14 @@
     return !(index && ((Array.isArray(index.records) && index.records.length) || Number(index.updatedAt) > 0));
   }
 
+  // Güncellemeyi yürüten sekme ilerlemeye (uhdProgress.beat) düzenli sinyal yazar; bu süre sinyal gelmezse sekme gitmiş
+  // sayılır ve işi başka sekme devralabilir. İçerik betiği, panel ve depolama aracısı aynı pencereyi buradan okur.
+  const TARAMA_BAYAT_MS = 90000;
+  const taramaCanli = (progress, now) => !!progress?.running && now - (progress.beat || 0) < TARAMA_BAYAT_MS;
+  // Dosya kaydındaki taraf biçiminin sürümü (tarafV); eski sürümlü kaydın tarafları Güncelle'de yeniden alınır.
+  // 2: taraflarla birlikte vekiller de saklanır.
+  const TARAF_V = 2;
+
   const ORIGIN = 'https://avukat.uyap.gov.tr';
 
   // ------------------------------------------------ savcılık (Cbs)

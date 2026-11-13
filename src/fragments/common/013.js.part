@@ -69,26 +69,6 @@
   // Tutar: 12345.5 → "12.345,50 ₺"
   const fmtTL = v => (typeof v === 'number' && isFinite(v) ? v.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺' : '—');
 
-  // "alacakKalemFaizTutar" → "Alacak kalem faiz tutar" (bilinmeyen alanları okunur göstermek için).
-  // UYAP alan adları ASCII yazılır; ekranda yaygın sözcükler Türkçe karakterle, kısaltmalar büyük harfle gösterilir.
-  const HUMAN_WORDS = {
-    aciklama: 'açıklama', aciklamasi: 'açıklaması', adi: 'adı', adresi: 'adresi', alacakli: 'alacaklı', bilgileri: 'bilgileri',
-    borclu: 'borçlu', borcu: 'borcu', calisani: 'çalışanı', calisma: 'çalışma', cikis: 'çıkış', dogum: 'doğum', durumu: 'durumu',
-    giris: 'giriş', isyeri: 'iş yeri', ise: 'işe', isten: 'işten', kisi: 'kişi', kaydi: 'kaydı', meslegi: 'mesleği', numarasi: 'numarası',
-    odeme: 'ödeme', arac: 'araç', sayisi: 'sayısı', sigortali: 'sigortalı', sirket: 'şirket', sube: 'şube', tarihi: 'tarihi', tescil: 'tescil',
-    tutari: 'tutarı', turu: 'türü', unvani: 'unvanı', ucret: 'ücret', ozet: 'özet', sgk: 'SGK', ssk: 'SSK', egm: 'EGM', tc: 'TC',
-    vkn: 'VKN', mersis: 'MERSİS', iban: 'IBAN', ilce: 'ilçe', islem: 'işlem', soyadi: 'soyadı'
-  };
-  const humanKey = k => {
-    // tr-TR küçültme ASCII "I"yı "ı" yapar (ilkIseGiris → "ıse"); alan adları ASCII olduğu için önce "i"ye çevrilir.
-    // Kısaltma dizisi sonraki sözcükten ayrılır: TCKimlikNo → "TC kimlik no".
-    const words = String(k).replace(/_/g, ' ').replace(/([a-zçğıöşü0-9])([A-ZÇĞİÖŞÜ])/g, '$1 $2')
-      .replace(/([A-ZÇĞİÖŞÜ]+)([A-ZÇĞİÖŞÜ][a-zçğıöşü])/g, '$1 $2').replace(/\s+/g, ' ').trim()
-      .replace(/I/g, 'i').toLocaleLowerCase('tr-TR').split(' ').map(w => HUMAN_WORDS[w] || w);
-    const s = words.join(' ');
-    return /^[a-zçğıöşü]/.test(s) ? s.replace(/^./, c => c.toLocaleUpperCase('tr-TR')) : s;
-  };
-
   // ------------------------------------------------ görünüm
   // UYAP adları büyük harfle verir; yalnız baş harfleri büyük gösterilir (arama etkilenmez).
   // Nokta içeren kısaltmalar (A.Ş., T.C., LTD.) ve 2-3 harfli şirket ekleri olduğu gibi kalır.

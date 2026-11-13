@@ -1,12 +1,10 @@
 // Arama arayüzü: hem eklenti popup'ında hem UYAP sayfasındaki yan panelde aynı kod kullanılır.
 (() => {
   if (globalThis.UHD.mountUI) return;
-  const { onayIste, search, passFilter, fileNoQuery, fmtTrDate, fmtNum, fmtDate, norm, detectMyName, myKeys, isClient, nameKey, BRAND, csvCell, csvDosyaNo, unseenEvrak, trDateTs, lastEvrak, personFiles, trTitle, cleanDurum, cleanBirim, kunyeOf, evrakTakipAcik, CBS, ILLER, ilAdi, BACKUP_APP, BACKUP_FORMAT, BACKUP_KEYS, checkBackup, todayIso, daysLeft, upcomingDurusmalar, durusmaCakismalari, CAKISMA_DK, durusmaIcs } = globalThis.UHD;
+  const { onayIste, search, passFilter, fileNoQuery, fmtTrDate, fmtNum, fmtDate, norm, detectMyName, myKeys, isClient, nameKey, BRAND, csvCell, csvDosyaNo, unseenEvrak, trDateTs, lastEvrak, personFiles, trTitle, cleanDurum, cleanBirim, kunyeOf, evrakTakipAcik, CBS, ILLER, ilAdi, BACKUP_APP, BACKUP_FORMAT, BACKUP_KEYS, checkBackup, todayIso, daysLeft, upcomingDurusmalar, durusmaCakismalari, CAKISMA_DK, durusmaIcs, taramaCanli, TARAF_V } = globalThis.UHD;
   const LIMIT = 60;
   const RECENT_MAX = 10;
-  const RUN_STALE_MS = 90000;
   const REMIND_DAYS = 7;
-  const TARAF_V = 2;
 
   const CSS = `
 .uhd{--navy:${BRAND.primary};--navy2:${BRAND.primaryDark};--deep:${BRAND.deep};--soft:${BRAND.soft};--bord:${BRAND.border};--focus:${BRAND.focus};
@@ -648,7 +646,7 @@
 
     const myNames = () => String(prefs.myName || '').split(/[,;]/).map(x => x.trim()).filter(Boolean);
     const myName = () => myNames().join(', ') || detected;
-    const running = () => !!(progress && progress.running && Date.now() - (progress.beat || 0) < RUN_STALE_MS);
+    const running = () => taramaCanli(progress, Date.now());
 
     function setIndex(ix) {
       records = (ix && ix.records) || [];

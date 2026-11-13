@@ -9,7 +9,6 @@
   const MiB = 1024 * 1024;
   const SINIR = Object.freeze({
     paket: 40 * MiB,          // UYAP'tan gelen dosya
-    girdi: 1000,              // zip merkezî dizinindeki girdi
     icerik: 20 * MiB,         // açılmış content.xml (beyan ve fiilî sayaç)
     derinlik: 32,             // tablo → hücre → tablo iç içeliği
     blok: 30000,              // paragraf + tablo + resim
@@ -71,99 +70,27 @@
   const bekle = () => new Promise(r => setTimeout(r, 0));
 
   // ---------------------------------------------------------------- zip
-  const CRC_TABLO = (() => {
-    const t = new Uint32Array(256);
-    for (let n = 0; n < 256; n++) {
-      let c = n;
-      for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-      t[n] = c >>> 0;
-    }
-    return t;
-  })();
-  function crc32(b) {
-    let c = 0xffffffff;
-    for (let i = 0; i < b.length; i++) c = CRC_TABLO[(c ^ b[i]) & 0xff] ^ (c >>> 8);
-    return (c ^ 0xffffffff) >>> 0;
-  }
-
-  // Boyut ve CRC yalnız merkezî dizinden alınır: UYAP'ın Java tabanlı editörü DEFLATE girdileri veri tanımlayıcılı
-  // yazar ve yerel başlıkta bu alanlar 0'dır.
+  // Arşiv, içerik betiklerinde ve duruşma paketi sayfasında önce yüklenen ortak okuyucuyla (DurusmaPaketiZip) açılır:
+  // dizin sonu, merkezî dizin ve yerel başlık tutarlılığı ile CRC-32 tek politikayla denetlenir. Boyut ve CRC merkezî
+  // dizinden alınır; UYAP'ın Java tabanlı editörü DEFLATE girdileri veri tanımlayıcılı yazar ve yerel başlıkta bu alanlar 0'dır.
+  // Okuyucunun hatası (code 'zip') zip türünde UdfHatasi olur; ayrıntı okuyucunun sabit iletisidir, belge metni taşımaz.
   function zipGirdileri(u8) {
     const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
     if (u8.length < 22 || dv.getUint32(0, true) !== 0x04034b50) throw hata('zip', 'imza yok');
-    let eocd = -1;
-    for (let i = u8.length - 22, alt = Math.max(0, u8.length - 22 - 65535); i >= alt; i--) {
-      if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
-    }
-    if (eocd < 0) throw hata('zip', 'dizin sonu yok');
-    if (dv.getUint16(eocd + 4, true) || dv.getUint16(eocd + 6, true)) throw hata('zip', 'çok parçalı');
-    const adet = dv.getUint16(eocd + 10, true);
-    const mdBoyut = dv.getUint32(eocd + 12, true);
-    const mdOfset = dv.getUint32(eocd + 16, true);
-    if (adet === 0xffff || mdOfset === 0xffffffff || mdBoyut === 0xffffffff) throw hata('zip', 'ZIP64');
-    if (adet > SINIR.girdi) throw hata('zip', 'girdi sınırı');
-    if (mdOfset + mdBoyut > eocd) throw hata('zip', 'dizin taşıyor');
-    const girdiler = [];
-    let p = mdOfset;
-    const son = mdOfset + mdBoyut;
-    for (let k = 0; k < adet; k++) {
-      if (p + 46 > son || dv.getUint32(p, true) !== 0x02014b50) throw hata('zip', 'dizin bozuk');
-      const adUz = dv.getUint16(p + 28, true), ekUz = dv.getUint16(p + 30, true), notUz = dv.getUint16(p + 32, true);
-      if (p + 46 + adUz + ekUz + notUz > son) throw hata('zip', 'dizin bozuk');
-      const bayrak = dv.getUint16(p + 8, true);
-      girdiler.push({
-        bayrak, yontem: dv.getUint16(p + 10, true), crc: dv.getUint32(p + 16, true),
-        sik: dv.getUint32(p + 20, true), acik: dv.getUint32(p + 24, true), yerel: dv.getUint32(p + 42, true),
-        ad: new TextDecoder(bayrak & 0x800 ? 'utf-8' : 'windows-1252').decode(u8.subarray(p + 46, p + 46 + adUz)),
-        mdOfset
-      });
-      p += 46 + adUz + ekUz + notUz;
-    }
-    return girdiler;
+    try { return globalThis.DurusmaPaketiZip.girdiler(u8); } catch (e) { throw e && e.code === 'zip' ? hata('zip', e.message) : e; }
   }
 
-  async function girdiAc(u8, g, ust, signal) {
+  // Şifre ve boyut beyanı okuyucudan önce denetlenir: content.xml sınırını aşan beyan bozuk ZIP değil boyut hatasıdır.
+  // Açılan bayt okuyucuda sayılır; beyanı aşan akış (zip bombası) ve bozuk DEFLATE akışı zip hatasıdır.
+  async function girdiAc(zip, g, signal) {
     if (g.bayrak & 1) throw hata('zip', 'şifreli');
-    if (g.acik > ust) throw hata('boyut', `beyan ${g.acik} bayt`);
-    const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
-    if (g.yerel + 30 > u8.length || dv.getUint32(g.yerel, true) !== 0x04034b50) throw hata('zip', 'yerel başlık yok');
-    const bas = g.yerel + 30 + dv.getUint16(g.yerel + 26, true) + dv.getUint16(g.yerel + 28, true);
-    if (bas + g.sik > Math.min(u8.length, g.mdOfset)) throw hata('zip', 'veri taşıyor');
-    const ham = u8.subarray(bas, bas + g.sik);
-    let cikti;
-    if (g.yontem === 0) {
-      if (g.sik !== g.acik) throw hata('zip', 'saklanmış girdi boyutu');
-      cikti = ham.slice();
-    } else if (g.yontem === 8) {
-      // Açılan bayt sayılır: yalancı başlıkta beyanı ya da üst sınırı aşan akış durdurulur (zip bombası).
-      // Üst sınırı aşan beyan yukarıda reddedildi; beyanı aşan akış bozuk girdidir, boyut değil zip hatasıdır.
-      const sinir = Math.min(g.acik, ust);
-      const okuyucu = new Blob([ham]).stream().pipeThrough(new DecompressionStream('deflate-raw')).getReader();
-      const parcalar = [];
-      let toplam = 0;
-      try {
-        for (;;) {
-          if (iptalMi(signal)) { okuyucu.cancel().catch(() => {}); iptalDenetle(signal); }
-          const { done, value } = await okuyucu.read();
-          if (done) break;
-          toplam += value.length;
-          if (toplam > sinir) {
-            okuyucu.cancel().catch(() => {});
-            throw hata('zip', 'açılan veri beyanı aştı');
-          }
-          parcalar.push(value);
-        }
-      } catch (e) {
-        if (e instanceof UdfHatasi || (e && e.name === 'AbortError')) throw e;
-        throw hata('zip', 'açılamadı');
-      }
-      if (toplam !== g.acik) throw hata('zip', 'boyut beyanla tutmuyor');
-      cikti = new Uint8Array(toplam);
-      let o = 0;
-      for (const c of parcalar) { cikti.set(c, o); o += c.length; }
-    } else throw hata('zip', `sıkıştırma ${g.yontem}`);
-    if (crc32(cikti) !== g.crc) throw hata('zip', 'CRC-32');
-    return cikti;
+    if (g.acik > SINIR.icerik) throw hata('boyut', `beyan ${g.acik} bayt`);
+    try {
+      return await globalThis.DurusmaPaketiZip.ac(zip, g, { maxBytes: SINIR.icerik, signal });
+    } catch (e) {
+      iptalDenetle(signal);
+      throw hata('zip', e && e.code === 'zip' ? e.message : 'açılamadı');
+    }
   }
 
   // ---------------------------------------------------------------- kodlama ve XML
@@ -927,11 +854,11 @@
     if (!blob || blob.size > SINIR.paket) throw hata('boyut', 'paket');
     const u8 = new Uint8Array(await blob.arrayBuffer());
     iptalDenetle(signal);
-    const girdiler = zipGirdileri(u8);
+    const zip = zipGirdileri(u8), girdiler = zip.liste;
     const icerik = girdiler.filter(g => g.ad.replace(/^(\.?\/)+/, '').toLowerCase() === 'content.xml');
     if (!icerik.length) throw hata('content-xml-yok');
     if (icerik.length > 1) throw hata('belirsiz');
-    const bayt = await girdiAc(u8, icerik[0], SINIR.icerik, signal);
+    const bayt = await girdiAc(zip, icerik[0], signal);
     iptalDenetle(signal);
     const { metin, kodlama } = metneCevir(bayt);
     const xml = xmlCozumle(metin);

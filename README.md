@@ -236,7 +236,7 @@ npm run demo
 
 `npm run demo` sonrası **http://127.0.0.1:4173/demo/** adresini açın; sunucuyu **Ctrl+C** ile kapatın. Demo gerçek indirme panelini sentetik işler üzerinde gösterir. UYAP'a bağlanmaz, belge veya indirme çalıştırmaz, gerçek dosya verisi kullanmaz; tam uygulamanın bütün ekranlarını temsil etmez.
 
-`demo/common.js` özel motor fonksiyonları yerine `NOT_AVAILABLE` hatası veren stub'lar içerir. Katkı geliştirirken gerçek servis yerine sentetik callback/manager kullanın; görünümü kapatmanın motoru durdurmaması ve diske kaydedilen ilerleme ile geçici parça ilerlemesinin ayrı gösterilmesi gibi sözleşmeleri koruyun.
+Açık testler `common.js`'i açık parçalardan kurar ([tests/common-taklidi.js](tests/common-taklidi.js)); özel motor işlevlerinin yerine `NOT_AVAILABLE` hatası veren stub'lar girer. Katkı geliştirirken gerçek servis yerine sentetik callback/manager kullanın; görünümü kapatmanın motoru durdurmaması ve diske kaydedilen ilerleme ile geçici parça ilerlemesinin ayrı gösterilmesi gibi sözleşmeleri koruyun.
 
 ## Katkı, destek ve lisans
 
