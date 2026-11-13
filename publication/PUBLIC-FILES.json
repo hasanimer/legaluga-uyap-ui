@@ -280,7 +280,7 @@
     },
     {
       "path": "src/extension/storage.js",
-      "sha256": "b8da1f71f01768afad6e1add7b1e4deec0eefa5247307556d685c089fddb63cf"
+      "sha256": "6de0807faed9ea2e377ff7587927ae5a338fb2da534f370ba85f84297955a130"
     },
     {
       "path": "src/extension/tabs.js",
@@ -304,7 +304,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "9e1f4207a0a51f3db41ec3b9cd6a639318aace9a5a8bbfd3e8ac4d56d0a07c96"
+      "sha256": "6c73fdbb6fcf72f785dd03f7bc59780607f070afdd1fff08357eba5b92146200"
     },
     {
       "path": "src/extension/vault-crypto.js",

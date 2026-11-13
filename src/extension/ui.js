@@ -668,6 +668,44 @@
       }
     }
 
+    // Dizin her ara kayıtta bütün hâlinde yayınlanır; yeni değeri okumak büyük dizini kopyalatır, ardından liste çizilir.
+    // Görünmeyen panel (gizli sekme ya da kapalı panel) değeri okumaz, dizini bayat sayar. Panel gösterilince
+    // (refreshStatus) ya da sekme görünür olunca dizin tek okumayla alınıp bir kez çizilir; bayat dizinle iş yapılmaz.
+    let dizinBayat = false;
+    let dizinSurum = 0;        // her dizin olayında artar: araya giren olay süren okumanın eski sonucunu geçersiz kılar
+    let dizinOkuma = null;
+    const gorunmuyor = () => document.hidden || !!(opts.isVisible && !opts.isVisible());
+    function dizinDegisti(change) {
+      dizinSurum++;
+      dizinBayat = gorunmuyor();
+      if (!dizinBayat) setIndex(change.newValue);
+      return !dizinBayat;
+    }
+    function dizinTazele() {
+      if (!dizinBayat || !loaded) return Promise.resolve();
+      if (dizinOkuma) return dizinOkuma;
+      const surum = dizinSurum;
+      dizinOkuma = chrome.storage.local.get('uhdIndex').then(v => {
+        dizinOkuma = null;
+        if (surum !== dizinSurum) return dizinBayat ? dizinTazele() : undefined;
+        dizinBayat = false;
+        setIndex(v.uhdIndex);
+        renderFilters();
+        if (!editing && settings.hidden) render();
+        if (!settings.hidden) refreshSettings();
+        renderStatus();
+        autoNotice();
+      }, error => {
+        // Okunamayan dizin bayat kalır, sonraki gösterimde yeniden okunur. Bağlam gittiyse hata yutulmaz: sayfadaki
+        // unhandledrejection işleyicisi paneli durdurup “Yenile”yi gösterir.
+        dizinOkuma = null;
+        if (baglamGitti(error)) throw error;
+      });
+      return dizinOkuma;
+    }
+    const dizinTazeyken = fn => (dizinBayat ? dizinTazele().then(fn) : fn());
+    document.addEventListener('visibilitychange', () => { if (!gorunmuyor()) dizinTazele(); });
+
     // ------------------------------------------------ bildirim
 
     function showNotice(text, kind, action, noticeKey) {
@@ -2581,9 +2619,9 @@
       if (ch.uhdGizli) { gizli = ch.uhdGizli.newValue || {}; renderFilters(); redraw = true; }
       if (ch.uhdDurusmalar) durusmaMeta = ch.uhdDurusmalar.newValue || null;
       if (ch.uhdDurusmalar || ch.uhdPrefs) { computeDurusma(); renderFilters(); redraw = true; }
-      if (ch.uhdIndex) setIndex(ch.uhdIndex.newValue);
-      else if (ch.uhdEvrakGoruldu) computeYeni();
-      if (ch.uhdIndex || ch.uhdEvrakGoruldu) { renderFilters(); redraw = true; }
+      const dizin = !!ch.uhdIndex && dizinDegisti(ch.uhdIndex);   // görünmeyen panelde dizin okunmaz, bayat işaretlenir
+      if (!dizin && ch.uhdEvrakGoruldu) computeYeni();
+      if (dizin || ch.uhdEvrakGoruldu) { renderFilters(); redraw = true; }
       if (ch.uhdNotes) { notes = ch.uhdNotes.newValue || {}; redraw = true; }
       if (ch.uhdRecent) recent = ch.uhdRecent.newValue || [];
       if (ch.uhdProgress) {
@@ -2591,11 +2629,11 @@
         if (!records.length) redraw = true;   // ilk kullanım ekranındaki düğmenin durumu
       }
       if (redraw && !editing && settings.hidden) render();
-      if (!settings.hidden && (ch.uhdPrefs || ch.uhdGizli || ch.uhdIndex || (ch.uhdProgress && running() !== ayarKosu))) refreshSettings();
-      if (ch.uhdIndex || ch.uhdProgress || ch.uhdJob) renderStatus();
+      if (!settings.hidden && (ch.uhdPrefs || ch.uhdGizli || dizin || (ch.uhdProgress && running() !== ayarKosu))) refreshSettings();
+      if (dizin || ch.uhdProgress || ch.uhdJob) renderStatus();
       if (ch.uhdProgress || ch.uhdJob) syncSetupScanNotice();
       if ((ch.uhdProgress || ch.uhdJob) && syncCbsScan) syncCbsScan();
-      if (ch.uhdIndex || ch.uhdProgress || ch.uhdEvrakGoruldu || ch.uhdDurusmalar || ch.uhdPrefs) autoNotice();
+      if (dizin || ch.uhdProgress || ch.uhdEvrakGoruldu || ch.uhdDurusmalar || ch.uhdPrefs) autoNotice();
     });
     setInterval(renderStatus, 5000);
 
@@ -2609,14 +2647,15 @@
       setBusy,
       getNote: key => notes[key] || '',
       saveNote,
-      refreshStatus: renderStatus,
-      showDurusmalar,
+      // Panel gösterilince (content.js showPanel): gizliyken değişen dizin tek okumayla tazelenir, durum çubuğu yenilenir.
+      refreshStatus() { if (!gorunmuyor()) dizinTazele(); renderStatus(); },
+      showDurusmalar: range => dizinTazeyken(() => showDurusmalar(range)),
       showDownloads,
       // Dosya ekranındaki "Bu dosyadaki yeni evrakları görüldü say".
-      markSeen: (keys, kadar) => markSeen(keys, false, kadar),
+      markSeen: (keys, kadar) => dizinTazeyken(() => markSeen(keys, false, kadar)),
       // Popup'taki özet satırından gelen istek: 'hearings' duruşmalar (7 gün), 'hearings-today' bugünküler,
       // 'hearings-cakisma' çakışanlar, 'new' yeni evrak, diğerleri dosyalar.
-      showView(name) {
+      showView: name => dizinTazeyken(() => {
         if (hasDownloads && !downloadArea.hidden) showDownloads(false);
         if (name === 'hearings' || name === 'hearings-today' || name === 'hearings-cakisma') {
           showDurusmalar(name === 'hearings-today' ? 'today' : name === 'hearings-cakisma' ? 'cakisma' : 'week');
@@ -2625,7 +2664,7 @@
         input.value = '';
         switchView(name === 'new' ? 'new' : 'files');
         input.focus();
-      }
+      })
     };
   }
 
