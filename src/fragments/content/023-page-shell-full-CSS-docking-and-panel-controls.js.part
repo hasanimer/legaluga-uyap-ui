@@ -365,7 +365,6 @@
 .viewer .bank-reply-text{padding:16px;white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font:13px/1.6 "Segoe UI",system-ui,sans-serif}
 .viewer :is(.dp-summary,.dp-finance,.ek-banka,.ek-banka-takip) :is(button,select,summary):focus-visible{outline:2px solid var(--shell-focus);outline-offset:3px}
 .viewer .paket-motor{position:absolute;left:-10000px;top:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none}
-.viewer .ek-paket-ac{align-self:flex-start;font-weight:600}
 .viewer a.chip{text-decoration:none;display:inline-flex;align-items:center}
 .viewer .ek-paket{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--shell-accent);border-radius:8px;background:var(--shell-bg);font-size:12px}
 .viewer .ek-paket-ust{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:space-between}
@@ -512,8 +511,6 @@
 .viewer .ek-liste-arac .chip[aria-pressed=true]{color:var(--shell-text)}
 .viewer .ek-liste-sayi{margin-left:auto;color:var(--shell-muted);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .viewer .ek-paket-araclari{display:flex;flex-direction:column;gap:8px;padding:0 0 10px;border-bottom:1px solid var(--shell-line)}
-.viewer .ek-paket-araclari>.ek-paket-ac{align-self:stretch;min-height:34px;border-style:dashed;background:transparent;font-weight:400;color:var(--shell-muted)}
-.viewer .ek-paket-araclari>.ek-paket-ac:hover,.viewer .ek-paket-araclari>.ek-paket-ac[aria-pressed=true]{background:var(--shell-bg);border-style:solid;color:var(--shell-accent)}
 .viewer .ek-liste>.dp-muted{margin:0 2px;line-height:1.55}
 .viewer .ek-liste>.dp-muted:empty{display:none}
 .viewer .ek-teyit{margin:0 2px;padding:6px 8px;border-left:3px solid var(--shell-line);border-radius:6px;background:var(--shell-soft);color:var(--shell-text);font-size:12px;line-height:1.45;min-width:0;overflow-wrap:anywhere}

@@ -52,7 +52,7 @@
     },
     {
       "path": "docs/DEVELOPMENT.md",
-      "sha256": "fe7f79d4d5bc5a90a57a2c8b5a1032961c6f1126bd23772f44bd9f7cefdeeee9"
+      "sha256": "21337931f77e58ed96ed1626ff66c6e3509b48b09d79f4b5c002cfeb7e42458a"
     },
     {
       "path": "docs/PRIVACY.md",
@@ -112,7 +112,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "789421273be4f93fcd9bc1b8b24da95fe47434898bae0102f13905c2627eabc3"
+      "sha256": "7214fc0c3bf7b792db2381d9e979fd916be293e9990bfc7d3748c2ce871b5e15"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -156,7 +156,7 @@
     },
     {
       "path": "src/extension/atif-paneli.js",
-      "sha256": "5db98f47d69d21ff03e31306318b8c0990475f7cf130864a39220f58938649e8"
+      "sha256": "269ef25f97811ab03b9a1bba9e83f40f5c06f4913b6cfa6c82597c9e14e4f784"
     },
     {
       "path": "src/extension/belge-pdf.js",
@@ -236,7 +236,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "64b26d7ccb06ba6311099a031197f2ab24c5972402dd62c69023053943dd4265"
+      "sha256": "7cab590a5dc7939209982b2f074f5f7384e2b6377325d8e59be82cc771c0248c"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -284,7 +284,7 @@
     },
     {
       "path": "src/extension/tebligat-ui.js",
-      "sha256": "b7213e179f863d2a62c4e25da5d84b8e8953b366d6ce2c9f73ee5a54818e379d"
+      "sha256": "152b266028b2c465c79655200dde29be9c0dae4284f669bed434acac09814623"
     },
     {
       "path": "src/extension/telemetry.js",
@@ -296,7 +296,7 @@
     },
     {
       "path": "src/extension/udf.js",
-      "sha256": "86fc6a5380f41c24790d8c41daae87317ced272bbb6d981d6cfaab31e090f21b"
+      "sha256": "d3809755d7db81b9fdfe53c48c404c57c4c83fd68e538ba1a2ee29e4de396d6d"
     },
     {
       "path": "src/extension/ui.js",
@@ -524,7 +524,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "3688b564af93e89ac4f0181e46add1c1308df73d24de180876066f105163886e"
+      "sha256": "726bef4b2132d46fbace1ae56b0e72c518707e82e69a7693d245847648b45baa"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -628,7 +628,7 @@
     },
     {
       "path": "tests/atif-ocr-worker.test.js",
-      "sha256": "62ba83e578a66227049199a72f263d243da24d0583f0cfc253a1842cf594d06a"
+      "sha256": "2f4468293e6690c3bacfc105b3f878caf3fff65d6cf7f36c3517836415d3e2e4"
     },
     {
       "path": "tests/crypto-invariants.test.js",
@@ -664,7 +664,7 @@
     },
     {
       "path": "tests/erisilebilirlik.test.js",
-      "sha256": "e8866db0320675fa51ff0d9afb52992b1e282cd84e4c46c76899e1dad0af4c06"
+      "sha256": "2228ad39f42c68a9941a9d52950044773aa44da4f17fa4eeb2556ac46b94e5c7"
     },
     {
       "path": "tests/eyp-paketi.test.js",

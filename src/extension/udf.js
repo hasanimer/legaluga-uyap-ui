@@ -1268,7 +1268,7 @@
 .viewer .udf-resim.red{display:inline-flex;align-items:center;justify-content:center;border:1px dashed #98a2b3;color:#475467;font:9pt/1.2 "Segoe UI",system-ui,sans-serif;font-style:normal;font-weight:400;text-indent:0;text-align:center;box-sizing:border-box;padding:2px 4px;white-space:normal}
 .viewer .udf-blokresim{line-height:0}
 .viewer .udf-filigran{position:absolute;opacity:.15;pointer-events:none}
-.viewer .udf-ust,.viewer .udf-alt{color:#667085;font-size:.8em;opacity:.85}
+.viewer .udf-ust,.viewer .udf-alt{color:#667085;font-size:.8em}
 .viewer .udf-ust{border-bottom:1px dashed #d0d5dd;margin-bottom:6pt;padding-bottom:2pt}
 .viewer .udf-alt{border-top:1px dashed #d0d5dd;margin-top:6pt;padding-top:2pt}
 .viewer .udf-not{max-width:600px;padding:10px 12px;border-radius:8px;background:var(--shell-warn-bg);color:var(--shell-warn-text);font:12px/1.45 "Segoe UI",system-ui,sans-serif}

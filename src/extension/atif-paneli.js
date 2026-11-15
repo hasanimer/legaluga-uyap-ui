@@ -1322,7 +1322,7 @@
 .viewer .ek-atif-ocr{display:inline-block;margin-left:6px;padding:0 6px;border-radius:6px;background:var(--shell-soft);color:var(--shell-muted);font-size:11px;font-weight:600}
 .viewer .ek-atif-ocr-ara{align-self:flex-start}
 .viewer .ek-atif-havuz{position:relative;display:inline-flex;align-items:center;margin-left:6px;padding:0 6px;border-radius:6px;background:var(--shell-soft);color:var(--shell-muted);font-size:11px;font-weight:600;line-height:18px;vertical-align:1px}
-.viewer .ek-atif-havuz[data-hukum=dogrulandi],.viewer .ek-atif-havuz[data-hukum=eslesti]{color:var(--shell-accent)}
+.viewer .ek-atif-havuz[data-hukum=dogrulandi],.viewer .ek-atif-havuz[data-hukum=eslesti]{color:var(--shell-success)}
 .viewer .ek-atif-havuz[data-hukum=dikkat],.viewer .ek-atif-havuz[data-hukum=bulunamadi]{color:var(--shell-warn-text)}
 .viewer .ek-atif-havuz[data-hukum=hatali-kunye]{color:var(--shell-error)}
 .viewer .ek-atif-havuz-not{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
@@ -1343,6 +1343,7 @@
 :host([data-theme=dark]) .viewer :is(.ek-atiflar,.ek-atif-menu,.ek-atif-bul){box-shadow:0 10px 28px rgba(0,0,0,.55)}
 @container ekran (max-width:460px){.viewer .ek-atif-eylem :is(a,button){flex:1}.viewer .ek-atif-eylem .ek-atif-alinti-kopyala{flex-basis:100%}}
 @media(prefers-reduced-motion:reduce){.viewer .atif-cizgi.vurgu{animation:none}}
+@media(forced-colors:active){.viewer .ek-onbar .ek-atif-ac.on{background:Highlight!important;border-color:Highlight!important;color:HighlightText!important}}
 @media(prefers-contrast:more){.viewer .ek-atif{border-color:var(--shell-muted)}.viewer .atif-cizgi{text-decoration-thickness:2px}.viewer :is(.ek-atiflar,.ek-atif-menu){border-color:var(--shell-text)}}
 `;
 
