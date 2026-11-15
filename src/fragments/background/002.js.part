@@ -1,1 +1,1 @@
-importScripts('vault-crypto.js', 
+importScripts('vault-crypto.js', 'banka-takip.js', 'common.js', 'evrak-indirme.js', 'storage.js', 'telemetry.js', 'vendor/sentry.bundle.js', 'tebligat-ptt.js');

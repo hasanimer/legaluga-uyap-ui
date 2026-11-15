@@ -1,14 +1,3 @@
-      paketSession = session;
-      session.bridge = globalThis.UHD.durusmaPaketiBridge.create(frame, paketMesaj);
-      paketDurum.textContent = `${fmtNum(sirali.length)} evrak için paket hazırlanıyor…`;
-      zipSync();
-      // Uzantı çerçevesi bağlanamazsa (eklenti yenilendi, güvenlik kanalı kurulamadı) beklemede kalınmaz.
-      setTimeout(() => {
-        if (paketSession !== session || session.basladi) return;
-        paketKapat();
-        paketDurum.textContent = 'Paket hazırlayıcı açılamadı. Sayfayı yenileyip tekrar deneyin.';
-      }, 20000);
-    }
 
     // ------------------------------------------------ İcra Banka sorgusu sekmesi: sorgu, talep kontrolü ve banka cevapları
     // Banka (gönderen), özgün başlık ve tarih yalnız evrak listesinden gelir. Cevaplar yorumlanmaz;

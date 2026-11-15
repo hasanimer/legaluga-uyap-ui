@@ -1,1 +1,0 @@
-        if (!eligibility.allowed) throw Object.assign(new Error(eligibility.reason), { code: 'API_ELIGIBILITY' });

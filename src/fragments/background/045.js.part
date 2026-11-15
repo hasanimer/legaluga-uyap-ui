@@ -1,1 +1,0 @@
-    if (!setupSender(sender) || !['uhd-download-part', 'uhd-download-cancel', 'uhd-download-reconcile', 'uhd-download-show'].includes(message?.type)) return;
