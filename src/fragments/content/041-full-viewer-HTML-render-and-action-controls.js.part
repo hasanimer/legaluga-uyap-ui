@@ -1,4 +1,6 @@
 
+    // Çerçeve liste çizmez: LIST yalnız seçilecek evrakların kimliğini ve seçilebilirliğini taşır. Aynı kimliği alan kopya da
+    // gider; model onu ayırt edilemez sayıp seçtirmez. Hedefler bütün liste için tutulur, gelen kimlikler onlarla doğrulanır.
     function paketListe() {
       if (!paketSession) return;
       const session = paketSession;
@@ -12,18 +14,16 @@
         const id = session.ids.get(fingerprint);
         session.idByKey?.set(x.k + '\n' + x.dosya, id);
         targets.set(id, { x, ekId });
-        return { id, title: x.tur, date: x.onay || '', dateSource: x.ana ? 'parent' : 'document',
-          format: 'Bilinmiyor', group: x.dosya, isAttachment: !!x.ana, parentId: x.ana ? session.idForMain(x.ana) : '',
-          parentTitle: x.ana?.tur || '', selectable: !!x.k && (!x.ana || !!ekId) };
+        return { id, selectable: !!x.k && (!x.ana || !!ekId) };
       });
       session.targets = targets;
-      session.bridge.send({ type: 'LIST', items, complete: !kaynak?.list.morePages, locked: !!kaynak?.list.kilit });
+      const secilen = new Set((session.bekleyen || []).map(k => session.idByKey?.get(k)));
+      session.bridge.send({ type: 'LIST', items: items.filter(item => secilen.has(item.id)), locked: !!kaynak?.list.kilit });
     }
     function paketKapat() {
       const session = paketSession;
       if (!session) return;
       if (paketRun) { paketRun.ac.abort(); paketRun = null; }
-      session.listAc?.abort(); session.originalAc?.abort();
       session.bridge.close();
       session.layer.remove();
       paketSession = null;

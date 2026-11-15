@@ -112,7 +112,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "7248bf854dc5ce8089b065f2c07763e22258203d667c178cb4ce3212624ced1d"
+      "sha256": "789421273be4f93fcd9bc1b8b24da95fe47434898bae0102f13905c2627eabc3"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -176,7 +176,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-model.js",
-      "sha256": "729fab0dc504e0d45bccae8ac753fe2cb9914ccc5aabe58b2c92174392697c1d"
+      "sha256": "65b28dfc55ae7c2e24ed5c9d7481e6f949a6c4c01d803e95bc3906f8404299d8"
     },
     {
       "path": "src/extension/durusma-paketi-pdf.js",
@@ -192,7 +192,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-ui.js",
-      "sha256": "bdb4be633223bbd2180faa9254cd221e0592cd854a59ef45481af1b4f3e1f014"
+      "sha256": "57fb8b8d61d156b3f50ec0d639032579020d9b13a0f926a6b6affa1a88a80e23"
     },
     {
       "path": "src/extension/durusma-paketi-worker.js",
@@ -548,11 +548,11 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "1ede43f14420130dbb504e40627e10f749007c10475ac351f76464407b354547"
+      "sha256": "c6ff88301dd7457a2ea9582c47482a3f44179f9cfa1d0aa83e1f52a02ee09851"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "d59366116209d0437b73d6026aac5e6a62d80782d9c03bb89f44cb804a8ae53e"
+      "sha256": "7a53d8ccb8ee473c4b08becbc7513628ab7fbf34a7adc006485a36aa25a693b3"
     },
     {
       "path": "src/fragments/content/043-full-viewer-HTML-render-and-action-controls.js.part",
@@ -596,7 +596,7 @@
     },
     {
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "9d1ebf3a647a15548e587202fc2c275cb1778c42d1ced823d3c77b2c08978a96"
+      "sha256": "b72f6bcf25ad943f164e16537b9a83506c105da62f15a91839a34a28bb339e63"
     },
     {
       "path": "src/fragments/content/105-viewer-document-load-and-list-ready.js.part",

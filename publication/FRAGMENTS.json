@@ -247,16 +247,16 @@
       "source": "content.js",
       "order": 33,
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "1ede43f14420130dbb504e40627e10f749007c10475ac351f76464407b354547",
-      "bytes": 62159,
+      "sha256": "c6ff88301dd7457a2ea9582c47482a3f44179f9cfa1d0aa83e1f52a02ee09851",
+      "bytes": 61943,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
       "source": "content.js",
       "order": 35,
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "d59366116209d0437b73d6026aac5e6a62d80782d9c03bb89f44cb804a8ae53e",
-      "bytes": 1596,
+      "sha256": "7a53d8ccb8ee473c4b08becbc7513628ab7fbf34a7adc006485a36aa25a693b3",
+      "bytes": 1673,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -343,8 +343,8 @@
       "source": "content.js",
       "order": 58,
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "9d1ebf3a647a15548e587202fc2c275cb1778c42d1ced823d3c77b2c08978a96",
-      "bytes": 36454,
+      "sha256": "b72f6bcf25ad943f164e16537b9a83506c105da62f15a91839a34a28bb339e63",
+      "bytes": 37295,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
