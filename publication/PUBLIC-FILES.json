@@ -48,11 +48,11 @@
     },
     {
       "path": "demo/panel.css",
-      "sha256": "d65a288d49a0e33705d80d28e22044786284f8c924ba931cc48577d9b60f221f"
+      "sha256": "42596a6772908c4ee9cb230a8c94e11c1d8247f1f06a13cb17497724dd2ce5f7"
     },
     {
       "path": "docs/DEVELOPMENT.md",
-      "sha256": "f928610675552d1db346f566bf30ec48d7005bb97fe5c8b9a0481002333fbe2c"
+      "sha256": "fe7f79d4d5bc5a90a57a2c8b5a1032961c6f1126bd23772f44bd9f7cefdeeee9"
     },
     {
       "path": "docs/PRIVACY.md",
@@ -112,7 +112,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "4f296d25a3777fa4bdaa0f6872d835f0b9474bf74cc91005840107df947236a0"
+      "sha256": "a15a24c279e9835c092489d571a83581106d04ccccf3296492a8865161ad5d9d"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -164,7 +164,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-bootstrap.js",
-      "sha256": "a912f68e5226f460eb45aeab787f3016673ced43feed4cb46a12aff55a4e60d9"
+      "sha256": "ab14138c19b50c5fdad3e0af477897b8693147123ef6b1dfc3b744d91d40e3c6"
     },
     {
       "path": "src/extension/durusma-paketi-bridge.js",
@@ -192,7 +192,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-ui.js",
-      "sha256": "1ad634d5f0662caa89d84023038885f20a992aaf8531b6b4a26e290c4b54de74"
+      "sha256": "bdb4be633223bbd2180faa9254cd221e0592cd854a59ef45481af1b4f3e1f014"
     },
     {
       "path": "src/extension/durusma-paketi-worker.js",
@@ -203,12 +203,8 @@
       "sha256": "06ef4227715a767e1c4c9fef91a82a1021e0c4a9be0f46bd5655db08bc723880"
     },
     {
-      "path": "src/extension/durusma-paketi.css",
-      "sha256": "6423fd489a016bd434628bd23c03b2f7611901af22fe97a6aadecb7036e62651"
-    },
-    {
       "path": "src/extension/durusma-paketi.html",
-      "sha256": "2c2625f94e8a5edfa0a85b32298b348281745493201982fcbcb1d0d204bded8a"
+      "sha256": "41a946a8562bca04158858f2baa96af047aae7beda83b22c6c211f9c08a566ee"
     },
     {
       "path": "src/extension/evrak-zip.js",
@@ -232,7 +228,7 @@
     },
     {
       "path": "src/extension/indirme-panel.js",
-      "sha256": "5889e670b2cf48d9c4a9448253893c9cbac1099cc6ed930cb3b9265c4a14f026"
+      "sha256": "c2c8ee0c9a70436880954b71685bbe5c2763b938d74cf25f6cc216666cf252da"
     },
     {
       "path": "src/extension/kunye-ayikla.js",
@@ -240,7 +236,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "7c7c8ed76247afeb282379fd0a97cac171d1fcfeeb498b1747dbee5c24433a7b"
+      "sha256": "64b26d7ccb06ba6311099a031197f2ab24c5972402dd62c69023053943dd4265"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -280,7 +276,7 @@
     },
     {
       "path": "src/extension/storage.js",
-      "sha256": "b8da1f71f01768afad6e1add7b1e4deec0eefa5247307556d685c089fddb63cf"
+      "sha256": "6de0807faed9ea2e377ff7587927ae5a338fb2da534f370ba85f84297955a130"
     },
     {
       "path": "src/extension/tabs.js",
@@ -304,11 +300,11 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "9e1f4207a0a51f3db41ec3b9cd6a639318aace9a5a8bbfd3e8ac4d56d0a07c96"
+      "sha256": "08db1b60c603ad0e1ab2709b75b05f452d1742f702ebbcd2a914708ef1196319"
     },
     {
       "path": "src/extension/vault-crypto.js",
-      "sha256": "c8e4fa5a4fb231f7c0929c17c054408c6b4ef7316fe9bb9736588c454d7e8579"
+      "sha256": "254b74e9b4fb74c2e912106c74bafd8d23ac34b0e72a34ebef298e9bec19a9f1"
     },
     {
       "path": "src/extension/vendor/FONTKIT-APACHE-2.0.LICENSE",
@@ -596,7 +592,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "e09a4a7c89212a5a60b4868f5fdc48e6ecfc2d75a49fc413ceea020bf884038e"
+      "sha256": "c357aca0b3e858e28059a26827d2d70efdab7dfd3525524db36add2011ef45ad"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -608,7 +604,7 @@
     },
     {
       "path": "src/fragments/content/029-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "df423c7d83f15274d928f5ee4a5cbf38cea7c5579c9cf2a69da17459348a0c46"
+      "sha256": "81ad2320b3bf06fe10e68ab110cdf7df6786be230b535d8d0b827038076e9022"
     },
     {
       "path": "src/fragments/content/031-overview-safahat-notes-and-safe-document-rendering.js.part",
@@ -628,7 +624,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "c3b73f343313c7c35b8f71b030d6dccf1bad25cad7a7e72634b9f2cc64ad7bd2"
+      "sha256": "1ede43f14420130dbb504e40627e10f749007c10475ac351f76464407b354547"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -704,7 +700,7 @@
     },
     {
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "7a22e1f7c5e1c37590721fa594c3e2f489859770cf8c077bf99d535b01fa7576"
+      "sha256": "9d1ebf3a647a15548e587202fc2c275cb1778c42d1ced823d3c77b2c08978a96"
     },
     {
       "path": "src/fragments/content/105-viewer-document-load-and-list-ready.js.part",
@@ -712,7 +708,7 @@
     },
     {
       "path": "src/fragments/content/118-viewer-list-loading-retry-and-error-controls.js.part",
-      "sha256": "c4ef4aa4db5bcbedd47a74a13725eb767438d23f4c20a61c8dce191814c185ec"
+      "sha256": "5157a408cc99aba4ac934f06eaf652eefb73e3f23ad0f24ad4ec99cd9115b2de"
     },
     {
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",
@@ -736,11 +732,11 @@
     },
     {
       "path": "tests/atif-ocr-worker.test.js",
-      "sha256": "ef512eddef07094c45f28ec66bf53fddfd4a0ccf0e0e4f90ee257f6acd4e1ebb"
+      "sha256": "62ba83e578a66227049199a72f263d243da24d0583f0cfc253a1842cf594d06a"
     },
     {
       "path": "tests/crypto-invariants.test.js",
-      "sha256": "b79a02c89f1039afdd635c9d5d17956146061eef8643bd3e8405c922e34b625b"
+      "sha256": "5b081e7c52fd601787d90d1ba13fdaaf83db2bedef91fae77a9d21df7d3881d1"
     },
     {
       "path": "tests/demo-consistency.test.js",
@@ -771,12 +767,20 @@
       "sha256": "c6dd8223668d6c79b12ec7584d970e7e9369d65f8472a78b9cb6fcab53acbbf1"
     },
     {
+      "path": "tests/erisilebilirlik.test.js",
+      "sha256": "e8866db0320675fa51ff0d9afb52992b1e282cd84e4c46c76899e1dad0af4c06"
+    },
+    {
       "path": "tests/eyp-paketi.test.js",
       "sha256": "e42cf0ac888946d13db6987b2e18468ae7518abe305161552425413988e29dfd"
     },
     {
       "path": "tests/zip-yardimci.js",
       "sha256": "0ed52faa36a48583b8afe9625e9d0acc7839ebd2cb60024f4bd0d9ecdceddd4c"
+    },
+    {
+      "path": "tests/fixtures/yedek-v2.json",
+      "sha256": "52c33a9eca0c44eb53bb8b327d9e6ee767cdb173b0316d6b882e6e75b0d5ea86"
     },
     {
       "path": "src/extension/vendor/tesseract/UPSTREAM.md",

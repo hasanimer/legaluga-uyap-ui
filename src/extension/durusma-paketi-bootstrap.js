@@ -23,12 +23,9 @@
   }
   window.addEventListener('message', receive);
   let attempts = 0;
+  // Çerçeve görünmezdir ve arayüzü yoktur: beş denemede kanal kurulamazsa sessizce durur.
   const request = () => {
-    if (connected || ++attempts > 5) {
-      clearInterval(retryTimer);
-      if (!connected) document.getElementById('baglanti').textContent = 'Güvenli bağlantı kurulamadı. Paketi kapatıp tekrar açın.';
-      return;
-    }
+    if (connected || ++attempts > 5) { clearInterval(retryTimer); return; }
     chrome.runtime.sendMessage({ type: 'uhd-hearing-channel', sessionId, secret }).catch(() => {});
   };
   const retryTimer = setInterval(request, 2500);

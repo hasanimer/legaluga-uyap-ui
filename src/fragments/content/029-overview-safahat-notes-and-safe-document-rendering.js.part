@@ -16,7 +16,7 @@
       done();
     } else if (ev.key === 'Tab') {
       const scope = box.getAttribute('aria-modal') === 'true' ? [box] : [panel, box];
-      const targets = [launch, ...scope.flatMap(s => [...s.querySelectorAll(FOCUSABLE)])].filter(x => x && visible(x) && x.tabIndex >= 0);
+      const targets = [launch, ...scope.flatMap(s => [...s.querySelectorAll(FOCUSABLE)])].filter(x => x && x.tabIndex >= 0 && visible(x));
       if (!targets.length) return;
       const active = shadowRoot.activeElement;
       const next = ev.shiftKey ? targets[targets.length - 1] : targets[0];

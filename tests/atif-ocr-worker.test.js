@@ -108,16 +108,35 @@ test('Tesseract için geçici window taklidi geri alınır; metinsiz PDF çizimi
   assert.deepEqual(kayit.importlar, ['vendor/pdfjs-reader.js', 'vendor/tesseract/tesseract.min.js']);
 });
 
-test('uzantı sayfası CSP yalnız paket betiğine ve WebAssembly derlemesine izin verir', () => {
+// Uzantı sayfaları (popup, Ayarlar, Duruşma Paketi, görünmeyen PTT belgesi), service worker ve işçileri için yönerge
+// bazlı izin listesi; her yönerge yalnız burada yazılı değerleri taşır. Betik yalnız paketten (WebAssembly derlemesi
+// dahil). Ağ: paket, Tesseract çekirdeğinin gömülü wasm'ı (data:), künye havuzu, Sentry alım adresi ve görünmeyen PTT
+// sorgusu. Çerçeve yalnız resmî PTT formu (görünmez Duruşma Paketi çerçevesi önizleme göstermez). Kaynaklar yalnız
+// kökendir, yol taşımaz.
+// İçerik betikleri bu politikaya tabi değildir.
+const CSP_IZINLERI = {
+  'script-src': ["'self'", "'wasm-unsafe-eval'"],
+  'object-src': ["'self'"],
+  'connect-src': ["'self'", 'data:', 'https://legaluga.com', 'https://o4511620723703808.ingest.de.sentry.io', 'https://www.ptt.gov.tr'],
+  'frame-src': ['https://www.ptt.gov.tr'],
+  'base-uri': ["'none'"],
+  'form-action': ["'none'"]
+};
+
+test('uzantı sayfası CSP yönerge bazlı izin listesine uyar: betik paketten, ağ ve çerçeve yalnız bilinen kökenlere', () => {
   const csp = MANIFEST.content_security_policy;
   assert.deepEqual(Object.keys(csp), ['extension_pages']);
-  const metin = csp.extension_pages;
-  assert.doesNotMatch(metin, /'unsafe-eval'|'unsafe-inline'|https?:|\*|data:|blob:/);
-  const yonergeler = Object.fromEntries(metin.split(';').map(x => x.trim()).filter(Boolean)
-    .map(x => { const [ad, ...degerler] = x.split(/\s+/); return [ad, degerler]; }));
-  assert.deepEqual(Object.keys(yonergeler).sort(), ['object-src', 'script-src']);
-  assert.deepEqual(yonergeler['script-src'], ["'self'", "'wasm-unsafe-eval'"]);
-  assert.deepEqual(yonergeler['object-src'], ["'self'"]);
+  const yonergeler = csp.extension_pages.split(';').map(x => x.trim()).filter(Boolean).map(x => x.split(/\s+/));
+  // Tarayıcı yinelenen yönergenin ikincisini yok sayar; her yönerge bir kez yazılır.
+  const adlar = yonergeler.map(([ad]) => ad);
+  assert.equal(new Set(adlar).size, adlar.length, adlar.join(' '));
+  assert.deepEqual(Object.fromEntries(yonergeler.map(([ad, ...degerler]) => [ad, degerler])), CSP_IZINLERI);
+  for (const [ad, ...degerler] of yonergeler) {
+    for (const deger of degerler) {
+      assert.doesNotMatch(deger, /^'unsafe-|\*|^https?:$/, `${ad} ${deger}`);
+      if (/^https?:/.test(deger)) assert.equal(deger, new URL(deger).origin, `${ad}: kaynak yol taşımaz (${deger})`);
+    }
+  }
   assert.equal(MANIFEST.sandbox, undefined);
 });
 
