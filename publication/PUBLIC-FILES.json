@@ -112,7 +112,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "914024ec054d26227dbb1d1a270c332fb886d5499e2d982b9725a0ebc24aea92"
+      "sha256": "2b0293b682dba01e2fa0e9ef04a8c87b41e7fe32e572a8f5c7984c0f9160f1f0"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -556,7 +556,7 @@
     },
     {
       "path": "src/fragments/content/003-bootstrap-shared-request-safety.js.part",
-      "sha256": "c43f473f8ead5e6edfcf63a43813d2b7c3118f68ed32be7136dca70c2c342826"
+      "sha256": "4b645e170081a93d0c81e99f0dd9202483215cd4b8226de9836169cb4b859445"
     },
     {
       "path": "src/fragments/content/005-context-invalidation-and-progress-boundaries.js.part",

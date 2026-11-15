@@ -263,8 +263,8 @@
       "source": "content.js",
       "order": 3,
       "path": "src/fragments/content/003-bootstrap-shared-request-safety.js.part",
-      "sha256": "c43f473f8ead5e6edfcf63a43813d2b7c3118f68ed32be7136dca70c2c342826",
-      "bytes": 9983,
+      "sha256": "4b645e170081a93d0c81e99f0dd9202483215cd4b8226de9836169cb4b859445",
+      "bytes": 10128,
       "purpose": "bootstrap-shared-request-safety"
     },
     {

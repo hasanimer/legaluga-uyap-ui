@@ -144,15 +144,17 @@
       }
     });
   }
-  // Worker kapısının koruma reddi porttan düz Error (name 'Blocked', durdu) olarak gelir. Tarama, beklemeler ve paneller
-  // korumayı Blocked örneğiyle tanıdığı için ret bu tek sınırda Blocked’a çevrilir; sekmede doğan Blocked ve iptal olduğu gibi geçer.
+  // Worker kapısının koruma reddi porttan düz Error (name 'Blocked', durdu) gelir; korumaMi iki biçimi de tanır (bu sınırdan geçmeyen
+  // indirme sırası reddi için de). Tarama, beklemeler ve paneller korumayı Blocked örneğiyle tanıdığı için ret bu tek sınırda Blocked’a
+  // çevrilir; sekmede doğan Blocked ve iptal olduğu gibi geçer.
+  const korumaMi = e => e instanceof Blocked || e?.durdu === true || e?.name === 'Blocked';
   async function uyapRequest(signal, request) {
     const istemci = globalThis.UHDUyapKapiIstemci;
     const icinde = !!(signal && typeof signal === 'object' && globalThis.UHDUyapKapiIcinde?.has(signal));
     if (istemci && !icinde) {
       if (globalThis.UHDUyapKorumaDurdu === true) throw uyapKorumaHatasi();
       return istemci.toplu(signal, () => uyapRequestKilit(signal, request)).catch(err => {
-        if (!(err instanceof Blocked) && (err?.durdu === true || err?.name === 'Blocked')) throw Object.assign(uyapKorumaHatasi(), { cause: err });
+        if (!(err instanceof Blocked) && korumaMi(err)) throw Object.assign(uyapKorumaHatasi(), { cause: err });
         throw err;
       });
     }
