@@ -83,23 +83,30 @@
       resmiAramaMi: () => globalThis.UHDAtifPaneli.idareDosyasi(rec),
       motorKabi: viewer, kopru: () => globalThis.UHD.durusmaPaketiBridge, mesgulMu: () => bankBusy() }) || null;
     goruldu.addEventListener('click', () => {
-      // ui.markSeen geri alma işlevini verir: yalnız bu tıklamanın yazdığı görüldü zamanını önceki değerine çevirir.
+      // ui.markSeen geri alma işlevini verir: yalnız bu tıklamanın yazdığı görüldü zamanını önceki değerine çevirir. Kayıt
+      // başarısızsa null verir ve ekran eski hâline döner; ret (eklenti bağlamı gitti) sayfadaki işleyiciye ulaşır.
       const geriAl = ui && typeof ui.markSeen === 'function' ? ui.markSeen([rec.key], o.baglam && o.baglam.kadar) : null;
       const sira = okuma ? okuma.kuyruk[okuma.i] : null;
-      if (sira) sira.goruldu = true;
-      goruldu.disabled = true;
-      gorulduYazi.textContent = 'Görüldü sayıldı';
+      const yeniSay = yeni => {
+        if (sira) sira.goruldu = !yeni;
+        goruldu.disabled = !yeni;
+        gorulduYazi.textContent = yeni ? 'Bu dosyadaki yeni evrakları görüldü say' : 'Görüldü sayıldı';
+      };
+      yeniSay(false);
       const ileti = `${rec.dosyaNo} dosyasındaki yeni evraklar görüldü sayıldı.`;
       if (!geriAl || typeof geriAl.then !== 'function' || typeof toast !== 'function') return announce(ileti);
+      geriAl.then(cevir => {
+        if (cevir !== null) return;
+        yeniSay(true);
+        toast('Görüldü bilgisi kaydedilemedi. Tekrar deneyin.', 'err', 8000, null, { id: 'goruldu:' + rec.key });
+      });
       toast(ileti, 'ok', 12000, { label: 'Geri al', fn: async () => {
         try {
           const cevir = await geriAl;
           if (typeof cevir !== 'function') return;
           await cevir();
         } catch { return toast('Görüldü işareti geri alınamadı. Tekrar deneyin.', 'err', 8000, null, { id: 'goruldu:' + rec.key }); }
-        if (sira) sira.goruldu = false;
-        goruldu.disabled = false;
-        gorulduYazi.textContent = 'Bu dosyadaki yeni evrakları görüldü say';
+        yeniSay(true);
         announce(`${rec.dosyaNo} dosyasındaki evraklar yeniden yeni sayılıyor.`);
       } }, { id: 'goruldu:' + rec.key });
     });

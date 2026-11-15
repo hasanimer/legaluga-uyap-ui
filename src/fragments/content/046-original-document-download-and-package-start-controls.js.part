@@ -38,7 +38,5 @@
         });
         paketKapat();
         paketDurum.replaceChildren(el('p', { class: 'dp-err' }, 'PDF hazırlanamadı.'), hatalar.length ? el('ul', null, hatalar) : null);
-        return;
       }
-      if (faz === 'cancelled') { paketKapat(); paketDurum.textContent = 'Durduruldu; PDF oluşturulmadı.'; }
     }

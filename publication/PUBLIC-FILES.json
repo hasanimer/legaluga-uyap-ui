@@ -112,7 +112,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "7214fc0c3bf7b792db2381d9e979fd916be293e9990bfc7d3748c2ce871b5e15"
+      "sha256": "eb823e8e675c380854b8abe90d87769374799202f23b4fdb397f8fcb7e003ab5"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -548,7 +548,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "c6ff88301dd7457a2ea9582c47482a3f44179f9cfa1d0aa83e1f52a02ee09851"
+      "sha256": "ab477ec9178401adb484da54c9cae109314d6483015556552f4cc88cdd4c2933"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -560,7 +560,7 @@
     },
     {
       "path": "src/fragments/content/046-original-document-download-and-package-start-controls.js.part",
-      "sha256": "2f29e184f34d085f73e39bd5d08e2bfc12b2f35dff64b42ebd0485b8c5aea982"
+      "sha256": "c28d2ca546f30890d9be1311b3945554095e517c4397ed4685bd480994c6111a"
     },
     {
       "path": "src/fragments/content/050-package-frame-and-start-action-controls.js.part",
