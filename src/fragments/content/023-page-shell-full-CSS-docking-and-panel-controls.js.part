@@ -75,8 +75,7 @@
   } : null;
   downloadManager?.subscribe(downloadEmit);
   async function openDownload(fileKey) {
-    const { uhdIndex } = await chrome.storage.local.get('uhdIndex');
-    const rec = uhdIndex?.records?.find(item => item.key === fileKey);
+    const rec = await globalThis.UHDStorage.findRecord(fileKey);   // tek kayıt gelir, bütün dizin sekmeye taşınmaz
     if (!rec) throw new Error('Dosya kayıtlarınızda bulunamadı. Dosya listenizi güncelleyin.');
     return openDosyaPanel(rec, 'indir');
   }

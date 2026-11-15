@@ -669,15 +669,23 @@
       }
     }
 
-    // Dizin her ara kayıtta bütün hâlinde yayınlanır; yeni değeri okumak büyük dizini kopyalatır, ardından liste çizilir.
-    // Görünmeyen panel (gizli sekme ya da kapalı panel) değeri okumaz, dizini bayat sayar. Panel gösterilince
-    // (refreshStatus) ya da sekme görünür olunca dizin tek okumayla alınıp bir kez çizilir; bayat dizinle iş yapılmaz.
+    // Taramanın dizin yazıları dizini değil yalnız sürümünü duyurur (uhdIndexRev); öteki dizin yazıları değeriyle yayınlanır,
+    // değeri okumak büyük dizini kopyalatır. Görünmeyen panel (gizli sekme ya da kapalı panel) hiçbirinde okumaz, dizini bayat
+    // sayar; görünür panel duyuruda dizini tek okumayla alır. Panel gösterilince (refreshStatus) ya da sekme görünür olunca
+    // bayat dizin tek okumayla alınıp bir kez çizilir; bayat dizinle iş yapılmaz.
     let dizinBayat = false;
     let dizinSurum = 0;        // her dizin olayında artar: araya giren olay süren okumanın eski sonucunu geçersiz kılar
     let dizinOkuma = null;
     const gorunmuyor = () => document.hidden || !!(opts.isVisible && !opts.isVisible());
+    // change yoksa olay sürüm duyurusudur. İlk yükleme sürerken gelen duyuru dizini bayatlatmaz: depo, duyurudan eski
+    // yanıtı kendisi yeniden okur.
     function dizinDegisti(change) {
       dizinSurum++;
+      if (!change) {
+        dizinBayat = dizinBayat || loaded;
+        if (!gorunmuyor()) dizinTazele();
+        return false;
+      }
       dizinBayat = gorunmuyor();
       if (!dizinBayat) setIndex(change.newValue);
       return !dizinBayat;
@@ -707,7 +715,9 @@
       return dizinOkuma;
     }
     const dizinTazeyken = fn => (dizinBayat ? dizinTazele().then(fn) : fn());
-    document.addEventListener('visibilitychange', () => { if (!gorunmuyor()) dizinTazele(); });
+    // Panel ya da sekme görünür olunca bayat dizin tazelenir; tazeyse doluluğu (değiştiyse) sorulur.
+    function gorununce() { if (gorunmuyor()) return; if (dizinBayat) dizinTazele(); else dizinDolulugunuSor(); }
+    document.addEventListener('visibilitychange', gorununce);
 
     // ------------------------------------------------ bildirim
 
@@ -747,11 +757,32 @@
       return true;
     }
 
+    // Dizin tek depolama iletisinin sınırına (32 MiB) yaklaşınca uyarılır: aşılırsa tarama yazısı reddedilir, panelin ilk
+    // okuması da açılamayabilir. Doluluğu SW şifreli kayıttan bilir (indexMeta); panel yalnız görünürken ve dizin değişince sorar.
+    const DIZIN_UYARI_ORANI = 0.8;
+    let dizinDolulugu = 0, dolulukDizini = null;
+    function dizinDolulugunuSor() {
+      if (!loaded || meta === dolulukDizini || gorunmuyor() || !globalThis.UHDStorage?.indexMeta) return;
+      const sorulan = dolulukDizini = meta;
+      UHDStorage.indexMeta().then(ozet => {
+        if (dolulukDizini !== sorulan) return;
+        dizinDolulugu = ozet ? ozet.size / ozet.limit : 0;
+        autoNotice();
+      }, () => { if (dolulukDizini === sorulan) dolulukDizini = null; });
+    }
+
     function autoNotice() {
       if (manualNotice) return;
       // Hızlı bakışta duruşma ve yeni evrak üstteki özet satırında, son güncelleme alt şeritte görünür.
       if (quick || optionsPage) return showNotice('');
       if (filter.onlyDurusma || filter.onlyNew || person || !settings.hidden) return showNotice('');
+      dizinDolulugunuSor();
+      // Kapatılan uyarı doluluk sonraki %5 basamağına çıkana dek yeniden çıkmaz ve sıradaki bildirimleri gizlemez.
+      const yuzde = Math.floor(dizinDolulugu * 100), tavanKey = 'dizinTavan:' + Math.floor(yuzde / 5);
+      if (dizinDolulugu >= DIZIN_UYARI_ORANI && !dismissedNotices.has(tavanKey)) {
+        return showNotice(`Dosya listeniz yerel depolama sınırına yaklaştı (%${yuzde} dolu). Sınır aşılırsa güncelleme kaydedilemez ve liste açılamayabilir; kayıtlı bilgiler silinmez. Bir yedek almanız önerilir.`,
+          'err', { label: 'Yedek al', fn: exportBackup }, tavanKey);
+      }
       // Duruşma çakışması: kapatılınca aynı çakışmalar için yeniden çıkmaz; yeni çakışma eklenirse yeniden çıkar.
       const cakisan = upcomingDurusmalar(durusmaMeta && durusmaMeta.list).filter(d => cakismalar.has(d.id));
       const cakKey = 'cakisma:' + cakisan.map(d => d.id).join(',');
@@ -2623,7 +2654,8 @@
       if (ch.uhdGizli) { gizli = ch.uhdGizli.newValue || {}; renderFilters(); redraw = true; }
       if (ch.uhdDurusmalar) durusmaMeta = ch.uhdDurusmalar.newValue || null;
       if (ch.uhdDurusmalar || ch.uhdPrefs) { computeDurusma(); renderFilters(); redraw = true; }
-      const dizin = !!ch.uhdIndex && dizinDegisti(ch.uhdIndex);   // görünmeyen panelde dizin okunmaz, bayat işaretlenir
+      // Görünmeyen panelde dizin okunmaz, bayat işaretlenir; sürüm duyurusunu görünür panel okuyup sonra çizer.
+      const dizin = (!!ch.uhdIndex || !!ch.uhdIndexRev) && dizinDegisti(ch.uhdIndex);
       if (!dizin && ch.uhdEvrakGoruldu) computeYeni();
       if (dizin || ch.uhdEvrakGoruldu) { renderFilters(); redraw = true; }
       if (ch.uhdNotes) { notes = ch.uhdNotes.newValue || {}; redraw = true; }
@@ -2651,8 +2683,9 @@
       setBusy,
       getNote: key => notes[key] || '',
       saveNote,
-      // Panel gösterilince (content.js showPanel): gizliyken değişen dizin tek okumayla tazelenir, durum çubuğu yenilenir.
-      refreshStatus() { if (!gorunmuyor()) dizinTazele(); renderStatus(); },
+      // Panel gösterilince (content.js showPanel): gizliyken değişen dizin tek okumayla tazelenir, doluluk denetlenir, durum
+      // çubuğu yenilenir.
+      refreshStatus() { gorununce(); renderStatus(); },
       showDurusmalar: range => dizinTazeyken(() => showDurusmalar(range)),
       showDownloads,
       // Dosya ekranındaki "Bu dosyadaki yeni evrakları görüldü say".

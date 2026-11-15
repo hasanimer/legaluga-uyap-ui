@@ -34,11 +34,20 @@
     }
     return out;
   };
+  // Yayın kopyalanmaz: her bağlam iletinin kendi serileştirilmiş kopyasını alır, dinleyici alanı okuyunca kendi kopyasını.
+  // Kural: changes (sekmede message.changes, SW'de write()'ın değişiklik nesnesi) hiçbir dinleyici tarafından değiştirilmez;
+  // önbellek yalnız yanıtı beklenen get varken değere başvurur, okurken kopyalar. Nesne dondurulmaz: dinleyiciler kendi
+  // kopyalarını değiştirebilir (ör. içerik betiği paneldeki kayda dosyaId yazar).
+  // Sürüm duyurusu: tarama dizini (uhdIndex) değeriyle değil, yalnız sürümüyle yayınlar (uhdIndexRev, yeni değer depo sürümü).
+  // Duyuru anahtarı saklanmaz. Duyurudan eski yanıtı beklenen get değeri yamayamaz; o anahtarı yeniden okur (REREAD).
+  const DUYURU = new Map([['uhdIndexRev', 'uhdIndex']]), REREAD = Symbol('reread');
   const fire = (changes, area = 'local', revision = 0) => {
-    // Tek değişmez kopya. Önbellek değeri yalnız yanıtı beklenen get varken tutar; geç yanıtı yamalamak için yeterli.
-    const keep = area === 'local' && pendingGets > 0, source = keep || listeners.size ? clone(changes) : null;
-    if (area === 'local') for (const key of Object.keys(changes)) cache.set(key, { value: keep ? source[key].newValue : NOT_KEPT, revision });
-    for (const fn of listeners) { try { fn(lazyChanges(source), area); } catch { /* belge/metin içeren hatayı günlüğe alma */ } }
+    const keep = area === 'local' && pendingGets > 0;
+    if (area === 'local') for (const key of Object.keys(changes)) {
+      if (DUYURU.has(key)) cache.set(DUYURU.get(key), { value: keep ? REREAD : NOT_KEPT, revision });
+      else cache.set(key, { value: keep ? changes[key].newValue : NOT_KEPT, revision });
+    }
+    for (const fn of listeners) { try { fn(lazyChanges(changes), area); } catch { /* belge/metin içeren hatayı günlüğe alma */ } }
   };
   let broker;
   if (typeof document === 'undefined') {
@@ -118,6 +127,14 @@
       if (ownRevisions.size > 256) ownRevisions.delete(ownRevisions.values().next().value);
       await native.set({ ...values, [REV]: revision });
     }
+    // Dizin özeti (indexMeta): kayıtlar dışındaki alanlar, kayıt sayısı ve şifreli kayıttan yaklaşık düz metin baytı (ileti
+    // sınırına yakınlık). SW belleğindedir; dizin okundukça ve yazıldıkça yenilenir, dışarıdan değişince unutulur.
+    let dizinOzeti;   // undefined: bilinmiyor, null: dizin yok
+    const ozetle = (index, zarf) => {
+      if (!index || typeof index !== 'object' || Array.isArray(index)) return null;
+      const { records, ...meta } = index;
+      return { meta, count: Array.isArray(records) ? records.length : 0, size: Math.round(zarf.data.length / 4 * 3), limit: MAX_MESSAGE };
+    };
     async function read(query, wire = true) {
       const keys = keysOf(query); checkKeys(keys);
       const saved = await native.get(keys == null ? null : [...keys, REV]);
@@ -128,6 +145,7 @@
       let bound = 1024 + (query && typeof query === 'object' ? 3 * JSON.stringify(query).length : 0);
       for (const [name, value] of Object.entries(saved)) if (validKey(name)) {
         const result = await UHDVaultCrypto.open(keyRecord.key, keyRecord.id, name, value);
+        if (name === 'uhdIndex') dizinOzeti = result.exists ? ozetle(result.value, value) : null;
         if (result.exists) { data[name] = result.value; present.push(name); bound += value.data.length / 4 * 3 + 2 * name.length + 16; }
         else if (!(query && typeof query === 'object' && !Array.isArray(query))) delete data[name];
       }
@@ -142,7 +160,13 @@
       const tabs = await chrome.tabs.query({ url: 'https://avukat.uyap.gov.tr/*' }).catch(() => []);
       for (const tab of tabs) void chrome.tabs.sendMessage(tab.id, message, { frameId: 0 }).catch(() => {});
     }
-    async function write(values, absent = [], quiet = null) {
+    // Yazı sonrası: dizin özeti yenilenir; duyur'daki anahtarların (DUYURU) yerine sürüm duyurusu yayına eklenir.
+    function yaziSonrasi(names, values, encrypted, changes, duyur) {
+      if (names.includes('uhdIndex')) dizinOzeti = ozetle(values.uhdIndex, encrypted.uhdIndex);
+      for (const [duyuru, name] of DUYURU) if (duyur?.has(name) && names.includes(name)) changes[duyuru] = { newValue: revision };
+    }
+    // quiet: yayınlanmayan anahtarlar; duyur: yayınlanmayıp yalnız sürümü duyurulan anahtarlar (quiet'te de bulunur).
+    async function write(values, absent = [], quiet = null, duyur = null) {
       if (!values || typeof values !== 'object' || Array.isArray(values)) throw new Error('Depolama verisi geçersiz.');
       checkMessage(values);
       const names = [...new Set([...Object.keys(values), ...absent])]; checkKeys(names);
@@ -154,7 +178,11 @@
         // Ürün dinleyicileri yalnız newValue kullanır; eski+yeni büyük indeks tek mesajda ikiye katlanmaz.
         if (!quiet?.has(name)) changes[name] = exists ? { newValue: clone(values[name]) } : {};
       }
-      if (names.length) { await commit(encrypted); if (Object.keys(changes).length) await broadcast(changes); }
+      if (names.length) {
+        await commit(encrypted);
+        yaziSonrasi(names, values, encrypted, changes, duyur);
+        if (Object.keys(changes).length) await broadcast(changes);
+      }
       return { revision };
     }
     broker = (operation, args) => transact(async () => {
@@ -248,8 +276,10 @@
         // büyük found listesi her sayfada sekmelere gitmez. Diğer alanlardaki (stop, paused, listDone, stats…) değişiklik yayınlanır.
         const head = job => JSON.stringify({ ...job, listCheckpoint: undefined });
         const quiet = values.uhdJob && typeof values.uhdJob === 'object' && !args.absent.includes('uhdJob') &&
-          head(values.uhdJob) === head(saved.uhdJob) ? new Set(['uhdJob']) : null;
-        await write(values, args.absent, quiet);
+          head(values.uhdJob) === head(saved.uhdJob) ? ['uhdJob'] : [];
+        // Taramanın dizin yazıları (ara kayıtlar da son kayıt da) yalnız sürümle duyurulur: binlerce dosyalık dizin her kayıtta
+        // bütün sekmelere gitmez; görünen panel ve şerit dizini bir kez okur, görünmeyenler bayat sayar.
+        await write(values, args.absent, new Set([...quiet, 'uhdIndex']), new Set(['uhdIndex']));
         return { data: true, revision };
       }
       if (operation === 'stopScan') {
@@ -419,6 +449,16 @@
         await write({ uhdSafahat: globalThis.UHD.checkSafahatStore(current, true) });
         return { data: snapshot, revision };
       }
+      // Dizinin yalnız özeti ya da tek kaydı (şema aynı): SW dizini çözer, büyük yanıt sekmeye gitmez.
+      if (operation === 'indexMeta') {
+        if (dizinOzeti === undefined && (await read('uhdIndex', false)).data.uhdIndex === undefined) dizinOzeti = null;
+        return { data: clone(dizinOzeti), revision };
+      }
+      if (operation === 'findRecord') {
+        if (!globalThis.UHD.safahatFileKey(args?.key)) throw new Error('Dosya anahtarı geçersiz.');
+        const records = (await read('uhdIndex', false)).data.uhdIndex?.records;
+        return { data: (Array.isArray(records) && records.find(record => record?.key === args.key)) || null, revision };
+      }
       if (operation === 'status') {
         const saved = await native.get(null), values = Object.entries(saved).filter(([name]) => validKey(name));
         return { data: { encrypted: true, algorithm: 'AES-256-GCM', automatic: true, extractable: keyRecord.key.extractable, entries: values.length, plaintextEntries: values.filter(([,v])=>!UHDVaultCrypto.isEnvelope(v)).length }, revision };
@@ -441,6 +481,7 @@
       if (!names.length) return;
       // Eski sürümün açık uzantı sayfası düz metin yazarsa aynı kuyrukta şifrele; raw event yayma.
       void transact(async () => {
+        if (names.includes('uhdIndex')) dizinOzeti = undefined;
         const saved = await native.get(names), encrypted = {}, decoded = {};
         for (const name of names) {
           const raw = saved[name];
@@ -462,12 +503,21 @@
     if (!result?.ok) throw new Error(result?.error || 'Şifreli depolama yanıt vermedi. Sayfayı yenileyin.');
     return result;
   }
+  // Okunan anahtar yanıttan sonra yalnız sürümle duyurulduysa (REREAD) yanıt yamanamaz: okuma yinelenir (en çok üç kez).
+  async function duyuruyaKadarOku(query, istenen) {
+    let result = await request('get', query);
+    for (let i = 0; i < 3 && [...cache].some(([name, e]) => e.value === REREAD && e.revision > result.revision && istenen(name)); i++)
+      result = await request('get', query);
+    return result;
+  }
   const local = {
     async get(query = null) {
       pendingGets++;
       try {
-        const result = await request('get', query), data = result.data, keys = keysOf(query);
-        for (const [name, entry] of cache) if ((keys == null || keys.includes(name)) && entry.revision > result.revision && entry.value !== NOT_KEPT) {
+        const keys = keysOf(query), istenen = name => keys == null || keys.includes(name);
+        const result = await duyuruyaKadarOku(query, istenen), data = result.data;
+        // Yalnız tutulan değer yamar (NOT_KEPT ve REREAD simgedir; depo değeri simge olamaz).
+        for (const [name, entry] of cache) if (istenen(name) && entry.revision > result.revision && typeof entry.value !== 'symbol') {
           if (entry.value === undefined) {
             if (query && typeof query === 'object' && !Array.isArray(query) && Object.hasOwn(query, name)) data[name] = clone(query[name]);
             else delete data[name];
@@ -490,7 +540,11 @@
     chrome.runtime.onMessage.addListener((message, sender) => {
       if (message?.type === 'uhd-storage-changed' && sender.id === chrome.runtime.id && !sender.tab && Number.isSafeInteger(message.revision)) {
         const changes = {};
-        for (const [key, change] of Object.entries(message.changes || {})) if (validKey(key) && (!cache.has(key) || cache.get(key).revision < message.revision)) changes[key] = change;
+        // Sürüm duyurusu, duyurduğu anahtarın filigranıyla süzülür: okunmuş sürümden eski duyuru dinleyiciye gitmez.
+        for (const [key, change] of Object.entries(message.changes || {})) {
+          const filigran = cache.get(DUYURU.get(key) || key);
+          if (validKey(key) && (!filigran || filigran.revision < message.revision)) changes[key] = change;
+        }
         if (Object.keys(changes).length) fire(changes, 'local', message.revision);
       }
     });
@@ -532,5 +586,7 @@
     beginSafahat: async fileKey => (await request('beginSafahat', { fileKey })).data,
     saveSafahat: async (fileKey, token, items) => (await request('saveSafahat', { fileKey, token, items })).data,
     cancelSafahat: async (fileKey, token) => { await request('cancelSafahat', { fileKey, token }); },
+    indexMeta: async () => (await request('indexMeta')).data,
+    findRecord: async key => (await request('findRecord', { key })).data,
     status: async () => (await request('status')).data };
 })();

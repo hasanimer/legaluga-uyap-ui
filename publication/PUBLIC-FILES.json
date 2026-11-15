@@ -112,7 +112,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "a15a24c279e9835c092489d571a83581106d04ccccf3296492a8865161ad5d9d"
+      "sha256": "914024ec054d26227dbb1d1a270c332fb886d5499e2d982b9725a0ebc24aea92"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -276,7 +276,7 @@
     },
     {
       "path": "src/extension/storage.js",
-      "sha256": "6de0807faed9ea2e377ff7587927ae5a338fb2da534f370ba85f84297955a130"
+      "sha256": "df36ad8da3437e17cc5d2c96d08632f6a73c3c31b29c4629ad4d181906695490"
     },
     {
       "path": "src/extension/tabs.js",
@@ -300,7 +300,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "08db1b60c603ad0e1ab2709b75b05f452d1742f702ebbcd2a914708ef1196319"
+      "sha256": "d5a8c0a6202e675bbc88e85169cce9cff1b3ea34d95b7bce3e4ca3fbe0e78dfa"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -592,7 +592,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "c357aca0b3e858e28059a26827d2d70efdab7dfd3525524db36add2011ef45ad"
+      "sha256": "3688b564af93e89ac4f0181e46add1c1308df73d24de180876066f105163886e"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
