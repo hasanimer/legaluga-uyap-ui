@@ -112,7 +112,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "7be5e54dae328a06677e03a3cb554942f584ec709653fb3433e8ff1dd50c6ef5"
+      "sha256": "7248bf854dc5ce8089b065f2c07763e22258203d667c178cb4ce3212624ced1d"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -480,7 +480,7 @@
     },
     {
       "path": "src/fragments/common/015.js.part",
-      "sha256": "0177523cfa7ae73bc2a53e3860fcce52d2514fc94cf5b6e3a1763972365ad950"
+      "sha256": "60e70912c2485ef4c86a7ccdb5994c66956ee240453ca92b386c8ac448c83ae6"
     },
     {
       "path": "src/fragments/content/001-bootstrap-shared-request-safety.js.part",
@@ -712,7 +712,7 @@
     },
     {
       "path": "tests/common-taklidi.js",
-      "sha256": "1729f3c82cf59ea317f0b4027fc4d690ce826533f08768f7012d70016bfc503f"
+      "sha256": "c04667598b2d01c153ecb1b2d0ea498f498060449cb959c4f78542d019f895a9"
     },
     {
       "path": "tests/parca-sinirlari.js",

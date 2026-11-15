@@ -8,7 +8,7 @@ const kok = path.join(__dirname, '..');
 // Özel parçanın sırası → stub'ı yazılan adlar. Özel parça eklenir, kaldırılır ya da ad değişirse burası da değişir.
 const OZEL_ISLEVLER = new Map([
   [2, ['openPath']], [4, ['evrakKey']], [6, ['parseEvraklar', 'evrakKilidi']], [8, ['parseDurusma']],
-  [10, ['ihbarCevabiMi', 'bankaAdi', 'bankaUnvanAdi', 'bankaCevabi', 'bankaBelgeleri']], [12, ['parseSafahat']], [14, ['ekleriYerlestir']]
+  [10, ['ihbarCevabiMi', 'bankaAdi', 'bankaUnvanAdi']], [12, ['parseSafahat']], [14, ['ekleriYerlestir']]
 ]);
 const stub = ad => `  function ${ad}() { throw Object.assign(new Error('Özel işlem motoru açık depoda bulunmuyor.'), { code: 'NOT_AVAILABLE', feature: '${ad}' }); }\n`;
 

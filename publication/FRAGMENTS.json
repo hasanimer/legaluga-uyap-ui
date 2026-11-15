@@ -63,8 +63,8 @@
       "source": "common.js",
       "order": 15,
       "path": "src/fragments/common/015.js.part",
-      "sha256": "0177523cfa7ae73bc2a53e3860fcce52d2514fc94cf5b6e3a1763972365ad950",
-      "bytes": 32875,
+      "sha256": "60e70912c2485ef4c86a7ccdb5994c66956ee240453ca92b386c8ac448c83ae6",
+      "bytes": 32846,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
