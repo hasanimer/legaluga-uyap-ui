@@ -83,7 +83,7 @@ function harness({ mode = 'page', states = [], downloads = true, panel = true } 
     pause(key) { calls.push(['pause', key]); }, resume(key) { calls.push(['resume', key]); },
     start(...args) { calls.push(['start', ...args]); }
   };
-  Object.assign(context, { document, window: { matchMedia: () => ({ matches: false, addEventListener() {} }) },
+  Object.assign(context, { document, window: { matchMedia: () => ({ matches: false, addEventListener() {} }), addEventListener() {} },
     setTimeout: () => 1, clearTimeout() {}, setInterval: () => 1, clearInterval() {},
     chrome: { runtime: { id: 'synthetic-extension', getURL: value => `chrome-extension://synthetic-extension/${value}`,
       getManifest: () => ({ version: '1.19.29' }), sendMessage: async () => ({}) },

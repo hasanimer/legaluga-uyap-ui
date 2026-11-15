@@ -112,7 +112,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "2b0293b682dba01e2fa0e9ef04a8c87b41e7fe32e572a8f5c7984c0f9160f1f0"
+      "sha256": "96413d0049f0426c01bfb75af946add15207dff128042ad838a399ec5fb147e5"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -276,7 +276,7 @@
     },
     {
       "path": "src/extension/storage.js",
-      "sha256": "df36ad8da3437e17cc5d2c96d08632f6a73c3c31b29c4629ad4d181906695490"
+      "sha256": "0caa2f6a8efcb5152a4fd3ed0595cf38215dd8559bee66c6ab1b61f94aaddc7f"
     },
     {
       "path": "src/extension/tabs.js",
@@ -300,7 +300,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "d5a8c0a6202e675bbc88e85169cce9cff1b3ea34d95b7bce3e4ca3fbe0e78dfa"
+      "sha256": "015214d6d44ad125533821b82eaa20a13503c69ffb15997c06550b4aef307558"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -520,7 +520,7 @@
     },
     {
       "path": "src/fragments/common/001.js.part",
-      "sha256": "edc7ff115a84b0834e6d9c2a74fcc9a725c7fdb270920c7597574dd59c9e5031"
+      "sha256": "fa99c7677788d0babdf780d4e9b0a88493d03863b92443d385014ed934d8247c"
     },
     {
       "path": "src/fragments/common/003.js.part",
@@ -548,7 +548,7 @@
     },
     {
       "path": "src/fragments/common/015.js.part",
-      "sha256": "9bd67c971a3577d76dd480845b5ed0694faab7e304e35a5e0ea3e1754b65644a"
+      "sha256": "0177523cfa7ae73bc2a53e3860fcce52d2514fc94cf5b6e3a1763972365ad950"
     },
     {
       "path": "src/fragments/content/001-bootstrap-shared-request-safety.js.part",
@@ -764,7 +764,7 @@
     },
     {
       "path": "tests/ui-downloads.test.js",
-      "sha256": "c6dd8223668d6c79b12ec7584d970e7e9369d65f8472a78b9cb6fcab53acbbf1"
+      "sha256": "2ff0ff43377aa757eaf696d83223a6b1529ac6f79352580d57b59ed366b82500"
     },
     {
       "path": "tests/erisilebilirlik.test.js",

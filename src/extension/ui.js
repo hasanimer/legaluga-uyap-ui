@@ -1,9 +1,8 @@
 // Arama arayüzü: hem eklenti popup'ında hem UYAP sayfasındaki yan panelde aynı kod kullanılır.
 (() => {
   if (globalThis.UHD.mountUI) return;
-  const { onayIste, search, passFilter, fileNoQuery, fmtTrDate, fmtNum, fmtDate, norm, detectMyName, myKeys, isClient, nameKey, BRAND, csvCell, csvDosyaNo, unseenEvrak, trDateTs, lastEvrak, personFiles, trTitle, cleanDurum, cleanBirim, kunyeOf, evrakTakipAcik, CBS, ILLER, ilAdi, BACKUP_APP, BACKUP_FORMAT, BACKUP_KEYS, checkBackup, todayIso, daysLeft, upcomingDurusmalar, durusmaCakismalari, CAKISMA_DK, durusmaIcs, taramaCanli, TARAF_V } = globalThis.UHD;
+  const { onayIste, search, passFilter, fileNoQuery, fmtTrDate, fmtNum, fmtDate, norm, detectMyName, myKeys, isClient, nameKey, BRAND, csvCell, csvDosyaNo, unseenEvrak, trDateTs, lastEvrak, personFiles, trTitle, cleanDurum, cleanBirim, kunyeOf, evrakTakipAcik, CBS, ILLER, ilAdi, BACKUP_APP, BACKUP_FORMAT, BACKUP_KEYS, checkBackup, todayIso, daysLeft, upcomingDurusmalar, durusmaCakismalari, CAKISMA_DK, durusmaIcs, taramaCanli, TARAF_V, SON_ACILAN_MAX } = globalThis.UHD;
   const LIMIT = 60;
-  const RECENT_MAX = 10;
   const REMIND_DAYS = 7;
 
   const CSS = `
@@ -505,6 +504,7 @@
     let shownLimit = LIMIT;
     let loaded = false;
     let loadFailed = false;
+    let dizinHatasi = false;   // kapalı açılan panelin ertelenen dizin okuması düştü (dizinOkunamadi)
     let prefsRevision = 0;
     let setupOpen = false;
     let onboarding = null;
@@ -652,6 +652,7 @@
     function setIndex(ix) {
       records = (ix && ix.records) || [];
       meta = ix || {};
+      dizinHatasi = false;
       detected = detectMyName(records);
       computeYeni();
     }
@@ -675,6 +676,7 @@
     // bayat dizin tek okumayla alınıp bir kez çizilir; bayat dizinle iş yapılmaz.
     let dizinBayat = false;
     let dizinSurum = 0;        // her dizin olayında artar: araya giren olay süren okumanın eski sonucunu geçersiz kılar
+    let dizinDegerSurum = 0;   // yalnız değer taşıyan dizin olayında artar: ilk yükleme sürüm duyurusuyla geçersizleşmez (ilkDizin)
     let dizinOkuma = null;
     const gorunmuyor = () => document.hidden || !!(opts.isVisible && !opts.isVisible());
     // change yoksa olay sürüm duyurusudur. İlk yükleme sürerken gelen duyuru dizini bayatlatmaz: depo, duyurudan eski
@@ -686,6 +688,7 @@
         if (!gorunmuyor()) dizinTazele();
         return false;
       }
+      dizinDegerSurum++;
       dizinBayat = gorunmuyor();
       if (!dizinBayat) setIndex(change.newValue);
       return !dizinBayat;
@@ -711,6 +714,7 @@
         // unhandledrejection işleyicisi paneli durdurup “Yenile”yi gösterir.
         dizinOkuma = null;
         if (baglamGitti(error)) throw error;
+        dizinOkunamadi();
       });
       return dizinOkuma;
     }
@@ -848,6 +852,12 @@
       filter.tur = value?.pinned === false ? [] : [...new Set((Array.isArray(value?.tur) ? value.tur : []).filter(t => allowed.includes(t)))];
       filter.turPinned = value?.pinned !== false;
       if (cbsOnly()) filter.onlyClient = false;
+    }
+    // Açılıştan sonra gelen sabitlenmemiş değer (yayın, geri/ileri tazelemesi) yalnız sabitlemeyi kapatır; bellekteki
+    // oturumluk seçim silinmez.
+    function turFilterAl(value, sonradan) {
+      if (sonradan && value?.pinned === false) filter.turPinned = false;
+      else readTurFilter(value);
     }
     const viewName = () => filter.onlyDurusma ? 'hearings' : filter.onlyNew ? 'new' : 'files';
     const activeFilterCount = () => (filter.durum !== 'all' ? 1 : 0) + filter.tur.length + (filter.onlyClient ? 1 : 0)
@@ -1270,6 +1280,9 @@
 
     // kadar verilirse görüldü zamanı o ana çekilir: o andan sonra bulunan evrak yeni kalır.
     // Geri alma işlevini döndürür: undoable ise panel bildirimi “Geri al” ile sunar, değilse çağıran (dosya ekranı) sunar.
+    // UHDStorage varken depoya yalnız bu işlemin anahtarları yamalanır; başka sekmenin işaretleri ezilmez (yoksa, açık demoda,
+    // harita bütün olarak yazılır). Yazılamazsa bellek ve liste, arada başka değişiklik gelmediyse önceki hâline döner;
+    // kullanıcı bilgilendirilir ve geri alma sunulmaz (null).
     async function markSeen(keys, undoable, kadar) {
       const prev = goruldu;
       const count = undoable ? records.filter(r => keys.includes(r.key)).reduce((n, r) => n + unseenEvrak(r, prev).length, 0) : 0;
@@ -1282,13 +1295,28 @@
       renderFilters();
       render();
       autoNotice();
-      await chrome.storage.local.set({ uhdEvrakGoruldu: next });
+      try {
+        if (globalThis.UHDStorage) await UHDStorage.patchMap({ key: 'uhdEvrakGoruldu', set: written });
+        else await chrome.storage.local.set({ uhdEvrakGoruldu: next });
+      } catch (error) {
+        if (baglamGitti(error)) throw error;
+        if (goruldu === next) {
+          goruldu = prev;
+          computeYeni();
+          renderFilters();
+          render();
+        }
+        setNotice('Görüldü bilgisi kaydedilemedi. Tekrar deneyin.', 'err');
+        return null;
+      }
       // Geri al yalnız bu işlemin yazdığı anahtarları çevirir ve güncel haritadan başlar: arada başka kartta, popup'ta ya da
-      // başka sekmede verilen görüldü işaretleri silinmez; sonradan yeniden işaretlenen anahtar da ezilmez.
+      // başka sekmede verilen görüldü işaretleri silinmez; sonradan yeniden işaretlenen anahtar da ezilmez. UHDStorage varken
+      // aynı koşul (onlyIf) depo kuyruğunda da uygulanır.
       const undo = async () => {
-        const { uhdEvrakGoruldu: stored } = await chrome.storage.local.get('uhdEvrakGoruldu');
-        const cur = { ...(stored || goruldu) };
+        const stored = globalThis.UHDStorage ? goruldu : (await chrome.storage.local.get('uhdEvrakGoruldu')).uhdEvrakGoruldu;
+        const cur = { ...(stored || goruldu) }, set = {}, remove = [];
         for (const k of keys) {
+          if (k in prev) set[k] = prev[k]; else remove.push(k);
           if (cur[k] !== written[k]) continue;
           if (k in prev) cur[k] = prev[k];
           else delete cur[k];
@@ -1298,7 +1326,8 @@
         renderFilters();
         render();
         if (count) setNotice(''); else autoNotice();
-        await chrome.storage.local.set({ uhdEvrakGoruldu: cur });
+        if (globalThis.UHDStorage) await UHDStorage.patchMap({ key: 'uhdEvrakGoruldu', set, remove, onlyIf: written });
+        else await chrome.storage.local.set({ uhdEvrakGoruldu: cur });
       };
       if (count) setNotice(`${fmtNum(count)} evrak görüldü sayıldı.`, '', { label: 'Geri al', undo: true, fn: undo });
       return undo;
@@ -1690,8 +1719,10 @@
       btnQClear.hidden = !input.value;
       views.hidden = optionsPage || !loaded || (!records.length && !durusmaMeta) || !!person || !settings.hidden || (quick && !views.childElementCount);
       filters.hidden = quick || optionsPage || !records.length || !!person || !settings.hidden || filter.onlyDurusma;
-      if (!loaded) {
-        list.append(el('div', { class: 'empty', role: 'status' }, 'Dosyalarınız hazırlanıyor…'));
+      if (!loaded || (dizinBayat && !records.length)) {   // kapalı açılan panelin dizini gösterimde okunur
+        list.append(dizinHatasi
+          ? el('div', { class: 'empty', role: 'alert' }, el('p', null, 'Dosyalarınız okunamadı.'), el('button', { class: 'btn sm', onclick: dizinYenidenDene }, 'Tekrar dene'))
+          : el('div', { class: 'empty', role: 'status' }, 'Dosyalarınız hazırlanıyor…'));
         return;
       }
       if (person) return renderPerson();
@@ -1877,9 +1908,10 @@
     // ------------------------------------------------ kayıt işlemleri
 
     async function openRecord(r) {
-      recent = [r.key, ...recent.filter(k => k !== r.key)].slice(0, RECENT_MAX);
+      recent = [r.key, ...recent.filter(k => k !== r.key)].slice(0, SON_ACILAN_MAX);
       // Son açılanlar listesi yazılamazsa dosya yine açılır. Yazım açılıştan önce başlar: popup açılışın sonunda kapanır.
-      (async () => chrome.storage.local.set({ uhdRecent: recent }))().catch(() => {});
+      // UHDStorage varken dosya depo kuyruğunda başa alınır; başka sekmenin açtığı dosya listeden düşmez.
+      (async () => (globalThis.UHDStorage ? UHDStorage.pushRecent(r.key, SON_ACILAN_MAX) : chrome.storage.local.set({ uhdRecent: recent })))().catch(() => {});
       opts.onOpen(r);
     }
 
@@ -1982,7 +2014,7 @@
         barFill.style.width = progress.total ? `${Math.round(100 * progress.done / progress.total)}%` : '0';
         bar.setAttribute('aria-valuenow', String(progress.total ? Math.min(100, Math.round(100 * progress.done / progress.total)) : 0));
       } else {
-        const last = meta.updatedAt ? `Son güncelleme: ${fmtAgo(meta.updatedAt)} (${fmtDate(meta.updatedAt)})` : 'Henüz güncelleme yapılmadı.';
+        const last = meta.updatedAt ? `Son güncelleme: ${fmtAgo(meta.updatedAt)} (${fmtDate(meta.updatedAt)})` : dizinBayat ? '' : 'Henüz güncelleme yapılmadı.';
         const recentText = progress && progress.text && progress.endedAt && (paused || err || Date.now() - progress.endedAt < 3600000);
         statusText.textContent = pendingJob?.setupPending ? progress?.text || 'İlk tarama UYAP bağlantısını bekliyor.' : recentText ? `${progress.text} · ${fmtAgo(progress.endedAt)}` : last;
       }
@@ -1991,11 +2023,15 @@
 
     // ------------------------------------------------ gizlenen dosyalar
 
-    // Yazılamazsa bellek, arada başka değişiklik gelmediyse önceki hâline döner: görünüm depoyla ayrışmaz.
+    // Yazılamazsa bellek, arada başka değişiklik gelmediyse önceki hâline döner: görünüm depoyla ayrışmaz. UHDStorage varken
+    // yalnız değişen anahtar depo kuyruğunda yamalanır; başka sekmede gizlenen ya da gösterilen dosya ezilmez.
     async function hideFile(r) {
       const onceki = gizli, next = { ...gizli, [r.key]: { dosyaNo: r.dosyaNo, birimAdi: r.birimAdi, at: Date.now() } };
       gizli = next;
-      try { await chrome.storage.local.set({ uhdGizli: next }); }
+      try {
+        if (globalThis.UHDStorage) await UHDStorage.patchMap({ key: 'uhdGizli', set: { [r.key]: next[r.key] } });
+        else await chrome.storage.local.set({ uhdGizli: next });
+      }
       catch {
         if (gizli === next) gizli = onceki;
         return setNotice('Dosya gizlenemedi. Tekrar deneyin.', 'err');
@@ -2009,7 +2045,10 @@
       const onceki = gizli, next = { ...gizli };
       for (const key of keys) delete next[key];
       gizli = next;
-      try { await chrome.storage.local.set({ uhdGizli: next }); }
+      try {
+        if (globalThis.UHDStorage) await UHDStorage.patchMap({ key: 'uhdGizli', remove: keys });
+        else await chrome.storage.local.set({ uhdGizli: next });
+      }
       catch {
         if (gizli === next) gizli = onceki;
         return setNotice('Dosya yeniden gösterilemedi. Tekrar deneyin.', 'err');
@@ -2425,7 +2464,7 @@
           check('anaSayfaDurusma', true, 'Bugün ve bu hafta duruşmalar', 'Ana sayfanın üstündeki Legaluga şeridinde bugünkü ve önümüzdeki 7 günün duruşmalarını gösterir. Basınca dosya açılır.'),
           check('anaSayfaHizli', true, 'Hızlı işlemler', 'Dosya sorgulama ve Legaluga panelindeki dosyalar, duruşmalar ve yeni evraklar için kısayollar.'),
           check('anaSayfaYeniEvrak', true, 'Yeni evrak özeti', 'Son taramadan beri gelen ve henüz görülmemiş evrakları dosya dosya gösterir.'),
-          check('anaSayfaSonAcilan', true, 'Son açılan dosyalar', 'Legaluga ile açtığınız son 10 dosya. Liste yalnız bu bilgisayarda tutulur.'),
+          check('anaSayfaSonAcilan', true, 'Son açılan dosyalar', `Legaluga ile açtığınız son ${SON_ACILAN_MAX} dosya. Liste yalnız bu bilgisayarda tutulur.`),
           el('div', { class: 'hint' }, 'Şeritteki bilgiler yalnız uzantının bu bilgisayardaki kayıtlarından okunur; hiçbir yere gönderilmez.')),
 
         el('h3', null, 'Dosya açma'),
@@ -2596,10 +2635,49 @@
       applyTheme();
     }).catch(() => {});
     render();
+    // Kapalı açılan panelin dizini hiç okunamadıysa liste “hazırlanıyor”da kalmaz: hata ve “Tekrar dene” gösterilir; panel
+    // yeniden gösterilince de okunur. Eldeki (bayat) dizin varsa görünmeye devam eder.
+    function dizinOkunamadi() {
+      if (records.length) return;
+      dizinHatasi = true;
+      if (!editing && settings.hidden) render();
+    }
+    function dizinYenidenDene() {
+      dizinHatasi = false;
+      render();
+      return dizinTazele();
+    }
+    // İlk okuma; geri/ileri önbellekten dönüşte de bellek kopyalarını tazeler. Görünmeyen panel (UYAP sayfasında kapalı panel)
+    // büyük dizini okumaz: dizin bayat sayılır, panel gösterilince ya da dizin isteyen çağrıda tek okumayla alınır (dizinTazele).
+    // Kurulum kararı dizine bakabildiğinden (bayraksız eski profil, dosya varlığı) kurulum gerekiyorsa dizin hemen okunur.
+    // Okuma sürerken gelen değerli dizin olayı (dizinDegerSurum) eski sonuçla ezilmez; sürüm duyurusu ilk okumayı geçersiz
+    // kılmaz (depo, duyurudan eski yanıtı kendisi yeniden okur) ve dizini okunmamış panelde bayatlığı kaldırmaz. Açık ayar
+    // ekranı baştan açılmaz, düzenlenen not yeniden çizilmez.
+    function ilkDizin(okundu, surum, index) {
+      if (okundu && surum === dizinDegerSurum) { dizinBayat = false; setIndex(index); return; }
+      if (surum === dizinDegerSurum) dizinBayat = true;   // araya değerli olay girdiyse dizinDegisti bayatlığı zaten belirledi
+      computeYeni();
+    }
+    function yuklemeyiCiz() {
+      renderFilters();
+      if (!editing && settings.hidden) render();
+      renderStatus();
+      autoNotice();
+      if (!settings.hidden) refreshSettings();
+      else if (optionsPage) openSettings();
+      if (dizinBayat && !gorunmuyor()) dizinTazele();
+    }
     function loadInitial() {
+      const surum = dizinDegerSurum;
       const initialPrefsRevision = prefsRevision;
       const initialTurFilterRevision = turFilterRevision;
-      return chrome.storage.local.get(['uhdIndex', 'uhdProgress', 'uhdNotes', 'uhdRecent', 'uhdPrefs', 'uhdEvrakGoruldu', 'uhdJob', 'uhdDurusmalar', 'uhdGizli', 'uhdTurFilter']).then(v => {
+      const kucuk = ['uhdProgress', 'uhdNotes', 'uhdRecent', 'uhdPrefs', 'uhdEvrakGoruldu', 'uhdJob', 'uhdDurusmalar', 'uhdGizli', 'uhdTurFilter'];
+      let dizinOkundu = !gorunmuyor();
+      const okuma = chrome.storage.local.get(dizinOkundu ? ['uhdIndex', ...kucuk] : kucuk)
+        .then(v => (dizinOkundu || !globalThis.UHD.kurulumGerekli(v.uhdPrefs, null) ? v
+          : chrome.storage.local.get('uhdIndex').then(d => { dizinOkundu = true; return { ...v, ...d }; })));
+      return okuma.then(v => {
+        const tazeleme = loaded;
         if (loadFailed) setNotice('');
         loaded = true;
         loadFailed = false;
@@ -2608,23 +2686,22 @@
         btnUpdate.disabled = false;
         if (prefsRevision === initialPrefsRevision) prefs = v.uhdPrefs || {};
         if (quick) ozetTur = v.uhdTurFilter?.pinned === false || !Array.isArray(v.uhdTurFilter?.tur) ? [] : v.uhdTurFilter.tur;
-        else if (!pendingTurWrites && turFilterRevision === initialTurFilterRevision) readTurFilter(v.uhdTurFilter);
+        else if (!pendingTurWrites && turFilterRevision === initialTurFilterRevision) turFilterAl(v.uhdTurFilter, tazeleme);
         applyTheme();
         durusmaMeta = v.uhdDurusmalar || null;
         gizli = v.uhdGizli || {};
         computeDurusma();
         goruldu = v.uhdEvrakGoruldu || {};
         pendingJob = v.uhdJob || null;
-        setIndex(v.uhdIndex);
+        ilkDizin(dizinOkundu, surum, v.uhdIndex);
         progress = v.uhdProgress || null;
         notes = v.uhdNotes || {};
         recent = v.uhdRecent || [];
-        renderFilters();
-        render();
-        renderStatus();
-        autoNotice();
-        if (optionsPage) openSettings();
-      }).catch(() => {
+        yuklemeyiCiz();
+      }).catch(error => {
+        // Tazeleme okunamazsa eldeki kopyalar kalır; sonraki yayınlar onları günceller. Bağlam gittiyse (eklenti güncellendi)
+        // hata yutulmaz: sayfadaki unhandledrejection işleyicisi paneli durdurup “Yenile”yi gösterir.
+        if (loaded && !loadFailed) { if (baglamGitti(error)) throw error; return; }
         loaded = false;
         loadFailed = true;
         btnSettings.disabled = true;
@@ -2635,6 +2712,9 @@
       });
     }
     loadInitial();
+    // Geri/ileri önbellekteki sayfa (UYAP sekmesi) depo yayınlarını almaz; dönünce görüldü, gizli, son açılan, not ve
+    // tercih kopyaları eskiyle yazılmasın diye yeniden okunur.
+    window.addEventListener('pageshow', e => { if (e.persisted && loaded) loadInitial(); });
     chrome.storage.onChanged.addListener((ch, area) => {
       if (area !== 'local') return;
       let redraw = false;
@@ -2642,9 +2722,7 @@
       if (ch.uhdTurFilter && !quick) {
         turFilterRevision++;
         if (!pendingTurWrites) {
-          const v = ch.uhdTurFilter.newValue;
-          if (v && v.pinned === false) filter.turPinned = false;
-          else readTurFilter(v);
+          turFilterAl(ch.uhdTurFilter.newValue, true);
           sel = 0; shownLimit = LIMIT;
           renderFilters(); redraw = true;
         }

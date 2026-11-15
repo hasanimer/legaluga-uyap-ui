@@ -204,6 +204,33 @@
         if (!text) delete next[args.key];
         await write({ uhdNotes: next }); return { data: next, revision };
       }
+      // Görüldü ve gizli dosya haritalarına anahtar başına yama: okuma, koşul ve yazma aynı kuyruktadır, iki istemcinin farklı
+      // dosyalara verdiği işaretler birbirini ezmez. onlyIf'teki anahtar yalnız depodaki değeri o değerse değişir (null: kayıt yok);
+      // geri alma böylece yalnız kendi yazdığı değeri çevirir. Sonuç yedek doğrulamasının sözlük kurallarıyla denetlenir.
+      if (operation === 'patchMap') {
+        const nesne = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+        const { key, set = {}, remove = [], onlyIf = null } = nesne(args) ? args : {};
+        if (!['uhdEvrakGoruldu', 'uhdGizli'].includes(key) || !nesne(set) || !Array.isArray(remove) || (onlyIf !== null && !nesne(onlyIf)) ||
+            ![...Object.keys(set), ...remove].every(globalThis.UHD.safahatFileKey)) throw new Error('Harita yaması geçersiz.');
+        const current = (await read(key, false)).data[key] ?? {};
+        if (!nesne(current)) throw new Error('Harita deposu geçersiz; mevcut kayıt korundu.');
+        const deger = (map, name) => JSON.stringify(Object.hasOwn(map, name) ? map[name] : null);
+        const uygun = name => onlyIf === null || !Object.hasOwn(onlyIf, name) || deger(current, name) === deger(onlyIf, name);
+        const next = { ...current };
+        for (const [name, value] of Object.entries(set)) if (uygun(name)) next[name] = value;
+        for (const name of remove) if (uygun(name)) delete next[name];
+        try { globalThis.UHD.checkBackup({ app: UHD.BACKUP_APP, format: UHD.BACKUP_FORMAT, data: { [key]: next } }); }
+        catch { throw new Error('Harita yaması geçersiz; mevcut kayıt korundu.'); }
+        await write({ [key]: next }); return { data: next, revision };
+      }
+      // Son açılanlar: dosya başa alınır, liste kuyrukta kısaltılır; sekmeler, şerit ve UYAP penceresi birbirinin açtığını silmez.
+      if (operation === 'pushRecent') {
+        if (!globalThis.UHD.safahatFileKey(args?.key) || !Number.isSafeInteger(args.max) || args.max < 1 || args.max > 100)
+          throw new Error('Son açılan dosya kaydı geçersiz.');
+        const current = (await read('uhdRecent', false)).data.uhdRecent;
+        const next = [args.key, ...(Array.isArray(current) ? current : []).filter(k => typeof k === 'string' && k !== args.key)].slice(0, args.max);
+        await write({ uhdRecent: next }); return { data: next, revision };
+      }
       if (operation === 'queueSetupScan') {
         const saved = (await read(['uhdPrefs', 'uhdIndex', 'uhdJob', 'uhdProgress'])).data;
         if (globalThis.UHD.kurulumGerekli(saved.uhdPrefs, saved.uhdIndex)) return { data: { ok: false, error: 'Önce kurulum seçimlerini kaydedin.' }, revision };
@@ -555,6 +582,8 @@
   chrome.storage.onChanged.hasListener = fn => listeners.has(fn);
   globalThis.UHDStorage = { local, patchPrefs: async patch => (await request('patchPrefs', patch)).data,
     mergeNote: async (key, text) => (await request('mergeNote', { key, text })).data,
+    patchMap: async patch => (await request('patchMap', patch)).data,
+    pushRecent: async (key, max) => (await request('pushRecent', { key, max })).data,
     fillSetupNameIfEmpty: async (name, scanGuard) => (await request('fillSetupNameIfEmpty', scanGuard ? { name, scanGuard } : name)).data,
     queueSetupScan: async () => (await request('queueSetupScan')).data,
     activateSetupScan: async (id, owner) => (await request('activateSetupScan', owner ? { id, owner } : id)).data,

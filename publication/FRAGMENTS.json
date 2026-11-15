@@ -7,8 +7,8 @@
       "source": "common.js",
       "order": 1,
       "path": "src/fragments/common/001.js.part",
-      "sha256": "edc7ff115a84b0834e6d9c2a74fcc9a725c7fdb270920c7597574dd59c9e5031",
-      "bytes": 17808,
+      "sha256": "fa99c7677788d0babdf780d4e9b0a88493d03863b92443d385014ed934d8247c",
+      "bytes": 17978,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
@@ -63,8 +63,8 @@
       "source": "common.js",
       "order": 15,
       "path": "src/fragments/common/015.js.part",
-      "sha256": "9bd67c971a3577d76dd480845b5ed0694faab7e304e35a5e0ea3e1754b65644a",
-      "bytes": 32859,
+      "sha256": "0177523cfa7ae73bc2a53e3860fcce52d2514fc94cf5b6e3a1763972365ad950",
+      "bytes": 32875,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
