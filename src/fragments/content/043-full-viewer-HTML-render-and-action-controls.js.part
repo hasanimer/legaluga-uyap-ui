@@ -5,10 +5,10 @@
     function paketSirasi() {
       const secili = new Set(paketSecili);
       if (paketSira === 'secim' || paketSira === 'elle') return paketSecili.map(k => tum.find(x => paketAnahtar(x) === k)).filter(Boolean);
-      const gruplar = [];
-      for (const x of tum) { if (x.ana && gruplar.length) gruplar[gruplar.length - 1].push(x); else gruplar.push([x]); }
-      if (paketSira === 'eski') gruplar.reverse();
-      return gruplar.flat().filter(x => secili.has(paketAnahtar(x)));
+      const evrakGruplari = [];
+      for (const x of tum) { if (x.ana && evrakGruplari.length) evrakGruplari[evrakGruplari.length - 1].push(x); else evrakGruplari.push([x]); }
+      if (paketSira === 'eski') evrakGruplari.reverse();
+      return evrakGruplari.flat().filter(x => secili.has(paketAnahtar(x)));
     }
     function paketYaz() {
       const n = paketSirasi().length, calisiyor = !!paketSession;

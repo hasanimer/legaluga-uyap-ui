@@ -1,3 +1,4 @@
+'use strict';
 // Araç çubuğu popup'ı: UYAP dışındayken hızlı bakış (ara, dosyayı UYAP'ta aç; duruşma ve yeni evrak özeti). UYAP
 // sekmesinde simge popup yerine sayfadaki paneli açar (background.js); popup orada yalnız panel yanıt vermezse görünür.
 const { ORIGIN, openPath, mountUI, uyapTab, focusTab, unresponsive, requestUpdate, stopUpdateAll } = UHD;

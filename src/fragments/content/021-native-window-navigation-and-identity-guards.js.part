@@ -4,33 +4,33 @@
   // odağı kaybolmaz). Aynı adım 5 sn'den uzun sürerse geçen süre yazılır; 15 sn'den uzun sürerse UYAP'ın yavaş olduğu
   // söylenir ve "Baştan başlat" sunulur. Aynı dosyaya yeniden basılınca da "Baştan başlat" hemen çıkar.
   const YAVAS_MS = 5000, COK_YAVAS_MS = 15000;
-  function openProgress(title, run, restart) {
-    const stop = { label: 'Durdur', fn: () => { run.userStop = true; run.cancelled = true; run.ctl.abort(); } };
-    const again = { label: 'Baştan başlat', fn: () => { run.cancelled = true; run.ctl.abort(); restart(); } };
+  function openProgress(title, kosu, restart) {
+    const stop = { label: 'Durdur', fn: () => { kosu.userStop = true; kosu.cancelled = true; kosu.ctl.abort(); } };
+    const again = { label: 'Baştan başlat', fn: () => { kosu.cancelled = true; kosu.ctl.abort(); restart(); } };
     let text = '', since = Date.now(), nudged = false, waiting = false, timer = null;
     function draw() {
-      if (run.cancelled || openRun !== run) return done();
-      const slow = run.stoppable && !waiting && Date.now() - since >= COK_YAVAS_MS;
+      if (kosu.cancelled || openRun !== kosu) return done();
+      const slow = kosu.stoppable && !waiting && Date.now() - since >= COK_YAVAS_MS;
       const sub = nudged ? 'Bu dosya zaten açılıyor.' : slow ? 'UYAP yavaş yanıt veriyor. Bekleyebilir ya da baştan başlatabilirsiniz.' : '';
-      const actions = run.stoppable ? (slow || nudged ? [stop, again] : [stop]) : [];
+      const actions = kosu.stoppable ? (slow || nudged ? [stop, again] : [stop]) : [];
       const h = toast(text, 'busy', 0, null, { id: 'acma', title, sub, actions });
       const ms = Date.now() - since;
       if (h) h.meta(ms >= YAVAS_MS ? `${Math.floor(ms / 1000)} sn` : '');
       // Sabit panelde tıklanan kartın düğmesi de durumu yazar: "Açılıyor · 2/4", "Yeniden deneme 1/2".
       const adim = /^(\d\/4|Yeniden deneme \d\/\d)/.exec(text);
-      if (ui && ui.setBusy && run.key) ui.setBusy(run.key, !adim ? 'Açılıyor…' : /^\d/.test(adim[1]) ? `Açılıyor · ${adim[1]}` : adim[1]);
+      if (ui && ui.setBusy && kosu.key) ui.setBusy(kosu.key, !adim ? 'Açılıyor…' : /^\d/.test(adim[1]) ? `Açılıyor · ${adim[1]}` : adim[1]);
     }
     function done() {
       clearInterval(timer);
       timer = null;
-      if (ui && ui.setBusy && run.key) ui.setBusy(run.key, null);
+      if (ui && ui.setBusy && kosu.key) ui.setBusy(kosu.key, null);
     }
     return {
       // canStop false: tıklama UYAP'a gitti, akış artık geri alınamaz (Durdur yok). wait: kullanıcının UYAP'ta bir iş
       // yapması bekleniyor (güvenlik doğrulaması); "UYAP yavaş" denmez.
       set(next, canStop = true, wait = false) {
         if (next !== text) { text = next; since = Date.now(); nudged = false; }
-        run.stoppable = canStop;
+        kosu.stoppable = canStop;
         waiting = wait;
         draw();
         if (!timer) timer = setInterval(draw, 1000);

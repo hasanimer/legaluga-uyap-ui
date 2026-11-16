@@ -1,3 +1,4 @@
+'use strict';
 // Arama arayüzü: hem eklenti popup'ında hem UYAP sayfasındaki yan panelde aynı kod kullanılır.
 (() => {
   if (globalThis.UHD.mountUI) return;
@@ -442,7 +443,7 @@
       downloadMini.addEventListener('click', () => showDownloads());
       opts.downloads.subscribe(states => {
         const active = states.filter(state => ['running', 'queued'].includes(state.status) || state.status === 'paused' && state.phase !== 'idle' && !state.persistentPending);
-        const state = active.find(item => item.status === 'running') || active[0];
+        const state = active.find(entry => entry.status === 'running') || active[0];
         downloadMini.hidden = !state;
         downloadCount.textContent = active.length ? `↓ ${active.length}` : '↓';
         btnDownloads.title = active.length ? `İndirmeler: ${active.length} sürüyor veya sırada` : 'İndirmeleri göster';
@@ -515,7 +516,7 @@
     let cakismalar = new Map();   // duruşma kimliği → çakıştığı duruşmalar (common.js durusmaCakismalari)
     let yeniMap = new Map();   // kayıt key → en yeni görülmemiş evrakın onay zamanı
     let yeniCount = 0;         // görülmemiş yeni evrak sayısı
-    let evrakTracked = false;  // en az bir dosyanın evrakları tarandı mı
+    let evrakTracked = false;  // en az bir dosyanın evrakları tarandı mı (evrakAt; görülen evrak izi dizinde değil)
     const filter = { durum: 'all', tur: [], turPinned: true, onlyClient: false, onlyNew: false, onlyDurusma: false, cbsIl: '', cbsBirim: '', cbsIzin: '' };
 
     // Tema: ayar "auto" ise sistemin açık/koyu tercihine uyar.
@@ -662,7 +663,7 @@
       yeniCount = 0;
       evrakTracked = false;
       for (const r of records) {
-        if (r.evrakSeen) evrakTracked = true;
+        if (r.evrakAt || r.evrakSeen) evrakTracked = true;
         const u = unseenEvrak(r, goruldu);
         if (!u.length) continue;
         yeniCount += u.length;
@@ -762,7 +763,8 @@
     }
 
     // Dizin tek depolama iletisinin sınırına (32 MiB) yaklaşınca uyarılır: aşılırsa tarama yazısı reddedilir, panelin ilk
-    // okuması da açılamayabilir. Doluluğu SW şifreli kayıttan bilir (indexMeta); panel yalnız görünürken ve dizin değişince sorar.
+    // okuması da açılamayabilir. Doluluğu SW şifreli kayıttan bilir (indexMeta; tarama dizini evrak iziyle aynı iletide yazdığı
+    // için ikisinin toplamı); panel yalnız görünürken ve dizin değişince sorar.
     const DIZIN_UYARI_ORANI = 0.8;
     let dizinDolulugu = 0, dolulukDizini = null;
     function dizinDolulugunuSor() {
@@ -798,21 +800,24 @@
           + (cakisan.length > 2 ? ` Toplam ${fmtNum(cakisan.length)} duruşma çakışıyor.` : '');
         return showNotice(text, '', { label: 'Göster', fn: () => showDurusmalar('cakisma') }, cakKey);
       }
+      // Yakın duruşma: kapatılınca o gün yeniden çıkmaz ve sıradaki bildirimleri gizlemez.
       const yakinDur = upcomingDurusmalar(durusmaMeta && durusmaMeta.list).filter(d => daysLeft(d.tarih) <= 1);
-      if (pref('durusmaBildirim', true) && records.length && yakinDur.length && !filter.onlyDurusma) {
+      const durKey = 'hearings:' + todayIso();
+      if (pref('durusmaBildirim', true) && records.length && yakinDur.length && !filter.onlyDurusma && !dismissedNotices.has(durKey)) {
         const bugun = yakinDur.filter(d => daysLeft(d.tarih) === 0);
         const ilk = (bugun[0] || yakinDur[0]);
         const text = bugun.length
           ? `Bugün ${bugun.length} duruşmanız var; ilki ${ilk.saat}, ${ilk.dosyaNo} ${ilk.birimAdi}.`
           : `Yarın ${yakinDur.length} duruşmanız var; ilki ${ilk.saat}, ${ilk.dosyaNo} ${ilk.birimAdi}.`;
-        return showNotice(text, '', { label: 'Göster', fn: () => showDurusmalar() }, 'hearings:' + todayIso());
+        return showNotice(text, '', { label: 'Göster', fn: () => showDurusmalar() }, durKey);
       }
       const update = { label: 'Güncelle', fn: () => { setNotice(''); opts.onUpdate(false); } };
       if (!records.length || running()) return showNotice('');
-      const oldParties = records.filter(r => r.taraflar && r.tarafV !== TARAF_V).length;
-      if (oldParties) return showNotice(`Müvekkil ve vekil bilgisi için bir kez Güncelle’ye basın (${fmtNum(oldParties)} dosyanın tarafları yenilenecek).`, '', update, 'parties:' + oldParties);
-      const days = meta.updatedAt ? Math.floor((Date.now() - meta.updatedAt) / 86400000) : 0;
-      if (days >= REMIND_DAYS) return showNotice(`Son güncelleme ${days} gün önce yapıldı. Yeni dosyalar için güncellemeniz önerilir.`, '', update, 'update:' + meta.updatedAt);
+      // Taraf yenileme ve güncelleme hatırlatması da kapatılınca sıradaki bildirimi gizlemez.
+      const oldParties = records.filter(r => r.taraflar && r.tarafV !== TARAF_V).length, partiesKey = 'parties:' + oldParties;
+      if (oldParties && !dismissedNotices.has(partiesKey)) return showNotice(`Müvekkil ve vekil bilgisi için bir kez Güncelle’ye basın (${fmtNum(oldParties)} dosyanın tarafları yenilenecek).`, '', update, partiesKey);
+      const days = meta.updatedAt ? Math.floor((Date.now() - meta.updatedAt) / 86400000) : 0, updateKey = 'update:' + meta.updatedAt;
+      if (days >= REMIND_DAYS && !dismissedNotices.has(updateKey)) return showNotice(`Son güncelleme ${days} gün önce yapıldı. Yeni dosyalar için güncellemeniz önerilir.`, '', update, updateKey);
       if (yeniMap.size && !filter.onlyNew) {
         return showNotice(`${fmtNum(yeniMap.size)} dosyada ${fmtNum(yeniCount)} yeni evrak var.`, '', {
           label: 'Göster', fn: () => { input.value = ''; switchView('new'); }
@@ -951,18 +956,18 @@
       for (const r of cbs) if (r.birimTuru2 && (!filter.cbsIl || String(r.ilKodu) === filter.cbsIl)) birimler.set(r.birimTuru2, cleanBirim(r.birimTuruAdi || r.birimAdi));
       if (filter.cbsBirim && !birimler.has(filter.cbsBirim)) filter.cbsBirim = '';
       const secim = (key, label, allLabel, entries) => {
-        const select = el('select', { class: 'sort', 'aria-label': label, 'data-filter': key },
+        const filterSelect = el('select', { class: 'sort', 'aria-label': label, 'data-filter': key },
           el('option', { value: '' }, allLabel),
           [...entries].sort((a, b) => a[1].localeCompare(b[1], 'tr')).map(([value, text]) => el('option', { value }, text)));
-        select.value = filter[key] || '';
-        select.addEventListener('change', () => {
-          filter[key] = select.value;
+        filterSelect.value = filter[key] || '';
+        filterSelect.addEventListener('change', () => {
+          filter[key] = filterSelect.value;
           if (key === 'cbsIl') filter.cbsBirim = '';
           sel = 0; shownLimit = LIMIT;
           renderFilters(); render(); list.scrollTop = 0;
           filters.querySelector(`[data-filter="${key}"]`)?.focus();
         });
-        return el('label', null, label, select);
+        return el('label', null, label, filterSelect);
       };
       const izin = new Map([['izinli', 'İnceleme izni var'], ['bekliyor', 'İnceleme izni yok']]);
       const box = el('div', { class: 'cbs-filters', role: 'group', 'aria-label': 'Savcılık dosyalarını daralt' },
@@ -1013,7 +1018,7 @@
           });
           row.append(all);
         }
-        for (const c of CHIPS.filter(c => c.group === group)) {
+        for (const c of CHIPS.filter(chip => chip.group === group)) {
           const on = selected(c);
           const b = el('button', { class: 'chip' + (on ? ' on' : ''), 'aria-pressed': String(on), 'data-filter': c.group + ':' + c.v, title: c.title || null }, c.label);
           if (c.group === 'onlyClient' && cbsOnly()) { b.disabled = true; b.title = 'UYAP savcılık dosyalarında taraf bilgisi vermiyor.'; }
@@ -1149,16 +1154,16 @@
       ta.setAttribute('data-focus', 'noteline');
       const save = el('button', { type: 'button', class: 'btn sm primary', 'data-focus': 'notesave' }, 'Kaydet');
       const cancel = el('button', { type: 'button', class: 'btn sm', 'data-focus': 'notecancel' }, 'Vazgeç');
-      const status = el('div', { class: 'note-status', role: 'status', 'aria-live': 'polite' });
+      const noteStatus = el('div', { class: 'note-status', role: 'status', 'aria-live': 'polite' });
       const editor = el('div', { class: 'note-card-editor' }, field.root,
-        el('div', { class: 'note-actions' }, save, cancel, el('span', { class: 'note-hint' }, 'Ctrl/⌘ + Enter ile kaydet')), status);
+        el('div', { class: 'note-actions' }, save, cancel, el('span', { class: 'note-hint' }, 'Ctrl/⌘ + Enter ile kaydet')), noteStatus);
       state.editor = editor;
       const sync = () => {
         ta.disabled = !!state.saving;
         save.disabled = !!state.saving || (!state.error && state.text.trim() === state.base);
         cancel.disabled = !!state.saving;
-        status.classList.toggle('err', state.error);
-        status.textContent = state.saving ? 'Kaydediliyor…' : state.error ? 'Kaydedilemedi. Yeniden deneyin.' : state.text.trim() !== state.base ? 'Kaydedilmedi' : '';
+        noteStatus.classList.toggle('err', state.error);
+        noteStatus.textContent = state.saving ? 'Kaydediliyor…' : state.error ? 'Kaydedilemedi. Yeniden deneyin.' : state.text.trim() !== state.base ? 'Kaydedilmedi' : '';
       };
       const fit = () => {
         ta.style.height = 'auto';
@@ -1403,14 +1408,14 @@
 
     function durLine(r) {
       if (filter.onlyDurusma) return null;   // duruşmalar görünümünde saat satırı ayrıca yazılıyor
-      const list = durusmaByKey.get(r.key);
-      if (!list || !list.length) return null;
-      const d = list[0];
+      const durusmalar = durusmaByKey.get(r.key);
+      if (!durusmalar || !durusmalar.length) return null;
+      const d = durusmalar[0];
       const n = daysLeft(d.tarih);
       // Dosyanın yaklaşan duruşmalarından biri başka bir duruşmayla çakışıyorsa kartta etiket çıkar.
-      const cak = list.flatMap(x => (cakismalar.get(x.id) || []).map(c => `${fmtIso(x.tarih, true)} ${x.saat}: ${cakismaYazi(c)}`));
-      return el('div', { class: 'durline' + (n === 0 ? ' today' : n <= 3 ? ' soon' : ''), title: list.map(x => `${fmtIso(x.tarih, true)} ${x.saat} · ${x.islem}`).join('\n') },
-        `${d.islem}: `, el('b', null, `${fmtIso(d.tarih, true)} ${d.saat}`), ` · ${gunText(n)}`, list.length > 1 ? ` (+${list.length - 1})` : '',
+      const cak = durusmalar.flatMap(x => (cakismalar.get(x.id) || []).map(c => `${fmtIso(x.tarih, true)} ${x.saat}: ${cakismaYazi(c)}`));
+      return el('div', { class: 'durline' + (n === 0 ? ' today' : n <= 3 ? ' soon' : ''), title: durusmalar.map(x => `${fmtIso(x.tarih, true)} ${x.saat} · ${x.islem}`).join('\n') },
+        `${d.islem}: `, el('b', null, `${fmtIso(d.tarih, true)} ${d.saat}`), ` · ${gunText(n)}`, durusmalar.length > 1 ? ` (+${durusmalar.length - 1})` : '',
         cak.length ? el('span', { class: 'pill cak', title: 'Çakışan duruşma:\n' + cak.join('\n') }, 'Çakışma') : null);
     }
 
@@ -1421,8 +1426,8 @@
       input.focus();
     }
 
-    function exportIcs(list) {
-      const url = URL.createObjectURL(new Blob([durusmaIcs(list)], { type: 'text/calendar;charset=utf-8' }));
+    function exportIcs(durusmalar) {
+      const url = URL.createObjectURL(new Blob([durusmaIcs(durusmalar)], { type: 'text/calendar;charset=utf-8' }));
       const a = el('a', { href: url, download: `durusmalar-${todayIso()}.ics` });
       document.body.append(a);
       a.click();
@@ -2276,13 +2281,13 @@
         });
         return el('label', { class: 'check' }, box, el('div', null, el('div', null, label), hint ? el('div', { class: 'hint' }, hint) : null));
       };
-      const select = (key, def, label, options, onChange) => {
-        const sel = el('select', { 'aria-label': label, 'data-pref': key }, options.map(([v, t]) => el('option', { value: v, selected: pref(key, def) === v }, t)));
-        sel.addEventListener('change', async () => {
-          if (!(await tercihYaz({ [key]: sel.value }, () => { sel.value = pref(key, def); }))) return;
-          if (onChange) onChange(sel.value);
+      const prefSelect = (key, def, label, options, onChange) => {
+        const picker = el('select', { 'aria-label': label, 'data-pref': key }, options.map(([v, t]) => el('option', { value: v, selected: pref(key, def) === v }, t)));
+        picker.addEventListener('change', async () => {
+          if (!(await tercihYaz({ [key]: picker.value }, () => { picker.value = pref(key, def); }))) return;
+          if (onChange) onChange(picker.value);
         });
-        return el('div', { class: 'field' }, el('span', null, label), sel);
+        return el('div', { class: 'field' }, el('span', null, label), picker);
       };
 
       // Duruşmalarım’daki düğmeyle aynı anahtar: kontrol ve bildirim birlikte açılır, birlikte kapanır.
@@ -2449,8 +2454,8 @@
         el('h3', null, 'Arama ve görünüm'),
         el('div', { class: 'box' },
           check('vekilAra', true, 'Karşı taraf vekillerinin adlarında da ara', 'Kapatırsanız avukat adıyla yapılan aramalarda yalnız taraflar ve dosya bilgileri aranır.', () => render()),
-          select('siralama', 'relevance', 'Sonuç sıralaması', [['relevance', 'En uygun'], ['newest', 'Açılış: yeniden eskiye'], ['fileNo', 'Dosya no: büyükten küçüğe']], () => render()),
-          select('tema', 'auto', 'Tema', [['auto', 'Sistemle aynı'], ['light', 'Açık'], ['dark', 'Koyu']], () => applyTheme())),
+          prefSelect('siralama', 'relevance', 'Sonuç sıralaması', [['relevance', 'En uygun'], ['newest', 'Açılış: yeniden eskiye'], ['fileNo', 'Dosya no: büyükten küçüğe']], () => render()),
+          prefSelect('tema', 'auto', 'Tema', [['auto', 'Sistemle aynı'], ['light', 'Açık'], ['dark', 'Koyu']], () => applyTheme())),
 
         el('h3', null, 'UYAP paneli'),
         el('div', { class: 'box' },
@@ -2469,7 +2474,7 @@
 
         el('h3', null, 'Dosya açma'),
         el('div', { class: 'box' },
-          select('acilisSekme', 'yok', 'Dosya açılınca geçilecek sekme', [['yok', 'Hiçbiri'], ['evrak', 'Evrak'], ['taraf', 'Taraf bilgileri']]),
+          prefSelect('acilisSekme', 'yok', 'Dosya açılınca geçilecek sekme', [['yok', 'Hiçbiri'], ['evrak', 'Evrak'], ['taraf', 'Taraf bilgileri']]),
           el('div', { class: 'hint' }, 'Sekme o dosyada yoksa (ör. Yargıtay dosyaları) hiçbir şeye basılmaz.')),
 
         el('h3', null, 'Evrak görüntüleyici'),
@@ -2480,11 +2485,11 @@
         el('div', { class: 'box' },
           el('div', null, 'Taranacak yargı türleri'),
           el('div', { class: 'setup-grid' }, scanChecks),
-          select('taramaDurum', 'tum', 'Taranacak dosya durumu', [['tum', 'Açık ve kapalı dosyalar'], ['acik', 'Yalnız açık dosyalar'], ['kapali', 'Yalnız kapalı dosyalar']]),
+          prefSelect('taramaDurum', 'tum', 'Taranacak dosya durumu', [['tum', 'Açık ve kapalı dosyalar'], ['acik', 'Yalnız açık dosyalar'], ['kapali', 'Yalnız kapalı dosyalar']]),
           el('div', { class: 'hint' }, 'Bu seçimler UYAP’tan alınacak dosyaları belirler. Kapsam dışındaki önceki kayıtlar korunur; arama filtreleri kayıtlı listeyi daraltır. Süren taramada kapsam değişmez; yeni seçim bir sonraki güncellemede uygulanır.'),
           check('evrakTakip', evrakTakipAcik(prefs, records), 'Yeni evrakları bul', 'Her açık dosya için UYAP’a bir istek daha gider; dosya sayısına göre güncelleme belirgin uzar.'),
           check('safahatTakipOptIn', false, 'Son işlemi (safahat) kartta göster', 'Son elle çekilen ve kaydedilen safahattan en yeni işlemi kartta gösterir. Tarama safahat sorgusu yapmaz. Safahat sekmesindeki düğmeyle güncellenir.'),
-          select('otoGuncelle', 'kapali', 'Otomatik güncelleme', [['kapali', 'Kapalı'], ['6s', '6 saatte bir'], ['gunluk', 'Günde bir']]),
+          prefSelect('otoGuncelle', 'kapali', 'Otomatik güncelleme', [['kapali', 'Kapalı'], ['6s', '6 saatte bir'], ['gunluk', 'Günde bir']]),
           el('div', { class: 'hint' }, 'Otomatik güncelleme yalnız UYAP sekmesi açıkken, son güncellemenin üzerinden bu süre geçtiyse başlar.'),
           el('div', { class: 'row' }, btnFull, el('span', { class: 'hint' }, '“Güncelle” yalnız yeni dosyaların taraflarını alır; “Baştan tara” seçili kapsamdakileri yeniden alır.')),
           el('div', { class: 'row' }, btnSetup)),
@@ -2492,7 +2497,7 @@
         el('h3', null, 'Savcılık dosyaları'),
         cbsScanControls(),
         el('div', { class: 'box' },
-          select('savcilik', 'otomatik', 'Aranacak iller', [['otomatik', 'Dosyalarımın bulunduğu iller'], ['secili', 'Yalnız seçtiğim iller'], ['tum', 'Tüm iller (yavaş)'], ['kapali', 'Savcılık dosyalarını arama']], () => renderSettings()),
+          prefSelect('savcilik', 'otomatik', 'Aranacak iller', [['otomatik', 'Dosyalarımın bulunduğu iller'], ['secili', 'Yalnız seçtiğim iller'], ['tum', 'Tüm iller (yavaş)'], ['kapali', 'Savcılık dosyalarını arama']], () => renderSettings()),
           ['otomatik', 'secili'].includes(pref('savcilik', 'otomatik')) ? [
             el('div', { class: 'hint' }, pref('savcilik', 'otomatik') === 'secili' ? 'Yalnız aşağıya eklediğiniz iller taranır. İl eklemek için:' : 'İller mahkeme dosyalarınızın adliyelerinden bulunur (ör. Küçükçekmece → İstanbul). Başka il eklemek için:'),
             ilTags, el('div', { class: 'row' }, ilSec, ilEkle)] : null,

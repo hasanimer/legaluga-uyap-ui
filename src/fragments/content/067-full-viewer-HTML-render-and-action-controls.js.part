@@ -1,13 +1,13 @@
 
     async function bankLoadBorrowers() {
       if (bankBusy() || closed) return;
-      const run = bankRun = { ac: new AbortController() };
+      const kosu = bankRun = { ac: new AbortController() };
       bankNotice = 'Borçlular UYAP’tan alınıyor…'; bankDraw(); zipSync();
       try {
-        await bankPrepareBorrowers(run.ac.signal);
+        await bankPrepareBorrowers(kosu.ac.signal);
         bankNotice = bankBorrowers.length ? '' : 'UYAP borçlu listesi boş; sorgu yapılamadı. Önceki banka kaydı korundu.';
       } catch (error) { bankNotice = error?.name === 'AbortError' ? 'Durduruldu; önceki kayıt korundu.'
         : error?.code === 'API_BORROWERS' ? error.message : 'Borçlular alınamadı. UYAP oturumunu kontrol edip yeniden deneyin.'; }
-      finally { if (bankRun === run) bankRun = null; bankDraw(); zipSync(); }
+      finally { if (bankRun === kosu) bankRun = null; bankDraw(); zipSync(); }
     }
     

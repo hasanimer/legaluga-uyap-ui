@@ -1,3 +1,4 @@
+'use strict';
 // Content script tarafında yalnız beklenen uzantı iframe'ine tek MessagePort açar.
 (() => {
   let expected = null;

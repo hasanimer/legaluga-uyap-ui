@@ -1,3 +1,4 @@
+'use strict';
 // Görünmez paket motoru (uzantı kökenli çerçeve). Köprü, doğrulanmış tek oturum MessagePort'unu connect ile verir.
 // Çerçevenin arayüzü yoktur ve DOM'a dokunmaz: durum dosya ekranına STATUS, hazır PDF RESULT iletisiyle gider.
 (() => {
@@ -5,7 +6,7 @@
   let state = M.initial(), transport = null, sessionId = '', nextRun = 0, worker = null, preparse = null, workerTimer = null;
   let textJob = null;
   let documentPdfJob = null;
-  function stopDocumentPdfJob(notify = false) { documentPdfJob?.finish({ code: 'document-stopped' }, notify); }
+  function stopDocumentPdfJob(shouldNotify = false) { documentPdfJob?.finish({ code: 'document-stopped' }, shouldNotify); }
   function stopTextJob() { textJob?.finish([], '', false); }
   function stopWorker() {
     clearTimeout(workerTimer); workerTimer = null;
@@ -124,9 +125,9 @@
       workerTimer = setTimeout(() => {
         if (worker !== instance || state.runId !== runId) return;
         stopWorker();
-        const message = 'PDF hazırlama süresi sınırını aştı. Daha küçük bir paket seçip yeniden deneyin.';
-        send('WORKER_FAILED', { runId, failures: [{ id: '', reason: message }] });
-        dispatch({ type: 'ERROR', runId, message });
+        const timeoutMessage = 'PDF hazırlama süresi sınırını aştı. Daha küçük bir paket seçip yeniden deneyin.';
+        send('WORKER_FAILED', { runId, failures: [{ id: '', reason: timeoutMessage }] });
+        dispatch({ type: 'ERROR', runId, message: timeoutMessage });
       }, 120000);
     };
     armTimer();
@@ -178,12 +179,12 @@
       send('TEXT_RESULT', { jobId, texts: [], error: 'Metin evrak seçimi veya kaynak boyutu geçersiz.' }); return;
     }
     let w, zaman, finished = false;
-    const bitir = (sonuc, hata, notify = true) => {
+    const bitir = (sonuc, hata, shouldNotify = true) => {
       if (finished) return;
       finished = true; clearTimeout(zaman);
       if (textJob?.finish === bitir) textJob = null;
       if (w) { w.onmessage = null; w.onerror = null; w.onmessageerror = null; try { w.terminate(); } catch {} }
-      if (notify) {
+      if (shouldNotify) {
         const texts = Array.isArray(sonuc) ? sonuc : [];
         send('TEXT_RESULT', { jobId, texts, error: hata || '' },
           texts.flatMap(x => (x.sources || []).map(s => s.bytes).filter(b => b instanceof ArrayBuffer)));
@@ -212,14 +213,14 @@
     }
     const sayfaSiniri = Number.isSafeInteger(message.sayfaSiniri) && message.sayfaSiniri > 0 && message.sayfaSiniri <= 300 ? message.sayfaSiniri : 300;
     let w, zaman, finished = false;
-    const bitir = (sonuc, notify = true) => {
+    const bitir = (sonuc, shouldNotify = true) => {
       if (finished) return;
       finished = true; clearTimeout(zaman);
       if (textJob === is) textJob = null;
       if (w) { w.onmessage = null; w.onerror = null; w.onmessageerror = null; try { w.terminate(); } catch {} }
-      if (notify) send('PDF_TEXT_RESULT', { jobId, ...sonuc });
+      if (shouldNotify) send('PDF_TEXT_RESULT', { jobId, ...sonuc });
     };
-    const is = { jobId, finish: (_texts, _hata, notify = true) => bitir(bos('text-stopped'), notify) };
+    const is = { jobId, finish: (_texts, _hata, shouldNotify = true) => bitir(bos('text-stopped'), shouldNotify) };
     textJob = is;
     zaman = setTimeout(() => bitir(bos('text-timeout')), 120000);
     try { w = new Worker(chrome.runtime.getURL('durusma-paketi-worker.js')); }
@@ -250,14 +251,14 @@
     }
     const sayfaSiniri = Number.isSafeInteger(message.sayfaSiniri) && message.sayfaSiniri > 0 && message.sayfaSiniri <= 12 ? message.sayfaSiniri : 12;
     let w, zaman, finished = false;
-    const bitir = (sonuc, notify = true) => {
+    const bitir = (sonuc, shouldNotify = true) => {
       if (finished) return;
       finished = true; clearTimeout(zaman);
       if (textJob === is) textJob = null;
       if (w) { w.onmessage = null; w.onerror = null; w.onmessageerror = null; try { w.terminate(); } catch {} }
-      if (notify) send('OCR_RESULT', { jobId, ...sonuc });
+      if (shouldNotify) send('OCR_RESULT', { jobId, ...sonuc });
     };
-    const is = { jobId, finish: (_texts, _hata, notify = true) => bitir(bos('ocr-stopped'), notify) };
+    const is = { jobId, finish: (_texts, _hata, shouldNotify = true) => bitir(bos('ocr-stopped'), shouldNotify) };
     textJob = is;
     zaman = setTimeout(() => bitir(bos('ocr-timeout')), 240000);
     try { w = new Worker(chrome.runtime.getURL('atif-ocr-worker.js')); }
@@ -295,12 +296,12 @@
     }
     const parse = new AbortController();
     let w = null, timer = null, finished = false;
-    const finish = (result, notify = true) => {
+    const finish = (result, shouldNotify = true) => {
       if (finished) return;
       finished = true; clearTimeout(timer); parse.abort();
       if (documentPdfJob === job) documentPdfJob = null;
       if (w) { w.onmessage = null; w.onerror = null; w.onmessageerror = null; try { w.terminate(); } catch {} }
-      if (notify) send('DOCUMENT_PDF_RESULT', { jobId, ...result }, result.bytes ? [result.bytes] : []);
+      if (shouldNotify) send('DOCUMENT_PDF_RESULT', { jobId, ...result }, result.bytes ? [result.bytes] : []);
     };
     const job = { jobId, finish };
     documentPdfJob = job;

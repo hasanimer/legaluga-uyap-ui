@@ -20,7 +20,7 @@
   // kayıtlarını birlikte listeler; tek ZIP kartının anahtarı "zip:" ile başlar ve motorun dosya anahtarlarıyla çakışmaz.
   const zipJobs = new Map(), downloadListeners = new Set(), ZIP_HISTORY = 20;
   const downloadStates = () => [...(downloadManager ? downloadManager.list() : []),
-    ...Array.from(zipJobs.values(), job => ({ ...job.state, rec: { ...job.state.rec } }))];
+    ...Array.from(zipJobs.values(), zipJob => ({ ...zipJob.state, rec: { ...zipJob.state.rec } }))];
   const downloadEmit = () => {
     if (!downloadListeners.size) return;
     const states = downloadStates();
@@ -29,28 +29,28 @@
   const zipTracker = {
     begin({ rec, total, stop }) {
       const key = 'zip:' + rec.key, startedAt = Date.now();
-      const job = { stop, state: { kind: 'zip', key, id: '', fileKey: rec.key,
+      const zipJob = { stop, state: { kind: 'zip', key, id: '', fileKey: rec.key,
         rec: { dosyaNo: String(rec.dosyaNo || ''), birimAdi: String(rec.birimAdi || '') },
         status: 'running', phase: 'fetching', saved: 0, total: total || 0, missing: 0, skipped: 0, inPart: 0, partCount: 0,
         partBytes: 0, currentTitle: '', error: '', stopping: false, elapsedMs: 0, updatedAt: startedAt } };
       zipJobs.delete(key);
-      zipJobs.set(key, job);
+      zipJobs.set(key, zipJob);
       const finished = [...zipJobs.values()].filter(item => !item.stop);
       for (const item of finished.slice(0, Math.max(0, zipJobs.size - ZIP_HISTORY))) zipJobs.delete(item.state.key);
       downloadEmit();
       const yaz = patch => {
-        if (zipJobs.get(key) !== job) return false;
+        if (zipJobs.get(key) !== zipJob) return false;
         const now = Date.now();
-        Object.assign(job.state, patch, { elapsedMs: now - startedAt, updatedAt: now });
+        Object.assign(zipJob.state, patch, { elapsedMs: now - startedAt, updatedAt: now });
         return true;
       };
       return {
-        update(patch) { if (job.stop && yaz(patch)) downloadEmit(); },
+        update(patch) { if (zipJob.stop && yaz(patch)) downloadEmit(); },
         // remove: indirme parçalı indirmeye devredildi; kart motorun kaydıyla gösterilir.
         end(patch = {}) {
-          if (!job.stop) return;
-          job.stop = null;
-          if (patch.remove) { if (zipJobs.get(key) === job) zipJobs.delete(key); }
+          if (!zipJob.stop) return;
+          zipJob.stop = null;
+          if (patch.remove) { if (zipJobs.get(key) === zipJob) zipJobs.delete(key); }
           else yaz({ phase: 'idle', currentTitle: '', ...patch, stopping: false });
           downloadEmit();
         }
@@ -67,8 +67,8 @@
       return () => downloadListeners.delete(listener);
     },
     pause(key) {
-      const job = zipJobs.get(key);
-      if (job) { job.stop?.(); return; }
+      const zipJob = zipJobs.get(key);
+      if (zipJob) { zipJob.stop?.(); return; }
       return downloadManager.pause(key);
     },
     resume: (key, options) => downloadManager.resume(key, options)

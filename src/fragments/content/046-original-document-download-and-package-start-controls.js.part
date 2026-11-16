@@ -2,7 +2,7 @@
       paketSonucBirak();
       const url = paketSonucUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
       const ad = `Durusma_Paketi_${String(rec.dosyaNo || 'dosya').replace(/[^\w-]+/g, '-')}${atlanan.length ? '_eksik' : ''}.pdf`;
-      const goster = () => {
+      const sonucuGoster = () => {
         if (closed) return;
         birak();
         sira = -1; secimiCiz(); konumYaz();
@@ -13,9 +13,9 @@
         yeniSekme.href = url; yeniSekme.hidden = false;
         icerik(el('iframe', { src: url, title: 'Duruşma paketi' }));
       };
-      goster();
+      sonucuGoster();
       const yeniden = el('button', { type: 'button', class: 'chip' }, 'Paketi göster');
-      yeniden.addEventListener('click', goster);
+      yeniden.addEventListener('click', sonucuGoster);
       const kaydet = el('a', { class: 'chip', href: url, download: ad }, 'PDF’i indir');
       const satirlar = atlanan.map(({ x, reason }) => {
         const b = el('button', { type: 'button', class: 'chip' }, 'Özgün evrakı indir');

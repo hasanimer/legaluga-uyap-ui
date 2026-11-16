@@ -1,3 +1,4 @@
+'use strict';
 // İframe içinde saklanan 256-bit anahtar, sayfa DOM'unda veya URL'de bulunmaz.
 (() => {
   const sessionId = location.hash.slice(1);

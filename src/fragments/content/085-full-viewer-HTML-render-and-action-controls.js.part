@@ -2,31 +2,31 @@
     function bankaCiz() {
       bankDraw();
       if (!bankaKart || closed) return;
-      const { govde, durum, oku, durdur } = bankaKart;
+      const { govde: bankaGovde, durum, oku, durdur } = bankaKart;
       const busy = bankBusy();
       oku.disabled = busy; oku.hidden = false; oku.textContent = 'Listeyi yenile';
       oku.title = 'Yalnız dosyanın evrak listesini yeniler; banka sorgusu veya cevap metni analizi yapmaz.';
       durdur.hidden = !bankaOkuma; durdur.disabled = !!bankaOkuma?.ac.signal.aborted;
       if (!kaynak) {
         durum.textContent = listeBekliyor ? 'Evrak listesi UYAP’tan alınıyor…' : 'Cevap listesi henüz alınamadı. Listeyi yenile’ye basın.';
-        govde.replaceChildren(); return;
+        bankaGovde.replaceChildren(); return;
       }
-      if (kaynak.list.kilit) { durum.textContent = 'UYAP: ' + kaynak.list.kilit; govde.replaceChildren(); return; }
+      if (kaynak.list.kilit) { durum.textContent = 'UYAP: ' + kaynak.list.kilit; bankaGovde.replaceChildren(); return; }
       const satirlar = bankaSatirlari();
       const viewed = satirlar.filter(s => bankViewed.has(bankViewKey(s.x))).length;
       durum.textContent = bankaOkuma ? bankaOkuma.yazi : bankaHata ? bankaHata
         : satirlar.length ? fmtNum(satirlar.length) + (kaynak.list.morePages ? '+ cevap listelendi' : ' cevap') + ' · ' + fmtNum(viewed) + ' görüntülendi. Özgün başlıklar ve tarihler gösteriliyor.'
           : kaynak.list.morePages ? 'Bu sayfada banka cevabı yok. Tam liste için Listeyi yenile’ye basın.' : 'Bu dosyada banka cevabı yok.';
-      const expanded = new Set([...govde.querySelectorAll('.ek-banka-grup')].filter(group => group.open).map(group => group.dataset.banka));
-      const scrollTop = govde.scrollTop;
-      const gruplar = new Map();
+      const expanded = new Set([...bankaGovde.querySelectorAll('.ek-banka-grup')].filter(group => group.open).map(group => group.dataset.banka));
+      const scrollTop = bankaGovde.scrollTop;
+      const bankaGruplari = new Map();
       for (const { x } of satirlar) {
         const name = bankaAdi(x.gonderen || '') || x.gonderen || 'Gönderen belirtilmemiş';
         const key = norm(name);
-        if (!gruplar.has(key)) gruplar.set(key, { key, name, replies: [] });
-        gruplar.get(key).replies.push(x);
+        if (!bankaGruplari.has(key)) bankaGruplari.set(key, { key, name, replies: [] });
+        bankaGruplari.get(key).replies.push(x);
       }
-      govde.replaceChildren(...[...gruplar.values()].sort((a, b) => a.name.localeCompare(b.name, 'tr')).map(({ key, name, replies }) => {
+      bankaGovde.replaceChildren(...[...bankaGruplari.values()].sort((a, b) => a.name.localeCompare(b.name, 'tr')).map(({ key, name, replies }) => {
         const group = el('details', { class: 'ek-banka-grup', 'data-banka': key },
           el('summary', null, name, el('small', null, fmtNum(replies.length) + ' cevap')),
           el('table', null, el('thead', null, el('tr', null, ['Tarih', 'Evrak', 'Durum', ''].map(text => el('th', { scope: 'col' }, text)))),
@@ -42,11 +42,11 @@
         const toggle = el('button', { type: 'button', class: 'chip ek-banka-grup-ac', 'aria-label': name + ' cevaplarını ' + (group.open ? 'kapat' : 'aç'), 'aria-expanded': String(group.open) }, group.open ? 'Kapat' : 'Aç');
         const update = () => { toggle.textContent = group.open ? 'Kapat' : 'Aç'; toggle.setAttribute('aria-expanded', String(group.open)); toggle.setAttribute('aria-label', name + ' cevaplarını ' + (group.open ? 'kapat' : 'aç')); };
         toggle.addEventListener('click', event => { event.preventDefault(); event.stopPropagation(); group.open = !group.open; bankaTumAcik = false; update(); });
-        group.addEventListener('toggle', () => { if (govde.contains(group)) update(); });
+        group.addEventListener('toggle', () => { if (bankaGovde.contains(group)) update(); });
         group.children[0].append(toggle);
         return group;
       }));
-      govde.scrollTop = scrollTop;
+      bankaGovde.scrollTop = scrollTop;
     }
 
     function bankaBekle(signal, promise) {

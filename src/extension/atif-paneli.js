@@ -1,3 +1,4 @@
+'use strict';
 /* global module */
 // Evrak görüntüleyicisinde "Atıflar": açılmış evrakın metnindeki karar künyelerini (UHDKunye) bu cihazda bulur, listeler,
 // UDF görünümünde ince alt çizgiyle işaretler ve seçilen metinden "Kararı bul" bağlantısı sunar. Evrak metni ve künye
@@ -535,32 +536,32 @@
     // Seçilenleri aç: yalnız işaretli künyeler, seçim sırasıyla, mevcut adres() kısaltmasıyla tek sekme.
     function secilenCiz() {
       const K = globalThis.UHDKunye;
-      const liste = secilen.map(i => kunyeler[i]).filter(Boolean);
-      const href = liste.length && typeof K?.adres === 'function' ? K.adres(liste, 0) : null;
+      const seciliKunyeler = secilen.map(i => kunyeler[i]).filter(Boolean);
+      const href = seciliKunyeler.length && typeof K?.adres === 'function' ? K.adres(seciliKunyeler, 0) : null;
       const parca = href ? href.slice(href.indexOf('#k=') + 3) : '';
       const giden = href ? (K.coz?.(parca)?.k?.length || 0) : 0;
       const acikLink = !!(href && giden);
       secilenSatir.hidden = !acikLink;
       secilenAc.hidden = !acikLink;
       if (href) secilenAc.setAttribute('href', href); else secilenAc.removeAttribute('href');
-      secilenAc.textContent = `Seçilenleri aç (${liste.length})`;
-      const yazi = acikLink && giden < liste.length ? `${giden}/${liste.length} aktarılacak` : '';
+      secilenAc.textContent = `Seçilenleri aç (${seciliKunyeler.length})`;
+      const yazi = acikLink && giden < seciliKunyeler.length ? `${giden}/${seciliKunyeler.length} aktarılacak` : '';
       const degisti = aktarim.textContent !== yazi;
       aktarim.hidden = !yazi;
       aktarim.textContent = yazi;
       if (yazi) secilenAc.setAttribute('aria-describedby', aktarim.id || `${id}-aktarim`);
       else secilenAc.removeAttribute('aria-describedby');
       for (const s of satirlar) {
-        const kutu = s.querySelector('.ek-atif-sec');
-        if (kutu) kutu.checked = secilen.includes(Number(s.getAttribute('data-sira')));
+        const secKutusu = s.querySelector('.ek-atif-sec');
+        if (secKutusu) secKutusu.checked = secilen.includes(Number(s.getAttribute('data-sira')));
       }
       if (degisti && yazi) duyur(yazi);
       if (acik && !acikLink && secilenSatir.contains(odakta())) (satirlar[etkin] || kapatDugme).focus?.({ preventScroll: true });
     }
     function secilenDegistir(i, istenen) {
-      const kutu = satirlar[i]?.querySelector('.ek-atif-sec');
-      if (!kutu || kutu.disabled || !gonderilebilir(kunyeler[i])) {
-        if (kutu) kutu.checked = false;
+      const secKutusu = satirlar[i]?.querySelector('.ek-atif-sec');
+      if (!secKutusu || secKutusu.disabled || !gonderilebilir(kunyeler[i])) {
+        if (secKutusu) secKutusu.checked = false;
         return;
       }
       const yer = secilen.indexOf(i);
@@ -568,7 +569,7 @@
         if (yer >= 0) { secilenCiz(); return; }
         const sinir = isaretSiniri();
         if (secilen.length >= sinir) {
-          kutu.checked = false;
+          secKutusu.checked = false;
           duyur(`En çok ${sinir} künye seçilebilir.`, true);
           return;
         }
@@ -585,15 +586,15 @@
       const uyari = k.hatali === 'olmayan_daire' ? 'olmayan daire' : k.hatali === 'gecersiz_tarih' ? 'geçersiz tarih' : '';
       const eksik = kararNoEksik(k) ? 'Karar numarası belirtilmemiş' : '';
       const uygun = gonderilebilir(k);
-      const kutu = el('input', { type: 'checkbox', class: 'ek-atif-sec', tabindex: '-1',
+      const secKutusu = el('input', { type: 'checkbox', class: 'ek-atif-sec', tabindex: '-1',
         'aria-label': `${K.kisaYazim(k) || 'Künye'} künyesini seç` });
-      kutu.disabled = !uygun;
-      if (!uygun) kutu.title = eksik || 'Bu künye karar aramasına gönderilemez';
+      secKutusu.disabled = !uygun;
+      if (!uygun) secKutusu.title = eksik || 'Bu künye karar aramasına gönderilemez';
       const rozet = el('span', { class: 'ek-atif-havuz' });
       rozet.hidden = true;
       const s = el('li', { class: 'ek-atif', tabindex: '-1', 'data-sira': String(i),
         'aria-label': [K.tamYazim(k), k.sayi > 1 ? `${k.sayi} geçiş` : '', eksik, uyari && `uyarı: ${uyari}`].filter(Boolean).join(', ') },
-      el('span', { class: 'ek-atif-bas' }, kutu,
+      el('span', { class: 'ek-atif-bas' }, secKutusu,
         el('span', { class: 'ek-atif-kunye' }, el('b', { class: 'ek-atif-kisa' }, K.kisaYazim(k)), k.sayi > 1 ? el('small', null, ` · ${k.sayi} geçiş`) : null,
           eksik ? el('small', { class: 'ek-atif-eksik' }, eksik) : null,
           uyari ? el('span', { class: 'ek-atif-uyari' }, uyari) : null,
@@ -601,9 +602,9 @@
       yazi ? el('p', { class: 'ek-atif-alinti', title: yazi }, yazi) : null,
       el('span', { class: 'ek-atif-eylem' }, ac, resmi, kopyala, alintiKopyala));
       // Satıra tıklamak evraktaki ilk geçişe kaydırır; düğmeler ve seçim kutusu kendi işini yapar.
-      s.addEventListener('click', ev => { if (ev.target === kutu) return; etkinYap(i); atla(i); });
-      kutu.addEventListener('click', ev => ev.stopPropagation?.());
-      kutu.addEventListener('change', () => secilenDegistir(i, !!kutu.checked));
+      s.addEventListener('click', ev => { if (ev.target === secKutusu) return; etkinYap(i); atla(i); });
+      secKutusu.addEventListener('click', ev => ev.stopPropagation?.());
+      secKutusu.addEventListener('change', () => secilenDegistir(i, !!secKutusu.checked));
       ac.addEventListener('click', ev => ev.stopPropagation());
       resmi?.addEventListener('click', ev => ev.stopPropagation());
       kopyala.addEventListener('click', ev => { ev.stopPropagation(); kopya(k, kopyala); });
@@ -625,8 +626,8 @@
         if (i < 0) return;
         ev.preventDefault();
         ev.stopPropagation();
-        const kutu = satirlar[i].querySelector('.ek-atif-sec');
-        if (!kutu || kutu.disabled) { duyur('Bu künye karar aramasına gönderilemez.'); return; }
+        const secKutusu = satirlar[i].querySelector('.ek-atif-sec');
+        if (!secKutusu || secKutusu.disabled) { duyur('Bu künye karar aramasına gönderilemez.'); return; }
         secilenDegistir(i, !secilen.includes(i));
         return;
       }
@@ -658,14 +659,14 @@
     function havuzBoya(rozet, kayit) {
       if (!rozet) return;
       const hukum = havuzHukmu(kayit);
-      const ipucu = havuzIpucu(hukum, kayit);
+      const rozetMetni = havuzIpucu(hukum, kayit);
       rozet.hidden = false;
       rozet.setAttribute('data-hukum', hukum);
-      rozet.setAttribute('title', ipucu);
-      rozet.setAttribute('aria-label', ipucu);
+      rozet.setAttribute('title', rozetMetni);
+      rozet.setAttribute('aria-label', rozetMetni);
       rozet.replaceChildren(
         el('span', { class: 'ek-atif-havuz-ad', 'aria-hidden': 'true' }, HAVUZ_YAZI[hukum]),
-        el('span', { class: 'ek-atif-havuz-not' }, ipucu));
+        el('span', { class: 'ek-atif-havuz-not' }, rozetMetni));
     }
     function havuzSatirlariniBoya(gecici = null) {
       satirlar.forEach((s, i) => {
@@ -685,11 +686,11 @@
     // Geçici hata (kanal, süre, ok:false ya da arka planın veri-yok yanıtı) önbelleğe girmez: rozet Denetlenemedi
     // gösterilir, panel yeniden açılınca künye yeniden sorulur. Kalıcı hükümler aynı ekranda bir kez sorulur.
     function havuzUygula(giden, yanit) {
-      const liste = yanit && yanit.ok === true && Array.isArray(yanit.sonuclar) ? yanit.sonuclar : null;
+      const sonuclar = yanit && yanit.ok === true && Array.isArray(yanit.sonuclar) ? yanit.sonuclar : null;
       const gecici = new Map();
       giden.forEach((b, i) => {
         havuzUcus.delete(b.anahtar);
-        const ham = liste && liste[i] && typeof liste[i] === 'object' ? liste[i] : null;
+        const ham = sonuclar && sonuclar[i] && typeof sonuclar[i] === 'object' ? sonuclar[i] : null;
         const kayit = { hukum: havuzHukmu(ham), kontroller: ham && ham.kontroller };
         if (!ham || (ham.havuz && ham.havuz.durum === 'veri-yok' && ham.havuz.kalici !== true)) gecici.set(b.anahtar, kayit);
         else havuzOnbellek.set(b.anahtar, kayit);
@@ -1173,13 +1174,13 @@
         return ayirac + p.metin;
       }).join(''), kesik = m.kesildi === true;
       if (metin.length > SINIR.karakter) { metin = metin.slice(0, SINIR.karakter); kesik = true; }
-      const bos = Number.isSafeInteger(m.bosSayfa) && m.bosSayfa > 0 ? m.bosSayfa : 0;
+      const bosSayfa = Number.isSafeInteger(m.bosSayfa) && m.bosSayfa > 0 ? m.bosSayfa : 0;
       await bekle();
       if (!surer()) return;
       const hepsi = K.bul(metin);
       alintiMetni = metin; alintiBirimleri = birimler;
       listeCiz(K.tekillestir(hepsi), [(kesik || hepsi.kesildi) && ILETI.pdfKesik,
-        bos && `${bos} sayfada metin katmanı yok (taranmış sayfa); o sayfalar taranamadı.`,
+        bosSayfa && `${bosSayfa} sayfada metin katmanı yok (taranmış sayfa); o sayfalar taranamadı.`,
         hata && `${hata} sayfanın metni okunamadı; o sayfalardaki atıflar taranamadı.`].filter(Boolean));
     }
     function pdfTara(b, surer) {
@@ -1268,11 +1269,11 @@
 
     // applyPagePrefs çağırır: süren işi hemen durdurur; yeniden açılınca eldeki evrakta taramayı başlatır.
     function ayarDegisti() {
-      const acik = ayarAcik();
-      if (acik === sonAyar) return false;
-      sonAyar = acik;
+      const ayar = ayarAcik();
+      if (ayar === sonAyar) return false;
+      sonAyar = ayar;
       temizle(false);
-      if (acik && sonBelge) belge(sonBelge.t, sonBelge.b);
+      if (ayar && sonBelge) belge(sonBelge.t, sonBelge.b);
       return true;
     }
 

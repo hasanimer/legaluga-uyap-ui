@@ -36,10 +36,10 @@
     const viewer = el('div', { lang: 'tr', class: 'viewer' }, box);
     // Ekranın onayları eklentinin kendi penceresinde sorulur; pencere açıkken ikinci bir onay açılmaz.
     let onayAcik = false;
-    const onaySor = async o => {
+    const onaySor = async soru => {
       if (onayAcik) return false;
       onayAcik = true;
-      try { return await onayIste(viewer, o); } finally { onayAcik = false; }
+      try { return await onayIste(viewer, soru); } finally { onayAcik = false; }
     };
     mountViewerExpand(box, close);
     let closed = false, aktif = null;
@@ -304,9 +304,9 @@
       // Son Güncelle'nin bu dosya için bıraktığı uyarılar (yalnız kayıttaki kısa metinler).
       const sonGuncelle = Array.isArray(rec.evrakTeyit?.uyari) ? rec.evrakTeyit.uyari.filter(u => typeof u === 'string' && u).slice(0, 5) : [];
       // Normal eşleşmede bildirim yoktur; yalnız eksik, açılamayan veya kapsamı eksik evrak uyarılır.
-      const goster = !!t && t.durum !== 'kilit' && !!kaynak && !kaynak.list.kilit && (t.durum === 'farkli' || t.ayniKimlik > 0 || t.acilamaz.sayi > 0 ||
+      const uyarilsin = !!t && t.durum !== 'kilit' && !!kaynak && !kaynak.list.kilit && (t.durum === 'farkli' || t.ayniKimlik > 0 || t.acilamaz.sayi > 0 ||
         sonGuncelle.length > 0 || !!teyitHata || t.kapsam.nedenler.some(n => n !== 'sayfaSayisi'));
-      if (!goster) { teyitSatir.hidden = true; teyitSatir.replaceChildren(); if (odakta) ogeler.focus({ preventScroll: true }); return; }
+      if (!uyarilsin) { teyitSatir.hidden = true; teyitSatir.replaceChildren(); if (odakta) ogeler.focus({ preventScroll: true }); return; }
       const m = evrakTeyitMetni(t);
       const ayrinti = [...m.ayrinti, ...sonGuncelle.map(u => `Son Güncelle’de: ${u}`)];
       const sorun = m.metin.replace(/^(?:UYAP listesiyle|Okunan kısım UYAP listesiyle) eşleşti: [\d.,]+ evrak(?:, [\d.,]+ ek)?\.\s*/, '');
@@ -320,9 +320,9 @@
         parca.push(teyitDugme);
       }
       if (teyitHata) parca.push(el('p', { class: 'dp-err' }, teyitHata));
-      const tablo = (baslik, grup) => grup.turler.length ? [el('p', { class: 'ek-teyit-baslik' }, baslik), el('table', { class: 'ek-teyit-tablo' },
+      const tablo = (baslik, sayim) => sayim.turler.length ? [el('p', { class: 'ek-teyit-baslik' }, baslik), el('table', { class: 'ek-teyit-tablo' },
         el('thead', null, el('tr', null, el('th', { scope: 'col' }, 'Tür'), el('th', { scope: 'col' }, 'UYAP'), el('th', { scope: 'col' }, 'Listede'))),
-        el('tbody', null, ...grup.turler.map(x => el('tr', { class: x.uyap !== x.listede ? 'fark' : null },
+        el('tbody', null, ...sayim.turler.map(x => el('tr', { class: x.uyap !== x.listede ? 'fark' : null },
           el('td', null, x.tur), el('td', null, fmtNum(x.uyap)), el('td', null, fmtNum(x.listede))))))] : [];
       const tablolar = [...tablo('Evraklar', t.evrak), ...tablo('Ekler', t.ek)];
       if (tablolar.length) {
@@ -431,7 +431,7 @@
       else sec(i, true);
       ogeler.focus({ preventScroll: true });
     }
-    function odakSync(visible = false) {
+    function odakSync(kaydir = false) {
       let node = null;
       if (evrakOdak?.kat && kategorili) node = kategoriDom.get(evrakOdak.kat)?.head;
       else if (evrakOdak?.row) {
@@ -451,7 +451,7 @@
         evrakOdak = node.classList.contains('ek-oge') ? { row: paketAnahtar(gorunen[Number(node.dataset.i)]) } : { kat: node.dataset.kategori };
         node.classList.toggle('odak', true);
         ogeler.setAttribute('aria-activedescendant', node.id);
-        if (visible) node.scrollIntoView({ block: 'nearest' });
+        if (kaydir) node.scrollIntoView({ block: 'nearest' });
       } else { evrakOdak = null; ogeler.removeAttribute('aria-activedescendant'); }
     }
     function listeyiCiz() {
@@ -510,11 +510,11 @@
             'aria-label': `${kat.title}, ${fmtNum(kat.evrakSayisi)} evrak, ${fmtNum(kat.ekSayisi)} ek`, title: `${kat.title} (${fmtNum(kat.evrakSayisi)} evrak, ${fmtNum(kat.ekSayisi)} ek)` },
             el('span', { class: 'ek-kategori-ok', 'aria-hidden': 'true' }, '▸'), el('span', { class: 'ek-klasor', 'aria-hidden': 'true' }),
             el('span', { class: 'ek-kategori-ad' }, `${kat.title} (${fmtNum(kat.evrakSayisi)})${kat.ekSayisi ? ` · ${fmtNum(kat.ekSayisi)} ek` : ''}`));
-          const box = el('details', { class: 'ek-kategori' + (level === 1 ? ' ek-dosya-klasoru' : ''), role: 'none', 'data-kategori': kat.key }, head,
+          const kategoriKutu = el('details', { class: 'ek-kategori' + (level === 1 ? ' ek-dosya-klasoru' : ''), role: 'none', 'data-kategori': kat.key }, head,
             el('div', { class: 'ek-kategori-icerik', role: 'group', id: `${kimlik}-cg${index}` }, content));
-          kategoriDom.set(kat.key, { box, head, parent, children, rows });
+          kategoriDom.set(kat.key, { box: kategoriKutu, head, parent, children, rows });
           kategoriAc(kat.key, aramaImza ? !aramadaKapali.has(kat.key) : acikKategoriler.has(kat.key));
-          return box;
+          return kategoriKutu;
         };
         ogeler.replaceChildren(...evrakKlasorleri(gorunen).map(dosya => {
           kategoriKokleri.push(dosya.key);
@@ -535,7 +535,7 @@
       listeSayi.textContent = sayim.ek ? `${fmtNum(sayim.evrak)} evrak · ${fmtNum(sayim.ek)} ek` : `${fmtNum(sayim.evrak)} evrak`;
       zipSync();
     }
-    function secimiCiz(visible = false) {
+    function secimiCiz(kaydir = false) {
       const node = sira >= 0 ? ogeler.querySelector(`[data-i="${sira}"]`) : null;
       if (node !== seciliDugum) {
         for (const [n, on] of [[seciliDugum, false], [node, true]]) if (n) { n.classList.toggle('on', on); n.setAttribute('aria-selected', String(on)); }
@@ -550,7 +550,7 @@
         bekleyenAna = a && !ekDom.has(a) ? a : null;
         evrakOdak = { row: paketAnahtar(gorunen[sira]) };
       } else { evrakOdak = null; bekleyenAna = null; }
-      odakSync(visible);
+      odakSync(kaydir);
     }
     const zipSelection = () => ({ mode: zipTypeMode.value || 'all', keys: [...zipSelectedTypes], includeAttachments: zipEkler.checked });
     function zipCandidates(kapsam = zipKapsam) {
@@ -565,12 +565,12 @@
     // satırında ve ek satırında görünür). Tür seçiminden SONRA, kimliği seçilmiş bir ana satırla aynı olan ek satırı atılır; ana
     // satır seçilmediyse aynı ekin yalnız ilk kopyası kalır. Kimlikler aynı listeden geldiği için dosya grubu içinde karşılaştırılır.
     function tekBelge(rows) {
-      const kimlik = v => v == null || v === '' ? null : String(v);
-      const anaKimlikleri = new Set(rows.filter(x => !x.ana && kimlik(x.e?.evrakId) != null).map(x => x.dosya + '\n' + kimlik(x.e.evrakId)));
+      const kimlikMetni = v => v == null || v === '' ? null : String(v);
+      const anaKimlikleri = new Set(rows.filter(x => !x.ana && kimlikMetni(x.e?.evrakId) != null).map(x => x.dosya + '\n' + kimlikMetni(x.e.evrakId)));
       const gorulen = new Set();
       return rows.filter(x => {
-        if (!x.ana || kimlik(x.ekId) == null) return true;
-        const a = x.dosya + '\n' + kimlik(x.ekId);
+        if (!x.ana || kimlikMetni(x.ekId) == null) return true;
+        const a = x.dosya + '\n' + kimlikMetni(x.ekId);
         if (anaKimlikleri.has(a) || gorulen.has(a)) return false;
         gorulen.add(a);
         return true;
@@ -736,15 +736,15 @@
       if (bulkLoaded && !force) return bulkJob;
       bulkRead = (async () => {
         try {
-          const job = await globalThis.UHDStorage.getBulkDownload(rec.key);
+          const plan = await globalThis.UHDStorage.getBulkDownload(rec.key);
           if (closed) return null;
-          if (job && bulkTools.check(job).fileKey !== rec.key) throw new Error('İndirme planı bu dosyaya ait değil.');
-          bulkJob = job;
-          if (job && downloads)
-            downloads.track({ rec, fileKey: rec.key, job, readDocument: createDownloadReader(rec, kaynak) });
+          if (plan && bulkTools.check(plan).fileKey !== rec.key) throw new Error('İndirme planı bu dosyaya ait değil.');
+          bulkJob = plan;
+          if (plan && downloads)
+            downloads.track({ rec, fileKey: rec.key, job: plan, readDocument: createDownloadReader(rec, kaynak) });
           bulkIssue = '';
           bulkLoaded = true;
-          return job;
+          return plan;
         } catch (err) {
           if (!closed) { bulkIssue = `İndirme kaydı okunamadı: ${err.message}`; bulkLoaded = false; }
           return null;

@@ -1,3 +1,4 @@
+'use strict';
 // UDF evrak görüntüleyicisi. UDF (UYAP Doküman Formatı) bir zip paketidir; içindeki content.xml belgenin bütün
 // metnini tek bir havuzda (CDATA) tutar, paragraf ve parçalar havuzu startOffset/length ile gösterir.
 // Okuyucu bu eklenti için baştan yazıldı. Ağ isteği yapmaz. Belge içeriği hiçbir zaman HTML olarak işlenmez:
@@ -884,10 +885,10 @@
   // oluşuyorsa tırnak içinde kullanılır.
   const MANTIKSAL = { dialog: 'sans-serif', sansserif: 'sans-serif', serif: 'serif', monospaced: 'monospace', dialoginput: 'monospace' };
   function aileListesi(a) {
-    const ad = String(a || '').trim();
-    const m = MANTIKSAL[ad.toLowerCase()];
+    const aileAdi = String(a || '').trim();
+    const m = MANTIKSAL[aileAdi.toLowerCase()];
     if (m) return m === 'monospace' ? '"Courier New", monospace' : m === 'sans-serif' ? 'Arial, sans-serif' : '"Times New Roman", serif';
-    if (/^[\p{L}\p{N} ._-]{1,64}$/u.test(ad)) return `"${ad}", "Times New Roman", serif`;
+    if (/^[\p{L}\p{N} ._-]{1,64}$/u.test(aileAdi)) return `"${aileAdi}", "Times New Roman", serif`;
     return '"Times New Roman", serif';
   }
   const rgb = c => `rgb(${c[0]}, ${c[1]}, ${c[2]})`;

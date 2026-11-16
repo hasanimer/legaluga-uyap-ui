@@ -40,3 +40,9 @@ test('sürüm manifest, package.json, README ve gizlilik politikasında aynı',(
   assert.equal(read('README.md').match(/^> Bu rehber, \*\*([\d.]+)\*\* paketinin/m)?.[1],version,'README.md');
   assert.equal(read('docs/PRIVACY.md').match(/^Son güncelleme: .* · \*\*([\d.]+)\*\* sürümü için/m)?.[1],version,'docs/PRIVACY.md');
 });
+// Sürüm notları CHANGELOG.md'de "## x.y.z" başlıklarıyla, en yeni üstte durur; README yalnız güncel sürüm satırını ve bağlantıyı taşır.
+test('CHANGELOG en üst başlığı manifest sürümüne eşit, sürümler yeniden eskiye ve her birinin notu yazılmış; README not taşımaz',()=>{
+  const read=name=>fs.readFileSync(path.join(__dirname,'..',name),'utf8');
+  const {changelogDenetle}=require('./changelog-denetimi');
+  changelogDenetle({changelog:read('CHANGELOG.md'),readme:read('README.md'),surum:JSON.parse(read('src/extension/manifest.json')).version});
+});

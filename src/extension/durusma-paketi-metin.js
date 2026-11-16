@@ -1,3 +1,4 @@
+'use strict';
 /* HTML, XML ve düz metin evrakı okunur paragraf modeline çevirir (UDF paragraf modeliyle aynı biçim; PDF'e
    durusma-paketi-udf.js çizer). Ağa ya da DOM'a dokunmaz; betik çalıştırmaz, dış kaynak yüklemez. */
 (() => {
@@ -206,7 +207,7 @@
   }
 
   // Modeli kurar. tur: 'html' | 'xml' | 'text'. Dönüş: { model, uyarilar }; metin yoksa açık hata.
-  function model(bytes, { mime = '', tur: t } = {}) {
+  function model(bytes, /** @type {{ mime?: string, tur?: string }} */ { mime = '', tur: t } = {}) {
     const metin = coz(bytes, mime);
     const r = t === 'html' ? html(metin) : t === 'xml' ? xml(metin) : duz(metin);
     if (!r.paragraflar.length) {

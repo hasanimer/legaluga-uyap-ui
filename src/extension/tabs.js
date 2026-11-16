@@ -1,3 +1,4 @@
+'use strict';
 // Eklenti sayfaları (araç çubuğu popup'ı ve Ayarlar sayfası) için UYAP sekmesi yardımcıları. Dosya açma, güncelleme
 // ve panel UYAP sekmesinde, oradaki içerik betiğiyle yürür; bu sayfalar yalnız istek iletir.
 (() => {

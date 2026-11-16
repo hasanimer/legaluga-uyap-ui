@@ -1,3 +1,4 @@
+'use strict';
 /* global module, importScripts */
 // Tam TIFF zincirini yerel worker'da, kaynak çözünürlüğü düşürmeden PDF'e dönüştürür. Sayfa tuvale çizilip PNG'ye
 // çevrilmez: tek şeritli CCITT G4 sayfanın özgün faks akışı çözülmeden (/CCITTFaxDecode, kayıpsız), öteki siyah-beyaz
@@ -8,7 +9,7 @@
   const DEFAULT_DPI = 200;
   const OUTPUT_CAP = 128 * MiB;
   function fail(message, code = 'tiff-incomplete') {
-    const error = new Error(message); error.code = code; throw error;
+    const error = /** @type {Error & { code?: string }} */ (new Error(message)); error.code = code; throw error;
   }
   function checkedBytes(...values) {
     let total = 0;

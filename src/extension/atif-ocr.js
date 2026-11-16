@@ -1,3 +1,4 @@
+'use strict';
 /* global module */
 // Taranmış evrak metnini künye ayıklayıcısına vermeden önce düzeltir. Yalnız esas/karar yakınıdaki
 // numara benzeri parçalara dokunur; doğuştan metin bu modülden geçmez. Ağ, depolama ve DOM yoktur.

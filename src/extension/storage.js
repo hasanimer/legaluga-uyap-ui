@@ -1,3 +1,4 @@
+'use strict';
 // Kalıcı AES-GCM veriler ve anahtar yalnız uzantı kökenindeki service worker'da işlenir.
 // Mevcut chrome.storage.local sözleşmesini korur; içerik betiklerine anahtar/ciphertext verilmez.
 (() => {
@@ -40,6 +41,8 @@
   // kopyalarını değiştirebilir (ör. içerik betiği paneldeki kayda dosyaId yazar).
   // Sürüm duyurusu: tarama dizini (uhdIndex) değeriyle değil, yalnız sürümüyle yayınlar (uhdIndexRev, yeni değer depo sürümü).
   // Duyuru anahtarı saklanmaz. Duyurudan eski yanıtı beklenen get değeri yamayamaz; o anahtarı yeniden okur (REREAD).
+  // Evrak izi (uhdEvrakIzi) duyurulmaz da: onu yalnız tarama okur, dinleyen yok; tarama onu dizinle aynı yazıda yazar, iki anahtarı
+  // birlikte bekleyen okuma dizin duyurusuyla yinelenir.
   const DUYURU = new Map([['uhdIndexRev', 'uhdIndex']]), REREAD = Symbol('reread');
   const fire = (changes, area = 'local', revision = 0) => {
     const keep = area === 'local' && pendingGets > 0;
@@ -51,19 +54,33 @@
   };
   let broker;
   if (typeof document === 'undefined') {
-    let queue = Promise.resolve(), revision = 0, keyRecord;
+    let queue = Promise.resolve(), revision = 0, keyRecord, gecis = null, gecisTamam = false;
     const ownRevisions = new Set();
-    const transact = task => {
-      const result = queue.then(async () => { await hazir(); return task(); });
+    // Evrak izi geçişi worker ömründe bir kez, dizine bakan ilk işlemden önce aynı kuyrukta denenir; hatası işlemi durdurmaz.
+    // Geçiş denetimi dizini çözer: dizine ve ize dokunmayan okuma ve yazılar (ör. açılıştaki küçük tercih okuması) onu beklemez.
+    // Biten geçiş depoda kalıcı işaretle (GECIS) bilinir; sonraki worker ömürleri dizini çözmeden geçer.
+    // İşaret şifresiz tek sayıdır, ürün anahtarı değildir (sayfalar okuyamaz, yedeğe girmez). Evrak izi taşımayan dizin yazısıyla
+    // aynı yazıda konur (geçişin dizin yazısı, tarama, geri yükleme), yalnız geçiş bu worker ömründe tamamlandıysa: düşen geçiş
+    // sonraki açılışta yeniden denenir. Yazılmamışsa denetim dizini çözer, taşınacak iz yoksa yalnız tercihi dondurabilir.
+    const GECIS = '__uhdEvrakIziAyrik';
+    const izsizDizin = index => Array.isArray(index?.records) && !index.records.some(r => r && Object.hasOwn(r, 'evrakSeen'));
+    const transact = (task, gecisli = true) => {
+      const result = queue.then(async () => {
+        await hazir();
+        if (gecisli) await (gecis ??= evrakIziGecisi().then(() => { gecisTamam = true; }, () => {}));
+        return task();
+      });
       queue = result.catch(() => {}); return result;
     };
+    const dizinsiz = (operation, args) => ['get', 'set', 'remove'].includes(operation) &&
+      keysOf(args)?.every(key => key !== 'uhdIndex' && key !== 'uhdEvrakIzi') === true;
     async function keyStore() {
       const db = await new Promise((resolve, reject) => {
-        const request = indexedDB.open('legaluga-vault', 1);
-        request.onupgradeneeded = () => request.result.createObjectStore('keys');
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(new Error('Şifreleme anahtarı deposu açılamadı.'));
-        request.onblocked = () => reject(new Error('Şifreleme anahtarı deposu başka pencerede kilitli.'));
+        const openRequest = indexedDB.open('legaluga-vault', 1);
+        openRequest.onupgradeneeded = () => openRequest.result.createObjectStore('keys');
+        openRequest.onsuccess = () => resolve(openRequest.result);
+        openRequest.onerror = () => reject(new Error('Şifreleme anahtarı deposu açılamadı.'));
+        openRequest.onblocked = () => reject(new Error('Şifreleme anahtarı deposu başka pencerede kilitli.'));
       });
       const run = (mode, operation) => new Promise((resolve, reject) => {
         const tx = db.transaction('keys', mode), req = operation(tx.objectStore('keys'));
@@ -121,19 +138,21 @@
       return ready;
     };
     baslat();
-    async function commit(values) {
+    async function commit(values, ek = {}) {
       revision = Math.max(revision + 1, Date.now() * 1000);
       ownRevisions.add(revision);
       if (ownRevisions.size > 256) ownRevisions.delete(ownRevisions.values().next().value);
-      await native.set({ ...values, [REV]: revision });
+      await native.set({ ...values, ...ek, [REV]: revision });
     }
     // Dizin özeti (indexMeta): kayıtlar dışındaki alanlar, kayıt sayısı ve şifreli kayıttan yaklaşık düz metin baytı (ileti
-    // sınırına yakınlık). SW belleğindedir; dizin okundukça ve yazıldıkça yenilenir, dışarıdan değişince unutulur.
-    let dizinOzeti;   // undefined: bilinmiyor, null: dizin yok
+    // sınırına yakınlık). SW belleğindedir; dizin okundukça ve yazıldıkça yenilenir, dışarıdan değişince unutulur. Evrak izinin
+    // boyutu (izBoyutu) da aynı kuralla bellekte tutulur: panel doluluğu her dizin duyurusunda sorar, büyük iz her soruda okunmaz.
+    let dizinOzeti, izBoyutu;   // undefined: bilinmiyor; dizinOzeti null: dizin yok
+    const zarfBoyutu = zarf => UHDVaultCrypto.isEnvelope(zarf) ? Math.round(zarf.data.length / 4 * 3) : 0;
     const ozetle = (index, zarf) => {
       if (!index || typeof index !== 'object' || Array.isArray(index)) return null;
       const { records, ...meta } = index;
-      return { meta, count: Array.isArray(records) ? records.length : 0, size: Math.round(zarf.data.length / 4 * 3), limit: MAX_MESSAGE };
+      return { meta, count: Array.isArray(records) ? records.length : 0, size: zarfBoyutu(zarf), limit: MAX_MESSAGE };
     };
     async function read(query, wire = true) {
       const keys = keysOf(query); checkKeys(keys);
@@ -146,6 +165,7 @@
       for (const [name, value] of Object.entries(saved)) if (validKey(name)) {
         const result = await UHDVaultCrypto.open(keyRecord.key, keyRecord.id, name, value);
         if (name === 'uhdIndex') dizinOzeti = result.exists ? ozetle(result.value, value) : null;
+        if (name === 'uhdEvrakIzi') izBoyutu = zarfBoyutu(value);
         if (result.exists) { data[name] = result.value; present.push(name); bound += value.data.length / 4 * 3 + 2 * name.length + 16; }
         else if (!(query && typeof query === 'object' && !Array.isArray(query))) delete data[name];
       }
@@ -160,9 +180,33 @@
       const tabs = await chrome.tabs.query({ url: 'https://avukat.uyap.gov.tr/*' }).catch(() => []);
       for (const tab of tabs) void chrome.tabs.sendMessage(tab.id, message, { frameId: 0 }).catch(() => {});
     }
+    // Evrak izi geçişi: eski profilde dizin kayıtlarındaki görülen evrak anahtarları (evrakSeen) ayrı anahtara (uhdEvrakIzi)
+    // taşınır. Önce iz yazılır, sonra kayıtlardan silinir; arada kesilirse sonraki açılış birleşimle tamamlar (UHD.evrakIziniAyir).
+    // Takip tercihi izle aynı yazıdadır: dizin yazısı reddedilip tarama dizini izden ayırırsa sonraki açılışta taşınacak iz kalmaz
+    // (dondurulan tercih evrakTakipAcik sonucunu geçişten önce de sonra da değiştirmez). Taşınacak iz yoksa yazı yapılmaz.
+    // İşaret konduktan sonra eski biçimli dizin ancak sürüm düşürmeyle gelir; taramanın birleşimi o izi de kayıpsız ayırır.
+    async function evrakIziGecisi() {
+      if ((await native.get(GECIS))[GECIS] === 1) return;
+      const { uhdIndex, uhdPrefs } = (await read(['uhdIndex', 'uhdPrefs'], false)).data;
+      if (!Array.isArray(uhdIndex?.records)) return;
+      if (izsizDizin(uhdIndex)) {
+        // Önceki ömürde geçiş tercihi yazamadan düştü ve tarama dizini izden ayırdıysa tercih izden dondurulur. Tarama takibi
+        // dizindeki kayıtların izinden türetir (evrakTakipAcik): aynı kural, ayardaki kutu taramayla aynı kalır.
+        const prefs = uhdPrefs || {};
+        if (typeof prefs.evrakTakip === 'boolean' || prefs.evrakKapali) return;
+        const izi = (await read('uhdEvrakIzi', false)).data.uhdEvrakIzi;
+        if (izi && typeof izi === 'object' && uhdIndex.records.some(r => r && Array.isArray(izi[r.key]))) await write({ uhdPrefs: { ...prefs, evrakTakip: true } });
+        return;
+      }
+      const ayrik = globalThis.UHD.evrakIziniAyir(uhdIndex, (await read('uhdEvrakIzi', false)).data.uhdEvrakIzi, uhdPrefs);
+      await write({ uhdEvrakIzi: ayrik.izi, ...(ayrik.prefs && { uhdPrefs: ayrik.prefs }) }, [], new Set(['uhdEvrakIzi']));
+      gecisTamam = true;   // iz ve tercih yazıldı: bundan sonraki izsiz dizin yazısı (bu da, taramanınki de) geçişi tamamlar
+      await write({ uhdIndex: ayrik.index }, [], new Set(['uhdIndex']), new Set(['uhdIndex']));
+    }
     // Yazı sonrası: dizin özeti yenilenir; duyur'daki anahtarların (DUYURU) yerine sürüm duyurusu yayına eklenir.
     function yaziSonrasi(names, values, encrypted, changes, duyur) {
       if (names.includes('uhdIndex')) dizinOzeti = ozetle(values.uhdIndex, encrypted.uhdIndex);
+      if (names.includes('uhdEvrakIzi')) izBoyutu = zarfBoyutu(encrypted.uhdEvrakIzi);
       for (const [duyuru, name] of DUYURU) if (duyur?.has(name) && names.includes(name)) changes[duyuru] = { newValue: revision };
     }
     // quiet: yayınlanmayan anahtarlar; duyur: yayınlanmayıp yalnız sürümü duyurulan anahtarlar (quiet'te de bulunur).
@@ -179,7 +223,7 @@
         if (!quiet?.has(name)) changes[name] = exists ? { newValue: clone(values[name]) } : {};
       }
       if (names.length) {
-        await commit(encrypted);
+        await commit(encrypted, gecisTamam && izsizDizin(values.uhdIndex) ? { [GECIS]: 1 } : {});
         yaziSonrasi(names, values, encrypted, changes, duyur);
         if (Object.keys(changes).length) await broadcast(changes);
       }
@@ -305,8 +349,8 @@
         const quiet = values.uhdJob && typeof values.uhdJob === 'object' && !args.absent.includes('uhdJob') &&
           head(values.uhdJob) === head(saved.uhdJob) ? ['uhdJob'] : [];
         // Taramanın dizin yazıları (ara kayıtlar da son kayıt da) yalnız sürümle duyurulur: binlerce dosyalık dizin her kayıtta
-        // bütün sekmelere gitmez; görünen panel ve şerit dizini bir kez okur, görünmeyenler bayat sayar.
-        await write(values, args.absent, new Set([...quiet, 'uhdIndex']), new Set(['uhdIndex']));
+        // bütün sekmelere gitmez; görünen panel ve şerit dizini bir kez okur, görünmeyenler bayat sayar. Evrak izi yayınlanmaz.
+        await write(values, args.absent, new Set([...quiet, 'uhdIndex', 'uhdEvrakIzi']), new Set(['uhdIndex']));
         return { data: true, revision };
       }
       if (operation === 'stopScan') {
@@ -353,7 +397,7 @@
         const data = globalThis.UHD.checkBackup({ app: UHD.BACKUP_APP, format: UHD.BACKUP_FORMAT, data: args });
         // Önce bütün yedek doğrulanır; eski işin iptali ve yedek tek şifreli commit ile birlikte görünür.
         await write({ ...data, uhdScanEpoch: crypto.randomUUID(), uhdProgress: { running: false, text: 'Yedek geri yüklendi.', endedAt: Date.now() } },
-          [...UHD.BACKUP_KEYS.filter(k => !Object.hasOwn(data, k)), 'uhdJob']);
+          [...UHD.BACKUP_KEYS.filter(k => !Object.hasOwn(data, k)), 'uhdJob'], new Set(['uhdEvrakIzi']));
         return { revision };
       }
       if (operation === 'clearAppData') {
@@ -476,10 +520,13 @@
         await write({ uhdSafahat: globalThis.UHD.checkSafahatStore(current, true) });
         return { data: snapshot, revision };
       }
-      // Dizinin yalnız özeti ya da tek kaydı (şema aynı): SW dizini çözer, büyük yanıt sekmeye gitmez.
+      // Dizinin yalnız özeti ya da tek kaydı (şema aynı): SW dizini çözer, büyük yanıt sekmeye gitmez. Tarama dizini ve evrak
+      // izini aynı iletide okur ve yazar (atomik): ileti sınırına yakınlık (size) ikisinin toplamıdır; izin boyutu zarfından.
       if (operation === 'indexMeta') {
         if (dizinOzeti === undefined && (await read('uhdIndex', false)).data.uhdIndex === undefined) dizinOzeti = null;
-        return { data: clone(dizinOzeti), revision };
+        if (!dizinOzeti) return { data: null, revision };
+        izBoyutu ??= zarfBoyutu((await native.get('uhdEvrakIzi')).uhdEvrakIzi);
+        return { data: { ...clone(dizinOzeti), size: dizinOzeti.size + izBoyutu }, revision };
       }
       if (operation === 'findRecord') {
         if (!globalThis.UHD.safahatFileKey(args?.key)) throw new Error('Dosya anahtarı geçersiz.');
@@ -491,7 +538,7 @@
         return { data: { encrypted: true, algorithm: 'AES-256-GCM', automatic: true, extractable: keyRecord.key.extractable, entries: values.length, plaintextEntries: values.filter(([,v])=>!UHDVaultCrypto.isEnvelope(v)).length }, revision };
       }
       throw new Error('Depolama işlemi desteklenmiyor.');
-    });
+    }, !dizinsiz(operation, args));
     const trusted = sender => sender.id === chrome.runtime.id && (String(sender.url || '').startsWith(chrome.runtime.getURL('')) || (sender.frameId === 0 && String(sender.url || '').startsWith('https://avukat.uyap.gov.tr/')));
     chrome.runtime.onMessage.addListener((message, sender, reply) => {
       if (message?.type !== 'uhd-storage' || !trusted(sender)) return;
@@ -509,6 +556,7 @@
       // Eski sürümün açık uzantı sayfası düz metin yazarsa aynı kuyrukta şifrele; raw event yayma.
       void transact(async () => {
         if (names.includes('uhdIndex')) dizinOzeti = undefined;
+        if (names.includes('uhdEvrakIzi')) izBoyutu = undefined;
         const saved = await native.get(names), encrypted = {}, decoded = {};
         for (const name of names) {
           const raw = saved[name];
