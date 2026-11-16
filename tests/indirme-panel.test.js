@@ -57,7 +57,7 @@ test('boş İndirmeler alanı işi başlatmadan abonelik kurar ve açık boş du
   h.api.destroy();
 });
 
-test('yüzde yalnız kalıcı evrakları sayar; geçici evrak ve ölçülen parça boyutu ayrı görünür', () => {
+test('yüzde alınan evrakları sayar, diske kaydedilen sayı ayrı yazılır; ölçülen parça boyutu ayrı görünür', () => {
   const state = job({ status: 'running', phase: 'fetching', saved: 230, inPart: 47,
     partBytes: 2 * 1024 * 1024, currentTitle: 'Sentetik belge', elapsedMs: 80000 });
   const before = JSON.stringify(state), h = harness([state]);
@@ -65,7 +65,7 @@ test('yüzde yalnız kalıcı evrakları sayar; geçici evrak ve ölçülen par�
   assert.equal(h.field('status', 'file-a').textContent, 'Evraklar alınıyor');
   assert.equal(h.field('percent', 'file-a').textContent, '%2');
   assert.equal(h.field('progress', 'file-a').attrs.value, '2');
-  assert.match(h.field('saved', 'file-a').textContent, /230 \/ 10\.840 evrak diske kaydedildi/);
+  assert.match(h.field('saved', 'file-a').textContent, /277 \/ 10\.840 evrak alındı · 230 diske kaydedildi/);
   assert.match(h.field('received', 'file-a').textContent, /47.*henüz kaydedilmedi/);
   assert.equal(h.field('bytes', 'file-a').textContent, 'Bu parça: 2 MiB');
   assert.equal(h.field('elapsed', 'file-a').textContent, 'Etkin süre: 1 dk 20 sn');
@@ -75,10 +75,11 @@ test('yüzde yalnız kalıcı evrakları sayar; geçici evrak ve ölçülen par�
   h.api.destroy();
 });
 
-test('Chrome diske kaydederken yüzde ilerlemez; doğrulanmış cursor geldikten sonra tamamlanır', () => {
-  const state = job({ status: 'running', phase: 'saving', saved: 0, total: 100, partCount: 0, inPart: 100 });
+test('ilk parça diske yazılmadan da yüzde alınan evrakla ilerler; doğrulanmış cursor geldikten sonra tamamlanır', () => {
+  const state = job({ status: 'running', phase: 'saving', saved: 0, total: 100, partCount: 0, inPart: 40 });
   const h = harness([state]);
-  assert.equal(h.field('percent', 'file-a').textContent, '%0');
+  assert.equal(h.field('percent', 'file-a').textContent, '%40');
+  assert.match(h.field('saved', 'file-a').textContent, /40 \/ 100 evrak alındı · 0 diske kaydedildi/);
   assert.equal(h.field('status', 'file-a').textContent, 'ZIP diske kaydediliyor');
   assert.equal(h.field('folder', 'file-a').hidden, true);
   h.update([job({ status: 'complete', saved: 100, total: 100, partCount: 1,
@@ -133,7 +134,7 @@ test('duraklatılan fetch/paketleme/kayıt bitene kadar Devam et çalışmaz; pr
     assert.equal(h.field('status', 'file-a').textContent, 'Duraklatılıyor…', phase);
     assert.equal(h.field('control', 'file-a').textContent, 'Duraklatılıyor…', phase);
     assert.equal(h.field('control', 'file-a').disabled, true, phase);
-    assert.match(h.field('saved', 'file-a').textContent, /200 \/ 10\.840/);
+    assert.match(h.field('saved', 'file-a').textContent, /247 \/ 10\.840 evrak alındı · 200 diske kaydedildi/);
     await h.field('control', 'file-a').click();
   }
   assert.equal(h.calls.filter(call => call[0] === 'pause').length, 1);

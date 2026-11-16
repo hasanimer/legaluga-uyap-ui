@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "ed23e7cca37c33ba08cf6b98824d6d9f282cdc8ce2c276f0cb7bb45c74adf506"
+      "sha256": "36acde0ec1587715fa4c4ff27f44f577410ad10ab5c87cf22db40477bdc18f75"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -236,7 +236,7 @@
     },
     {
       "path": "src/extension/indirme-panel.js",
-      "sha256": "f1cb5d5e94951f0b4f438533b0c60b482f53ed08b2730439feafceb74df2cfdc"
+      "sha256": "4932a4e3b2aa882dcd6a5104d12451a342d702df74a72b8c26754677e8e20a39"
     },
     {
       "path": "src/extension/kunye-ayikla.js",
@@ -308,7 +308,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "2c4dc12a1b1410d023c5fee86fedd5bd58a473df00fe193a94d9f066d78a9db0"
+      "sha256": "8d5a67cf1ba67aa32eb68eecdcaaf33ab56c1b395c279390d7d41afded4c28f3"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -556,7 +556,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "5194eff1db4bbef471eea966509fcf0d2ae09f04e25d98e5f1ddbfa6c8c89dae"
+      "sha256": "db014d2b969860653d7af043cb0ae883bcacb902fa7ecf44c588a2cb0d8a3730"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -604,7 +604,7 @@
     },
     {
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "0a0dc15a76064d5deba1465a5af9886229505c21b9a0541d291b37a8c99af62d"
+      "sha256": "6424da2e4fc85fd16d2d0c45dae299f46132170a622b3dc1a574ad6c38dd5404"
     },
     {
       "path": "src/fragments/content/105-viewer-document-load-and-list-ready.js.part",
@@ -652,7 +652,7 @@
     },
     {
       "path": "tests/indirme-panel.test.js",
-      "sha256": "e79c0fce9fbe58e26c6e65e34fc24c95f3b3278f95a5910eb9f68f7a289f4fd2"
+      "sha256": "782e59e39a025d066ac694e7acf962dafb7c9bbc69f8b17bc094ed4563d34531"
     },
     {
       "path": "tests/onboarding-ui.test.js",
@@ -668,7 +668,7 @@
     },
     {
       "path": "tests/ui-downloads.test.js",
-      "sha256": "2ff0ff43377aa757eaf696d83223a6b1529ac6f79352580d57b59ed366b82500"
+      "sha256": "a2093069474c00c480f940d34c3dcfdbc957dad69503a7a97ef13fc11e92acf3"
     },
     {
       "path": "tests/update-inventory.test.js",

@@ -123,16 +123,16 @@ test('panelde İndirmeler düğmesi gerçek çekmeceyi açar; geri dönüş oda�
   assert.equal(h.document.activeElement, button);
 });
 
-test('mini durum yalnız diske kaydedilen yüzdeyi gösterir; geçici parça sayısı ayrı kalır', async () => {
+test('mini durum alınan evrakla ilerler; diske kaydedilen sayı ayrı yazılır', async () => {
   const h = harness({ states: [job()] }); await flush();
   const mini = h.find('.download-mini'), progress = mini.querySelector('progress');
   assert.equal(mini.hidden, false);
-  assert.equal(progress.value, 25);
-  assert.match(mini.textContent, /2031\/100.*25\/100 kaydedildi.*50 evrak bu parçada/);
-  assert.equal(h.field('percent').textContent, '%25');
+  assert.equal(progress.value, 75);
+  assert.match(mini.textContent, /2031\/100.*75\/100 alındı · 25 diske kaydedildi/);
+  assert.equal(h.field('percent').textContent, '%75');
   h.update([job({ saved: 25, inPart: 75, phase: 'saving' })]);
-  assert.equal(progress.value, 25);
-  assert.match(mini.textContent, /Diske kaydediliyor.*75 evrak bu parçada/);
+  assert.equal(progress.value, 100);
+  assert.match(mini.textContent, /Diske kaydediliyor.*100\/100 alındı · 25 diske kaydedildi/);
   await mini.click();
   assert.equal(h.find('.download-area').hidden, false);
   assert.equal(h.field('status').textContent, 'ZIP diske kaydediliyor');
@@ -144,8 +144,8 @@ test('duraklatma geçişinde mini görünür kalır; prefix kaydı bittiğinde v
   for (const phase of ['fetching', 'packing', 'saving']) {
     h.update([job({ status: 'paused', phase, persistentPending: false })]);
     assert.equal(mini.hidden, false, phase);
-    assert.match(mini.textContent, /Duraklatılıyor….*25\/100 kaydedildi.*50 evrak bu parçada/);
-    assert.equal(progress.value, 25, phase);
+    assert.match(mini.textContent, /Duraklatılıyor….*75\/100 alındı · 25 diske kaydedildi/);
+    assert.equal(progress.value, 75, phase);
     assert.equal(h.find('.downloads-toggle .dl-n').textContent, '↓ 1');
     assert.equal(h.field('control').disabled, true, phase);
     await h.field('control').click();
@@ -247,7 +247,7 @@ test('arka plan güncellemeleri kapalı çekmeceyi açmaz; durmuş iş kullanıc
   await h.find('.download-back').click();
   h.update([job({ saved: 50, inPart: 10 })]);
   assert.equal(h.find('.download-area').hidden, true);
-  assert.equal(h.find('.download-mini').querySelector('progress').value, 50);
+  assert.equal(h.find('.download-mini').querySelector('progress').value, 60, 'alınan evrak: 50 kayıtlı + 10 parçada');
 });
 
 test('popup/options veya yöneticisi/bileşeni olmayan ekran indirme UI’sı ve aboneliği oluşturmaz', async () => {
