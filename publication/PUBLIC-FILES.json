@@ -304,7 +304,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "015214d6d44ad125533821b82eaa20a13503c69ffb15997c06550b4aef307558"
+      "sha256": "8d7fe0fb733ef94f806f59982c2dcfd962bf3a3018f23350ffc0275d5b5052d9"
     },
     {
       "path": "src/extension/vault-crypto.js",

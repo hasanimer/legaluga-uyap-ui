@@ -798,21 +798,24 @@
           + (cakisan.length > 2 ? ` Toplam ${fmtNum(cakisan.length)} duruşma çakışıyor.` : '');
         return showNotice(text, '', { label: 'Göster', fn: () => showDurusmalar('cakisma') }, cakKey);
       }
+      // Yakın duruşma: kapatılınca o gün yeniden çıkmaz ve sıradaki bildirimleri gizlemez.
       const yakinDur = upcomingDurusmalar(durusmaMeta && durusmaMeta.list).filter(d => daysLeft(d.tarih) <= 1);
-      if (pref('durusmaBildirim', true) && records.length && yakinDur.length && !filter.onlyDurusma) {
+      const durKey = 'hearings:' + todayIso();
+      if (pref('durusmaBildirim', true) && records.length && yakinDur.length && !filter.onlyDurusma && !dismissedNotices.has(durKey)) {
         const bugun = yakinDur.filter(d => daysLeft(d.tarih) === 0);
         const ilk = (bugun[0] || yakinDur[0]);
         const text = bugun.length
           ? `Bugün ${bugun.length} duruşmanız var; ilki ${ilk.saat}, ${ilk.dosyaNo} ${ilk.birimAdi}.`
           : `Yarın ${yakinDur.length} duruşmanız var; ilki ${ilk.saat}, ${ilk.dosyaNo} ${ilk.birimAdi}.`;
-        return showNotice(text, '', { label: 'Göster', fn: () => showDurusmalar() }, 'hearings:' + todayIso());
+        return showNotice(text, '', { label: 'Göster', fn: () => showDurusmalar() }, durKey);
       }
       const update = { label: 'Güncelle', fn: () => { setNotice(''); opts.onUpdate(false); } };
       if (!records.length || running()) return showNotice('');
-      const oldParties = records.filter(r => r.taraflar && r.tarafV !== TARAF_V).length;
-      if (oldParties) return showNotice(`Müvekkil ve vekil bilgisi için bir kez Güncelle’ye basın (${fmtNum(oldParties)} dosyanın tarafları yenilenecek).`, '', update, 'parties:' + oldParties);
-      const days = meta.updatedAt ? Math.floor((Date.now() - meta.updatedAt) / 86400000) : 0;
-      if (days >= REMIND_DAYS) return showNotice(`Son güncelleme ${days} gün önce yapıldı. Yeni dosyalar için güncellemeniz önerilir.`, '', update, 'update:' + meta.updatedAt);
+      // Taraf yenileme ve güncelleme hatırlatması da kapatılınca sıradaki bildirimi gizlemez.
+      const oldParties = records.filter(r => r.taraflar && r.tarafV !== TARAF_V).length, partiesKey = 'parties:' + oldParties;
+      if (oldParties && !dismissedNotices.has(partiesKey)) return showNotice(`Müvekkil ve vekil bilgisi için bir kez Güncelle’ye basın (${fmtNum(oldParties)} dosyanın tarafları yenilenecek).`, '', update, partiesKey);
+      const days = meta.updatedAt ? Math.floor((Date.now() - meta.updatedAt) / 86400000) : 0, updateKey = 'update:' + meta.updatedAt;
+      if (days >= REMIND_DAYS && !dismissedNotices.has(updateKey)) return showNotice(`Son güncelleme ${days} gün önce yapıldı. Yeni dosyalar için güncellemeniz önerilir.`, '', update, updateKey);
       if (yeniMap.size && !filter.onlyNew) {
         return showNotice(`${fmtNum(yeniMap.size)} dosyada ${fmtNum(yeniCount)} yeni evrak var.`, '', {
           label: 'Göster', fn: () => { input.value = ''; switchView('new'); }
