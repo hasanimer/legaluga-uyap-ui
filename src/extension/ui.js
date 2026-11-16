@@ -2,7 +2,7 @@
 // Arama arayüzü: hem eklenti popup'ında hem UYAP sayfasındaki yan panelde aynı kod kullanılır.
 (() => {
   if (globalThis.UHD.mountUI) return;
-  const { onayIste, search, passFilter, fileNoQuery, fmtTrDate, fmtNum, fmtDate, norm, detectMyName, myKeys, isClient, nameKey, BRAND, csvCell, csvDosyaNo, unseenEvrak, trDateTs, lastEvrak, personFiles, trTitle, cleanDurum, cleanBirim, kunyeOf, evrakTakipAcik, CBS, ILLER, ilAdi, BACKUP_APP, BACKUP_FORMAT, BACKUP_KEYS, checkBackup, todayIso, daysLeft, upcomingDurusmalar, durusmaCakismalari, CAKISMA_DK, durusmaIcs, taramaCanli, TARAF_V, SON_ACILAN_MAX } = globalThis.UHD;
+  const { onayIste, search, passFilter, fileNoQuery, fmtTrDate, fmtNum, fmtDate, norm, detectMyName, myKeys, isClient, nameKey, BRAND, csvCell, csvDosyaNo, unseenEvrak, trDateTs, lastEvrak, personFiles, trTitle, cleanDurum, cleanBirim, kunyeOf, evrakTakipAcik, evrakIziniGom, CBS, ILLER, ilAdi, BACKUP_APP, BACKUP_FORMAT, BACKUP_KEYS, checkBackup, todayIso, daysLeft, upcomingDurusmalar, durusmaCakismalari, CAKISMA_DK, durusmaIcs, taramaCanli, TARAF_V, SON_ACILAN_MAX } = globalThis.UHD;
   const LIMIT = 60;
   const REMIND_DAYS = 7;
 
@@ -2117,7 +2117,7 @@
     async function exportBackup() {
       try {
         const password = await backupPassword(true); if (password === null) return;
-        const data = checkBackup({ app: BACKUP_APP, format: BACKUP_FORMAT, data: await chrome.storage.local.get(BACKUP_KEYS) });
+        const data = evrakIziniGom(checkBackup({ app: BACKUP_APP, format: BACKUP_FORMAT, data: await chrome.storage.local.get(BACKUP_KEYS) }));
         const version = (chrome.runtime && chrome.runtime.getManifest) ? chrome.runtime.getManifest().version : '';
         const body = JSON.stringify(await UHDVaultCrypto.encryptBackup({ app: BACKUP_APP, format: BACKUP_FORMAT, version, exportedAt: new Date().toISOString(), data }, password));
         const url = URL.createObjectURL(new Blob([body], { type: 'application/json' }));

@@ -158,6 +158,19 @@
     return { index: { ...index, records: kayitlar }, izi: Object.fromEntries(birlesik), prefs: tercih };
   }
 
+  // Yedeğe yazılırken iz kayıtların evrakSeen alanına geri gömülür: önceki sürüm uhdEvrakIzi anahtarını tanımaz ve atar, izi
+  // kayıttan okur. Bu sürüm yüklerken evrakIziniAyir izi yeniden ayrı anahtara taşır. Kaydı olmayan iz yedeğe girmez.
+  function evrakIziniGom(data) {
+    const izi = data && data.uhdEvrakIzi;
+    if (!izi || typeof izi !== 'object' || Array.isArray(izi)) return data;
+    const geri = { ...data };
+    delete geri.uhdEvrakIzi;
+    const records = data.uhdIndex && Array.isArray(data.uhdIndex.records) ? data.uhdIndex.records : null;
+    if (!records) return geri;
+    const kayitlar = records.map(r => r && Array.isArray(izi[r.key]) ? { ...r, evrakSeen: izi[r.key] } : r);
+    return { ...geri, uhdIndex: { ...data.uhdIndex, records: kayitlar } };
+  }
+
   // ------------------------------------------------ yedek
   // Yedek dosyası: { app, format, exportedAt, version, data: { anahtar: değer } }. Başka uygulamanın ya da
   // desteklenmeyen biçimin dosyası reddedilir; yalnız bilinen anahtarlar geri yüklenir.
