@@ -980,11 +980,15 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     if (panelMode === 'dock') schedulePanelFit();
     else if (panelMode === 'drawer') fitDrawer();
   }
+  // Geçersiz bağlamda (eklenti yeniden yüklendi) sendMessage eşzamanlı fırlatır; .catch onu yakalamaz.
   function readPageZoom() {
+    if (!contextAvailable()) return;
     const revision = pageZoomRevision;
-    chrome.runtime.sendMessage({ type: 'uhd-page-zoom' }).then(result => {
-      if (revision === pageZoomRevision) applyPageZoom(result?.zoom);
-    }).catch(() => {});
+    try {
+      chrome.runtime.sendMessage({ type: 'uhd-page-zoom' }).then(result => {
+        if (revision === pageZoomRevision) applyPageZoom(result?.zoom);
+      }).catch(() => {});
+    } catch (error) { if (invalidated(error)) stopInvalidatedContext(); }
   }
 
   // Dosya açılırken UYAP ekranı sürekli değişir; yerleşim açma bitince bir kez yeniden ölçülür.

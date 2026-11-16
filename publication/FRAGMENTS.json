@@ -199,8 +199,8 @@
       "source": "content.js",
       "order": 21,
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "8ff45a077cc59a6a7669d8991631a5723e2affabfbf4770fcb19e8ecb62423c8",
-      "bytes": 109577,
+      "sha256": "1aece884c63af5e26beb433c4d86d173e2cd3c9805fd9bcb9b66473295051cd6",
+      "bytes": 109815,
       "purpose": "page-shell-full-CSS-docking-and-panel-controls"
     },
     {
