@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "d4e033e002c73f3bd6b3a94261288fca95335ccdd167c3a50eb44ef953dcf891"
+      "sha256": "ed23e7cca37c33ba08cf6b98824d6d9f282cdc8ce2c276f0cb7bb45c74adf506"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -308,7 +308,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "17fb175cd028f248a17e1d8c8fff45988ec3fe88bf40651219c783e4f3235383"
+      "sha256": "2c4dc12a1b1410d023c5fee86fedd5bd58a473df00fe193a94d9f066d78a9db0"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -484,11 +484,11 @@
     },
     {
       "path": "src/fragments/common/013.js.part",
-      "sha256": "5aba9d644d2d1a0bb3a279c59b1f1a98496d89cf275c9ae910656f6ea7e81378"
+      "sha256": "90595e7f9a2582a4dd9fba20e20806213c317d2595dc2f17e87ea836875eb5cf"
     },
     {
       "path": "src/fragments/common/015.js.part",
-      "sha256": "dd917b297f36bc0345f804bb782d6889f680a98aee19cd81ac713469d5286b60"
+      "sha256": "edbec415964df0b65450bd2555d8163ed9c0348158cf1e09d8cbfc61b1995bba"
     },
     {
       "path": "src/fragments/content/001-bootstrap-shared-request-safety.js.part",
