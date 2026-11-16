@@ -135,7 +135,7 @@
     const zipDurdur = el('button', { type: 'button', class: 'chip', hidden: true, 'data-zip': 'durdur' }, 'Durdur');
     const zipTekrar = el('button', { type: 'button', class: 'chip', hidden: true, 'data-zip': 'tekrar' }, 'Kalanları tekrar dene');
     const zipKaydet = el('a', { class: 'chip', hidden: true, 'data-zip': 'kaydet' }, 'ZIP’i yeniden indir');
-    const zipPanel = el('button', { type: 'button', class: 'chip', hidden: !downloads, 'data-zip': 'panel' }, 'İndirmeleri panelde göster');
+    const zipPanel = el('button', { type: 'button', class: 'chip', hidden: !downloads, 'data-zip': 'panel' }, 'İndirmeleri panelde göster'), zipEngel = el('p', { class: 'dp-muted', hidden: true, 'data-zip': 'engel' });
     const zipEkler = el('input', { type: 'checkbox', checked: true, 'data-zip': 'ekler' });
     const zipTypeMode = el('select', { 'data-zip': 'tur-mode', 'aria-label': 'Evrak türü seçimi' },
       el('option', { value: 'all' }, 'Tüm türler'), el('option', { value: 'include' }, 'Yalnız seçtiklerim'),
@@ -172,11 +172,11 @@
         el('label', { class: 'ti-secenek' }, zipEkler, el('span', null, 'Ekleri de indir',
           el('small', null, 'Kapalıysa hiçbir ek indirilmez. Açıkken seçilen ana evrakın ekleri de alınır; ek türünü ayrıca seçebilir veya hariç tutabilirsiniz.'))),
         el('label', { class: 'ti-secenek' }, zipParts, el('span', null, 'Parçalı ve kaldığı yerden devam eden indirme',
-          el('small', null, 'Her parçada en çok 100 evrak veya yaklaşık 32 MiB; daha büyük tek evrak ayrı parçaya konur (üst sınır 128 MiB). UYAP sekmesi açıkken bu ekranı kapatsanız da indirme sürer. Sekme veya tarayıcı kapanırsa tamamlanan parçadan devam edebilirsiniz.'))),
+          el('small', null, 'Her parçada en çok 100 evrak veya yaklaşık 32 MiB; daha büyük tek evrak ayrı parçaya konur (üst sınır 128 MiB). Parça en geç birkaç dakikada bir diske yazılır. UYAP sekmesi açıkken bu ekranı kapatsanız da indirme sürer. Sekme veya tarayıcı kapanırsa diske yazılmış parçadan devam edebilirsiniz.'))),
         el('label', { class: 'ti-secenek' }, zipKlasor, el('span', null, 'Klasör düzeninde indir',
           el('small', null, 'ZIP içinde Avukat / Yargı türü / Birim türü / Mahkeme ve esas no klasörü açılır; evraklar özgün biçimleriyle kategori klasörlerine, ekler evrakın yanındaki _ekler klasörüne konur. Dosya bilgileri uyap-project.json kaydına yazılır. Parçalı indirmede tüm parçaları aynı klasöre çıkarın; kayıtlı plan devam ederken başladığı düzeni korur.')))),
       bulkCard,
-      el('div', { class: 'ti-eylem' }, zipIndir, zipDurdur, zipTekrar, zipKaydet, zipPanel),
+      el('div', { class: 'ti-eylem' }, zipIndir, zipDurdur, zipTekrar, zipKaydet, zipPanel), zipEngel,
       zipProgress, zipStatus);
     // Duruşma paketi: listede evraklar işaretlenir (önizleme sürer), sıra ve PDF bu ekranda; PDF görünmez uzantı çerçevesinde
     // (paket motoru: pdf-lib ve worker uzantı kökeninde çalışır) hazırlanır ve önizlemede açılır.
@@ -655,6 +655,7 @@
       zipIndir.disabled = busy || !!bulkRead || !zipTools || !!kaynak?.list.kilit || (!!kaynak && !count && !needsFullList) || (!!zipParts.checked && (!!bulkJob || !!bulkState));
       const action = zipParts.checked ? 'Parçalı indir' : 'ZIP olarak indir';
       zipIndir.textContent = kaynak && !needsFullList && count ? `${action} (${fmtNum(count)} evrak)` : action;
+      zipEngel.hidden = !(zipEngel.textContent = zipParts.checked && (bulkJob || bulkState) && !zipRun && globalThis.UHDBulkPanel?.planEngeli ? globalThis.UHDBulkPanel.planEngeli({ bos: globalThis.UHDBulkPanel.bosPlan(bulkState, bulkJob), yarim: savedPlan }) : '');
       zipIndir.title = zipParts.checked && (bulkJob || bulkState) ? 'Yeni bir indirme için Yeni indirme planı seçin; kalan evraklar için devam edin.' : listeBekliyor ? 'Evrak listesi UYAP’tan alınıyor.' : kaynak?.list.kilit ? 'UYAP evrak listesi kilitli.' : bankaOkuma ? 'Banka cevapları okunurken ZIP indirilemez.' : paketSession ? 'Duruşma paketi hazırlanırken ZIP indirilemez.' : '';
       paketAraclari.hidden = !paketMod;
       paketBar.hidden = !paketMod;
@@ -720,12 +721,12 @@
       const active = ['queued', 'running'].includes(bulkState.status) || bulkState.phase !== 'idle' && !bulkState.persistentPending;
       if (active) {
         if (!zipRun || zipRun.bulk) zipRun = { bulk: true, managed: true, ac: new AbortController(), packAc: new AbortController() };
-        zipProgress.max = bulkState.total; zipProgress.value = bulkState.saved; zipProgress.hidden = false;
+        zipProgress.max = bulkState.total; zipProgress.value = Math.min(bulkState.total, bulkState.saved + (bulkState.inPart || 0)); zipProgress.hidden = false;
       } else if (zipRun?.managed) { zipRun = null; zipProgress.hidden = true; }
       const stage = { waiting: 'Kuyrukta', fetching: 'Evrak alınıyor', packing: 'ZIP hazırlanıyor', saving: 'Diske kaydediliyor' }[bulkState.phase];
       const result = bulkState.status === 'complete' ? 'İndirme tamamlandı.' : bulkState.status === 'error' ? bulkState.error :
         bulkState.status === 'paused' && !active ? 'Duraklatıldı. Kaldığı yerden devam edebilirsiniz.' : stage || 'İndirme sürüyor';
-      zipMessage(`${result} ${fmtNum(bulkState.saved)}/${fmtNum(bulkState.total)} evrak kaydedildi · ${fmtNum(bulkState.inPart)} evrak bu parçada.${bulkEk()}${bulkAtlanan() ? ` ${bulkAtlanan()}` : ''}`, bulkState.status === 'error');
+      zipMessage(`${result} ${fmtNum(bulkState.saved)}/${fmtNum(bulkState.total)} evrak diske kaydedildi${bulkState.inPart > 0 ? ` · ${fmtNum(bulkState.inPart)} evrak alındı, henüz diske yazılmadı` : ''}.${bulkEk()}${bulkAtlanan() ? ` ${bulkAtlanan()}` : ''}`, bulkState.status === 'error');
       const signature = `${bulkState.id}|${bulkState.saved}|${bulkState.partCount}|${bulkState.status}`;
       if (!active && signature !== bulkFinished) { bulkFinished = signature; bulkLoad(true); }
       zipSync();

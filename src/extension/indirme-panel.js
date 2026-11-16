@@ -77,7 +77,7 @@
     const list = el('div', data('list', { class: 'bdp-list', role: 'list', 'aria-label': 'İndirme işleri' }));
     const root = el('section', data('panel', { class: 'bdp', 'aria-labelledby': `${key}-heading` }),
       el('div', { class: 'bdp-heading' }, heading, count),
-      el('p', { class: 'bdp-help' }, 'Parçalı indirmede yüzde, diske kaydedilmiş evrakları gösterir; mevcut parçadaki evraklar ZIP kaydı tamamlanana kadar geçicidir. Tek ZIP indirmesinde evraklar ZIP hazırlanınca birlikte kaydedilir; bu indirmeler yalnız bu sekmede listelenir.'),
+      el('p', { class: 'bdp-help' }, 'Yüzde UYAP’tan alınan evrakları gösterir; diske kaydedilen sayı ayrıca yazılır. Parçalı indirmede mevcut parçadaki evraklar ZIP kaydı tamamlanana kadar geçicidir. Tek ZIP indirmesinde evraklar ZIP hazırlanınca birlikte kaydedilir; bu indirmeler yalnız bu sekmede listelenir.'),
       problem, retry, empty, list, live);
     container.append(root);
     const announce = text => { if (!destroyed && text) live.textContent = text; };
@@ -173,18 +173,20 @@
       const state = row.state;
       if (!state) return;
       const total = number(state.total), saved = Math.min(number(state.saved), total);
-      const percent = total ? Math.floor(100 * saved / total) : 0;
+      // Yüzde alınan evrakla ilerler: ilk parça diske yazılana kadar indirme donmuş görünmesin.
+      const zip = isZip(state), fetched = zip ? saved : Math.min(total, saved + number(state.inPart));
+      const percent = total ? Math.floor(100 * fetched / total) : 0;
       const label = literal(state.rec?.dosyaNo, 100) || 'Dosya';
       row.card.setAttribute('data-status', state.status);
       row.title.textContent = label;
       row.court.textContent = literal(state.rec?.birimAdi, 220);
       row.status.textContent = phaseText(state);
-      const zip = isZip(state), verb = zip ? 'alındı' : 'diske kaydedildi';
-      row.saved.textContent = `${fmt(saved)} / ${fmt(total)} evrak ${verb}`;
+      const text = `${fmt(fetched)} / ${fmt(total)} evrak alındı${zip ? '' : ` · ${fmt(saved)} diske kaydedildi`}`;
+      row.saved.textContent = text;
       row.percent.textContent = `%${percent}`;
       row.progress.setAttribute('value', percent);
-      row.progress.setAttribute('aria-label', zip ? 'Alınan evraklar' : 'Diske kaydedilen evraklar');
-      row.progress.setAttribute('aria-valuetext', `${fmt(saved)} / ${fmt(total)} evrak ${verb}, yüzde ${percent}`);
+      row.progress.setAttribute('aria-label', 'Alınan evraklar');
+      row.progress.setAttribute('aria-valuetext', `${text}, yüzde ${percent}`);
       row.parts.hidden = zip;
       row.parts.textContent = `${fmt(state.partCount)} ZIP parçası kaydedildi`;
       row.received.hidden = !number(state.inPart);
@@ -289,7 +291,19 @@
       finally { for (const row of rows.values()) row.alive = false; rows.clear(); root.remove(); }
     } };
   }
-  const api = { CSS, mount };
+  // Kayıtlı plan Toplu indir ekranında yeni parçalı indirmeyi kapattığında düğmenin altında yazılan neden.
+  // bos: plan hiçbir parçayı diske yazmadı; yarim: kalan evrak var; ikisi de yoksa plan tamamlanmıştır.
+  function planEngeli({ bos = false, yarim = false } = {}) {
+    if (yarim && bos) return 'Kaydedilmiş planda henüz hiçbir evrak kaydedilmedi. Yukarıdaki seçimle indirmek için “Yeni indirme planı”na basın.';
+    if (yarim) return 'Bu dosyada yarım kalmış bir indirme planı var. Kalan evraklar için “Kaldığı yerden devam et”e, yukarıdaki seçimle baştan indirmek için “Yeni indirme planı”na basın.';
+    return 'Bu dosyanın indirmesi tamamlandı. Yeniden indirmek için “Yeni indirme planı”na basın.';
+  }
+  // Plan hiçbir parçayı diske yazmadıysa sıfırlamak kayıp doğurmaz; onay sorulmaz.
+  function bosPlan(state, job) {
+    return state ? state.saved === 0 && !state.partCount && !state.persistentPending
+      : !!job && job.cursor === 0 && !job.parts?.length && !job.pendingDownload;
+  }
+  const api = { CSS, mount, planEngeli, bosPlan };
   globalThis.UHDBulkPanel = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })();

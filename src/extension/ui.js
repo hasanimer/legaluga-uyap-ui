@@ -449,10 +449,11 @@
         btnDownloads.title = active.length ? `İndirmeler: ${active.length} sürüyor veya sırada` : 'İndirmeleri göster';
         if (!state) return;
         const saved = Math.min(state.saved || 0, state.total || 0), total = state.total || 0;
+        const fetched = state.kind === 'zip' ? saved : Math.min(total, saved + (state.inPart || 0));   // alınan evrakla ilerler
         const phase = state.status === 'paused' ? 'Duraklatılıyor…' : { waiting: 'Sırada', fetching: 'Evraklar alınıyor', packing: 'ZIP hazırlanıyor', saving: 'Diske kaydediliyor' }[state.phase] || 'İndiriliyor';
-        downloadText.textContent = `${state.rec?.dosyaNo || 'Dosya'} · ${phase} · ${saved.toLocaleString('tr-TR')}/${total.toLocaleString('tr-TR')} ${state.kind === 'zip' ? 'alındı' : 'kaydedildi'}${state.inPart ? ` · ${state.inPart} evrak bu parçada` : ''}`;
-        downloadProgress.value = total ? Math.floor(100 * saved / total) : 0;
-        downloadProgress.setAttribute('aria-label', state.kind === 'zip' ? 'Alınan evraklar' : 'Diske kaydedilen evraklar');
+        downloadText.textContent = `${state.rec?.dosyaNo || 'Dosya'} · ${phase} · ${fetched.toLocaleString('tr-TR')}/${total.toLocaleString('tr-TR')} alındı${state.kind === 'zip' ? '' : ` · ${saved.toLocaleString('tr-TR')} diske kaydedildi`}`;
+        downloadProgress.value = total ? Math.floor(100 * fetched / total) : 0;
+        downloadProgress.setAttribute('aria-label', 'Alınan evraklar');
       });
     }
     // Eklenti yenilendiğinde eski content script UYAP sekmesinde kalabilir.
