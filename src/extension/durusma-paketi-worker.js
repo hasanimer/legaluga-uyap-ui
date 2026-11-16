@@ -247,11 +247,11 @@ async function start(message) {
       const item = byId.get(id);
       try {
         if (!item) throw Object.assign(new Error('Seçilen evrak bulunamadı'), { code: 'selection', id });
-        const message = `${items.length + conversionIssues.length + 1}/${orderedIds.length} evrak hazırlanıyor · ${item.title || 'Evrak'}`;
-        post({ type: 'PROGRESS', runId, phase: 'convert', itemId: id, message });
+        const progressText = `${items.length + conversionIssues.length + 1}/${orderedIds.length} evrak hazırlanıyor · ${item.title || 'Evrak'}`;
+        post({ type: 'PROGRESS', runId, phase: 'convert', itemId: id, message: progressText });
         // Çok sayfalı TIFF'te her sayfa bildirilir; panel ilerleyen işi süre sınırıyla kesmez.
         items.push(await prepare(item, fonts, signal, (page, total) =>
-          post({ type: 'PROGRESS', runId, phase: 'convert', itemId: id, message: `${message} · sayfa ${page}/${total}` })));
+          post({ type: 'PROGRESS', runId, phase: 'convert', itemId: id, message: `${progressText} · sayfa ${page}/${total}` })));
       } catch (error) {
         if (signal.aborted) throw error;
         conversionIssues.push({ id, code: error?.code || 'convert',

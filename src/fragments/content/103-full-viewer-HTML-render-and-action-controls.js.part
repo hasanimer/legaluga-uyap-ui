@@ -31,11 +31,11 @@
       try {
         await globalThis.navigator.locks.request(`uhd-bulk-download:${rec.key}`, { ifAvailable: true }, async lock => {
           if (!lock) throw new Error('Bu dosyanın indirmesi başka bir sekmede sürüyor; plan sıfırlanmadı.');
-          const job = await bulkLoad(true);
+          const plan = await bulkLoad(true);
           if (closed) return;
-          if (job && !await globalThis.UHDStorage.discardBulkDownload(rec.key, job.id)) throw new Error('Chrome indirmesi sürerken plan sıfırlanamaz.');
+          if (plan && !await globalThis.UHDStorage.discardBulkDownload(rec.key, plan.id)) throw new Error('Chrome indirmesi sürerken plan sıfırlanamaz.');
           if (downloads) {
-            if (job) downloads.track({ rec, fileKey: rec.key, job });
+            if (plan) downloads.track({ rec, fileKey: rec.key, job: plan });
             if (!downloads.forget(rec.key)) throw new Error('Bu dosyanın indirmesi sürerken plan sıfırlanamaz.');
           }
           bulkState = null;
@@ -574,7 +574,7 @@
 
     // Evrak seçimi: liste ve konum hemen güncellenir; art arda seçimlerde evrak son seçimden kısa süre sonra getirilir ve
     // eski istekler iptal edilir, böylece yanlış evrak gösterilmez. hemen: tıklama ya da Enter (bekleme yok).
-    function sec(i, hemen = false, visible = false) {
+    function sec(i, hemen = false, kaydir = false) {
       if (closed || i < 0 || i >= gorunen.length) return;
       if (nativeDocument) {
         sira = i;
@@ -583,9 +583,9 @@
         return;
       }
       const hedef = gorunen[i];
-      if (i === sira && ayni(hedef, simdikiOge) && (!hemen || simdiki || gezAc)) { secimiCiz(visible); return; }
+      if (i === sira && ayni(hedef, simdikiOge) && (!hemen || simdiki || gezAc)) { secimiCiz(kaydir); return; }
       sira = i;
-      secimiCiz(visible);
+      secimiCiz(kaydir);
       konumYaz();
       const ep = ++gezEpoch;
       if (gezAc) gezAc.abort();

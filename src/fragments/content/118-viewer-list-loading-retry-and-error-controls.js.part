@@ -56,7 +56,7 @@
         else {
           // Her sekme kendi alanına yazar: sekme değişince geç gelen yanıt başka sekmenin üzerine yazmaz.
           if (k !== 'notlar' && k !== 'tebligat') p.replaceChildren(el('div', { class: 'dp-muted' }, 'UYAP’tan alınıyor…'));
-          const run = { ozet: () => loadOzet(rec, p), safahat: () => loadSafahat(rec, p, safahatAc.signal), notlar: () => loadNotlar(rec, p, notlarAc.signal),
+          const sekmeYukle = { ozet: () => loadOzet(rec, p), safahat: () => loadSafahat(rec, p, safahatAc.signal), notlar: () => loadNotlar(rec, p, notlarAc.signal),
             tebligat: async () => {
               tebligatUi = globalThis.UHDTebligatUI.mount(p, {
                 query: (provider, barcode, options) => globalThis.UHDTebligatAPI.query(provider, barcode, { ...options, fileKey: rec.key }),
@@ -82,7 +82,7 @@
               });
             }
           }[k];
-          run().catch(err => {
+          sekmeYukle().catch(err => {
             if (closed) return;
             globalThis.UHDReporter?.report(err, k);
             yuklenen.delete(k);   // sekmeye dönülünce yeniden denenir

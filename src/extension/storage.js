@@ -75,11 +75,11 @@
       keysOf(args)?.every(key => key !== 'uhdIndex' && key !== 'uhdEvrakIzi') === true;
     async function keyStore() {
       const db = await new Promise((resolve, reject) => {
-        const request = indexedDB.open('legaluga-vault', 1);
-        request.onupgradeneeded = () => request.result.createObjectStore('keys');
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(new Error('Şifreleme anahtarı deposu açılamadı.'));
-        request.onblocked = () => reject(new Error('Şifreleme anahtarı deposu başka pencerede kilitli.'));
+        const openRequest = indexedDB.open('legaluga-vault', 1);
+        openRequest.onupgradeneeded = () => openRequest.result.createObjectStore('keys');
+        openRequest.onsuccess = () => resolve(openRequest.result);
+        openRequest.onerror = () => reject(new Error('Şifreleme anahtarı deposu açılamadı.'));
+        openRequest.onblocked = () => reject(new Error('Şifreleme anahtarı deposu başka pencerede kilitli.'));
       });
       const run = (mode, operation) => new Promise((resolve, reject) => {
         const tx = db.transaction('keys', mode), req = operation(tx.objectStore('keys'));

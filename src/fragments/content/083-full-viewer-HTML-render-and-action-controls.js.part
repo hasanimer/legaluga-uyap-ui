@@ -47,8 +47,8 @@
       state.dialog.remove();
       if (!closed) { bankaCiz(); zipSync(); }
       if (restore) {
-        const previous = state.previous?.isConnected ? state.previous : Array.from(shadowRoot.querySelectorAll('button')).find(button => state.previousKey && [button.getAttribute('data-bank-reply'), button.getAttribute('data-bank-request'), button.getAttribute('data-tebligat-open')].includes(state.previousKey));
-        previous?.focus({ preventScroll: true });
+        const focusTarget = state.previous?.isConnected ? state.previous : Array.from(shadowRoot.querySelectorAll('button')).find(button => state.previousKey && [button.getAttribute('data-bank-reply'), button.getAttribute('data-bank-request'), button.getAttribute('data-tebligat-open')].includes(state.previousKey));
+        focusTarget?.focus({ preventScroll: true });
       }
     }
     async function bankReplyRender(state, target, sourceEntry, sourcePath) {
@@ -137,7 +137,7 @@
         sourcePath = sourcePath.map(part => ({ indis: part.indis, ad: part.ad }));
       }
       bankReplyClose(false);
-      const previous = shadowRoot.activeElement || document.activeElement;
+      const acan = shadowRoot.activeElement || document.activeElement;
       const closeReply = el('button', { type: 'button', 'data-bank-preview': 'close', title: kind ? 'Önizlemeyi kapat (Esc)' : 'Cevap önizlemesini kapat (Esc)' }, 'Kapat');
       const title = el('b', { 'data-bank-preview': 'title' }, `${x.tur} · ${tarihYaz(x.onay)}`);
       const download = el('a', { class: 'chip', hidden: true, 'data-bank-preview': 'download' }, 'Özgün evrakı indir');
@@ -149,7 +149,7 @@
       const dialog = el('dialog', { class: 'bank-reply-preview', 'aria-label': `${kind === 'tebligat' ? 'Tebligat evrakı' : ihbarCevabiMi(x.tur) ? 'Banka cevabı' : 'Talep evrakı'} önizlemesi` },
         el('div', { class: 'bar' }, title, closeReply),
         el('div', { class: 'bank-reply-toolbar' }, select, sourceSelect, download), content);
-      const state = bankReplyPopupState = { dialog, title, download, content, select, sourceSelect, sourceDocs: [], target: x, kind, previous, previousKey: previous?.getAttribute?.('data-bank-reply') || previous?.getAttribute?.('data-bank-request') || previous?.getAttribute?.('data-tebligat-open'), ac: new AbortController(), readAc: null, urls: new Set(), render: null };
+      const state = bankReplyPopupState = { dialog, title, download, content, select, sourceSelect, sourceDocs: [], target: x, kind, previous: acan, previousKey: acan?.getAttribute?.('data-bank-reply') || acan?.getAttribute?.('data-bank-request') || acan?.getAttribute?.('data-tebligat-open'), ac: new AbortController(), readAc: null, urls: new Set(), render: null };
       bankReplyPopup = dialog;
       closeReply.addEventListener('click', () => bankReplyClose());
       dialog.addEventListener('cancel', event => { event.preventDefault(); bankReplyClose(); });

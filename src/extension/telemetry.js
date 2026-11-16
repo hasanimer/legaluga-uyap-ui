@@ -49,19 +49,19 @@
     return out;
   }
   function toSentryEvent(value) {
-    const report = normalize(value);
-    if (!report) return null;
-    const tags = { operation: report.operation, source: report.source };
-    if (report.code) tags.code = report.code;
-    if (report.status) tags.http_status = String(report.status);
-    if (report.uyapCode) tags.uyap_code = report.uyapCode;
-    const exception = { type: report.type, value: OPERATIONS[report.operation] };
-    if (report.frames.length) exception.stacktrace = { frames: report.frames.map(f => ({
+    const normalized = normalize(value);
+    if (!normalized) return null;
+    const tags = { operation: normalized.operation, source: normalized.source };
+    if (normalized.code) tags.code = normalized.code;
+    if (normalized.status) tags.http_status = String(normalized.status);
+    if (normalized.uyapCode) tags.uyap_code = normalized.uyapCode;
+    const exception = { type: normalized.type, value: OPERATIONS[normalized.operation] };
+    if (normalized.frames.length) exception.stacktrace = { frames: normalized.frames.map(f => ({
       filename: 'app:///' + f.file, lineno: f.line, ...(f.column ? { colno: f.column } : {}), in_app: true
     })) };
-    const top = report.frames.at(-1);
-    return { level: report.operation === 'test' ? 'info' : 'error', tags, exception: { values: [exception] },
-      fingerprint: [report.operation, report.type, report.code || '', String(report.status || ''), report.uyapCode || '', top ? `${top.file}:${top.line}` : ''] };
+    const top = normalized.frames.at(-1);
+    return { level: normalized.operation === 'test' ? 'info' : 'error', tags, exception: { values: [exception] },
+      fingerprint: [normalized.operation, normalized.type, normalized.code || '', String(normalized.status || ''), normalized.uyapCode || '', top ? `${top.file}:${top.line}` : ''] };
   }
   function report(error, operation = 'unhandled') {
     try {

@@ -21,14 +21,14 @@
       if (!tarafGruplari.has(rol)) tarafGruplari.set(rol, []);
       tarafGruplari.get(rol).push(taraf);
     }
-    const tarafGrubu = ([rol, taraflar]) => {
+    const tarafGrubu = ([rol, grupTaraflari]) => {
       const baslik = rol || 'Sıfatı belirtilmeyen taraflar';
       return el('section', { class: 'dp-party-group', 'aria-label': baslik },
         el('h5', { class: 'dp-party-group-title' }, baslik,
-          el('span', { class: 'dp-party-count', 'aria-label': `${taraflar.length} taraf` }, String(taraflar.length))),
+          el('span', { class: 'dp-party-count', 'aria-label': `${grupTaraflari.length} taraf` }, String(grupTaraflari.length))),
         el('table', { class: 'dp-table dp-parties-table', 'aria-label': baslik },
           el('thead', null, el('tr', null, ['Taraf', 'Vekil'].map(h => el('th', { scope: 'col' }, h)))),
-          el('tbody', null, taraflar.map(t => el('tr', null,
+          el('tbody', null, grupTaraflari.map(t => el('tr', null,
             el('td', { 'data-label': 'Taraf' }, t?.adi || '—'),
             el('td', { 'data-label': 'Vekil' }, (Array.isArray(t?.vekil) ? t.vekil : []).join(', ') || '—'))))));
     };

@@ -175,7 +175,7 @@
         input.addEventListener('change', () => {
           const selected = new Set(draft.taramaTurleri);
           if (input.checked) selected.add(type.kod); else selected.delete(type.kod);
-          draft.taramaTurleri = TURLER.filter(type => selected.has(type.kod)).map(type => type.kod);
+          draft.taramaTurleri = TURLER.filter(tur => selected.has(tur.kod)).map(tur => tur.kod);
           changed();
         });
         return el('label', { class: 'setup-choice' }, input, type.ad);

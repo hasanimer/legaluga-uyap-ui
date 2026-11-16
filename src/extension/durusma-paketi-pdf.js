@@ -6,7 +6,7 @@
   if (!PDF || !KIT) throw new Error('PDF motoru yerel vendor bağımlılıklarını bulamadı');
   const { PDFDocument, PDFName, PDFNumber, PDFArray, PDFDict, degrees, rgb,
     pushGraphicsState, popGraphicsState, rectangle, clip, endPath } = PDF;
-  const N = name => PDFName.of(name);
+  const N = key => PDFName.of(key);
   const BAND_PT = 28;
   const PAGE = [595.28, 841.89];
   const LIMITS = { documents: 100, pages: 300, sourceBytes: 64 * 1024 * 1024,
@@ -194,18 +194,18 @@
     });
   }
 
-  function wrapLines(font, value, width, size) {
+  function wrapLines(font, value, width, fontSize) {
       const words = str(value).split(/\s+/);
       const lines = [];
       let line = '';
       while (words.length) {
         const word = words.shift();
         const next = line ? `${line} ${word}` : word;
-        if (font.widthOfTextAtSize(next, size) <= width) { line = next; continue; }
+        if (font.widthOfTextAtSize(next, fontSize) <= width) { line = next; continue; }
         if (line) { lines.push(line); line = ''; words.unshift(word); continue; }
         let part = '';
         for (const char of word) {
-          if (font.widthOfTextAtSize(part + char, size) > width && part) { lines.push(part); part = ''; }
+          if (font.widthOfTextAtSize(part + char, fontSize) > width && part) { lines.push(part); part = ''; }
           part += char;
         }
         line = part;

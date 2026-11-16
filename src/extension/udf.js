@@ -884,10 +884,10 @@
   // oluşuyorsa tırnak içinde kullanılır.
   const MANTIKSAL = { dialog: 'sans-serif', sansserif: 'sans-serif', serif: 'serif', monospaced: 'monospace', dialoginput: 'monospace' };
   function aileListesi(a) {
-    const ad = String(a || '').trim();
-    const m = MANTIKSAL[ad.toLowerCase()];
+    const aileAdi = String(a || '').trim();
+    const m = MANTIKSAL[aileAdi.toLowerCase()];
     if (m) return m === 'monospace' ? '"Courier New", monospace' : m === 'sans-serif' ? 'Arial, sans-serif' : '"Times New Roman", serif';
-    if (/^[\p{L}\p{N} ._-]{1,64}$/u.test(ad)) return `"${ad}", "Times New Roman", serif`;
+    if (/^[\p{L}\p{N} ._-]{1,64}$/u.test(aileAdi)) return `"${aileAdi}", "Times New Roman", serif`;
     return '"Times New Roman", serif';
   }
   const rgb = c => `rgb(${c[0]}, ${c[1]}, ${c[2]})`;

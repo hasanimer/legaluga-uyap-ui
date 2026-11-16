@@ -418,7 +418,7 @@
     // sayfada çizilir ama yalnız ilk sayfadaki çizim kayda girer.
     let kayit = true;
     const kayitlar = [];
-    const dogrula = liste => { for (const k of liste.splice(0)) assertTextIntegrity(k.expected, k.drawn.join('')); };
+    const dogrula = bekleyenler => { for (const k of bekleyenler.splice(0)) assertTextIntegrity(k.expected, k.drawn.join('')); };
     const yukseklik = atom => Math.max(atom.need, atom.advance);
     const bosluk = v => ({ need: 0, advance: v, draw() {} });
     // Atom: bölünmeden çizilen yatay şerit (satır, resim, tablo satırı). need sayfada gereken yükseklik, advance
