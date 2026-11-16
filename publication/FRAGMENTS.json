@@ -127,8 +127,8 @@
       "source": "content.js",
       "order": 3,
       "path": "src/fragments/content/003-bootstrap-shared-request-safety.js.part",
-      "sha256": "4b645e170081a93d0c81e99f0dd9202483215cd4b8226de9836169cb4b859445",
-      "bytes": 10128,
+      "sha256": "03941a464fa9efef928e6e58d62dc040ac93c060de24270d44ba8bdc3033507d",
+      "bytes": 10820,
       "purpose": "bootstrap-shared-request-safety"
     },
     {
@@ -199,8 +199,8 @@
       "source": "content.js",
       "order": 21,
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "1aece884c63af5e26beb433c4d86d173e2cd3c9805fd9bcb9b66473295051cd6",
-      "bytes": 109815,
+      "sha256": "7afe0b38187e7429f1ec02d85f888fef70c930b9489566a9ac9a099213c7383b",
+      "bytes": 109848,
       "purpose": "page-shell-full-CSS-docking-and-panel-controls"
     },
     {

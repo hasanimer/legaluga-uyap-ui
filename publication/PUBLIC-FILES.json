@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "365d53beb3860eea16c85110ead1a6c2a4f2cf6e55827edf223480c4244239db"
+      "sha256": "f2e412b9375c8216dfa4081c9eab433fd8fa5829d9d9cdda64b73f31598ddc9f"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -308,7 +308,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "8d5a67cf1ba67aa32eb68eecdcaaf33ab56c1b395c279390d7d41afded4c28f3"
+      "sha256": "92cf3d564bf99dca4db2759b4ae626bc51bd2384ac0f83bfdd39802b407ffdd4"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -496,7 +496,7 @@
     },
     {
       "path": "src/fragments/content/003-bootstrap-shared-request-safety.js.part",
-      "sha256": "4b645e170081a93d0c81e99f0dd9202483215cd4b8226de9836169cb4b859445"
+      "sha256": "03941a464fa9efef928e6e58d62dc040ac93c060de24270d44ba8bdc3033507d"
     },
     {
       "path": "src/fragments/content/005-context-invalidation-and-progress-boundaries.js.part",
@@ -532,7 +532,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "1aece884c63af5e26beb433c4d86d173e2cd3c9805fd9bcb9b66473295051cd6"
+      "sha256": "7afe0b38187e7429f1ec02d85f888fef70c930b9489566a9ac9a099213c7383b"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",

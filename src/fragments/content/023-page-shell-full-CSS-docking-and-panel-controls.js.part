@@ -9,8 +9,9 @@
       beforeFetch: async signal => {
         uyapBulk(signal);
         if (captchaOpen()) {
-          if (typeof uyapKorumaYaz === 'function') await uyapKorumaYaz();
-          throw new Blocked(CAPTCHA_MSG);
+          const hata = new Blocked(CAPTCHA_MSG);
+          if (typeof uyapKorumaYaz === 'function') await uyapKorumaYaz(hata);
+          throw hata;
         }
       }
     }) : null;
