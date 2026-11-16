@@ -135,13 +135,36 @@
     return (records || []).some(r => r && r.evrakSeen);
   }
 
+  // Evrak izi (uhdEvrakIzi: { kayıtKey: [görülen evrak anahtarı] }): görülen evrak anahtarları dizin kayıtlarında değil ayrı
+  // anahtarda tutulur; dizin ve yayını küçülür, izi yalnız tarama okur ve yazar. Eski kayıttaki iz (evrakSeen: geçiş öncesi profil
+  // ya da yedek) buraya taşınır; ikisi de doluysa birleşir (önce ayrı anahtardaki sıra), görülen evrak yeniden "yeni" sayılmaz.
+  // İzden türeyen göstergeler aynı kalır: 1.1.0 kaydının son evrakı izden çıkarılıp yazılır (lastEvrak), takip tercihi hiç
+  // seçilmemiş profilde takip açık olarak yazılır (evrakTakipAcik). Taşınacak iz yoksa null.
+  function evrakIziniAyir(index, izi, prefs) {
+    const records = index && Array.isArray(index.records) ? index.records : [];
+    if (!records.some(r => r && Object.hasOwn(r, 'evrakSeen'))) return null;
+    const birlesik = new Map(Object.entries(izi && typeof izi === 'object' && !Array.isArray(izi) ? izi : {}));
+    const kayitlar = records.map(r => {
+      if (!r || !Object.hasOwn(r, 'evrakSeen')) return r;
+      const { evrakSeen, ...kayit } = r;
+      if (Array.isArray(evrakSeen)) {
+        const once = birlesik.get(r.key);
+        birlesik.set(r.key, [...new Set([...(Array.isArray(once) ? once : []), ...evrakSeen])]);
+        if (!kayit.sonEvrak && evrakSeen.length) kayit.sonEvrak = lastEvrak(r);
+      }
+      return kayit;
+    });
+    const tercih = typeof prefs?.evrakTakip !== 'boolean' && evrakTakipAcik(prefs, records) ? { ...prefs, evrakTakip: true } : null;
+    return { index: { ...index, records: kayitlar }, izi: Object.fromEntries(birlesik), prefs: tercih };
+  }
+
   // ------------------------------------------------ yedek
   // Yedek dosyası: { app, format, exportedAt, version, data: { anahtar: değer } }. Başka uygulamanın ya da
   // desteklenmeyen biçimin dosyası reddedilir; yalnız bilinen anahtarlar geri yüklenir.
   const BACKUP_APP = 'legaluga-uyap-asistani';
   const BACKUP_FORMAT = 1;
   // Kaldırılan süre özelliğinin eski kayıtları yalnızca yedeklerde kayıpsız korunur.
-  const BACKUP_KEYS = ['uhdIndex', 'uhdNotes', 'uhdSureler', 'uhdEvrakGoruldu', 'uhdDurusmalar', 'uhdPrefs', 'uhdRecent', 'uhdGizli', 'uhdTurFilter', 'uhdBankChecks', 'uhdSafahat', 'uhdBalances'];
+  const BACKUP_KEYS = ['uhdIndex', 'uhdEvrakIzi', 'uhdNotes', 'uhdSureler', 'uhdEvrakGoruldu', 'uhdDurusmalar', 'uhdPrefs', 'uhdRecent', 'uhdGizli', 'uhdTurFilter', 'uhdBankChecks', 'uhdSafahat', 'uhdBalances'];
   function checkBackup(obj) {
     const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
     if (!object(obj) || obj.app !== BACKUP_APP) throw new Error('Bu dosya Legaluga UYAP Asistanı yedeği değil.');
@@ -190,6 +213,7 @@
     const dictionary = (value, check, label) => {
       if (value != null && (!object(value) || Object.values(value).some(item => !check(item)))) fail(label);
     };
+    dictionary(data.uhdEvrakIzi, item => Array.isArray(item) && Array.from(item).every(string), 'evrak bilgisi');
     dictionary(data.uhdNotes, string, 'notlar');
     dictionary(data.uhdEvrakGoruldu, number, 'evrak görüntüleme bilgisi');
     dictionary(data.uhdGizli, item => {
@@ -219,6 +243,9 @@
     }
     if (Object.hasOwn(data, 'uhdSafahat')) data.uhdSafahat = checkSafahatStore(data.uhdSafahat);
     if (Object.hasOwn(data, 'uhdBalances')) data.uhdBalances = checkBalanceStore(data.uhdBalances);
+    // Eski yedeğin kayıtlarındaki evrak izi yüklemede ayrı anahtara taşınır.
+    const ayrik = evrakIziniAyir(data.uhdIndex, data.uhdEvrakIzi, data.uhdPrefs);
+    if (ayrik) Object.assign(data, { uhdIndex: ayrik.index, uhdEvrakIzi: ayrik.izi }, ayrik.prefs && { uhdPrefs: ayrik.prefs });
     // Başka cihazın veya eski yedeğin raporlama tercihi bu cihazda onay sayılmaz.
     data.uhdPrefs = { ...(data.uhdPrefs || {}), hataRaporu: false };
     delete data.uhdPrefs.telemetryConsentAt;

@@ -515,7 +515,7 @@
     let cakismalar = new Map();   // duruşma kimliği → çakıştığı duruşmalar (common.js durusmaCakismalari)
     let yeniMap = new Map();   // kayıt key → en yeni görülmemiş evrakın onay zamanı
     let yeniCount = 0;         // görülmemiş yeni evrak sayısı
-    let evrakTracked = false;  // en az bir dosyanın evrakları tarandı mı
+    let evrakTracked = false;  // en az bir dosyanın evrakları tarandı mı (evrakAt; görülen evrak izi dizinde değil)
     const filter = { durum: 'all', tur: [], turPinned: true, onlyClient: false, onlyNew: false, onlyDurusma: false, cbsIl: '', cbsBirim: '', cbsIzin: '' };
 
     // Tema: ayar "auto" ise sistemin açık/koyu tercihine uyar.
@@ -662,7 +662,7 @@
       yeniCount = 0;
       evrakTracked = false;
       for (const r of records) {
-        if (r.evrakSeen) evrakTracked = true;
+        if (r.evrakAt || r.evrakSeen) evrakTracked = true;
         const u = unseenEvrak(r, goruldu);
         if (!u.length) continue;
         yeniCount += u.length;
@@ -762,7 +762,8 @@
     }
 
     // Dizin tek depolama iletisinin sınırına (32 MiB) yaklaşınca uyarılır: aşılırsa tarama yazısı reddedilir, panelin ilk
-    // okuması da açılamayabilir. Doluluğu SW şifreli kayıttan bilir (indexMeta); panel yalnız görünürken ve dizin değişince sorar.
+    // okuması da açılamayabilir. Doluluğu SW şifreli kayıttan bilir (indexMeta; tarama dizini evrak iziyle aynı iletide yazdığı
+    // için ikisinin toplamı); panel yalnız görünürken ve dizin değişince sorar.
     const DIZIN_UYARI_ORANI = 0.8;
     let dizinDolulugu = 0, dolulukDizini = null;
     function dizinDolulugunuSor() {
