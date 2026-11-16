@@ -1,0 +1,20 @@
+# Kaynaklar UTF-8 ve LF satır sonludur; girinti iki boşluktur. tests/satir-sonu.test.js satır sonlarını denetler.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+
+# Parçalar araya bir şey eklenmeden bayt bayt birleştirilir: son satır sonu ve satır sonu boşlukları elle düzeltilmez.
+[*.part]
+insert_final_newline = false
+trim_trailing_whitespace = false
+
+# Üçüncü taraf dosyalar özgün baytlarıyla tutulur.
+[{vendor/**,**/vendor/**}]
+charset = unset
+end_of_line = unset
+indent_style = unset
+indent_size = unset

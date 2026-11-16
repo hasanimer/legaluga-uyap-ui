@@ -8,7 +8,7 @@ Eklenti, **Av. Hasan İmer Akın** tarafından meslektaşlarının ücretsiz kul
 Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lisansıyla** sunar. UYAP işlem motoru özel kaynaklıdır; tam eklenti mağazadan kurulur.
 
 > Bu rehber, **1.19.65** paketinin davranışlarını anlatır. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
-**1.19.65:** **PDF indir**, tablo, resim, üst/alt bilgi, filigran ve şablon alanı içeren UDF evrakı da PDF’e çevirir; yerleşim yaklaşık olabilir. Toplu indirmede UYAP hız koruması durdurduğunda o ana kadar alınan evraklar diske kaydedilir; boş dönen ya da 128 MiB’ı aşan evrak için **Bu evrakı atla ve sürdür** seçeneği çıkar; mola ve kalan süre İndirmeler panelinde ve dosya ekranında görünür.
+**1.19.65:** **PDF indir**, tablo, resim, üst/alt bilgi, filigran ve şablon alanı içeren UDF evrakı da PDF’e çevirir; yerleşim yaklaşık olabilir. Toplu indirmede UYAP hız koruması durdurduğunda o ana kadar alınan evraklar diske kaydedilir; boş dönen ya da 128 MiB’ı aşan evrak için **Bu evrakı atla ve sürdür** seçeneği çıkar; mola ve kalan süre İndirmeler panelinde ve dosya ekranında görünür. **Ayarlar → UYAP bağlantısı ve koruma** bölümündeki **Otomatik indirme hızı** ile toplu indirme yaklaşık 2,5 kat hızlandırılabilir; varsayılan Normal’dir, UYAP koruması devreye girerse hız kendiliğinden Normal’e döner.
 
 **1.19.64:** Toplu indirmede **Klasör düzeninde indir** seçeneği; UYAP ana sayfasında tanıtım kutularını gizleme ayarı ve Legaluga şeridi; UYAP penceresinde **Legaluga'da aç** ile Ödeme/Evrak Gönder geçişleri, Özet'te duruşma bilgisi. Takılan toplu indirme, Atıflar panelindeki geçici yeniden deneme hatası ve Vergi Takibi devrinin eşzamanlı alımlarda tek kullanımlık kalması düzeltildi; UYAP'ın dosya iznine uymayan veri artık gösterilmez.
 
@@ -16,11 +16,11 @@ Bu depo arayüzü, genel araçları ve yerel şifreleme altyapısını **MIT lis
 
 **1.19.62:** UYAP’ın kendi evrak ekranında açık evrak UDF ise Legaluga araçlarında **UDF olarak indir** görünür; UYAP’ın yüklediği özgün `.udf` dosyası yeniden istenmeden bu cihazdan kaydedilir. Türü belirsiz evrakta önce içeriğe bakılır, UDF değilse indirilmez. Legaluga görüntüleyicisinde de UYAP türünü veya adını bildirmese bile UDF olarak açılan evrakta **UDF olarak indir** çıkar.
 
-**1.19.61:** **Legaluga ile aç** yeniden evrak listesini ve evrakları getirir. 1.19.59 ve 1.19.60'ta Evrak sekmesi, evrak açma, arama, Güncelle ve indirme UYAP'a istek göndermeden **UYAP kapısı kapandı** hatasıyla duruyordu; **Otomatik işlemleri elle aç** bunu düzeltmiyordu. Güncellemeden sonra UYAP sekmesini yenileyin.
+**1.19.61:** **Legaluga ile aç** yeniden evrak listesini ve evrakları getirir. 1.19.59 ve 1.19.60'ta Evrak sekmesi, evrak açma, arama, Güncelle ve indirme UYAP'a istek göndermeden **UYAP kapısı kapandı** hatasıyla duruyordu; **Otomatik işlemleri yeniden aç** bunu düzeltmiyordu. Güncellemeden sonra UYAP sekmesini yenileyin.
 
 **1.19.60:** Metin katmanı olmayan PDF, TIFF ve resimde Atıflar paneli **Taranmış belgede atıfı ara** düğmesini gösterir. Okuma yalnız bu düğmeyle, bu cihazda, paketlenmiş Türkçe modelle ve en çok 12 sayfayla yapılır. Görüntü ve metin makineden çıkmaz; sonuç yalnız o sayfa görünümünün belleğinde tutulur.
 
-**1.19.59:** UYAP indirme ve işlem koruması (403/429/503, Retry-After, PRTL_GNL_1-1 veya doğrulama sayfası) bütün sekmelerdeki otomatik UYAP isteklerini durdurur; süre dolunca kendiliğinden devam etmez. Ayarlardaki **Otomatik işlemleri elle aç** yalnız kilidi kaldırır. İndirme ve sorgular tek kuyrukta, önceki sürümden yavaş aralıkla gider. **UYAP oturumunu koru** varsayılan olarak kapalıdır.
+**1.19.59:** UYAP indirme ve işlem koruması (403/429/503, Retry-After, PRTL_GNL_1-1 veya doğrulama sayfası) bütün sekmelerdeki otomatik UYAP isteklerini durdurur; süre dolunca kendiliğinden devam etmez. Ayarlardaki **Otomatik işlemleri yeniden aç** yalnız kilidi kaldırır. İndirme ve sorgular tek kuyrukta, önceki sürümden yavaş aralıkla gider. **UYAP oturumunu koru** varsayılan olarak kapalıdır.
 
 **1.19.54:** UYAP, HTTP `200` yanıtında `PRTL_GNL_1-1` güvenlik engeli bildirdiğinde tarama ve otomatik oturum yoklaması durur. Kontrol noktası bu Chrome profilinde şifreli saklanır; kısıtlama kalktığında **Sürdür** ile devam edebilirsiniz. Aynı sekme ve oturumda başarıyla alınmış mahkeme liste kapsamları ve sayfaları atlanır. Yeni sekme, sayfa yenilemesi veya yeni oturumda dosya kimliklerini tazelemek için listeler yeniden alınır; güvenlik nedeniyle duraklamış iş kendiliğinden başlamaz.
 
@@ -40,7 +40,7 @@ Görseller gerçek arayüz bileşenlerinden **örnek verilerle** hazırlanmışt
 2. [UYAP Avukat Portalı](https://avukat.uyap.gov.tr/)'nı açıp giriş yapın. Giriş tamamlandığında ilk kurulum **Legaluga Asistan** panelinde otomatik görünür; ayrı kurulum sekmesi açılmaz.
 3. Önce bağlantı ve UYAP oturumu kontrol edilir. Giriş gerekiyorsa resmî UYAP ekranında tamamlayın; giriş bilgilerinizi Legaluga paneline yazmanız gerekmez.
 4. İlk bağlantıda hesabınızdaki ad **vekil adı** alanına alınır. Bu adın vekil olarak geçtiği taraflar **Müvekkil** olarak gösterilir. Gerektiğinde adı düzenleyin; birden fazla adı virgülle ayırabilirsiniz.
-5. Taranacak yargı türlerini, açık/kapalı dosya kapsamını ve gerekirse savcılık illerini seçin. Ardından görünüm, güncelleme ve bildirim ayarlarını belirleyin.
+5. Taranacak yargı türlerini, açık/kapalı dosya kapsamını ve gerekirse savcılık illerini seçin. Görünüm, güncelleme ve bildirim tercihleri varsayılan değerleriyle başlar; **Ayarlar**'dan değiştirebilirsiniz.
 6. **Kaydet ve taramayı başlat** ilk taramayı başlatır. **Kurulumu tamamla** yalnız seçimlerinizi kaydeder.
 
 Tarama başlatırken oturum hazır değilse istek bağlantıyı bekler. Giriş tamamlanıp bağlantı doğrulandığında seçtiğiniz kapsamda kendiliğinden başlar; yeniden **Güncelle**'ye basmanız gerekmez. Bekleyen isteği iptal edebilirsiniz. Bir bağlantı veya doğrulama hatası gösterilirse paneldeki yönlendirmeyi izleyin.
@@ -85,7 +85,7 @@ Müvekkil etiketi, ayarlardaki vekil adıyla dosyanın taraf/vekil kaydının e�
 | **Tebligat sorgusu** | Seçilebilir tebligat zarfları, içerik ve barkod, eşleşen mazbatanın olayları ve isteğe bağlı resmî hizmet sorgusu. |
 | **Safahat** | Son kaydedilmiş işlem listesi ve kullanıcı düğmeyle başlattığında güncel UYAP kaydı. |
 | **Notlar / Toplu indir** | Dosyaya ait notlar ve seçtiğiniz evrakların özgün biçimleriyle indirilmesi. |
-| **Duruşma paketi hazırla** | Evrak sekmesindeki liste ve önizlemeyle belge seçimi, sıra düzenleme ve PDF paketi hazırlama. |
+| **Duruşma paketi (deneme)** | Evrak sekmesindeki liste ve önizlemeyle belge seçimi, sıra düzenleme ve PDF paketi hazırlama. |
 
 Masaüstünde **Özet** ana pencereye sığacak şekilde düzenlenir; uzun hesap veya taraf listeleri kendi bölümlerinde kaydırılır. Taraflar Davacı, Davalı, Sanık, Müşteki gibi UYAP sıfatlarına göre ayrı gruplarda gösterilir; vekiller ilgili tarafın satırında kalır. Dar ekranda bölümler alt alta yerleşir. Tutarlar UYAP'tan geldiği gibi gösterilir; eklenti dosya borcu hesaplamaz.
 
@@ -137,7 +137,7 @@ HTML, TXT ve XML taramasında dosya sınırı **10 MB**, metin sınırı **2 MB*
 
 **Ayarlar → Evrak görüntüleyici → Evraktaki karar atıflarını işaretle** ile taramayı ve Atıflar arayüzünü kapatabilirsiniz. Seçenek başlangıçta açıktır. UYAP’ın kendi evrak ekranındaki **Atıfları bul**, kapalı tercihi yalnız o açık belge için aşar; kayıtlı ayarı değiştirmez.
 
-**Tam metni aç** ve **Kararı bul**, yalnız siz tıklayınca [Legaluga karar arama sayfasını](https://mcp.legaluga.com/karar-bul) normal bir yeni sekmede açar. Bağlantının `#k=` bölümünde yalnız mahkeme/daire, varsa il, esas veya başvuru numarası, karar numarası, varsa tarih ve künye uyarısı taşınır; seçilen künye önce gelir, listeden en çok 10 künye aktarılır. Belge, belge metni, seçimin ham metni, taraf/dosya bilgisi ve UYAP oturumu aktarılmaz. `#k=` sayfanın istemci kodu tarafından okunabilir; Base64URL kodlaması şifreleme değildir. Belge yükleme veya otomatik dış sorgu yapılmaz. **Seçilenleri aç**, işaretlediğiniz künyeleri seçim sırasıyla aynı sayfada tek sekmede açar; karar numarası olmayan künyeler (Anayasa Mahkemesi bireysel başvurusu hariç) seçilemez, en çok 10 künye seçilir ve adres 4096 karakteri aşarsa kaçının aktarılacağı yazılır.
+**Tam metni aç** ve **Kararı bul**, yalnız siz tıklayınca [Legaluga karar arama sayfasını](https://mcp.legaluga.com/karar-bul) normal bir yeni sekmede açar. Bağlantının `#k=` bölümünde yalnız mahkeme/daire, varsa il, esas veya başvuru numarası, karar numarası, varsa tarih ve künye uyarısı taşınır; seçilen künye önce gelir, listeden en çok 10 künye aktarılır. Belge, belge metni, seçimin ham metni, taraf/dosya bilgisi ve UYAP oturumu aktarılmaz. `#k=` sayfanın istemci kodu tarafından okunabilir; Base64URL kodlaması şifreleme değildir. Atıf paneli açıldığında, listeden en çok 20 tanınmış künye (mahkeme, daire, varsa il, esas veya başvuru numarası, karar numarası, varsa tarih ve künye uyarısı) eklentinin arka planı üzerinden `https://legaluga.com/havuz/v1/` adresine kendiliğinden sorulur; belge metni, alıntı, taraf, dosya bilgisi ve UYAP oturumu bu sorguya eklenmez, panel açılmazsa sorgu yapılmaz. Bunun dışında belge yükleme veya otomatik dış sorgu yapılmaz. **Seçilenleri aç**, işaretlediğiniz künyeleri seçim sırasıyla aynı sayfada tek sekmede açar; karar numarası olmayan künyeler (Anayasa Mahkemesi bireysel başvurusu hariç) seçilemez, en çok 10 künye seçilir ve adres 4096 karakteri aşarsa kaçının aktarılacağı yazılır.
 
 ## Banka sorgusu ve cevapları
 
@@ -199,7 +199,7 @@ Devam edilen iş başlangıçta kaydedilen planı kullanır; sonradan değiştir
 
 ## Verileriniz ve şifreleme
 
-Dosya indeksi, notlar, tercihler, safahat ve banka takip özetleri bu Chrome profilinde yerel olarak saklanır. Oturum ve dosya belgeleri geliştiricinin sunucusuna aktarılmaz. **Tam metni aç / Seçilenleri aç / Kararı bul** bağlantısını tıklarsanız yalnız karar künyesi alanları Legaluga karar arama sayfasına aktarılır; belge yüklenmez. Belge okuma UYAP'a, canlı tebligat sorgusu ilgili resmî hizmete bağlanır.
+Dosya indeksi, notlar, tercihler, safahat ve banka takip özetleri bu Chrome profilinde yerel olarak saklanır. Oturum ve dosya belgeleri geliştiricinin sunucusuna aktarılmaz. **Tam metni aç / Seçilenleri aç / Kararı bul** bağlantısını tıklarsanız yalnız karar künyesi alanları Legaluga karar arama sayfasına aktarılır; belge yüklenmez. Atıf paneli açıldığında en çok 20 tanınmış karar künyesi Legaluga künye havuzuna (`legaluga.com/havuz`) kendiliğinden sorulur; belge metni, taraf ve dosya bilgisi gönderilmez. Belge okuma UYAP'a, canlı tebligat sorgusu ilgili resmî hizmete bağlanır.
 
 Yerel kayıtlar **AES-256-GCM** ile şifrelenir. Dışa aktarılamayan anahtar uzantının bu profildeki IndexedDB alanında tutulur. Şifreleme kodunun açık olması kullanıcı anahtarını veya belgelerini kaynak deposuna açmaz; ele geçirilmiş bir tarayıcı profilinden tam koruma garantisi de vermez.
 
@@ -238,7 +238,7 @@ npm run demo
 
 `npm run demo` sonrası **http://127.0.0.1:4173/demo/** adresini açın; sunucuyu **Ctrl+C** ile kapatın. Demo gerçek indirme panelini sentetik işler üzerinde gösterir. UYAP'a bağlanmaz, belge veya indirme çalıştırmaz, gerçek dosya verisi kullanmaz; tam uygulamanın bütün ekranlarını temsil etmez.
 
-`demo/common.js` özel motor fonksiyonları yerine `NOT_AVAILABLE` hatası veren stub'lar içerir. Katkı geliştirirken gerçek servis yerine sentetik callback/manager kullanın; görünümü kapatmanın motoru durdurmaması ve diske kaydedilen ilerleme ile geçici parça ilerlemesinin ayrı gösterilmesi gibi sözleşmeleri koruyun.
+Açık testler `common.js`'i açık parçalardan kurar ([tests/common-taklidi.js](tests/common-taklidi.js)); özel motor işlevlerinin yerine `NOT_AVAILABLE` hatası veren stub'lar girer. Katkı geliştirirken gerçek servis yerine sentetik callback/manager kullanın; görünümü kapatmanın motoru durdurmaması ve diske kaydedilen ilerleme ile geçici parça ilerlemesinin ayrı gösterilmesi gibi sözleşmeleri koruyun.
 
 ## Katkı, destek ve lisans
 

@@ -108,17 +108,58 @@ test('Tesseract için geçici window taklidi geri alınır; metinsiz PDF çizimi
   assert.deepEqual(kayit.importlar, ['vendor/pdfjs-reader.js', 'vendor/tesseract/tesseract.min.js']);
 });
 
-test('uzantı sayfası CSP yalnız paket betiğine ve WebAssembly derlemesine izin verir', () => {
+// Uzantı sayfaları (popup, Ayarlar, Duruşma Paketi, görünmeyen PTT belgesi), service worker ve işçileri için yönerge
+// bazlı izin listesi; her yönerge yalnız burada yazılı değerleri taşır. Yazılmayan yükleme türleri (resim, yazı tipi,
+// medya) default-src 'self' ile yalnız paketten. Betik yalnız paketten (WebAssembly derlemesi dahil; işçiler script-src'ye
+// düşer). Stil paketten ve satır içi: arayüz stilini <style> öğesi ve style öznitelikleriyle yazar; satır içi CSS ağa
+// ancak url() ile çıkar, o da img-src/font-src'ye (default-src) takılır. Ağ: paket, Tesseract çekirdeğinin gömülü wasm'ı
+// (data:), künye havuzu, Sentry alım adresi ve görünmeyen PTT sorgusu. Çerçeve yalnız resmî PTT formu (görünmez Duruşma
+// Paketi çerçevesi önizleme göstermez). Kaynaklar yalnız kökendir, yol taşımaz.
+// İçerik betikleri bu politikaya tabi değildir.
+const CSP_IZINLERI = {
+  'default-src': ["'self'"],
+  'script-src': ["'self'", "'wasm-unsafe-eval'"],
+  'object-src': ["'self'"],
+  'style-src': ["'self'", "'unsafe-inline'"],
+  'connect-src': ["'self'", 'data:', 'https://legaluga.com', 'https://o4511620723703808.ingest.de.sentry.io', 'https://www.ptt.gov.tr'],
+  'frame-src': ['https://www.ptt.gov.tr'],
+  'base-uri': ["'none'"],
+  'form-action': ["'none'"]
+};
+// 'unsafe-*' yalnız satır içi stil için; betik, işçi ve ağ yönergelerinde yoktur.
+const GEVSEK_IZINLER = new Set(["style-src 'unsafe-inline'"]);
+
+test('uzantı sayfası CSP yönerge bazlı izin listesine uyar: varsayılan paket, betik paketten, ağ ve çerçeve yalnız bilinen kökenlere', () => {
   const csp = MANIFEST.content_security_policy;
   assert.deepEqual(Object.keys(csp), ['extension_pages']);
-  const metin = csp.extension_pages;
-  assert.doesNotMatch(metin, /'unsafe-eval'|'unsafe-inline'|https?:|\*|data:|blob:/);
-  const yonergeler = Object.fromEntries(metin.split(';').map(x => x.trim()).filter(Boolean)
-    .map(x => { const [ad, ...degerler] = x.split(/\s+/); return [ad, degerler]; }));
-  assert.deepEqual(Object.keys(yonergeler).sort(), ['object-src', 'script-src']);
-  assert.deepEqual(yonergeler['script-src'], ["'self'", "'wasm-unsafe-eval'"]);
-  assert.deepEqual(yonergeler['object-src'], ["'self'"]);
+  const yonergeler = csp.extension_pages.split(';').map(x => x.trim()).filter(Boolean).map(x => x.split(/\s+/));
+  // Tarayıcı yinelenen yönergenin ikincisini yok sayar; her yönerge bir kez yazılır.
+  const adlar = yonergeler.map(([ad]) => ad);
+  assert.equal(new Set(adlar).size, adlar.length, adlar.join(' '));
+  assert.deepEqual(Object.fromEntries(yonergeler.map(([ad, ...degerler]) => [ad, degerler])), CSP_IZINLERI);
+  for (const [ad, ...degerler] of yonergeler) {
+    for (const deger of degerler) {
+      if (!GEVSEK_IZINLER.has(`${ad} ${deger}`)) assert.doesNotMatch(deger, /^'unsafe-|\*|^https?:$/, `${ad} ${deger}`);
+      if (/^https?:/.test(deger)) assert.equal(deger, new URL(deger).origin, `${ad}: kaynak yol taşımaz (${deger})`);
+    }
+  }
   assert.equal(MANIFEST.sandbox, undefined);
+});
+
+// default-src 'self' altında sayfaların HTML'i yalnız paketteki göreli dosyaları yükler; satır içi betik ve stil yoktur
+// (satır içi betik script-src'ye takılır). Stil dosyası <link> ile, betik src ile gelir.
+test('uzantı sayfalarının HTML\'i yalnız paketten yükler; satır içi betik, stil öğesi ve style özniteliği yok', () => {
+  const sayfalar = [MANIFEST.action.default_popup, MANIFEST.options_ui.page,
+    ...MANIFEST.web_accessible_resources.flatMap(x => x.resources).filter(x => x.endsWith('.html')), 'ptt-offscreen.html'];
+  assert.deepEqual(sayfalar, ['popup.html', 'options.html', 'durusma-paketi.html', 'ptt-offscreen.html']);
+  for (const ad of sayfalar) {
+    const html = fs.readFileSync(path.join(KOK, 'extension', ad), 'utf8');
+    assert.doesNotMatch(html, /<style\b|\sstyle\s*=|\son[a-z]+\s*=|javascript:/i, ad);
+    for (const [, govde] of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) assert.equal(govde.trim(), '', `${ad}: satır içi betik`);
+    const kaynaklar = [...html.matchAll(/\s(?:src|href)\s*=\s*"([^"]*)"/gi)].map(([, adres]) => adres);
+    assert.ok(kaynaklar.length, ad);
+    for (const adres of kaynaklar) assert.match(adres, /^[a-z0-9-]+(?:\/[a-z0-9-]+)*\.(?:js|css)$/, `${ad}: ${adres}`);
+  }
 });
 
 test('evrak HTML çerçevesinin CSP metni değişmez', () => {

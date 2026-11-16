@@ -1,4 +1,0 @@
-async function paketOzgunIndir(x) {
-      if (paketOzgunAc || closed) return;
-      const ac = paketOzgunAc = new AbortController();
-      try {

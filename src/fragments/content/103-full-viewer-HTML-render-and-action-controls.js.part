@@ -26,7 +26,8 @@
     });
     bulkNew.addEventListener('click', async () => {
       if (closed || zipRun || (!bulkJob && !bulkState) || !globalThis.navigator?.locks) return;
-      if (!confirm('Kaydedilmiş indirme planı sıfırlansın mı? İndirilmiş ZIP dosyaları bilgisayarınızda kalır. Sonraki indirme yukarıdaki kapsamla yeni bir plan oluşturur.')) return;
+      if (!(await onaySor({ baslik: 'Kaydedilmiş indirme planı sıfırlansın mı?', ileti: 'İndirilmiş ZIP dosyaları bilgisayarınızda kalır. Sonraki indirme yukarıdaki kapsamla yeni bir plan oluşturur.', onay: 'Planı sıfırla', tehlikeli: true }))) return;
+      if (closed || zipRun || (!bulkJob && !bulkState)) return;   // onay beklerken ekran kapandı ya da indirme başladı
       try {
         await globalThis.navigator.locks.request(`uhd-bulk-download:${rec.key}`, { ifAvailable: true }, async lock => {
           if (!lock) throw new Error('Bu dosyanın indirmesi başka bir sekmede sürüyor; plan sıfırlanmadı.');
@@ -49,11 +50,13 @@
       if (zipRun.managed) { downloads.pause(rec.key); return; }
       zipRun.ac.abort();
       if (zipRun.packing) zipRun.packAc.abort();
+      zipRun.durduruluyor?.();
       if (zipRun.bulk && zipRun.saving && bulkJob) chrome.runtime.sendMessage({ type: 'uhd-download-cancel', fileKey: rec.key, jobId: bulkJob.id }).catch(() => {});
       zipMessage(zipRun.packing ? 'ZIP hazırlama veya kaydetme durduruluyor.' : zipRun.bulk ? 'Durduruluyor; bu parçada alınmış evraklar kaydedilecek. Tamamlanan parçadan devam edebilirsiniz.' : 'Durduruluyor; alınmış evraklar eksik ZIP olarak hazırlanacak.');
       zipSync();
     });
-    zipPanel.addEventListener('click', () => { done(); showPanel(); ui.showDownloads?.(); });
+    // Tek ZIP bu ekrana bağlıdır: ekran kapanırsa indirme durur. Sürerken panel dosya ekranının yanında açılır.
+    zipPanel.addEventListener('click', () => { if (!zipRun || zipRun.managed) done(); showPanel(); ui.showDownloads?.(); });
     paketHazirla.addEventListener('click', paketHazirlaBasla);
     paketDurdur.addEventListener('click', () => { if (!paketSession) return; paketKapat(); paketDurum.textContent = 'Durduruldu; PDF oluşturulmadı.'; });
     paketSiraGor.addEventListener('click', () => paketSiraGoster());
@@ -85,24 +88,44 @@
       sira = gorunen.findIndex(x => ayni(x, simdikiOge));
       gruplariCiz(); listeyiCiz(); if (sira >= 0) secimiCiz(true); konumYaz();
     }
-    const aramaUygula = () => {
+    // Büyük grupta (ARAMA_ESIGI satırdan çok) yazarken çizim ARAMA_GECIKMESI ms bekler, art arda tuşlar tek çizimde birleşir; küçük
+    // grupta ve boş aramada (Temizle, Esc, × ya da silerek) hemen uygulanır. ↓ ve Enter bekleyeni hemen çizer; kapanış zamanlayıcıyı siler.
+    const ARAMA_ESIGI = 1000, ARAMA_GECIKMESI = 80;
+    const aramaUygula = (bekle = false) => {
       araTemizle.hidden = !ara.value;
+      clearTimeout(aramaZaman); aramaZaman = null;
+      if (bekle && ara.value && grupListesi(grup).length > ARAMA_ESIGI) { aramaZaman = setTimeout(aramaUygula, ARAMA_GECIKMESI); return; }
       suz();
       sira = gorunen.findIndex(x => ayni(x, simdikiOge));
       listeyiCiz(); konumYaz();
     };
-    ara.addEventListener('input', aramaUygula);
+    ara.addEventListener('input', () => aramaUygula(true));
     araTemizle.addEventListener('click', () => {
       ara.value = '';
       aramaUygula();
       ara.focus({ preventScroll: true });
     });
     ara.addEventListener('keydown', ev => {
+      if ((ev.key === 'ArrowDown' || ev.key === 'Enter') && aramaZaman) aramaUygula();
       if (ev.key === 'ArrowDown' && gorunen.length) { ev.preventDefault(); ogeler.focus({ preventScroll: true }); odakSync(true); }
     });
     evrakYenile.addEventListener('click', () => { if (!nativeDocument) return kaynak ? tamListeAl() : listeAl(); });
     kategoriGorunum.addEventListener('click', () => { kategorili = !kategorili; evrakOdak = null; listeyiCiz(); });
     tarihSirasi.addEventListener('click', () => { tarihArtan = !tarihArtan; listeyiCiz(); });
+    // Satır, paket kutusu ve klasör başlığı tıklamaları listedeki tek dinleyiciye kabarır (olay devri); hedef closest ile bulunur.
+    ogeler.addEventListener('click', ev => {
+      const key = ev.target.closest('.ek-kategori-baslik')?.dataset.kategori, kat = key && kategoriDom.get(key);
+      if (kat) {
+        // Klasör (details) kendiliğinden açılıp kapanmaz; durum kategoriAc ile tutulur.
+        ev.preventDefault();
+        kategoriAc(key, !kat.box.open); evrakOdak = { kat: key }; odakSync(); ogeler.focus({ preventScroll: true });
+        return;
+      }
+      const satir = ev.target.closest('.ek-oge'), kutu = ev.target.closest('.ek-paket-kutu');
+      if (!satir) return;
+      if (kutu) paketIsaretle(gorunen[Number(satir.dataset.i)], kutu.checked);
+      else satirEtkinlestir(Number(satir.dataset.i));
+    });
     ogeler.addEventListener('keydown', ev => {
       if (!gorunen.length || ev.altKey || ev.ctrlKey || ev.metaKey || ev.target.tagName === 'INPUT') return;
       // Kapalı ekler DOM'da gizli durur; gezinme onları atlar.

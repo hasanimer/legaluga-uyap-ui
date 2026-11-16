@@ -1,0 +1,12 @@
+async function stopUpdate() {
+    if (job) job.stop = true;
+    if (globalThis.UHDStorage && await globalThis.UHDStorage.cancelSetupScan()) return;
+    const { uhdJob: j, uhdProgress: p, uhdScanEpoch: epoch } = await chrome.storage.local.get(['uhdJob', 'uhdProgress', 'uhdScanEpoch']);
+    if (!j) return;
+    return globalThis.UHDStorage.stopScan({ jobId: j.id, epoch, owner: p?.owner ?? null, running: !!p?.running, beat: p?.beat ?? null, stop: !!job || !!alive(p) });
+  }
+
+  function checkStop() {
+    if (job && job.lost) throw new Stopped('lost');
+    if (job && job.stop) throw new Stopped('Durduruldu');
+  }

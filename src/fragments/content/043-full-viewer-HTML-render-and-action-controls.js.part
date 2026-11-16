@@ -13,7 +13,7 @@
     function paketYaz() {
       const n = paketSirasi().length, calisiyor = !!paketSession;
       paketSayi.textContent = n ? `Pakette ${fmtNum(n)} evrak` : 'Pakete alınacak evrakları işaretleyin';
-      paketHazirla.disabled = !n || calisiyor || !!bankRun || !!zipRun || !!bankaOkuma || !!tebligatRead || !!belgePdfRun;
+      paketHazirla.disabled = !n || calisiyor || mesgul('banka', 'zip', 'bankaOkuma', 'tebligat', 'belgePdf');
       paketSiraGor.disabled = !n || calisiyor;
       paketGorunen.disabled = calisiyor || !paketGorunenYeni().length;
       paketTemizle.disabled = !n || calisiyor;

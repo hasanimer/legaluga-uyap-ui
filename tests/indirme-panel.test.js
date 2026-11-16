@@ -31,7 +31,7 @@ function harness(states = [], options = {}) {
     },
     start(...args) { calls.push(['start', ...args]); },
     pause(key) { calls.push(['pause', key]); return options.pause?.(key); },
-    resume(key) { calls.push(['resume', key]); return options.resume?.(key); }
+    resume(key, extra) { calls.push(extra === undefined ? ['resume', key] : ['resume', key, JSON.parse(JSON.stringify(extra))]); return options.resume?.(key, extra); }
   };
   vm.runInContext(source, context);
   const api = context.UHDBulkPanel.mount(container, { manager,
@@ -300,5 +300,127 @@ test('atlanan evrak sayısı ayrı not olarak görünür ve bildirilir; tamamlan
   assert.equal(h.field('skipped').hidden, false);
   h.update([{ ...state, status: 'complete', phase: 'idle', saved: 10840, partCount: 109, skipped: 0 }]);
   assert.equal(h.field('status').textContent, 'Tamamlandı'); assert.equal(h.field('skipped').hidden, true);
+  h.api.destroy();
+});
+
+test('takılan evrak için atlama düğmesi yalnız motor bildirince görünür ve o evrakın kimliğiyle ister', async () => {
+  const durdu = job({ status: 'error', phase: 'idle', error: 'Bu evrak 128 MiB sınırını aşıyor.' }), h = harness([durdu]);
+  assert.equal(h.field('skip').hidden, true, 'bildirim yokken atlama sunulmaz');
+  assert.equal(h.field('error').textContent, 'Bu evrak 128 MiB sınırını aşıyor.');
+  // Tanınmayan neden ya da eksik kimlik düğmeyi açmaz.
+  for (const stuck of [{ jobId: 'plan-a', cursor: 200, neden: 'oturum' }, { cursor: 200, neden: 'buyuk' }, { jobId: 'plan-a', cursor: -1, neden: 'buyuk' }]) {
+    h.update([{ ...durdu, stuck }]);
+    assert.equal(h.field('skip').hidden, true, JSON.stringify(stuck));
+  }
+  h.update([{ ...durdu, stuck: { jobId: 'plan-a', cursor: 200, neden: 'buyuk', tur: 'Sentetik  Bilirkişi Raporu', tarih: '03.10.2026' } }]);
+  assert.equal(h.field('skip').hidden, false);
+  assert.equal(h.field('skip').textContent, 'Bu evrakı atla ve sürdür');
+  assert.match(h.field('skip').attrs['aria-label'], /2031\/100: alınamayan evrakı atla/);
+  assert.match(h.field('error').textContent, /^Bu evrak 128 MiB sınırını aşıyor: Sentetik Bilirkişi Raporu · 03\.10\.2026\. Devam et yeniden dener; “Bu evrakı atla ve sürdür” ZIP’e/);
+  assert.equal(h.field('control').textContent, 'Devam et');
+  assert.match(h.field('live').textContent, /Bu evrak 128 MiB sınırını aşıyor: Sentetik Bilirkişi Raporu.*“Bu evrakı atla ve sürdür”/, 'duyuru atlama seçeneğini söyler');
+  await h.field('skip').click();
+  assert.deepEqual(h.calls.filter(call => call[0] === 'resume'), [['resume', 'file-a', { skip: { jobId: 'plan-a', cursor: 200 } }]]);
+  // İş yeniden başlayınca düğme kalkar.
+  h.update([job({ status: 'running', phase: 'fetching' })]);
+  assert.equal(h.field('skip').hidden, true);
+  // Motor onayı reddederse neden kartta görünür.
+  const r = harness([{ ...durdu, stuck: { jobId: 'plan-a', cursor: 200, neden: 'bos' } }], { resume() { throw new Error('Atlanacak evrak doğrulanamadı. Devam et’e basıp yeniden deneyin.'); } });
+  assert.match(r.field('error').textContent, /^UYAP bu evrakı boş döndürüyor: evrak\./);
+  await r.field('skip').click();
+  assert.match(r.field('error').textContent, /^Atlanacak evrak doğrulanamadı/);
+  h.api.destroy(); r.api.destroy();
+});
+
+test('mola açıkça yazılır ve duyurulur; kalan süre yalnız sürerken ve 5 dakikaya yuvarlı görünür', () => {
+  const surer = job({ status: 'running', phase: 'fetching', currentTitle: 'Sentetik Evrak' }), h = harness([surer]);
+  assert.equal(h.field('status').textContent, 'Evraklar alınıyor');
+  assert.equal(h.field('eta').hidden, true);
+  assert.equal(h.field('current').textContent, 'Evrak: Sentetik Evrak');
+  h.update([{ ...surer, restUntil: Date.now() + 45000, etaMs: 23 * 60000 }]);
+  assert.equal(h.field('status').textContent, 'Mola veriliyor');
+  assert.match(h.field('current').textContent, /^UYAP’a yük bindirmemek için kısa bir mola veriliyor; indirme \d{2}:\d{2}:\d{2} civarında kendiliğinden sürer\.$/);
+  assert.match(h.field('live').textContent, /Mola veriliyor/);
+  assert.equal(h.field('eta').textContent, 'Kalan süre: yaklaşık 25 dk');
+  // Geçmiş mola anı ve duraklatılmış iş mola göstermez.
+  h.update([{ ...surer, restUntil: Date.now() - 1, etaMs: 2 * 3600000 + 60000 }]);
+  assert.equal(h.field('status').textContent, 'Evraklar alınıyor');
+  assert.equal(h.field('eta').textContent, 'Kalan süre: yaklaşık 2 sa 5 dk');
+  h.update([{ ...surer, etaMs: 60000 }]);
+  assert.equal(h.field('eta').textContent, 'Kalan süre: 5 dakikadan az');
+  h.update([{ ...surer, status: 'paused', phase: 'idle', restUntil: Date.now() + 45000, etaMs: 60000 }]);
+  assert.equal(h.field('status').textContent, 'Duraklatıldı');
+  assert.equal(h.field('eta').hidden, true);
+  h.api.destroy();
+});
+
+// Tek ZIP indirmesi motor kaydına girmez; sayfa kabuğu onu "zip:" anahtarıyla aynı listeye ekler.
+const zipJob = (extra = {}) => job({ kind: 'zip', key: 'zip:file-a', id: '', status: 'running', phase: 'fetching', saved: 3, total: 10,
+  partCount: 0, missing: 0, currentTitle: 'Sentetik Dilekçe', ...extra });
+const card = (h, jobKey) => h.all().find(node => node.attrs['data-job-key'] === jobKey);
+// Bu testlerde tek kart vardır; alan doğrudan panelden bulunur.
+const zipField = (h, name) => h.field(name);
+
+test('tek ZIP kartı alınan evrakı sayar; parça ve klasör yoktur, Durdur kendi anahtarıyla çağrılır', async () => {
+  const h = harness([zipJob()]);
+  assert.equal(zipField(h, 'status').textContent, 'Evraklar alınıyor');
+  assert.equal(zipField(h, 'saved').textContent, '3 / 10 evrak alındı');
+  assert.equal(zipField(h, 'percent').textContent, '%30');
+  assert.equal(zipField(h, 'parts').hidden, true);
+  assert.equal(zipField(h, 'folder').hidden, true);
+  assert.equal(zipField(h, 'control').hidden, false);
+  assert.equal(zipField(h, 'control').textContent, 'Durdur');
+  await zipField(h, 'control').click();
+  await flush();
+  assert.deepEqual(h.calls.filter(call => call[0] === 'pause'), [['pause', 'zip:file-a']]);
+  assert.equal(zipField(h, 'open').hidden, true, 'süren tek ZIP’te Dosyayı aç gizlidir: dosyayı yeniden açmak indirmeyi durdururdu');
+  await zipField(h, 'open').click();
+  assert.deepEqual(h.calls.filter(call => call[0] === 'open'), [], 'gizli düğme çağrı yapmaz');
+  h.update([zipJob({ status: 'complete', phase: 'idle', saved: 10 })]);
+  assert.equal(zipField(h, 'open').hidden, false);
+  await zipField(h, 'open').click();
+  assert.deepEqual(h.calls.filter(call => call[0] === 'open'), [['open', 'file-a']], 'Dosyayı aç dosya anahtarını kullanır');
+  h.api.destroy();
+});
+
+test('durdurulan tek ZIP eksik ZIP hazırlanırken yeniden durdurulamaz', async () => {
+  const h = harness([zipJob({ stopping: true })]);
+  assert.equal(zipField(h, 'status').textContent, 'Durduruluyor…');
+  assert.equal(zipField(h, 'control').disabled, true);
+  assert.equal(zipField(h, 'control').textContent, 'Durduruluyor…');
+  await zipField(h, 'control').click();
+  h.update([zipJob({ stopping: true, phase: 'packing' })]);
+  assert.equal(zipField(h, 'control').disabled, true, 'ZIP hazırlanırken de kapalı kalır');
+  await zipField(h, 'control').click();
+  assert.deepEqual(h.calls.filter(call => call[0] === 'pause'), []);
+  h.update([zipJob({ status: 'complete', phase: 'idle', saved: 4, missing: 6, stopping: false })]);
+  assert.equal(zipField(h, 'status').textContent, 'ZIP indirildi (eksik)');
+  assert.doesNotMatch(zipField(h, 'skipped').textContent, /tekrar dene/i);
+  h.api.destroy();
+});
+
+test('aynı dosyanın kayıtlı parçalı planı ile tek ZIP indirmesi iki ayrı kart olur', () => {
+  const h = harness([job(), zipJob()]);
+  assert.equal(h.field('count').textContent, '2 indirme · 1 sürüyor');
+  assert.ok(card(h, 'file-a'), 'parçalı plan kartı');
+  assert.ok(card(h, 'zip:file-a'), 'tek ZIP kartı');
+  h.update([job()]);
+  assert.equal(card(h, 'zip:file-a'), undefined, 'listeden kalkan tek ZIP kartı kaldırılır');
+  assert.ok(card(h, 'file-a'));
+  h.api.destroy();
+});
+
+test('biten tek ZIP eksikleri rapora yönlendirir; durdurulan tek ZIP sürdürülemez', () => {
+  const h = harness([zipJob({ status: 'complete', phase: 'idle', saved: 8, missing: 2 })]);
+  assert.equal(zipField(h, 'status').textContent, 'ZIP indirildi (eksik)');
+  assert.match(zipField(h, 'skipped').textContent, /2 evrak alınamadı; .*indirme raporunda/);
+  assert.equal(zipField(h, 'control').hidden, true);
+  h.update([zipJob({ status: 'paused', phase: 'idle', error: 'ZIP oluşturulmadı.' })]);
+  assert.equal(zipField(h, 'status').textContent, 'Durduruldu');
+  assert.equal(zipField(h, 'control').hidden, true, 'tek ZIP için Devam et sunulmaz');
+  assert.equal(zipField(h, 'error').textContent, 'ZIP oluşturulmadı.');
+  h.update([zipJob({ status: 'complete', phase: 'idle', saved: 10 })]);
+  assert.equal(zipField(h, 'status').textContent, 'ZIP indirildi');
+  assert.equal(zipField(h, 'skipped').hidden, true);
   h.api.destroy();
 });

@@ -3,3 +3,8 @@ chrome.runtime.onInstalled.addListener(async details => {
   if (details.reason === 'install') {
     await globalThis.UHDStorage.patchPrefs({ kurulumTamamlandi: false });
     await chrome.storage.local.set({ uhdLauncherIntroPending: true });
+    await openSetupPortal(true);
+  }
+  await chrome.storage.local.remove('ubh_prefs');
+  await chrome.storage.session.remove(['ubh_banks', 'ubh_progress']);
+});

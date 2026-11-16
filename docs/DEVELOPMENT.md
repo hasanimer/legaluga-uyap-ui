@@ -26,7 +26,7 @@ legaluga-uyap-ui/
 
 `src/extension/` içindeki dosyalar tam pakette köke yazılır. Örneğin `src/extension/options.html` paket içinde `options.html`, vendor dosyaları `vendor/...` olur. HTML, worker ve betiklerin göreli bağlantıları bu yüzden aynı dizin düzeninde tutulur. Bu klasörü tek başına Chrome'a yüklemek özel motoru sağlamaz.
 
-`src/fragments/` içindeki `.part` dosyaları bağımsız JavaScript modülleri değildir; kimi parça bir ifadenin ortasında başlayabilir veya bitebilir. [FRAGMENTS.json](../publication/FRAGMENTS.json) açık parçaların sırasını, kaynağını ve SHA256 değerini listeler. Özel derlemede açık ve özel parçalar araya karakter eklenmeden birleştirilir.
+`src/fragments/` içindeki `.part` dosyaları bağımsız JavaScript modülleri değildir; yine de her parça tek başına ya da fonksiyon gövdesi olarak derlenir ve satır sonuyla biter. Bugünkü istisnalar [tests/parca-sinirlari.js](../tests/parca-sinirlari.js) içindedir ve yalnız kısalır. [FRAGMENTS.json](../publication/FRAGMENTS.json) açık parçaların sırasını, kaynağını ve SHA256 değerini listeler. Özel derlemede açık ve özel parçalar araya karakter eklenmeden birleştirilir.
 
 [contracts.json](../publication/contracts.json) arayüz ve motor arasındaki bağlantıları tanımlar. [PUBLIC-FILES.json](../publication/PUBLIC-FILES.json) yayımlanmasına izin verilen tüm dosyaları listeler. Envanter dışındaki dosyalar, tam motor dosyaları, gerçek ağ kayıtları ve anahtar dosyaları doğrulamadan geçmez. Envanter kendi hash'ini içermez.
 
@@ -56,6 +56,21 @@ Tam metin ve seçim bağlantıları `UHDKunye.adres()` ile `https://mcp.legaluga
 
 Sentetik doğrulamada atıf tekilleştirme, UDF metin eşleme, HTML sandbox sınırı, seçim ve klavye işlemleri, PDF motoru iptal/meşgul durumları ve yalnız izinli künye alanlarının aktarılması korunmalıdır. Açık UI ve tam motor testlerini kendi depolarında çalıştırın; gerçek evrak, oturum veya ham seçim metnini test/log/rapora eklemeyin. Kullanıcı açıklaması [README'deki Atıflar bölümü](../README.md#evraktaki-karar-atıfları), dış hizmet veri akışı [gizlilik politikası](PRIVACY.md) içindedir.
 
+## Uzantı sayfası CSP'si
+
+[manifest.json](../src/extension/manifest.json) içindeki `content_security_policy.extension_pages`, eklentinin kendi sayfalarına (popup, Ayarlar, Duruşma Paketi, görünmeyen PTT belgesi), service worker'a ve bunların işçilerine uygulanır. Yönergeler [tests/atif-ocr-worker.test.js](../tests/atif-ocr-worker.test.js) içinde yönerge bazlı izin listesiyle sabitlenir; yeni ağ ucu ya da çerçeve, liste ve testle birlikte değişir:
+
+- `default-src 'self'`: yazılmayan yükleme türleri (resim, yazı tipi, medya) yalnız paketten. Sayfalarda dış resim, yazı tipi ya da medya yoktur; simgeler satır içi SVG'dir. İşçiler yazı tipini `fetch` ile paketten okur, pdf.js `disableFontFace` ile çalışır; `data:`/`blob:` resim ya da yazı tipi yüklenmez.
+- `script-src 'self' 'wasm-unsafe-eval'` ve `object-src 'self'`: betik ve WebAssembly yalnız paketten; işçiler `script-src`'ye düşer.
+- `style-src 'self' 'unsafe-inline'`: stil dosyası paketten. Popup ve Ayarlar arayüzü stilini `<style>` öğesiyle (`ui.js` panel kurulumu, `common.js` onay penceresi) ve birkaç `style` özniteliğiyle yazar; bunlar `'unsafe-inline'` ister. Satır içi CSS ağa ancak `url()` ile çıkar, o da `default-src`'ye takılır. Bu öğeler CSSOM'a (`adoptedStyleSheets`, sınıf) taşınınca `'unsafe-inline'` kaldırılır; JS'ten `el.style.x` ya da `cssText` ataması CSP'ye takılmaz.
+- `connect-src`: paket (`'self'`), Tesseract çekirdeğinin gömülü wasm'ı (`data:`; çekirdek onu önce `fetch` ile okur), künye havuzu (`https://legaluga.com`), Sentry alım adresi ve PTT (`https://www.ptt.gov.tr`). Kaynaklar yalnız kökendir, yol yazılmaz.
+- `frame-src`: yalnız görünmeyen PTT belgesindeki resmî form; Duruşma Paketi görünmez motordur, önizleme çerçevesi yoktur. Chrome, uzantı kökenli `chrome-extension:` ve `blob:` çerçevelerini bu yönergeden muaf tutar; yönerge fiilen uzantı dışı adresleri sınırlar.
+- `base-uri 'none'` ve `form-action 'none'`: sayfalarda `<base>` yoktur; formlar betikle işlenir ve varsayılan gönderimi durdurur.
+
+Politika **içerik betiklerini kapsamaz**. UYAP, PTT ve Danıştay sayfalarına yalıtılmış dünyada eklenen içerik betikleri (evrak görüntüleme dahil) ne bu politikaya ne de o sayfanın CSP'sine tabidir: yaptıkları `fetch` ve sayfaya ekledikleri çerçeve sayfanın `connect-src`/`frame-src`'sinden geçmez; oradaki sınır eklenti kodunun kendisidir. Sayfanın CSP'sine yalnız ana dünyada çalışan kod tabidir: manifestte `"world": "MAIN"` olan `uyap-document-main.js` (ilk kurulumda açık UYAP sekmesine yeniden eklendiğinde de) ve `ptt-main.js` ile tebligat sorgusunda ana dünyaya eklenen pasif ağ yakalayıcısı; yakalayıcı istek başlatmaz, sayfanın kendi `fetch`/XHR çağrılarını sarar. HTML evrakın gösterildiği çerçevenin kendi CSP'si (`default-src 'none'`) ayrıca geçerlidir.
+
+`default-src 'self'` ile "evrak ağa çıkmaz" DOM'lu sayfalarda (popup, Ayarlar, Duruşma Paketi, görünmeyen PTT belgesi) da tarayıcı kuralıdır: ağ isteği `connect-src`'deki kökenlere, resim, yazı tipi, medya ve stil dosyası pakete sınırlıdır. Gezinme (bağlantı, `window.open`, `location`, indirme) CSP ile sınırlanamaz; açık kalır. Yeni bir resim, yazı tipi ya da `data:`/`blob:` kaynağı gerekirse ilgili yönerge en dar biçimde (ör. `img-src 'self' data:`) izin listesi ve testle birlikte açılır.
+
 ## Katkı akışı
 
 1. İlgili `src/extension/` kaynağını veya açık parçayı değiştirin. Çıktı ZIP'leri ve tam motor kaynaklarını bu depoya eklemeyin.
@@ -63,6 +78,8 @@ Sentetik doğrulamada atıf tekilleştirme, UDF metin eşleme, HTML sandbox sın
 3. Parça değiştiyse `FRAGMENTS.json` içindeki SHA256 ve bayt sayısını; eklenen/değişen dosyalar için `PUBLIC-FILES.json` envanterini güncelleyin. Kaynak ve envanteri aynı commit'e alın.
 4. `npm test` ve `npm run validate` kontrollerini tamamlayın; değişikliği pull request olarak önerin. UYAP entegrasyonu gerekiyorsa tam paket özel depoda ayrıca doğrulanır ve yeni açık kaynak commit'ine sabitlenir.
 
-`scripts/build-sentry.mjs` ve `scripts/build-hearing-vendor.mjs` mevcut vendor üretiminin bakım betikleridir; varsayılan demo/test akışında çalışmazlar. Gerekli üretim bağımlılıkları özel derleme ortamında sürüm sabitlemesiyle yönetilir. Vendor yenilemesi lisansları, paket içi yolları, hash envanterini ve MV3 kısıtlarını birlikte gözden geçirmeyi gerektirir.
+Satır sonları LF'dir; `.editorconfig` düzenleyiciyi buna ayarlar, `tests/satir-sonu.test.js` CR içeren dosyayı reddeder. Yalnız `src/extension/vendor/` altında özgün baytları doğrulanamayan dört üçüncü taraf dosyası (`UTIF.js`, `UTIF.LICENSE`, iki `FONTKIT-*.LICENSE`) CRLF kalır.
+
+`scripts/build-sentry.mjs` ve `scripts/build-hearing-vendor.mjs` vendor üretiminin tek bakım betikleridir; varsayılan demo/test akışında çalışmazlar. Gerekli üretim bağımlılıkları özel derleme ortamında sürüm sabitlemesiyle yönetilir. Betikler paketleri ve yolları kendi konumlarından çözüp `src/extension/vendor/` altına yazar; `--check` ile yazmadan geçici klasöre üretip depodaki baytlarla karşılaştırır. Vendor yenilemesi lisansları, paket içi yolları, hash envanterini ve MV3 kısıtlarını birlikte gözden geçirmeyi gerektirir.
 
 Gerçek isim, dosya numarası, HAR, oturum verisi veya dava belgesi içeren örnekleri eklemeyin. README görselleri sentetik verilerle hazırlanır; çalışma kaynaklarının ve özel servislerin sınırlarını değiştirmez.

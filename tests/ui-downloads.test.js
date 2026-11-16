@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const read = name => fs.readFileSync(path.join(__dirname, '..', name.startsWith('demo/') ? name : 'src/extension/' + name), 'utf8');
+const read = name => fs.readFileSync(path.join(__dirname, '../src/extension', name), 'utf8');
 // Kurulum testinin sentetik düğümleri; test kayıtları ve harness'i çalıştırılmaz.
 const domSource = fs.readFileSync(path.join(__dirname, 'onboarding-ui.test.js'), 'utf8').split('function harness(')[0];
 const plain = value => JSON.parse(JSON.stringify(value));
@@ -83,13 +83,14 @@ function harness({ mode = 'page', states = [], downloads = true, panel = true } 
     pause(key) { calls.push(['pause', key]); }, resume(key) { calls.push(['resume', key]); },
     start(...args) { calls.push(['start', ...args]); }
   };
-  Object.assign(context, { document, window: { matchMedia: () => ({ matches: false, addEventListener() {} }) },
+  Object.assign(context, { document, window: { matchMedia: () => ({ matches: false, addEventListener() {} }), addEventListener() {} },
     setTimeout: () => 1, clearTimeout() {}, setInterval: () => 1, clearInterval() {},
     chrome: { runtime: { id: 'synthetic-extension', getURL: value => `chrome-extension://synthetic-extension/${value}`,
       getManifest: () => ({ version: '1.19.29' }), sendMessage: async () => ({}) },
       storage: { local: { get: async () => plain(storage), set: async values => Object.assign(storage, plain(values)), remove: async () => {} },
         onChanged: { addListener() {} } } } });
-  vm.runInContext(read('demo/common.js'), context);
+  // Açık depoda common.js açık parçalardan stub'larla kurulur; tam depo gerçek common.js yolunu LEGALUGA_COMMON_JS ile verir.
+  vm.runInContext(require('./common-taklidi.js').commonKaynagi(), context);
   if (panel) vm.runInContext(read('indirme-panel.js'), context);
   vm.runInContext(read('ui.js'), context);
   const container = document.createElement('main');
@@ -145,7 +146,7 @@ test('duraklatma geçişinde mini görünür kalır; prefix kaydı bittiğinde v
     assert.equal(mini.hidden, false, phase);
     assert.match(mini.textContent, /Duraklatılıyor….*25\/100 kaydedildi.*50 evrak bu parçada/);
     assert.equal(progress.value, 25, phase);
-    assert.equal(h.find('.downloads-toggle').textContent, '↓ 1');
+    assert.equal(h.find('.downloads-toggle .dl-n').textContent, '↓ 1');
     assert.equal(h.field('control').disabled, true, phase);
     await h.field('control').click();
   }
@@ -156,7 +157,7 @@ test('duraklatma geçişinde mini görünür kalır; prefix kaydı bittiğinde v
   assert.equal(h.field('control').disabled, false);
   h.update([job({ status: 'paused', phase: 'waiting', saved: 75, inPart: 0, persistentPending: true })]);
   assert.equal(mini.hidden, true);
-  assert.equal(h.find('.downloads-toggle').textContent, '↓');
+  assert.equal(h.find('.downloads-toggle .dl-n').textContent, '↓');
   assert.equal(h.field('control').disabled, false);
   await h.field('control').click();
   assert.deepEqual(h.calls.at(-1), ['resume', 'file-a']);
@@ -167,7 +168,7 @@ test('aktif iş bitince mini kapanır; doğrulanmış son parça çekmecede kal�
   h.update([job({ status: 'complete', phase: 'idle', saved: 100, inPart: 0, partCount: 2,
     lastPart: { downloadId: 0, completedAt: 1900000000000 } })]);
   assert.equal(h.find('.download-mini').hidden, true);
-  assert.equal(h.find('.downloads-toggle').textContent, '↓');
+  assert.equal(h.find('.downloads-toggle .dl-n').textContent, '↓');
   await h.find('.downloads-toggle').click();
   assert.equal(h.field('percent').textContent, '%100');
   assert.equal(h.field('folder').hidden, false);
@@ -180,14 +181,14 @@ test('aktif iş bitince mini kapanır; doğrulanmış son parça çekmecede kal�
 test('kuyrukta iki dosya görünür; mini çalışan işi öne alır ve duraklatma doğru dosyayı hedefler', async () => {
   const queued = job({ fileKey: 'file-b', id: '', rec: { dosyaNo: '2031/200' }, status: 'queued', phase: 'waiting' });
   const h = harness({ states: [queued, job()] }); await flush();
-  assert.equal(h.find('.downloads-toggle').textContent, '↓ 2');
+  assert.equal(h.find('.downloads-toggle .dl-n').textContent, '↓ 2');
   assert.match(h.find('.download-mini').textContent, /^2031\/100/);
   await h.find('.downloads-toggle').click();
   const queuedCard = h.nodes().find(node => node.attrs['data-file-key'] === 'file-b');
   await queuedCard.querySelector('[data-download="control"]').click();
   assert.deepEqual(h.calls.at(-1), ['pause', 'file-b']);
   h.update([queued]);
-  assert.equal(h.find('.downloads-toggle').textContent, '↓ 1');
+  assert.equal(h.find('.downloads-toggle .dl-n').textContent, '↓ 1');
   assert.match(h.find('.download-mini').textContent, /^2031\/200.*Sırada/);
 });
 

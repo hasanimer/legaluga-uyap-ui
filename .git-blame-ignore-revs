@@ -1,0 +1,5 @@
+# git blame bu commit'leri yok sayar. GitHub dosyayı kendiliğinden okur; yerelde bir kez:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# chore(eol): kaynak dosyaları LF satır sonuna çevir
+7bcf89ca71134b1ed4a7c41d99812722e34037a6

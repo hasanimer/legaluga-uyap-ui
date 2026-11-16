@@ -8,9 +8,11 @@
     for (let i = 0; i < 8; i++) n = (n >>> 1) ^ ((n & 1) ? 0xedb88320 : 0);
     return n >>> 0;
   });
-  function crc32(bytes) {
-    let crc = 0xffffffff;
-    for (const b of bytes) crc = (crc >>> 8) ^ crcTable[(crc ^ b) & 255];
+  // Eklentinin tek CRC-32'si (udf.js ve evrak-zip.js de bunu kullanır). onceki: önceki parçaların sonucu; parça parça
+  // okunan veri tamponlanmadan sürdürülür: crc32(b, crc32(a)) === crc32(a + b).
+  function crc32(bytes, onceki = 0) {
+    let crc = ~onceki;
+    for (let i = 0; i < bytes.length; i++) crc = (crc >>> 8) ^ crcTable[(crc ^ bytes[i]) & 255];
     return (crc ^ 0xffffffff) >>> 0;
   }
   function girdiler(bytes) {
@@ -135,7 +137,7 @@
       return { filename, type: 'application/octet-stream', blob: new Blob([b]), bas: Array.from(b.subarray(0, 8)) };
     } };
   }
-  const api = { girdiler, ac, eyp, SINIR };
+  const api = { girdiler, ac, eyp, crc32, SINIR };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else globalThis.DurusmaPaketiZip = api;
 })();

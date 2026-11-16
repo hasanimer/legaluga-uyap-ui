@@ -5,7 +5,7 @@
     const previous = (o.sira && o.sira.previous) || shadowRoot.activeElement || document.activeElement;
     const { udf, tiff } = globalThis.UHD;
     const cbs = rec.yargiTuru === CBS.kod;   // UYAP savcılık dosyalarında safahat vermez
-    const SEKMELER = nativeDocument ? [['evrak', 'Evrak']] : [['ozet', 'Özet'], ['evrak', 'Evrak'], rec.yargiTuru === '2' && ['banka', 'Banka sorgusu'], ['tebligat', 'Tebligat sorgusu'], !cbs && ['safahat', 'Safahat'], ['notlar', 'Notlar'], ['indir', 'Toplu İndir'], ['paket', 'Duruşma paketi hazırla']].filter(Boolean);
+    const SEKMELER = nativeDocument ? [['evrak', 'Evrak']] : [['ozet', 'Özet'], ['evrak', 'Evrak'], rec.yargiTuru === '2' && ['banka', 'Banka sorgusu'], ['tebligat', 'Tebligat sorgusu'], !cbs && ['safahat', 'Safahat'], ['notlar', 'Notlar'], ['indir', 'Toplu İndir'], ['paket', 'Duruşma paketi (deneme)']].filter(Boolean);
     const kimlik = `ek${++ekranSayac}`;
     let tebligatUi = null;
     const beside = besideDock();
@@ -34,6 +34,13 @@
     const box = el('div', { class: 'box ekran', role: 'dialog', 'aria-modal': String(!beside), 'aria-label': `Dosya ekranı ${dosyaBasligi}`, tabindex: '-1' },
       el('div', { class: 'bar' }, el('b', { title: dosyaBasligi }, dosyaBasligi), siraBar, close), sekmeBar, govde);
     const viewer = el('div', { lang: 'tr', class: 'viewer' }, box);
+    // Ekranın onayları eklentinin kendi penceresinde sorulur; pencere açıkken ikinci bir onay açılmaz.
+    let onayAcik = false;
+    const onaySor = async o => {
+      if (onayAcik) return false;
+      onayAcik = true;
+      try { return await onayIste(viewer, o); } finally { onayAcik = false; }
+    };
     mountViewerExpand(box, close);
     let closed = false, aktif = null;
     const paneller = {};
@@ -76,11 +83,32 @@
       resmiAramaMi: () => globalThis.UHDAtifPaneli.idareDosyasi(rec),
       motorKabi: viewer, kopru: () => globalThis.UHD.durusmaPaketiBridge, mesgulMu: () => bankBusy() }) || null;
     goruldu.addEventListener('click', () => {
-      if (ui && typeof ui.markSeen === 'function') ui.markSeen([rec.key], o.baglam && o.baglam.kadar);
-      if (okuma) okuma.kuyruk[okuma.i].goruldu = true;
-      goruldu.disabled = true;
-      gorulduYazi.textContent = 'Görüldü sayıldı';
-      announce(`${rec.dosyaNo} dosyasındaki yeni evraklar görüldü sayıldı.`);
+      // ui.markSeen geri alma işlevini verir: yalnız bu tıklamanın yazdığı görüldü zamanını önceki değerine çevirir. Kayıt
+      // başarısızsa null verir ve ekran eski hâline döner; ret (eklenti bağlamı gitti) sayfadaki işleyiciye ulaşır.
+      const geriAl = ui && typeof ui.markSeen === 'function' ? ui.markSeen([rec.key], o.baglam && o.baglam.kadar) : null;
+      const sira = okuma ? okuma.kuyruk[okuma.i] : null;
+      const yeniSay = yeni => {
+        if (sira) sira.goruldu = !yeni;
+        goruldu.disabled = !yeni;
+        gorulduYazi.textContent = yeni ? 'Bu dosyadaki yeni evrakları görüldü say' : 'Görüldü sayıldı';
+      };
+      yeniSay(false);
+      const ileti = `${rec.dosyaNo} dosyasındaki yeni evraklar görüldü sayıldı.`;
+      if (!geriAl || typeof geriAl.then !== 'function' || typeof toast !== 'function') return announce(ileti);
+      geriAl.then(cevir => {
+        if (cevir !== null) return;
+        yeniSay(true);
+        toast('Görüldü bilgisi kaydedilemedi. Tekrar deneyin.', 'err', 8000, null, { id: 'goruldu:' + rec.key });
+      });
+      toast(ileti, 'ok', 12000, { label: 'Geri al', fn: async () => {
+        try {
+          const cevir = await geriAl;
+          if (typeof cevir !== 'function') return;
+          await cevir();
+        } catch { return toast('Görüldü işareti geri alınamadı. Tekrar deneyin.', 'err', 8000, null, { id: 'goruldu:' + rec.key }); }
+        yeniSay(true);
+        announce(`${rec.dosyaNo} dosyasındaki evraklar yeniden yeni sayılıyor.`);
+      } }, { id: 'goruldu:' + rec.key });
     });
     const onizleme = el('div', { class: 'ek-onizleme', tabindex: '-1' }, onbar);
     const gruplar = el('div', { class: 'ek-gruplar', role: 'group', 'aria-label': 'Evrak grubu' });
@@ -182,7 +210,7 @@
     let kaynak = nativeDocument ? null : o.kaynak || null;   // { dosyaId, list }
     let listeHazirlandi = false, listeBekliyor = null, listeHata = '';   // evrak listesi bütün sekmeler arasında paylaşılır
     let tum = [], yeni = null, grup = 'son20', gorunen = [], sira = -1, simdiki = null, simdikiOge = null, gezEpoch = 0, gecikme = null, gezAc = null;
-    let kategorili = false, tarihArtan = false, evrakOdak = null, aramaImza = '';
+    let kategorili = false, tarihArtan = false, evrakOdak = null, aramaImza = '', aramaZaman = null;
     let teyit = null, teyitAlim = null, teyitHata = '', teyitAcik = false, teyitDugme = null, teyitOzet = null;
     const acikKategoriler = new Set(), aramadaKapali = new Set(), kategoriDom = new Map(), kategoriKokleri = [];
     // Ana evrakın ekleri kapalı başlar; Yeni listesindeki ana evrakın ekleri açık (yeniAcilanEk: ekranda bir kez açılanlar). Açık olanlar
@@ -190,12 +218,25 @@
     // ekDom: ana evrak anahtarı -> { ana satır, ek sayısı yazısı, ek satırları }.
     const acikEkler = new Set(), aramadaKapaliEk = new Set(), ekDom = new Map(), yeniAcilanEk = new Set();
     let bekleyenAna = null;   // ana evrakı listede yokken seçilen ekin ana evrakı: listede görününce bir kez açılır
+    let seciliDugum = null;   // seçili (.on) satır: secimiCiz yalnız onu ve yeni seçileni günceller, listeyiCiz yeniden kurar
     let tebligatRead = null, tebligatList = null, tebligatCache = null;
     let zipRun = null, zipState = null, zipUrl = null;
     let bulkJob = null, bulkRead = null, bulkLoaded = false, bulkChoice = false, bulkIssue = '';
     let bulkState = null, bulkOff = null, bulkFinished = '';
     let paketSession = null, paketRun = null, belgePdfRun = null;
     let paketMod = false, paketSecili = [], paketSira = 'eski', paketSonucUrl = null, paketOzgunAc = null;
+    // Aynı anda tek uzun UYAP işi: kapılar kendilerini durduran işleri mesgul(...) ile adla sayar; koşu nesneleri ve kimlik
+    // karşılaştırmaları yerinde kalır. Adlar yazıldığı sırayla okunur, ilk süren işte durulur (|| zinciri gibi).
+    // zip, banka, paket, bankaOkuma ve tebligat her kapıda; kapıya göre eklenenler:
+    //   teyitMesgul (Yenile, Tam listeyi al)                                  tebligatListe, liste
+    //   zipSync (ZIP, Kalanları tekrar dene, devam, atla, yeni plan)          liste, belgePdf
+    //   paketYaz (PDF hazırla)                                                belgePdf
+    //   paketHazirlaBasla, bankaOku                                           paketKosu, belgePdf
+    //   bankBusy (banka düğmeleri, PDF indir, tebligat okuma, atıf taraması)  paketKosu, belgePdf, teyit
+    //   bulkDownload, zipDownload                                             belgePdf
+    const isler = { zip: () => zipRun, banka: () => bankRun, paket: () => paketSession, paketKosu: () => paketRun, bankaOkuma: () => bankaOkuma,
+      tebligat: () => tebligatRead, tebligatListe: () => tebligatList, liste: () => listeBekliyor, belgePdf: () => belgePdfRun, teyit: () => teyitAlim };
+    const mesgul = (...adlar) => adlar.some(ad => !!isler[ad]());
     const PAKET_MAX = 100;
     const paketAnahtar = x => x.k + '\n' + x.dosya;
     // Pakete alınabilen: anahtarı olan evrak; ek ise UYAP'ın verdiği kendi kimliğiyle.
@@ -242,7 +283,7 @@
       teyit = evrakTeyit(kaynak.list, tum);
       teyitCiz();
     }
-    const teyitMesgul = () => !!zipRun || !!bankRun || !!paketSession || !!bankaOkuma || !!tebligatRead || !!tebligatList || !!listeBekliyor;
+    const teyitMesgul = () => mesgul('zip', 'banka', 'paket', 'bankaOkuma', 'tebligat', 'tebligatListe', 'liste');
     const teyitBos = () => (teyit ? evrakTeyitMetni(teyit).bos : '') || '';
     function teyitDurumu() {
       evrakYenile.disabled = teyitMesgul();
@@ -297,7 +338,8 @@
     // Son 20: en yeni 20 evrak ve ekleri.
     const son20 = () => { let n = 0; return tum.filter(x => (x.ana ? n <= 20 : ++n <= 20)); };
     const grupListesi = g => (g === 'yeni' ? yeni || [] : g === 'son20' ? son20() : tum);
-    const aranan = x => norm([x.tur, x.ana || x.yetimEk ? 'ek' : '', x.ana ? x.ana.tur : '', x.dosya, fmtTrDate(x.onay), x.no, x.gonderen].filter(Boolean).join(' '));
+    // Aranan metin öğe başına bir kez kurulur; listeKur öğeleri yeniden ürettiği için liste yenilenince önbellek kendiliğinden boşalır.
+    const arananlar = new WeakMap(), aranan = x => arananlar.get(x) ?? arananlar.set(x, norm([x.tur, x.ana || x.yetimEk ? 'ek' : '', x.ana ? x.ana.tur : '', x.dosya, fmtTrDate(x.onay), x.no, x.gonderen].filter(Boolean).join(' '))).get(x);
     function suz() {
       const t = norm(ara.value).split(/\s+/).filter(Boolean);
       const imza = t.join(' ');
@@ -436,7 +478,6 @@
         const alinir = paketMod && paketAlinir(x);
         const kutu = paketMod ? el('input', { type: 'checkbox', class: 'ek-paket-kutu', tabindex: '-1', 'aria-hidden': 'true', checked: !!no, disabled: !alinir,
           title: alinir ? (no ? 'Paketten çıkar' : 'Pakete al') : 'UYAP bu eke kimlik vermediği için pakete alınamıyor' }) : null;
-        if (kutu) kutu.addEventListener('click', ev => { ev.stopPropagation(); paketIsaretle(x, kutu.checked); });
         const sayi = anaK ? (n === x.ekSayisi ? `${fmtNum(n)} ek` : `${fmtNum(n)}/${fmtNum(x.ekSayisi)} ek`) : '';
         const b = el('div', { class: 'ek-oge' + (x.ana ? ' ek-alt' : '') + (on ? ' on' : '') + (paketMod ? ' paketli' : ''), role: kategorili ? 'treeitem' : 'option', 'aria-level': kategorili ? String(ustK ? level + 1 : level) : null,
           'aria-expanded': kategorili && anaK ? String(acik) : null, 'aria-description': anaK ? ekDurum(acik, sayi) : null, 'data-ek-expanded': anaK ? String(acik) : null,
@@ -444,14 +485,14 @@
           'aria-checked': paketMod ? String(!!no) : null, 'data-i': String(i), 'data-kategori': kategori },
           ...(paketMod ? [kutu, el('span', { class: 'ek-oge-metin' }, ad, el('small', null, alt)), no ? el('span', { class: 'ek-paket-no', title: 'Paketteki sırası' }, String(no)) : null]
             : [ad, el('small', null, alt)]));
-        b.addEventListener('click', () => satirEtkinlestir(i));
+        if (on) seciliDugum = b;
         if (anaK) Object.assign(ekGiris(anaK), { ana: b, sayi });
         if (ustK) { ekGiris(ustK).rows.push(b); b.hidden = !ekAcik(ustK); }
         return b;
       };
       // Ek, ana evrakı listelenmezken seçildiyse (yalnız eki bulan arama, Yeni'de ayrı listelenen ek) ana evrak listelenince ekleri bir kez
       // açılır ve seçili ek görünür kalır. Kullanıcının sonradan kapattığı ana evrak arama ya da grup değişince yeniden açılmaz.
-      kategoriDom.clear(); kategoriKokleri.length = 0; ekDom.clear();
+      kategoriDom.clear(); kategoriKokleri.length = 0; ekDom.clear(); seciliDugum = null;
       ogeler.setAttribute('role', kategorili ? 'tree' : 'listbox');
       ogeler.setAttribute('aria-label', kategorili ? 'Evrak türleri ve evraklar' : 'Evraklar');
       kategoriGorunum.setAttribute('aria-pressed', String(!kategorili));
@@ -472,10 +513,6 @@
           const box = el('details', { class: 'ek-kategori' + (level === 1 ? ' ek-dosya-klasoru' : ''), role: 'none', 'data-kategori': kat.key }, head,
             el('div', { class: 'ek-kategori-icerik', role: 'group', id: `${kimlik}-cg${index}` }, content));
           kategoriDom.set(kat.key, { box, head, parent, children, rows });
-          head.addEventListener('click', ev => {
-            ev.preventDefault(); ev.stopPropagation();
-            kategoriAc(kat.key, !box.open); evrakOdak = { kat: kat.key }; odakSync(); ogeler.focus({ preventScroll: true });
-          });
           kategoriAc(kat.key, aramaImza ? !aramadaKapali.has(kat.key) : acikKategoriler.has(kat.key));
           return box;
         };
@@ -499,13 +536,12 @@
       zipSync();
     }
     function secimiCiz(visible = false) {
-      for (const node of ogeler.querySelectorAll('.ek-oge')) {
-        const on = Number(node.dataset.i) === sira;
-        node.classList.toggle('on', on);
-        node.setAttribute('aria-selected', String(on));
+      const node = sira >= 0 ? ogeler.querySelector(`[data-i="${sira}"]`) : null;
+      if (node !== seciliDugum) {
+        for (const [n, on] of [[seciliDugum, false], [node, true]]) if (n) { n.classList.toggle('on', on); n.setAttribute('aria-selected', String(on)); }
+        seciliDugum = node;
       }
       if (sira >= 0) {
-        const node = ogeler.querySelector(`[data-i="${sira}"]`);
         if (node?.dataset.kategori) kategoriYoluAc(node.dataset.kategori);
         // Kapalı eke gelinince (önceki/sonraki, ← →, Sırayla oku) ana evrakın ekleri açılır; arama temizlense de açık kalır.
         const x = gorunen[sira];
@@ -614,7 +650,7 @@
       const count = zipTypesCiz().length;
       if (bulkTools && !bulkChoice) zipParts.checked = count > bulkTools.PART_ENTRIES;
       const needsFullList = !!(kaynak?.list.morePages || kaynak?.list.scopeUnknown) && !['son20', 'gorunen'].includes(zipKapsam);
-      const busy = !!zipRun || !!bankRun || !!paketSession || !!bankaOkuma || !!tebligatRead || !!listeBekliyor || !!belgePdfRun;
+      const busy = mesgul('zip', 'banka', 'paket', 'bankaOkuma', 'tebligat', 'liste', 'belgePdf');
       const savedPlan = bulkState ? bulkState.saved < bulkState.total : !!bulkJob && bulkJob.cursor < bulkJob.targets.length;
       zipIndir.disabled = busy || !!bulkRead || !zipTools || !!kaynak?.list.kilit || (!!kaynak && !count && !needsFullList) || (!!zipParts.checked && (!!bulkJob || !!bulkState));
       const action = zipParts.checked ? 'Parçalı indir' : 'ZIP olarak indir';
@@ -642,7 +678,7 @@
       bulkSkip.disabled = busy || !!bulkRead;
       bulkNew.hidden = !bulkJob && !bulkState;
       bulkNew.disabled = busy || !!bulkRead || !!bulkState?.persistentPending || !!bulkJob?.pendingDownload;
-      zipTekrar.disabled = !!zipRun || !!bankRun || !!paketSession || !!bankaOkuma || !!tebligatRead || !!listeBekliyor;
+      zipTekrar.disabled = busy;   // tıklama zipDownload'a varır: ZIP düğmesini durduran işler (PDF dönüşümü dahil) bunu da durdurur
       zipDurdur.hidden = !zipRun;
       zipDurdur.disabled = !!zipRun?.ac.signal.aborted || (zipRun?.managed && bulkState?.status === 'paused');
       teyitDurumu();

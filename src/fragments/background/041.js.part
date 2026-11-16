@@ -1,3 +1,0 @@
-    if (!job || job.fileKey !== fileKey || job.id !== message.jobId) return denied();
-    const part = job.parts.find(value => value.downloadId === message.downloadId);
-    if (!part) return denied();

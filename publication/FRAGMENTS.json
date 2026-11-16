@@ -7,781 +7,389 @@
       "source": "common.js",
       "order": 1,
       "path": "src/fragments/common/001.js.part",
-      "sha256": "09fd82f0972aeed0a712c46b1c445811080f556c9f0898276cf873d36b8261a9",
-      "bytes": 17565,
+      "sha256": "fa99c7677788d0babdf780d4e9b0a88493d03863b92443d385014ed934d8247c",
+      "bytes": 17978,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
       "source": "common.js",
       "order": 3,
       "path": "src/fragments/common/003.js.part",
-      "sha256": "b54d61b733160b33e3433b7f2488259862a95399c25fa4039f4c72d194cd862c",
-      "bytes": 68,
+      "sha256": "d16e95b4a07786f1108718e01670c9d97a999aaf583e86c786612bd9a46e7c66",
+      "bytes": 67,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
       "source": "common.js",
       "order": 5,
       "path": "src/fragments/common/005.js.part",
-      "sha256": "b7c97b870ccd91674012992817937cb6346c14979428607c39b48c467e250ab2",
-      "bytes": 236,
+      "sha256": "30f003d7f71eae04046ca0680cf526f19c7599e6d1c179d87ab64b8e41449183",
+      "bytes": 230,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
       "source": "common.js",
       "order": 7,
       "path": "src/fragments/common/007.js.part",
-      "sha256": "2ba39da0ae88c180504439c9c704628445f75e5b8b0d31b05730f2ef9ecb0e88",
-      "bytes": 3541,
+      "sha256": "24fc496274523159037859d59e55803d27ac894706cad087d3ba5059148241ef",
+      "bytes": 3469,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
       "source": "common.js",
       "order": 9,
       "path": "src/fragments/common/009.js.part",
-      "sha256": "a8285326b903f8ca030eaead0dcfeeaeb45e9cbcdc0e8901876f3a4d25b516fa",
-      "bytes": 4703,
+      "sha256": "9476b4f8dd8536268287f354adce157561046619ce6d079467aa58aba9a540c6",
+      "bytes": 4621,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
       "source": "common.js",
       "order": 11,
       "path": "src/fragments/common/011.js.part",
-      "sha256": "ac83f5ba0969f07e1fcf014205c9acdb74d9223d266cc41af038bbd29721d5e0",
-      "bytes": 1797,
+      "sha256": "0ad1e98733e92899ebe016f2bc2acefe0110620d1447b7910fda27adda333fac",
+      "bytes": 1768,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
       "source": "common.js",
       "order": 13,
       "path": "src/fragments/common/013.js.part",
-      "sha256": "c240b37265b3a7717d5e4b4f607df192ac7496ecbdaac9551305ef3d8c2e4d64",
-      "bytes": 20148,
+      "sha256": "3bb7cb8da6b1de4571a3154328423431e41c328e515eecd1fd17aecaf77bda8b",
+      "bytes": 18142,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
       "source": "common.js",
       "order": 15,
       "path": "src/fragments/common/015.js.part",
-      "sha256": "3b7242ce075a76c7d47a7600c2a4a07a6b7277fe74b439499104668ab44b6573",
-      "bytes": 29354,
+      "sha256": "60e70912c2485ef4c86a7ccdb5994c66956ee240453ca92b386c8ac448c83ae6",
+      "bytes": 32846,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
       "source": "background.js",
       "order": 2,
       "path": "src/fragments/background/002.js.part",
-      "sha256": "855ca97a404c4290b3722dd206d228e3da95c7fa17d205683846cf63c1dbd475",
-      "bytes": 33,
-      "purpose": "Generic cryptography bootstrap"
+      "sha256": "79212941da399d92d2781fe80f31e2ecb90dd36ff06217ba62cacd0e56cb3d33",
+      "bytes": 161,
+      "purpose": "Service worker script bootstrap: the complete importScripts list of shared, storage, telemetry and engine scripts"
     },
     {
       "source": "background.js",
       "order": 4,
-      "path": "src/fragments/background/004.js.part",
-      "sha256": "f188a35370c07f929e3c13f377bf56aa402d1e4266942ca7b5ddc655f63456bc",
-      "bytes": 13,
-      "purpose": "Generic shared validation bootstrap"
-    },
-    {
-      "source": "background.js",
-      "order": 6,
-      "path": "src/fragments/background/006.js.part",
-      "sha256": "940551e79ebb39cff6b2760bf50d0801a07fec60aa7e3a0a5bf016e2a43eb8fa",
-      "bytes": 57,
-      "purpose": "Generic encrypted storage and opt-in telemetry bootstrap"
-    },
-    {
-      "source": "background.js",
-      "order": 8,
-      "path": "src/fragments/background/008.js.part",
-      "sha256": "e86f05a454fe4234532f4e184b33d3d7b31271f070f29e2828159c4c3d7cf277",
-      "bytes": 4,
-      "purpose": "Bootstrap terminator"
-    },
-    {
-      "source": "background.js",
-      "order": 10,
       "path": "src/fragments/background/010.js.part",
-      "sha256": "a573a70f4d1627a1042a5190f85baa523f8d14f9ab7fa78990ea89ed0c961272",
-      "bytes": 1474,
+      "sha256": "fc1080478a4f08d0f1fe50a64a40826e3313781865e815759ea75565af40b014",
+      "bytes": 1445,
       "purpose": "Generic opt-in technical-report budget, serialization and extension sender gate"
     },
     {
       "source": "background.js",
-      "order": 11,
+      "order": 5,
       "path": "src/fragments/background/011.js.part",
-      "sha256": "1beeb2d4a4f4540c8259e085fdc8d9f6b6bb235e6ca5faaf900f74b5c01da908",
-      "bytes": 333,
-      "purpose": "Generic installation preferences and launcher state"
+      "sha256": "9defdba8a0ebc1a94b69f39b843dce218dd0eb3e674e16732f143f9df901b680",
+      "bytes": 489,
+      "purpose": "Installation preferences, launcher state, setup portal on first install and retired preference/session cleanup"
     },
     {
       "source": "background.js",
-      "order": 13,
-      "path": "src/fragments/background/013.js.part",
-      "sha256": "dba8ec59d90c511c8a2cc86b24e8b61ae015920c8fb8589530ee7d5eb0627343",
-      "bytes": 132,
-      "purpose": "Generic retired preference/session cleanup"
-    },
-    {
-      "source": "background.js",
-      "order": 15,
+      "order": 7,
       "path": "src/fragments/background/015.js.part",
-      "sha256": "5f51dec25d70262730c4590a89ab810f542785dc832eeac4b74979ae9d6d76ee",
-      "bytes": 396,
+      "sha256": "ca0657fb09272cfdca389f5b21f961a3cbf9d911fa4e8b0b714f8dcc369425e8",
+      "bytes": 391,
       "purpose": "Extension/current main-frame/origin/document-lifecycle authorization"
     },
     {
       "source": "background.js",
-      "order": 17,
+      "order": 9,
       "path": "src/fragments/background/017.js.part",
-      "sha256": "6e82d81eae7bc7a8458fca37f34f674b47220fa662056756879b3d6bfee3111e",
-      "bytes": 841,
-      "purpose": "Iframe channel runtime, nonce, secret format, origin and active-frame authorization"
+      "sha256": "d33f4b11e5ac7005e55b49e68e02564f46329924b9f2420fc995e17bf94eb070",
+      "bytes": 1125,
+      "purpose": "Iframe channel runtime, nonce, secret format, origin and active-frame authorization; secret relay only to a current UYAP main frame"
     },
     {
       "source": "background.js",
-      "order": 19,
+      "order": 10,
       "path": "src/fragments/background/019.js.part",
-      "sha256": "2bc4da95820bf0c04126196e9f484288d7c7a5ed50514ea3213be156da8563fb",
-      "bytes": 603,
-      "purpose": "General panel-ready sender authorization and extension popup UI"
-    },
-    {
-      "source": "background.js",
-      "order": 21,
-      "path": "src/fragments/background/021.js.part",
-      "sha256": "bf1c2f4c14841d1b543b61832196e7a00578fbf31548ae5dce3a1afae46c4ec9",
-      "bytes": 128,
-      "purpose": "Popup extension-origin and numeric target-tab authorization"
-    },
-    {
-      "source": "background.js",
-      "order": 23,
-      "path": "src/fragments/background/023.js.part",
-      "sha256": "d4afb117b0b2d84a57f949e867c2dfcc28d905964beedcbdaba18110ca679f83",
-      "bytes": 5585,
-      "purpose": "Generic keyboard-shortcut reporting, panel toggle and popup fallback UI"
-    },
-    {
-      "source": "background.js",
-      "order": 25,
-      "path": "src/fragments/background/025.js.part",
-      "sha256": "d4f34adbe0fec17ad176f00ce39bac22dda044173b0a4a2ab0973b65708836e4",
-      "bytes": 376,
-      "purpose": "Generic basename/regex escaping and extension download ownership/time validators"
-    },
-    {
-      "source": "background.js",
-      "order": 27,
-      "path": "src/fragments/background/027.js.part",
-      "sha256": "867f638be4c2ccecee2f591687e6f0504d9614e0e48c85c6b6b798e1e2aa06d4",
-      "bytes": 59,
-      "purpose": "Download reservation UUID/name association gate"
-    },
-    {
-      "source": "background.js",
-      "order": 29,
-      "path": "src/fragments/background/029.js.part",
-      "sha256": "4e6c592776b253fb291d4b6e34a8714a7a5ee4ec91ccf3a8dce16dcf183ba6b2",
-      "bytes": 95,
-      "purpose": "Download ownership and unique-match gate"
-    },
-    {
-      "source": "background.js",
-      "order": 31,
-      "path": "src/fragments/background/031.js.part",
-      "sha256": "5d85d7e696895d9ae672cf87f644edca14f41ac88a00c2e80241056bc41871e5",
-      "bytes": 202,
-      "purpose": "Exact download-ID ownership and Chrome completion-state gate"
-    },
-    {
-      "source": "background.js",
-      "order": 33,
-      "path": "src/fragments/background/033.js.part",
-      "sha256": "18fa6c143af89a1270cae092bc8b03a72f46d4034b3b1d2679732308453f013d",
-      "bytes": 625,
-      "purpose": "Download active main-frame/origin/blob-UUID source authorization"
-    },
-    {
-      "source": "background.js",
-      "order": 35,
-      "path": "src/fragments/background/035.js.part",
-      "sha256": "af9839308c9cf2a96767f124f29c877133b421343d45144969e40403fef93255",
-      "bytes": 196,
-      "purpose": "Exact job identity and part filename association gate"
-    },
-    {
-      "source": "background.js",
-      "order": 37,
-      "path": "src/fragments/background/037.js.part",
-      "sha256": "bca66b4eaf2bc36cf33697b969b89456bcead1360da8c28abd2b6029ab04338b",
-      "bytes": 81,
-      "purpose": "Cancellation exact job identity and pending-part existence gate"
-    },
-    {
-      "source": "background.js",
-      "order": 39,
-      "path": "src/fragments/background/039.js.part",
-      "sha256": "736c32689e96d314f0e7f18566a40aa3038974681a66dc3299d0b4b08debd429",
-      "bytes": 492,
-      "purpose": "Show-part source authorization and typed job/file/download identity validation"
-    },
-    {
-      "source": "background.js",
-      "order": 41,
-      "path": "src/fragments/background/041.js.part",
-      "sha256": "c68cfba04e3d94b8bd44e50374ebd8677196a9cfee6bf5a2b47a54be2821b302",
-      "bytes": 201,
-      "purpose": "Show-part exact saved job and completed-part membership gate"
-    },
-    {
-      "source": "background.js",
-      "order": 43,
-      "path": "src/fragments/background/043.js.part",
-      "sha256": "0a0b3b584328c607ab0c2fdb1e275186a3f56b529a95327d05b4ce3a5ab7773d",
-      "bytes": 252,
-      "purpose": "Show-part exact ID/extension owner/complete/existence/basename gate"
-    },
-    {
-      "source": "background.js",
-      "order": 45,
-      "path": "src/fragments/background/045.js.part",
-      "sha256": "9c12c55fc0cc742c198f133c6e96bc3e639fba6a4570581ea8af7dc46f9110fe",
-      "bytes": 158,
-      "purpose": "Download RPC extension/main-frame/origin and message-type allowlist"
+      "sha256": "68949785b569e26f298964f2832b7e892bd0dfb476e6c0da74a23a21e9ddff02",
+      "bytes": 6658,
+      "purpose": "Panel-ready, popup focus-tab, page-zoom and shortcut messages with sender authorization; panel toggle, popup fallback and one-time Vergi Takibi handoff"
     },
     {
       "source": "content.js",
       "order": 1,
       "path": "src/fragments/content/001-bootstrap-shared-request-safety.js.part",
-      "sha256": "7c327eaa273dd2db78cdb1022e09455bfb1d46c1105f386996927f1b8fd59cbd",
-      "bytes": 1351,
+      "sha256": "2a0c08616b75a7f579dc0cf891542add3baeeef0fecbba78deb5843deb0119a9",
+      "bytes": 1384,
       "purpose": "bootstrap-shared-request-safety"
     },
     {
       "source": "content.js",
       "order": 3,
       "path": "src/fragments/content/003-bootstrap-shared-request-safety.js.part",
-      "sha256": "ab59dbac72c5da0cdca14043f8951ef041f7103596e40e8d56070413c73356c8",
-      "bytes": 9801,
+      "sha256": "4b645e170081a93d0c81e99f0dd9202483215cd4b8226de9836169cb4b859445",
+      "bytes": 10128,
       "purpose": "bootstrap-shared-request-safety"
     },
     {
       "source": "content.js",
       "order": 5,
       "path": "src/fragments/content/005-context-invalidation-and-progress-boundaries.js.part",
-      "sha256": "8031747ed9f40782b59a0bc74275cd8eee9cb7b9b6bd6dbcd4db0f7900775b3c",
-      "bytes": 2382,
+      "sha256": "a902fb6836599c387d067628b6375afc2934961fd71657d91e2e810de7aed902",
+      "bytes": 2293,
       "purpose": "context-invalidation-and-progress-boundaries"
     },
     {
       "source": "content.js",
       "order": 7,
       "path": "src/fragments/content/007-setup-profile-DOM-boundary.js.part",
-      "sha256": "2e4e6b58e213f3a020d4cdbb1c29c419c1bcd722d4946e9d6cd93d3af8d3b6e4",
-      "bytes": 1457,
+      "sha256": "9ab854f4bb909db7326ca6c17fd0679ed3e126e31743501104e56cfe4edb2560",
+      "bytes": 1434,
       "purpose": "setup-profile-DOM-boundary"
     },
     {
       "source": "content.js",
       "order": 9,
-      "path": "src/fragments/content/009-explicit-scan-stop.js.part",
-      "sha256": "522b87bcaa7babac54a6705654007bd6b9fdb190ccdcb1988b4eb5aa7bdd770c",
-      "bytes": 480,
-      "purpose": "explicit-scan-stop"
+      "path": "src/fragments/content/009-explicit-scan-stop-and-owner-guards.js.part",
+      "sha256": "8f469ab3411e1cf9c788dff3dbb76ae614cfe3db0a0d1bfa1d66c013a9d2687f",
+      "bytes": 614,
+      "purpose": "explicit-scan-stop-and-owner-guards"
     },
     {
       "source": "content.js",
       "order": 11,
-      "path": "src/fragments/content/011-scan-owner-and-abort-guards.js.part",
-      "sha256": "822ed0cb577c3ef15f3489caf259b089ed178ebdd3f088e5dbcc8f04cb533531",
-      "bytes": 139,
-      "purpose": "scan-owner-and-abort-guards"
+      "path": "src/fragments/content/013-native-window-navigation-and-identity-guards.js.part",
+      "sha256": "3786b2ffafd6651f15d608e93bbf2a85dad84907bb0df770f1a3d15a234928a5",
+      "bytes": 15994,
+      "purpose": "native-window-navigation-and-identity-guards"
     },
     {
       "source": "content.js",
       "order": 13,
-      "path": "src/fragments/content/013-native-window-navigation-and-identity-guards.js.part",
-      "sha256": "2e8dba23bc21024c9f37d8b842510e1b06c951084815708a8a5b9bb29d2137e1",
-      "bytes": 16269,
+      "path": "src/fragments/content/015-native-window-navigation-and-identity-guards.js.part",
+      "sha256": "a3ac981ebdc180974a571d386500c97e561753b1ab0f7d5693fac955ab9edc37",
+      "bytes": 214,
       "purpose": "native-window-navigation-and-identity-guards"
     },
     {
       "source": "content.js",
       "order": 15,
-      "path": "src/fragments/content/015-native-window-navigation-and-identity-guards.js.part",
-      "sha256": "5872668b19f3a82cd7b2ae33a50774444731febc46c745701ad254520ac43e12",
-      "bytes": 217,
+      "path": "src/fragments/content/017-native-window-navigation-and-identity-guards.js.part",
+      "sha256": "2887b0960061e81cea4cfb7f74145ebd8f9f8ee8e4ef10babd4fe7c88be1561f",
+      "bytes": 22149,
       "purpose": "native-window-navigation-and-identity-guards"
     },
     {
       "source": "content.js",
       "order": 17,
-      "path": "src/fragments/content/017-native-window-navigation-and-identity-guards.js.part",
-      "sha256": "be16681e49a7dae1cad13bc689556405481a600f43bb7c5f246255dfc5d38a9b",
-      "bytes": 22517,
+      "path": "src/fragments/content/019-native-window-navigation-and-identity-guards.js.part",
+      "sha256": "384df43e0983fe0fecce2153d161bc61225811daa2238b02d65850b46a0ce7f9",
+      "bytes": 147,
       "purpose": "native-window-navigation-and-identity-guards"
     },
     {
       "source": "content.js",
       "order": 19,
-      "path": "src/fragments/content/019-native-window-navigation-and-identity-guards.js.part",
-      "sha256": "3c7ea20bf5317a9b5ca0fd1f56a4a4fb0ab60df7264ff827225d205f9f8e8f42",
-      "bytes": 150,
+      "path": "src/fragments/content/021-native-window-navigation-and-identity-guards.js.part",
+      "sha256": "1ffcbe4868b6208ed85c874cc0d4566ced572349fdd7f906a29afb0ae9bac8be",
+      "bytes": 4635,
       "purpose": "native-window-navigation-and-identity-guards"
     },
     {
       "source": "content.js",
       "order": 21,
-      "path": "src/fragments/content/021-native-window-navigation-and-identity-guards.js.part",
-      "sha256": "45f2b4683b860b4572881987381a1f55cc21432aec9a652be5bc5e199d9431fd",
-      "bytes": 4570,
-      "purpose": "native-window-navigation-and-identity-guards"
-    },
-    {
-      "source": "content.js",
-      "order": 23,
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "b86e23ad27bcac6b3b07e51d9782168ecf70bc40989103ce15fbf19a57d6b504",
-      "bytes": 107334,
+      "sha256": "726bef4b2132d46fbace1ae56b0e72c518707e82e69a7693d245847648b45baa",
+      "bytes": 109535,
       "purpose": "page-shell-full-CSS-docking-and-panel-controls"
     },
     {
       "source": "content.js",
-      "order": 25,
+      "order": 23,
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
-      "sha256": "b18250efb398907804bd0c95d8fe545e70c8799fbea05263717cbc6094b55f18",
-      "bytes": 4796,
+      "sha256": "855217dd26cde0f8fc9b8bd7d343679c30c344fd5a7dbb3076e220aa6c40c9b6",
+      "bytes": 4749,
       "purpose": "document-source-and-attachment-identity-validators"
     },
     {
       "source": "content.js",
-      "order": 27,
+      "order": 25,
       "path": "src/fragments/content/027-document-view-command-abort-guards.js.part",
-      "sha256": "b1443f2e4966bf5352242899a331f2427f8be3c25308c4ffe30c347858b93733",
-      "bytes": 405,
+      "sha256": "12031acee73c12771743c69168baa7df28448b9b6cbe41a553deec604c2eef56",
+      "bytes": 394,
       "purpose": "document-view-command-abort-guards"
     },
     {
       "source": "content.js",
-      "order": 29,
+      "order": 27,
       "path": "src/fragments/content/029-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "ce9917a68ac9a6e707e00c5465060f0d75c5e86b4991cbc60355881fa65ddfc7",
-      "bytes": 9699,
+      "sha256": "dd17c2410ce6b2bf16566df5f991af71147475b6b80bd8568083433ca78b1045",
+      "bytes": 3107,
+      "purpose": "overview-safahat-notes-and-safe-document-rendering"
+    },
+    {
+      "source": "content.js",
+      "order": 29,
+      "path": "src/fragments/content/033-overview-safahat-notes-and-safe-document-rendering.js.part",
+      "sha256": "ce20e10bb79a4f8cdfd17004ec120ef86bd18da21932f778c35cbe498fa69882",
+      "bytes": 7032,
       "purpose": "overview-safahat-notes-and-safe-document-rendering"
     },
     {
       "source": "content.js",
       "order": 31,
-      "path": "src/fragments/content/031-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "a21b928a9c14981387430cdf08461081b9567aa0111392da95fa3c23f3295a83",
-      "bytes": 64,
+      "path": "src/fragments/content/037-overview-safahat-notes-and-safe-document-rendering.js.part",
+      "sha256": "900b3a1d832cd6bd72fd778f3e9f90f861442a57defd41fbccade66e2be4d8cc",
+      "bytes": 17127,
       "purpose": "overview-safahat-notes-and-safe-document-rendering"
     },
     {
       "source": "content.js",
       "order": 33,
-      "path": "src/fragments/content/033-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "b1f7f9528c3bb2f79b852d137405edae73640354c9249da48a860044c083697e",
-      "bytes": 9670,
-      "purpose": "overview-safahat-notes-and-safe-document-rendering"
+      "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
+      "sha256": "ab477ec9178401adb484da54c9cae109314d6483015556552f4cc88cdd4c2933",
+      "bytes": 62286,
+      "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
       "source": "content.js",
       "order": 35,
-      "path": "src/fragments/content/035-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "0ee91c12da64f167265ac593566625e85618a9de1a351ed435b00d4ee3f61d2b",
-      "bytes": 893,
-      "purpose": "overview-safahat-notes-and-safe-document-rendering"
+      "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
+      "sha256": "7a53d8ccb8ee473c4b08becbc7513628ab7fbf34a7adc006485a36aa25a693b3",
+      "bytes": 1673,
+      "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
       "source": "content.js",
       "order": 37,
-      "path": "src/fragments/content/037-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "ffe1e55ba4a3178e9d4b3c73c1d028329a4fb78ee1e32124676267841024189a",
-      "bytes": 19309,
-      "purpose": "overview-safahat-notes-and-safe-document-rendering"
+      "path": "src/fragments/content/043-full-viewer-HTML-render-and-action-controls.js.part",
+      "sha256": "0ee17a9b0e8bef6d74dc700149332781a34ef2ac85b6a1c9a1172bcc11b7c0db",
+      "bytes": 7174,
+      "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
       "source": "content.js",
       "order": 39,
-      "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "9a1e257ca3df9004cb9bb1e643e4773a9eba81cd72886d0ac686d48a282923a3",
-      "bytes": 59424,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
+      "path": "src/fragments/content/046-original-document-download-and-package-start-controls.js.part",
+      "sha256": "c28d2ca546f30890d9be1311b3945554095e517c4397ed4685bd480994c6111a",
+      "bytes": 2444,
+      "purpose": "original-document-download-and-package-start-controls"
     },
     {
       "source": "content.js",
       "order": 41,
-      "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "b58d7b09630614d7c8662247c6293e73a63d8fe4acae3b488ecbadda3510d2b3",
-      "bytes": 1627,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
+      "path": "src/fragments/content/050-package-frame-and-start-action-controls.js.part",
+      "sha256": "1d3912cfca7b7de6ae97d4d55c181b2ddde9fc6fcf75f80e9a59d6a1c590ffaf",
+      "bytes": 4009,
+      "purpose": "package-frame-and-start-action-controls"
     },
     {
       "source": "content.js",
       "order": 43,
-      "path": "src/fragments/content/043-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "453ea5ddaa94d51115284acb7fec02b75333e0692040121166f7bf0dae44097a",
-      "bytes": 7296,
+      "path": "src/fragments/content/063-full-viewer-HTML-render-and-action-controls.js.part",
+      "sha256": "352f8d1e0e1b9550350aaf4d16d6f2a85cea2fa54c60138d81c0b084a69602a8",
+      "bytes": 2550,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
       "source": "content.js",
-      "order": 44,
-      "path": "src/fragments/content/044-original-document-download-action-and-link-render.js.part",
-      "sha256": "ea08fad15d1c2eae20840bdebad9f09e786be79c17cfcb6fcce8051f32671822",
-      "bytes": 149,
-      "purpose": "original-document-download-action-and-link-render"
-    },
-    {
-      "source": "content.js",
-      "order": 46,
-      "path": "src/fragments/content/046-original-document-download-action-and-link-render.js.part",
-      "sha256": "091cf25978478452a8601e133f7d475b58caa310aae84db23736f13b80475b9a",
-      "bytes": 570,
-      "purpose": "original-document-download-action-and-link-render"
-    },
-    {
-      "source": "content.js",
-      "order": 47,
-      "path": "src/fragments/content/047-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "f11162d12e18a6d8f270c97540daa90b72a8ddb9af1aac0f534c098ee2f99cd5",
-      "bytes": 2613,
+      "order": 45,
+      "path": "src/fragments/content/067-full-viewer-HTML-render-and-action-controls.js.part",
+      "sha256": "fa7dd2fe584ab43bf9d05ca2161c5a917de5d6e3c54888412ac2e4450e03bc8d",
+      "bytes": 743,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
       "source": "content.js",
       "order": 48,
-      "path": "src/fragments/content/048-package-frame-and-start-action-controls.js.part",
-      "sha256": "8dcb7acda2a33cc301a8363014ab7cace3eeccbb34f4d152e6cf27bbb81206f3",
-      "bytes": 409,
-      "purpose": "package-frame-and-start-action-controls"
+      "path": "src/fragments/content/083-full-viewer-HTML-render-and-action-controls.js.part",
+      "sha256": "685f47e367202b3f8515f3eef023f2a0bb63e5dbc6fecd6f0e16609ceab02b7f",
+      "bytes": 13641,
+      "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
       "source": "content.js",
       "order": 50,
-      "path": "src/fragments/content/050-package-frame-and-start-action-controls.js.part",
-      "sha256": "8a82335d33ea3e0696f63c791238300df370169afc133fc04781a6a4412fe042",
-      "bytes": 592,
-      "purpose": "package-frame-and-start-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 51,
-      "path": "src/fragments/content/051-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "eb42efc3d40b2b08b685ab957d6581b1eaffd525579f55f44ad24e10315db452",
-      "bytes": 4073,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 53,
-      "path": "src/fragments/content/053-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "a6926f3c5d71266e7aa81ae97a6b5f7b5f043c65504c180ffbe1d9b76ccac748",
-      "bytes": 6,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 55,
-      "path": "src/fragments/content/055-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "a6926f3c5d71266e7aa81ae97a6b5f7b5f043c65504c180ffbe1d9b76ccac748",
-      "bytes": 6,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 57,
-      "path": "src/fragments/content/057-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "a6926f3c5d71266e7aa81ae97a6b5f7b5f043c65504c180ffbe1d9b76ccac748",
-      "bytes": 6,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 59,
-      "path": "src/fragments/content/059-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "a6926f3c5d71266e7aa81ae97a6b5f7b5f043c65504c180ffbe1d9b76ccac748",
-      "bytes": 6,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 61,
-      "path": "src/fragments/content/061-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "a6926f3c5d71266e7aa81ae97a6b5f7b5f043c65504c180ffbe1d9b76ccac748",
-      "bytes": 6,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 63,
-      "path": "src/fragments/content/063-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "a2c37c7796697bc30333359e76ce8b2b734d74deead8e664f7b6395e3566726a",
-      "bytes": 2580,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 65,
-      "path": "src/fragments/content/065-bank-borrower-select-render-and-abort-guard.js.part",
-      "sha256": "0a4898a47613fa201f38f34a2031f666e7dfb7a2ff2c8aed7901cbd2d5a6c39c",
-      "bytes": 611,
-      "purpose": "bank-borrower-select-render-and-abort-guard"
-    },
-    {
-      "source": "content.js",
-      "order": 67,
-      "path": "src/fragments/content/067-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "416762328b7c2a121f224087d0af2bd71e4745285dc6d5a83198d267ce1e4d17",
-      "bytes": 756,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 69,
-      "path": "src/fragments/content/069-bank-click-abort-and-UI-boundary.js.part",
-      "sha256": "83de8bd4d326562fc8e5f30ff0ec2a9437285c39c1f098575ef747b44da81709",
-      "bytes": 354,
-      "purpose": "bank-click-abort-and-UI-boundary"
-    },
-    {
-      "source": "content.js",
-      "order": 71,
-      "path": "src/fragments/content/071-bank-eligibility-enforcement.js.part",
-      "sha256": "75f7579146f46d2771f93ae4aa322112f11cb1cc813e911390cde13354f0e685",
-      "bytes": 116,
-      "purpose": "bank-eligibility-enforcement"
-    },
-    {
-      "source": "content.js",
-      "order": 73,
-      "path": "src/fragments/content/073-bank-explicit-fee-consent-and-single-request-policy.js.part",
-      "sha256": "c4c020fca04832852abe42e430e6eee0de97414004a7ab7043808476f9878087",
-      "bytes": 458,
-      "purpose": "bank-explicit-fee-consent-and-single-request-policy"
-    },
-    {
-      "source": "content.js",
-      "order": 75,
-      "path": "src/fragments/content/075-bank-response-abort-and-closed-view-guard.js.part",
-      "sha256": "9e1875506a99640faf034b87ccb7d81e1e3cf64388683e4edec21c9126305ee8",
-      "bytes": 54,
-      "purpose": "bank-response-abort-and-closed-view-guard"
-    },
-    {
-      "source": "content.js",
-      "order": 77,
-      "path": "src/fragments/content/077-bank-pre-write-abort-guard.js.part",
-      "sha256": "bb6ba858423e7ae9fcdd487cb61cbd88ec1e4c01eeed36f8f4d113502313c8e5",
-      "bytes": 34,
-      "purpose": "bank-pre-write-abort-guard"
-    },
-    {
-      "source": "content.js",
-      "order": 79,
-      "path": "src/fragments/content/079-bank-error-and-finish-UI-boundary.js.part",
-      "sha256": "4189eeb4c2a0c2dccc5b34d035d112be803b171ea5f22a73982c974a03553748",
-      "bytes": 368,
-      "purpose": "bank-error-and-finish-UI-boundary"
-    },
-    {
-      "source": "content.js",
-      "order": 81,
-      "path": "src/fragments/content/081-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "a6926f3c5d71266e7aa81ae97a6b5f7b5f043c65504c180ffbe1d9b76ccac748",
-      "bytes": 6,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 83,
-      "path": "src/fragments/content/083-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "0bed375ee46cbe528f711322c93b36a09d296165c82f02f10da6f40120a115ba",
-      "bytes": 13779,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 85,
       "path": "src/fragments/content/085-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "05ecf8e5167dc03bde09282b9e65ba74f7e365a24590242d7d402082c2cf8218",
-      "bytes": 6215,
+      "sha256": "0e9c9399659190debd7abfcf0e05d86dc8d5a7399d326a9ffddc55dd3d10f9da",
+      "bytes": 6140,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
       "source": "content.js",
-      "order": 87,
+      "order": 52,
       "path": "src/fragments/content/087-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "74e8e3bfe8a5f58e4456ea9bb9783bf3fb55eb86a2c1e22273efed891a9edf92",
-      "bytes": 233,
+      "sha256": "ead93de60846dc5555d5de4d50aa08a50b3e727aded406faa9b49b4be1e7fdda",
+      "bytes": 230,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
       "source": "content.js",
-      "order": 89,
-      "path": "src/fragments/content/089-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "a6926f3c5d71266e7aa81ae97a6b5f7b5f043c65504c180ffbe1d9b76ccac748",
-      "bytes": 6,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 91,
-      "path": "src/fragments/content/091-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "a6926f3c5d71266e7aa81ae97a6b5f7b5f043c65504c180ffbe1d9b76ccac748",
-      "bytes": 6,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 93,
-      "path": "src/fragments/content/093-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "a6926f3c5d71266e7aa81ae97a6b5f7b5f043c65504c180ffbe1d9b76ccac748",
-      "bytes": 6,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 95,
+      "order": 54,
       "path": "src/fragments/content/095-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "29e575178956bad14d5eecacbe6e9db8ff7075fb62448e96078e8f191a010091",
-      "bytes": 169,
+      "sha256": "e5daff420580eef6545ca33ef43428893a3777914511d24477c2cde69182608f",
+      "bytes": 167,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
       "source": "content.js",
-      "order": 97,
-      "path": "src/fragments/content/097-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "a6926f3c5d71266e7aa81ae97a6b5f7b5f043c65504c180ffbe1d9b76ccac748",
-      "bytes": 6,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 99,
+      "order": 56,
       "path": "src/fragments/content/099-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "b6bf1134494676d90b618882ba5b63ef3dc7ef70680ed14c3f2824868ad3b50b",
-      "bytes": 2378,
+      "sha256": "55e934f5f06db20024b29e4001ff215bda2d948e5c37e9fb3f8e4fd771a0dbdf",
+      "bytes": 2336,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
       "source": "content.js",
-      "order": 101,
-      "path": "src/fragments/content/101-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "4dc501d66cd78903b81b1a53459d0432939728c537bbe9ffab55ab81521cb352",
-      "bytes": 5,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 103,
+      "order": 58,
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "f7ce6adf0fd84893187ae9fd906f2dad5330b3c1401e13784d36110933475332",
-      "bytes": 35422,
+      "sha256": "b72f6bcf25ad943f164e16537b9a83506c105da62f15a91839a34a28bb339e63",
+      "bytes": 37295,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
       "source": "content.js",
-      "order": 105,
-      "path": "src/fragments/content/105-viewer-navigation-abort-epoch-boundary.js.part",
-      "sha256": "8197be5211ea09917c9c3fe4a64044fbe4ef1ac47de1d7dc0b8fa0e64c0a83ae",
-      "bytes": 163,
-      "purpose": "viewer-navigation-abort-epoch-boundary"
+      "order": 60,
+      "path": "src/fragments/content/105-viewer-document-load-and-list-ready.js.part",
+      "sha256": "1de65516a3dd2a4d89de8e3e3a978a2de8eca2c427f2e724b4494798821d8601",
+      "bytes": 4271,
+      "purpose": "viewer-document-load-and-list-ready"
     },
     {
       "source": "content.js",
-      "order": 107,
-      "path": "src/fragments/content/107-viewer-read-fatal-CAPTCHA-abort-guard.js.part",
-      "sha256": "a529449b364b366cd58df77d2eebf22a7e5514b717224075a7ae669127856fdf",
-      "bytes": 177,
-      "purpose": "viewer-read-fatal-CAPTCHA-abort-guard"
-    },
-    {
-      "source": "content.js",
-      "order": 109,
-      "path": "src/fragments/content/109-viewer-refresh-current-epoch-guard.js.part",
-      "sha256": "b17b246049af7f071166cde4946640060c5fe3601e3b7a7466087dd9c4cdc645",
-      "bytes": 35,
-      "purpose": "viewer-refresh-current-epoch-guard"
-    },
-    {
-      "source": "content.js",
-      "order": 111,
-      "path": "src/fragments/content/111-viewer-refresh-epoch-source-lock-guard.js.part",
-      "sha256": "d03bc9efad0ac60b5c761269505a1ba1bf615517b152f65f02813b36f1917452",
-      "bytes": 320,
-      "purpose": "viewer-refresh-epoch-source-lock-guard"
-    },
-    {
-      "source": "content.js",
-      "order": 113,
-      "path": "src/fragments/content/113-viewer-loaded-render-and-error-action-controls.js.part",
-      "sha256": "6e275fc2174d82851fd80691531b892464d7a15198bfd7d4fcef6fe886558f96",
-      "bytes": 834,
-      "purpose": "viewer-loaded-render-and-error-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 115,
-      "path": "src/fragments/content/115-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "f608039618b0368f3f1daaf29155fea3e71c2bcf7a14f70f81aa997ad9ce7ff4",
-      "bytes": 2244,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 116,
-      "path": "src/fragments/content/116-viewer-list-loading-retry-and-error-controls.js.part",
-      "sha256": "a1a0e06a8eca534a688f027f3b3cf9b7b356dd6f67d3e4a5606ef470ebd7792a",
-      "bytes": 485,
-      "purpose": "viewer-list-loading-retry-and-error-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 118,
+      "order": 62,
       "path": "src/fragments/content/118-viewer-list-loading-retry-and-error-controls.js.part",
-      "sha256": "4b315b8d561770d2166baba502895ee0abfd5993661930b741c7ed4f7bc64860",
-      "bytes": 1136,
+      "sha256": "db0f58394cbe40c57abcdbe94d58422bd31d5d822a983ce8231be9e9ccc45dc4",
+      "bytes": 13522,
       "purpose": "viewer-list-loading-retry-and-error-controls"
     },
     {
       "source": "content.js",
-      "order": 119,
-      "path": "src/fragments/content/119-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "2ea8c20cd81e339d2c507fb5f2e9e79d04a959545cba7445e4f240d64354f095",
-      "bytes": 13412,
-      "purpose": "full-viewer-HTML-render-and-action-controls"
-    },
-    {
-      "source": "content.js",
-      "order": 121,
+      "order": 64,
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",
-      "sha256": "e82bc1aa68187d89fde1f74ae8da8f0307dadefc1ab28f9d1ca8a6d4cd5f71bf",
-      "bytes": 18211,
+      "sha256": "f08c52796d98981a24712ccfb3b1b28e781f6c5942ac403fe7503614552007cd",
+      "bytes": 18842,
       "purpose": "toast-announcement-and-runtime-action-UI"
     },
     {
       "source": "content.js",
-      "order": 123,
+      "order": 66,
       "path": "src/fragments/content/123-panel-command-action-boundary.js.part",
-      "sha256": "047557595e18d3d73cd5f6faa524c5f6bb519e994b0c4021aa2f93714e993674",
-      "bytes": 574,
+      "sha256": "fdc28f201eee629b1c2c67776fe760e053ad13f61085675c849de0bd7e4b38a4",
+      "bytes": 557,
       "purpose": "panel-command-action-boundary"
     },
     {
       "source": "content.js",
-      "order": 125,
+      "order": 68,
       "path": "src/fragments/content/125-panel-ready-message-boundary.js.part",
-      "sha256": "af0871315825724c9c1fe1b447f9e3d372763a344b35e356aee8fc36e2565bdb",
-      "bytes": 220,
+      "sha256": "37f6e2658355d75dac4b9ea3543cd2d0f044423c89434bbac4ae3555cb08935d",
+      "bytes": 215,
       "purpose": "panel-ready-message-boundary"
     },
     {
       "source": "content.js",
-      "order": 127,
+      "order": 70,
       "path": "src/fragments/content/127-session-protection-lifecycle-and-visible-safety-gates.js.part",
       "sha256": "20ad3df4ff284e9b7f9ffa8bc7cf4f4d4c998b2da506b84102739344259c20a4",
       "bytes": 1647,
@@ -789,34 +397,10 @@
     },
     {
       "source": "content.js",
-      "order": 129,
+      "order": 75,
       "path": "src/fragments/content/129-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "c677661d2944019a9701b61c55a6d8859fe62fe5daa15fa88a9c430a63ab5e3d",
-      "bytes": 223,
-      "purpose": "session-protection-lifecycle-and-visible-safety-gates"
-    },
-    {
-      "source": "content.js",
-      "order": 131,
-      "path": "src/fragments/content/131-session-before-request-current-activity-guard.js.part",
-      "sha256": "44dcce6bae7d392a6f2b9129af3608cd49a3e82f593daad2470361d12b69e50a",
-      "bytes": 112,
-      "purpose": "session-before-request-current-activity-guard"
-    },
-    {
-      "source": "content.js",
-      "order": 133,
-      "path": "src/fragments/content/133-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "3fb972502d1262fc8df633f585fec783058ddfdf4f246f03834a4ee30341b2b0",
-      "bytes": 45,
-      "purpose": "session-protection-lifecycle-and-visible-safety-gates"
-    },
-    {
-      "source": "content.js",
-      "order": 135,
-      "path": "src/fragments/content/135-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "ad2e4665edd15697ce833595363eb113a251101c67fa4df34844819f0be4287c",
-      "bytes": 756,
+      "sha256": "7378521d274ffb3cfa509b8a896c78fcdbf32eec96966e36a3c2a9df89fb1552",
+      "bytes": 1911,
       "purpose": "session-protection-lifecycle-and-visible-safety-gates"
     }
   ]
