@@ -1,3 +1,4 @@
+'use strict';
 // Ham hata metni, UYAP yanıtı ve sayfa adresi bu sınırdan dışarı çıkmaz.
 (() => {
   if (globalThis.UHDReporter) return;

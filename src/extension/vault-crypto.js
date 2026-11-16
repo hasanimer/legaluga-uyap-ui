@@ -1,3 +1,4 @@
+'use strict';
 /* global module */
 // Web Crypto dışında kripto uygulaması yok. Şifreleme, anahtarın bulunduğu profilin ele geçirilmesini önlemez.
 (() => {

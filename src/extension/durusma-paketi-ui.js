@@ -1,3 +1,4 @@
+'use strict';
 // Görünmez paket motoru (uzantı kökenli çerçeve). Köprü, doğrulanmış tek oturum MessagePort'unu connect ile verir.
 // Çerçevenin arayüzü yoktur ve DOM'a dokunmaz: durum dosya ekranına STATUS, hazır PDF RESULT iletisiyle gider.
 (() => {

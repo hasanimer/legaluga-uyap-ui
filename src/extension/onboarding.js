@@ -1,3 +1,4 @@
+'use strict';
 // İlk kurulum tercihleri, kullanıcı tamamlayana kadar yalnız bu ekranda tutulur.
 // Kurulum yalnız taramaya başlamak için gerekenleri sorar: kapsam ve vekil adı. DEFAULTS'taki öbür tercihler
 // sorulmadan varsayılan (ya da önceden kayıtlı) değeriyle yazılır; hepsi Ayarlar'dan değiştirilir.

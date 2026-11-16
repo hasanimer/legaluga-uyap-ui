@@ -1,3 +1,4 @@
+'use strict';
 /* global module */
 // Karar künyesi ayıklayıcı: açılmış evrakın düz metnindeki Yargıtay, Danıştay, Anayasa Mahkemesi ve bölge adliye
 // mahkemesi künyelerini yerelde bulur. DOM'a, ağa ve depolamaya dokunmaz; metin ve künye günlüğe yazılmaz.

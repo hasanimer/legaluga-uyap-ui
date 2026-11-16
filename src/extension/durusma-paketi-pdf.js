@@ -1,3 +1,4 @@
+'use strict';
 /* Duruşma paketi PDF motoru. Yerel worker içinde, yalnız byte girişiyle çalışır. */
 (() => {
   'use strict';

@@ -1,3 +1,4 @@
+'use strict';
 // TIFF evrak görüntüleyicisi. UYAP'taki taranmış evrakın çoğu tek ya da çok sayfalı TIFF'tir (CCITT G4, LZW, JPEG…).
 // Sayfa yapısı (IFD zinciri) burada, sınırlı ve döngüye dayanıklı biçimde okunur; UTIF'in kendi IFD okuyucusu
 // (alt IFD, EXIF ve üretici notlarına iner, sayaçlara güvenir) hiç çağrılmaz. Görüntü verisinin çözümü

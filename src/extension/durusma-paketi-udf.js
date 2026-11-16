@@ -1,3 +1,4 @@
+'use strict';
 /* UDF çizicisi: paragraf, tablo, resim ve üst/alt bilgi; aynı font ölçümü satır kırma ve PDF çiziminde kullanılır. */
 (() => {
   'use strict';

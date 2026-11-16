@@ -1,3 +1,4 @@
+'use strict';
 /* global module */
 // Evrak görüntüleyicisinde "Atıflar": açılmış evrakın metnindeki karar künyelerini (UHDKunye) bu cihazda bulur, listeler,
 // UDF görünümünde ince alt çizgiyle işaretler ve seçilen metinden "Kararı bul" bağlantısı sunar. Evrak metni ve künye

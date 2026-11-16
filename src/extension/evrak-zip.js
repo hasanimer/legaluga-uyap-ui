@@ -1,3 +1,4 @@
+'use strict';
 // Yerel evrakları özgün baytlarıyla, Türkçe ve Windows'ta güvenli adlarla tek ZIP'te toplar.
 // ZIP32 / STORE ve UTF-8: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
 (() => {

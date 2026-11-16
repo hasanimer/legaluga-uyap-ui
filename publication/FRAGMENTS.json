@@ -7,8 +7,8 @@
       "source": "common.js",
       "order": 1,
       "path": "src/fragments/common/001.js.part",
-      "sha256": "fa99c7677788d0babdf780d4e9b0a88493d03863b92443d385014ed934d8247c",
-      "bytes": 17978,
+      "sha256": "07fe83ff9e10d9917083cb5f4a631577091c6a333d0705a5e31bcc998b89c74a",
+      "bytes": 17992,
       "purpose": "Generic UI/search/list/date helpers and auditable local-data/permission boundaries"
     },
     {
@@ -119,8 +119,8 @@
       "source": "content.js",
       "order": 1,
       "path": "src/fragments/content/001-bootstrap-shared-request-safety.js.part",
-      "sha256": "2a0c08616b75a7f579dc0cf891542add3baeeef0fecbba78deb5843deb0119a9",
-      "bytes": 1384,
+      "sha256": "f8f86125c8046f81fd9446e9b2ec1dd5fed9fb8a5031d7bb4eb0854ed33cd665",
+      "bytes": 1398,
       "purpose": "bootstrap-shared-request-safety"
     },
     {

@@ -1,3 +1,4 @@
+'use strict';
 /* global module */
 // Tek evrak PDF'i yerel uzantı çerçevesinde hazırlanır. Özgün Blob değişmez; baytların kopyası aktarılır.
 (() => {

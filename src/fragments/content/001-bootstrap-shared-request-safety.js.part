@@ -1,3 +1,4 @@
+'use strict';
 // UYAP Avukat Portalı sekmesinde çalışır.
 // - Güncelleme: UYAP ekranının kendi kullandığı JSON uçlarıyla dosya listesi, taraf adları ve
 //   açık dosyaların evrak listesi alınır; evrak listesi önceki taramayla karşılaştırılıp yeni evraklar işaretlenir.

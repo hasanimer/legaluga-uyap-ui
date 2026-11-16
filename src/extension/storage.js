@@ -1,3 +1,4 @@
+'use strict';
 // Kalıcı AES-GCM veriler ve anahtar yalnız uzantı kökenindeki service worker'da işlenir.
 // Mevcut chrome.storage.local sözleşmesini korur; içerik betiklerine anahtar/ciphertext verilmez.
 (() => {

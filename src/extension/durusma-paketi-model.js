@@ -1,3 +1,4 @@
+'use strict';
 /* global module */
 // Görünmez paket motorunun saf seçim ve iş durumu modeli: dosya ekranının işaretlediği evraklar ve tek koşunun evresi.
 (() => {

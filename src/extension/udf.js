@@ -1,3 +1,4 @@
+'use strict';
 // UDF evrak görüntüleyicisi. UDF (UYAP Doküman Formatı) bir zip paketidir; içindeki content.xml belgenin bütün
 // metnini tek bir havuzda (CDATA) tutar, paragraf ve parçalar havuzu startOffset/length ile gösterir.
 // Okuyucu bu eklenti için baştan yazıldı. Ağ isteği yapmaz. Belge içeriği hiçbir zaman HTML olarak işlenmez:

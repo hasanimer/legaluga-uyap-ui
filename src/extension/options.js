@@ -1,3 +1,4 @@
+'use strict';
 // Ayarlar sayfası (chrome://extensions → Ayrıntılar → Uzantı seçenekleri ya da popup'taki Ayarlar). Popup'tan ayrı bir
 // sekmede açılır: "Yedekten yükle" dosya seçimi popup kapanınca kaybolmaz.
 const { mountUI, requestUpdate, requestCbs, stopUpdateAll } = UHD;

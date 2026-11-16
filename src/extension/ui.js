@@ -1,3 +1,4 @@
+'use strict';
 // Arama arayüzü: hem eklenti popup'ında hem UYAP sayfasındaki yan panelde aynı kod kullanılır.
 (() => {
   if (globalThis.UHD.mountUI) return;

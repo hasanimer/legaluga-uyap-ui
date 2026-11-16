@@ -1,3 +1,4 @@
+'use strict';
 // Taranmış evrak OCR'ı. Yalnız uzantı paketindeki Tesseract ve Türkçe traineddata kullanılır.
 // Uzak model, blob işçi ve IndexedDB önbelleği kapalıdır. Görüntü ve metin bu işçiden dışarı URL olarak çıkmaz.
 (() => {

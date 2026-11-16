@@ -1,3 +1,4 @@
+'use strict';
 /* global module */
 // Yerel ZIP okuyucu: merkezi dizin, stored/deflate girdileri. Açılan akış belleğe alınmadan önce sınırlandırılır.
 (() => {

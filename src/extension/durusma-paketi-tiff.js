@@ -1,3 +1,4 @@
+'use strict';
 /* global module, importScripts */
 // Tam TIFF zincirini yerel worker'da, kaynak çözünürlüğü düşürmeden PDF'e dönüştürür. Sayfa tuvale çizilip PNG'ye
 // çevrilmez: tek şeritli CCITT G4 sayfanın özgün faks akışı çözülmeden (/CCITTFaxDecode, kayıpsız), öteki siyah-beyaz

@@ -1,3 +1,4 @@
+'use strict';
 /* Yerel uzantı worker'ı. Evrak baytları yalnız INIT ile gelir; ağdan dava verisi istemez. */
 // Yerel pdf.js mesaj/akış işleyicileri Promise.try kullanır. Eski worker çalışma ortamlarında
 // geri dönüş vendor yüklenmeden kurulur; yerleşik API varsa korunur. Çağrı hemen yapılır, hata reddedilir.

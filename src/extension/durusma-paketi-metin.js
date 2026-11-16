@@ -1,3 +1,4 @@
+'use strict';
 /* HTML, XML ve düz metin evrakı okunur paragraf modeline çevirir (UDF paragraf modeliyle aynı biçim; PDF'e
    durusma-paketi-udf.js çizer). Ağa ya da DOM'a dokunmaz; betik çalıştırmaz, dış kaynak yüklemez. */
 (() => {
