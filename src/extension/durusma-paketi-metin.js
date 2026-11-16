@@ -206,7 +206,7 @@
   }
 
   // Modeli kurar. tur: 'html' | 'xml' | 'text'. Dönüş: { model, uyarilar }; metin yoksa açık hata.
-  function model(bytes, { mime = '', tur: t } = {}) {
+  function model(bytes, /** @type {{ mime?: string, tur?: string }} */ { mime = '', tur: t } = {}) {
     const metin = coz(bytes, mime);
     const r = t === 'html' ? html(metin) : t === 'xml' ? xml(metin) : duz(metin);
     if (!r.paragraflar.length) {

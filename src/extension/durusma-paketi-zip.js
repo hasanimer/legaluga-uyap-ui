@@ -47,7 +47,7 @@
     if (p !== eocd) throw hata('ZIP dizini eksik veya tutarsız');
     return { u8, dv, liste: out, dizin };
   }
-  async function ac(zip, g, { maxBytes = SINIR.boyut, signal } = {}) {
+  async function ac(zip, g, /** @type {{ maxBytes?: number, signal?: AbortSignal }} */ { maxBytes = SINIR.boyut, signal } = {}) {
     const { u8, dv, dizin } = zip;
     const cap = Math.min(SINIR.boyut, Number.isSafeInteger(maxBytes) && maxBytes >= 0 ? maxBytes : 0);
     if (signal?.aborted) throw hata('ZIP okuma durduruldu');
@@ -99,7 +99,7 @@
     return sonuc;
   }
   // EYP'nin üst yazısı ve ekleri yerel paket içinden açılır. İmza/üstveri dosyaları belge yerine gösterilmez.
-  async function eyp(blob, { signal } = {}) {
+  async function eyp(blob, /** @type {{ signal?: AbortSignal }} */ { signal } = {}) {
     signal?.throwIfAborted();
     if (!blob?.size || blob.size > SINIR.boyut) throw hata('EYP paketi 64 MiB görüntüleme sınırını aşıyor.');
     const zip = girdiler(await blob.arrayBuffer());
@@ -127,7 +127,7 @@
     belgeler.sort((a, b) => Number(b.ustYazi) - Number(a.ustYazi));
     const ust = belgeler.filter(x => x.ustYazi);
     const ilk = ust.length === 1 ? belgeler.indexOf(ust[0]) : belgeler.length === 1 ? 0 : -1;
-    return { belgeler, ilk, async oku(indis, { signal: okumaSignal } = {}) {
+    return { belgeler, ilk, async oku(indis, /** @type {{ signal?: AbortSignal }} */ { signal: okumaSignal } = {}) {
       if (!Number.isSafeInteger(indis) || !belgeler[indis]) throw hata('EYP belge seçimi geçersiz.');
       okumaSignal?.throwIfAborted();
       const b = await ac(zip, belgeler[indis].girdi, { maxBytes: SINIR.boyut, signal: okumaSignal });

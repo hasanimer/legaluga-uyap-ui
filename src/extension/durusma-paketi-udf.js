@@ -17,13 +17,13 @@
   const DOSYA = Object.freeze({ serif: 'LiberationSerif', sans: 'LiberationSans', mono: 'LiberationMono' });
   const YUZ_DOSYA = Object.freeze({ regular: 'Regular', bold: 'Bold', italic: 'Italic', boldItalic: 'BoldItalic' });
   const AILE = new Map();
-  for (const [grup, yaklasik, adlar] of [
+  for (const [grup, yaklasik, adlar] of /** @type {[string, boolean, string[]][]} */ ([
     ['serif', false, ['Times New Roman', 'Times', 'Serif', 'Liberation Serif', 'Tinos']],
     ['sans', false, ['Arial', 'Helvetica', 'Liberation Sans', 'Arimo', 'SansSerif', 'Dialog']],
     ['mono', false, ['Courier New', 'Courier', 'Liberation Mono', 'Cousine', 'Monospaced', 'DialogInput']],
     ['sans', true, ['Calibri', 'Tahoma', 'Verdana', 'Segoe UI', 'Trebuchet MS', 'Century Gothic', 'Lucida Sans', 'Microsoft Sans Serif']],
     ['mono', true, ['Consolas', 'Lucida Console']]
-  ]) for (const ad of adlar) AILE.set(ad.toLowerCase(), Object.freeze({ grup, yaklasik, ad }));
+  ])) for (const ad of adlar) AILE.set(ad.toLowerCase(), Object.freeze({ grup, yaklasik, ad }));
   const SIMGE = /symbol|wingding|webding|dingbat|marlett|mt extra/iu;
   // Uyarıda yalnız paket fontuyla çizilebilen kısa adlar gösterilir; öteki adlar genel adla anılır.
   const GORUNUR_AD = /^[A-Za-z0-9ÇĞİÖŞÜçğıöşü][A-Za-z0-9ÇĞİÖŞÜçğıöşü ._-]{0,39}$/u;
@@ -333,7 +333,7 @@
   // esnek: HTML/XML/düz metinden kurulan model (durusma-paketi-metin.js); fontta olmayan karakter "?" yazılır.
   // UDF'de yalnız anlamı koruyan eşlemeler uygulanır, kalan glifsiz karakter reddedilir. Satıra sığmayan sözcük
   // iki yolda da harf harf bölünür; UDF'de sayılı uyarı verilir. uyarilar içindekilere yazılır.
-  async function convert({ model, diagnostics, signal, limits = {}, fonts, esnek = false, uyarilar = null }) {
+  async function convert({ model, diagnostics, signal, limits = /** @type {{ pages?: number, maxImagePixels?: number }} */ ({}), fonts, esnek = false, uyarilar = null }) {
     validate(model, diagnostics); check(signal);
     // Yaklaşık eşlenen aileler uyarıda en çok üç adla anılır; metrik uyumlu eşleme uyarı vermez.
     const used = new Set(), yerineAile = new Map();

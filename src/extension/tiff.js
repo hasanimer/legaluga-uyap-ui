@@ -449,7 +449,7 @@
   }
   // Dosyayı okur, IFD zincirini dolaşır ve sayfa tanımlarını döndürür. Döngüde ya da dosya dışına düşen IFD'de
   // durulur; o ana dek okunan sayfalar gösterilir.
-  async function ac(blob, { signal } = {}) {
+  async function ac(blob, /** @type {{ signal?: AbortSignal }} */ { signal } = {}) {
     const UTIF = globalThis.UTIF;
     if (!UTIF || typeof UTIF.decodeImage !== 'function' || typeof UTIF.toRGBA8 !== 'function') throw hata('cozucu');
     if (!blob || !blob.size) throw hata('bozuk', 'boş');
@@ -645,7 +645,7 @@
   }
 
   // ---------------------------------------------------------------- görünüm
-  function ciz(belge, { signal, kaydirma } = {}) {
+  function ciz(belge, /** @type {{ signal?: AbortSignal, kaydirma?: Element }} */ { signal, kaydirma } = {}) {
     const E = (etiket, sinif) => { const e = document.createElement(etiket); if (sinif) e.className = sinif; return e; };
     const kok = E('div', 'tiff');
     kok.setAttribute('role', 'document');

@@ -53,7 +53,8 @@
   const bytes = value => value >= 1024 * 1024 ? `${(value / (1024 * 1024)).toLocaleString('tr-TR', { maximumFractionDigits: 1 })} MiB`
     : value >= 1024 ? `${(value / 1024).toLocaleString('tr-TR', { maximumFractionDigits: 1 })} KiB` : `${fmt(value)} B`;
 
-  function mount(container, { manager, openFile, showPart } = {}) {
+  function mount(container, /** @type {{ manager?: any, openFile?: (fileKey: string) => unknown,
+    showPart?: (parca: { fileKey: string, jobId: string, downloadId: number }) => unknown }} */ { manager, openFile, showPart } = {}) {
     if (!container || typeof manager?.list !== 'function' || typeof manager?.subscribe !== 'function')
       throw new Error('İndirme yöneticisi yüklenemedi.');
     const doc = container.ownerDocument || document, key = `bdp-${++sequence}`, rows = new Map();

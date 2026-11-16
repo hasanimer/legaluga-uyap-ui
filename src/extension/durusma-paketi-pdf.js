@@ -267,7 +267,8 @@
   }
 
   async function build({ items, orderedIds, excluded = [], fontRegular, fontBold, signal,
-    limits = {}, onProgress = () => {}, pdfjs = globalThis.DurusmaPaketiPDFJS }) {
+    limits = {}, onProgress = /** @type {(ilerleme: { phase: string, itemId?: string, message: string }) => void} */ (() => {}),
+    pdfjs = globalThis.DurusmaPaketiPDFJS }) {
     const cap = Object.fromEntries(Object.entries(LIMITS).map(([key, value]) =>
       [key, Number.isFinite(limits[key]) && limits[key] >= 0 ? Math.min(value, limits[key]) : value]));
     if (!pdfjs?.getDocument) fail('text-audit-unavailable', 'PDF metin denetimi yerel olarak yüklenemedi');
@@ -328,7 +329,7 @@
       }
     }
     if (issues.length) {
-      const error = new PackageError('preflight', `${issues.length} evrak hazırlanamadı`);
+      const error = /** @type {PackageError & { issues?: object[] }} */ (new PackageError('preflight', `${issues.length} evrak hazırlanamadı`));
       error.issues = issues; throw error;
     }
     const sourceCount = docs.reduce((n, d) => n + d.pages.length, 0);

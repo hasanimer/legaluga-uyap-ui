@@ -8,7 +8,7 @@
   const DEFAULT_DPI = 200;
   const OUTPUT_CAP = 128 * MiB;
   function fail(message, code = 'tiff-incomplete') {
-    const error = new Error(message); error.code = code; throw error;
+    const error = /** @type {Error & { code?: string }} */ (new Error(message)); error.code = code; throw error;
   }
   function checkedBytes(...values) {
     let total = 0;

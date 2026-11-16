@@ -38,7 +38,7 @@
     }
     return [...groups.values()].sort((a, b) => a.title.localeCompare(b.title, 'tr'));
   }
-  function selectRows(rows, { mode = 'all', keys = [], includeAttachments = true } = {}) {
+  function selectRows(rows, /** @type {{ mode?: string, keys?: string[] | Set<string>, includeAttachments?: boolean }} */ { mode = 'all', keys = [], includeAttachments = true } = {}) {
     const selected = new Set((Array.isArray(keys) ? keys : keys instanceof Set ? [...keys] : [])
       .filter(value => typeof value === 'string' && value.trim()).map(typeKey));
     return (Array.isArray(rows) ? rows : []).filter(item => {
@@ -219,7 +219,7 @@
     return { day: ((year - 1980) << 9) | (month << 5) | day, time: (hour << 11) | (minute << 5) | Math.floor(second / 2) };
   }
 
-  async function createZip(entries, { signal } = {}) {
+  async function createZip(entries, /** @type {{ signal?: AbortSignal }} */ { signal } = {}) {
     throwIfAborted(signal);
     if (!Array.isArray(entries)) throw new TypeError('ZIP evrak listesi dizi olmalı.');
     if (entries.length > MAX_ENTRIES) throw new Error(`ZIP en fazla ${MAX_ENTRIES} evrak içerebilir. Listeyi bölerek indirin.`);
@@ -288,6 +288,7 @@
   // Yollar (uzantı dahil) 200 karakteri aşmaz; Windows'un 260 sınırında çıkarma klasörüne yer kalır. Ana evrak adı,
   // yanındaki _ekler klasöründe en az 16 karakterlik ek adına yer bırakacak kadar kısaltılır.
   const FOLDER_PATH_MAX = 200, EK_ROOM = 7 + 16;
+  /** @type {readonly (readonly [string, readonly string[]])[]} */
   const KATEGORILER = Object.freeze([
     // Önce özgül kurallar: aynı kelimeyi taşıyan genel kurallardan önce eşleşir.
     ['04-Muzekkereler-Yazismalar', ['teblig muzekkeresi', 'genel karar/muzekkere', 'haciz karar yazisi', '89/1 haciz ihbarnamesi cevabi']],
