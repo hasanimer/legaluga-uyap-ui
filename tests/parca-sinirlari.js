@@ -34,42 +34,21 @@ function karsilastir(bulunan, istisnalar) {
 const ACIK_ISTISNALAR = Object.freeze({
   // content.js
   'src/fragments/content/001-bootstrap-shared-request-safety.js.part': ['derlenmez'],
-  'src/fragments/content/005-context-invalidation-and-progress-boundaries.js.part': ['derlenmez'],
   'src/fragments/content/007-setup-profile-DOM-boundary.js.part': ['satır sonu yok'],
   'src/fragments/content/009-explicit-scan-stop-and-owner-guards.js.part': ['satır sonu yok'],
   'src/fragments/content/017-native-window-navigation-and-identity-guards.js.part': ['satır sonu yok'],
   'src/fragments/content/019-native-window-navigation-and-identity-guards.js.part': ['satır sonu yok'],
-  'src/fragments/content/029-overview-safahat-notes-and-safe-document-rendering.js.part': ['derlenmez'],
-  'src/fragments/content/033-overview-safahat-notes-and-safe-document-rendering.js.part': ['derlenmez'],
-  'src/fragments/content/037-overview-safahat-notes-and-safe-document-rendering.js.part': ['derlenmez'],
   'src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part': ['derlenmez'],
   'src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part': ['satır sonu yok'],
-  'src/fragments/content/043-full-viewer-HTML-render-and-action-controls.js.part': ['derlenmez'],
-  'src/fragments/content/046-original-document-download-and-package-start-controls.js.part': ['derlenmez'],
-  'src/fragments/content/050-package-frame-and-start-action-controls.js.part': ['derlenmez'],
-  'src/fragments/content/069-bank-click-abort-and-UI-boundary.js.part': ['derlenmez'],
-  'src/fragments/content/079-bank-error-and-finish-UI-boundary.js.part': ['derlenmez'],
   'src/fragments/content/087-full-viewer-HTML-render-and-action-controls.js.part': ['satır sonu yok'],
   'src/fragments/content/095-full-viewer-HTML-render-and-action-controls.js.part': ['satır sonu yok'],
-  'src/fragments/content/105-viewer-document-load-and-list-ready.js.part': ['derlenmez'],
   'src/fragments/content/118-viewer-list-loading-retry-and-error-controls.js.part': ['derlenmez'],
   'src/fragments/content/123-panel-command-action-boundary.js.part': ['satır sonu yok'],
   'src/fragments/content/125-panel-ready-message-boundary.js.part': ['satır sonu yok'],
   'src/fragments/content/129-session-protection-lifecycle-and-visible-safety-gates.js.part': ['derlenmez'],
   // common.js
   'src/fragments/common/001.js.part': ['derlenmez'],
-  'src/fragments/common/015.js.part': ['derlenmez'],
-  // background.js
-  'src/fragments/background/002.js.part': ['derlenmez', 'satır sonu yok'],
-  'src/fragments/background/004.js.part': ['derlenmez', 'satır sonu yok'],
-  'src/fragments/background/006.js.part': ['derlenmez', 'satır sonu yok'],
-  'src/fragments/background/008.js.part': ['derlenmez'],
-  'src/fragments/background/011.js.part': ['derlenmez'],
-  'src/fragments/background/013.js.part': ['derlenmez'],
-  'src/fragments/background/017.js.part': ['derlenmez'],
-  'src/fragments/background/019.js.part': ['derlenmez'],
-  'src/fragments/background/023.js.part': ['derlenmez'],
-  'src/fragments/background/029.js.part': ['derlenmez']
+  'src/fragments/common/015.js.part': ['derlenmez']
 });
 
 module.exports = { DERLENMEZ, SATIR_SONU_YOK, ihlaller, karsilastir, ACIK_ISTISNALAR };

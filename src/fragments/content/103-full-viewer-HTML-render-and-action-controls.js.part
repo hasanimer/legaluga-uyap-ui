@@ -112,6 +112,20 @@
     evrakYenile.addEventListener('click', () => { if (!nativeDocument) return kaynak ? tamListeAl() : listeAl(); });
     kategoriGorunum.addEventListener('click', () => { kategorili = !kategorili; evrakOdak = null; listeyiCiz(); });
     tarihSirasi.addEventListener('click', () => { tarihArtan = !tarihArtan; listeyiCiz(); });
+    // Satır, paket kutusu ve klasör başlığı tıklamaları listedeki tek dinleyiciye kabarır (olay devri); hedef closest ile bulunur.
+    ogeler.addEventListener('click', ev => {
+      const key = ev.target.closest('.ek-kategori-baslik')?.dataset.kategori, kat = key && kategoriDom.get(key);
+      if (kat) {
+        // Klasör (details) kendiliğinden açılıp kapanmaz; durum kategoriAc ile tutulur.
+        ev.preventDefault();
+        kategoriAc(key, !kat.box.open); evrakOdak = { kat: key }; odakSync(); ogeler.focus({ preventScroll: true });
+        return;
+      }
+      const satir = ev.target.closest('.ek-oge'), kutu = ev.target.closest('.ek-paket-kutu');
+      if (!satir) return;
+      if (kutu) paketIsaretle(gorunen[Number(satir.dataset.i)], kutu.checked);
+      else satirEtkinlestir(Number(satir.dataset.i));
+    });
     ogeler.addEventListener('keydown', ev => {
       if (!gorunen.length || ev.altKey || ev.ctrlKey || ev.metaKey || ev.target.tagName === 'INPUT') return;
       // Kapalı ekler DOM'da gizli durur; gezinme onları atlar.

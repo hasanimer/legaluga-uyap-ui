@@ -130,6 +130,7 @@
       }, 120000);
     };
     armTimer();
+    // İşçiye yalnız INIT ve START gider; durdurmak onu sonlandırmaktır (stopWorker), CANCELLED yanıtı beklenmez.
     instance.onmessage = event => {
       if (worker !== instance || state.runId !== runId || state.phase !== 'running') return;
       const result = event.data || {};
@@ -148,8 +149,6 @@
         receive({ type: 'READY', sessionId, runId, bytes: result.bytes,
           incomplete: !!result.incomplete, excluded: Array.isArray(result.excluded) ? result.excluded : [],
           filename: result.incomplete ? 'Durusma_Paketi_eksik-paket.pdf' : 'Durusma_Paketi.pdf' });
-      } else if (result.type === 'CANCELLED') {
-        stopWorker(); send('CANCEL', { runId }); dispatch({ type: 'CANCELLED', runId });
       }
     };
     instance.onerror = () => {
@@ -286,7 +285,7 @@
     const jobId = typeof message.jobId === 'string' ? message.jobId : '';
     const source = message.item;
     if (documentPdfJob?.jobId === jobId && jobId) return;
-    if (documentPdfJob || textJob || worker || preparse || ['running', 'cancelling'].includes(state.phase)) {
+    if (documentPdfJob || textJob || worker || preparse || state.phase === 'running') {
       send('DOCUMENT_PDF_RESULT', { jobId, code: 'document-busy' }); return;
     }
     const formats = new Set(['udf', 'tiff', 'tif', 'jpg', 'jpeg', 'png', 'html', 'htm', 'xml', 'txt', 'text']);
@@ -374,7 +373,6 @@
     }
     if (message.type === 'PROGRESS') dispatch({ type: 'PROGRESS', ...message });
     if (message.type === 'FAILED') dispatch({ type: 'FAILED', ...message });
-    if (message.type === 'CANCELLED' && dispatch({ type: 'CANCELLED', ...message })) stopWorker();
     if (message.type === 'ERROR' && dispatch({ type: 'ERROR', ...message })) stopWorker();
     if (message.type === 'READY' && message.runId === state.runId && state.phase === 'running') {
       const bytes = message.bytes;
@@ -383,10 +381,8 @@
         filename: String(message.filename || 'Durusma_Paketi.pdf') };
       if (!dispatch({ type: 'READY', runId: message.runId, result })) return;
       // PDF'in tek kopyası kopyalanmadan dosya ekranına aktarılır (önizleme ve indirme orada); çerçevede kopya kalmaz.
-      const skipped = [...state.skipped, ...state.excluded.filter(id => !state.skipped.some(x => x.id === id))
-        .map(id => ({ id, reason: 'Dışarıda bırakıldı.' }))];
       transport?.send({ type: 'RESULT', sessionId, runId: message.runId, bytes, filename: result.filename,
-        incomplete: result.incomplete, count: state.snapshot.length - skipped.length, skipped }, [bytes]);
+        incomplete: result.incomplete, count: state.snapshot.length - state.skipped.length, skipped: state.skipped }, [bytes]);
     }
   }
   function connect(adapter) {

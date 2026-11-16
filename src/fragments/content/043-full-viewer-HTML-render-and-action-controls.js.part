@@ -111,7 +111,3 @@
       const u = paketSonucUrl; paketSonucUrl = null;
       setTimeout(() => URL.revokeObjectURL(u), 60000);
     }
-async function paketOzgunIndir(x) {
-      if (paketOzgunAc || closed) return;
-      const ac = paketOzgunAc = new AbortController();
-      try {

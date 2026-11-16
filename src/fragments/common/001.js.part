@@ -36,6 +36,8 @@
   // Dosya kaydındaki taraf biçiminin sürümü (tarafV); eski sürümlü kaydın tarafları Güncelle'de yeniden alınır.
   // 2: taraflarla birlikte vekiller de saklanır.
   const TARAF_V = 2;
+  // Son açılan dosyalar listesinin (uhdRecent) uzunluğu: panel, ana sayfa şeridi ve UYAP penceresi düğmesi aynı sınırı kullanır.
+  const SON_ACILAN_MAX = 10;
 
   const ORIGIN = 'https://avukat.uyap.gov.tr';
 
