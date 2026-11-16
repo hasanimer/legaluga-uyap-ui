@@ -5,8 +5,8 @@
   const APP = 'legaluga-uyap-asistani', ITERATIONS = 600000, MAX_BYTES = 48 * 1024 * 1024;
   // Okunabilen yinelemeler açık listedir: yazma değeri değişse de eski yedekler başlıktaki değerle açılır.
   const BACKUP_ITERATIONS = new Set([600000]);
-  // Yazma ve okuma alt sınırı ayrıdır: yeni yedeğin sınırı yükselse de eski kısa parolalı yedek açılır.
-  const BACKUP_PASSWORD_MIN_LENGTH = 6, BACKUP_PASSWORD_OPEN_MIN_LENGTH = 6, BACKUP_PASSWORD_MAX_LENGTH = 1024;
+  // Yazma ve okuma alt sınırı ayrıdır: yeni yedek 10 karakter ister, önceki sürümlerin 6-9 karakterli parolayla aldığı yedek açılır.
+  const BACKUP_PASSWORD_MIN_LENGTH = 10, BACKUP_PASSWORD_OPEN_MIN_LENGTH = 6, BACKUP_PASSWORD_MAX_LENGTH = 1024;
   const enc = new TextEncoder(), dec = new TextDecoder('utf-8', { fatal: true });
   const b64 = bytes => {
     if (typeof bytes.toBase64 === 'function') return bytes.toBase64();

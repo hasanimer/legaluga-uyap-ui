@@ -54,9 +54,30 @@ test('aynı tuz ve IV ile şifreli yedek altın vektörle bayt bayt aynıdır',a
 test('yineleme sayısı açık kümede değilse yedek reddedilir',async () => {
   for (const iterations of [600001,'600000',1e9,0,undefined]) await assert.rejects(vault.decryptBackup({...yedek,iterations},parola),/desteklenmiyor/);
 });
-test('README yedek parolası alt sınırını yazma sabitiyle aynı anar',() => {
+// Yazma alt sınırı 10, okuma alt sınırı 6: önceki sürümlerde 6-9 karakterli parolayla alınmış yedekler açılmaya devam eder.
+test('yeni yedek en az 10 karakterli parolayla yazılır; 9 karakter reddedilir',async () => {
+  assert.equal(vault.BACKUP_PASSWORD_MIN_LENGTH,10);
+  await assert.rejects(vault.encryptBackup(acik,'123456789'),/10–1024/);
+  const yeni=await vault.encryptBackup(acik,'1234567890');
+  assert.deepEqual(await vault.decryptBackup(yeni,'1234567890'),acik);
+});
+test('6 karakterli parolayla yazılmış eski yedek okuma yolundan açılır; 5 karakter reddedilir',async () => {
+  assert.equal(vault.BACKUP_PASSWORD_OPEN_MIN_LENGTH,6);
+  // Eski yedek bugünkü yazma yolundan geçemeyeceği için biçim tanımına göre yalnız WebCrypto ile üretilir.
+  const eskiParola='123456',salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+  const header={app:'legaluga-uyap-asistani',format:2,encrypted:true,algorithm:'AES-256-GCM',kdf:'PBKDF2-SHA-256',iterations:600000,salt:Buffer.from(salt).toString('base64')};
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(eskiParola),'PBKDF2',false,['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:600000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt']);
+  const aad=`legaluga-uyap-asistani|backup|2|AES-256-GCM|PBKDF2-SHA-256|600000|${header.salt}`;
+  const data=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:new TextEncoder().encode(aad),tagLength:128},key,new TextEncoder().encode(JSON.stringify(acik)));
+  const eski={...header,iv:Buffer.from(iv).toString('base64'),data:Buffer.from(data).toString('base64')};
+  assert.deepEqual(await vault.decryptBackup(eski,eskiParola),acik);
+  await assert.rejects(vault.decryptBackup(eski,'12345'),/6–1024/);
+});
+// README yeni yedeğin yazma ve eski yedeğin okuma alt sınırını ayrı anar; etiketsiz başka "en az N karakterli parola" anması kalmaz.
+test('README yedek parolasının yazma ve okuma alt sınırlarını sabitlerle aynı anar',() => {
   const metin=fs.readFileSync(path.join(__dirname,'..','README.md'),'utf8');
-  const sinirlar=[...metin.matchAll(/en az (\d+) karakterli (?:kullanıcı )?parola/g)].map(m=>Number(m[1]));
-  assert.ok(sinirlar.length>0,'README yedek parolasının alt sınırını anmalı');
-  assert.deepEqual(sinirlar,sinirlar.map(()=>vault.BACKUP_PASSWORD_MIN_LENGTH));
+  const anmalar=[...metin.matchAll(/(yeni yedek(?:te| için)|eski yedekler) en az (\d+) karakterli (?:kullanıcı )?parola/g)].map(m=>[m[1].startsWith('yeni')?'yazma':'okuma',Number(m[2])]);
+  assert.deepEqual(anmalar,[['yazma',vault.BACKUP_PASSWORD_MIN_LENGTH],['okuma',vault.BACKUP_PASSWORD_OPEN_MIN_LENGTH]]);
+  assert.equal([...metin.matchAll(/en az \d+ karakterli (?:kullanıcı )?parola/g)].length,anmalar.length,'README alt sınırı yalnız yazma ve okuma etiketiyle anar');
 });

@@ -23,12 +23,16 @@
       "sha256": "32cb91b15ab78ee5714c97d62d4abd4d0791cd3a6547da9a88eff41001d1e608"
     },
     {
+      "path": "CHANGELOG.md",
+      "sha256": "8f77d7aaad0d85a4cb9d160ca865b92a608d347a3a0d7eeab700e501206cd350"
+    },
+    {
       "path": "LICENSE",
       "sha256": "b1c24284d0462c24ac42d70000a852003fa41410fb419e6d6a8eec1f6a4cdd3f"
     },
     {
       "path": "README.md",
-      "sha256": "7d8e9542a6b695ff95e2959b82ba45b17dc6a6efc5160130503ebe1201559ce6"
+      "sha256": "f2662db6f733dd75189d38e8997818584d81e12f3edd238e6fc4371e39f8e919"
     },
     {
       "path": "SECURITY.md",
@@ -308,7 +312,7 @@
     },
     {
       "path": "src/extension/vault-crypto.js",
-      "sha256": "254b74e9b4fb74c2e912106c74bafd8d23ac34b0e72a34ebef298e9bec19a9f1"
+      "sha256": "32623ab150b2be9c3294936fd02389fedd2c4cf6a768d7230de184923a787a3e"
     },
     {
       "path": "src/extension/vendor/FONTKIT-APACHE-2.0.LICENSE",
@@ -636,7 +640,7 @@
     },
     {
       "path": "tests/crypto-invariants.test.js",
-      "sha256": "5b081e7c52fd601787d90d1ba13fdaaf83db2bedef91fae77a9d21df7d3881d1"
+      "sha256": "34354b0d0f08270d9ff76f2cb04db992a099c0f66a8dfbdee7f5b4928e4d7e05"
     },
     {
       "path": "tests/demo-consistency.test.js",
@@ -656,7 +660,7 @@
     },
     {
       "path": "tests/publication-boundary.test.js",
-      "sha256": "18ff16a78ac70e5a9c6a876d655e5ff0bd1be75deedd83731179964738a3f4cf"
+      "sha256": "244324f0d32cd4669e9e4d963c1e2b1de42ac7545650cc1759e1b6cf46ba316e"
     },
     {
       "path": "tests/satir-sonu.test.js",
@@ -717,6 +721,10 @@
     {
       "path": "src/extension/vendor/tesseract/worker.min.js.LICENSE.txt",
       "sha256": "45f54171aeaa1d10c0c1a66f374b7bba1f02472b1487fbe892eec04f840002ac"
+    },
+    {
+      "path": "tests/changelog-denetimi.js",
+      "sha256": "036f5cd8a56a224e6616f6ae35534d23087c7a99723c8e61269eaf5c180734f7"
     },
     {
       "path": "tests/common-taklidi.js",
