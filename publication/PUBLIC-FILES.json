@@ -52,7 +52,7 @@
     },
     {
       "path": "docs/DEVELOPMENT.md",
-      "sha256": "21337931f77e58ed96ed1626ff66c6e3509b48b09d79f4b5c002cfeb7e42458a"
+      "sha256": "ed033674b4c57555d25a4eeebb38770866673242ecee985ecf96a35b34316d8c"
     },
     {
       "path": "docs/PRIVACY.md",
@@ -143,8 +143,12 @@
       "sha256": "ec1b1857eaaae08989ee32c64f3b81b8e3e4f295f9abbd0907b39b6e0d12ac9e"
     },
     {
+      "path": "scripts/update-inventory.mjs",
+      "sha256": "c4b9d157a7e1b53f8b1a476989b5ea3220c9cb6a29af3620e34ee766912ee070"
+    },
+    {
       "path": "scripts/validate-public.mjs",
-      "sha256": "471abaf61ab367a37ad6ed140e09ef233fa9c526f02930330acacb89cc684290"
+      "sha256": "d643e799507e39351bef0cddaf906fde921e1ccb9f1046f62e8c7336db980519"
     },
     {
       "path": "src/extension/atif-ocr.js",
@@ -661,6 +665,10 @@
     {
       "path": "tests/ui-downloads.test.js",
       "sha256": "2ff0ff43377aa757eaf696d83223a6b1529ac6f79352580d57b59ed366b82500"
+    },
+    {
+      "path": "tests/update-inventory.test.js",
+      "sha256": "c4da46812cbd4827cefbaf7170cbd6af4b40f1e54931d160083535225117fbe8"
     },
     {
       "path": "tests/erisilebilirlik.test.js",
