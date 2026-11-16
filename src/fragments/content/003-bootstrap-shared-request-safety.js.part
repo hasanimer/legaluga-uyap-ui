@@ -63,6 +63,11 @@
       : /^(?:[A-Za-z]{3},|[A-Za-z]+,|[A-Za-z]{3}\s+[A-Za-z]{3}\s)/.test(text) ? Date.parse(text) : NaN;
     return Number.isFinite(at) ? Math.max(now, at) : null;
   }
+  // Kilidi açan asıl neden ayrı anahtarda (uhdUyapKorumaAyrinti) tutulur ve Ayarlar'da gösterilir; koruma kaydı genel iletiyi taşır.
+  function uyapKorumaAyrintisi(err) {
+    const mesaj = String(err?.message || '').replace(UYAP_KORUMA_MESAJ, '').replace(/[\p{Cc}\p{Cf}]/gu, ' ').replace(/\s+/g, ' ').trim().slice(0, 300);
+    return { mesaj, ...(Number.isInteger(err?.status) ? { durum: err.status } : {}), ...(typeof err?.kind === 'string' ? { tur: err.kind } : {}), at: Date.now() };
+  }
   function uyapKorumaHatasi() {
     return Object.assign(new Blocked(UYAP_KORUMA_MESAJ), { uyap: true, durdu: true, kind: 'koruma' });
   }
@@ -75,13 +80,13 @@
     } catch { return globalThis.UHDUyapKorumaDurdu === true; }
   }
   let uyapKorumaYaziyor = false;
-  async function uyapKorumaYaz() {
+  async function uyapKorumaYaz(hata) {
     if (uyapKorumaYaziyor || globalThis.UHDUyapKorumaDurdu === true) return;
     globalThis.UHDUyapKorumaDurdu = true;
     uyapKorumaYaziyor = true;
     try {
       // Koruma yalnız bu kayıtta tutulur; okumadan tek yazım arada yazılan başka bir kaydı ezmez.
-      await chrome.storage.local.set({ [UYAP_KORUMA]: { durdu: true, neden: UYAP_KORUMA_MESAJ } });
+      await chrome.storage.local.set({ [UYAP_KORUMA]: { durdu: true, neden: UYAP_KORUMA_MESAJ }, ...(hata ? { uhdUyapKorumaAyrinti: uyapKorumaAyrintisi(hata) } : {}) });
       globalThis.UHDUyapKapiIstemci?.koru(UYAP_KORUMA_MESAJ);
     } catch { /* bellek bayrağı bu sekmeyi yine durdurur */ }
     finally { uyapKorumaYaziyor = false; }
@@ -128,7 +133,7 @@
         return result;
       }
       catch (err) {
-        if (err instanceof Blocked) state.durdu = true;
+        if (err instanceof Blocked) { state.durdu = true; state.ayrinti = uyapKorumaAyrintisi(err); }
         throw err;
       } finally {
         const finishedAt = Date.now(), bulk = signal && uyapBulkSignals.has(signal);
@@ -137,6 +142,7 @@
         const kayit = { [UYAP_REQUEST_STATE]: { nextAt: state.nextAt } };
         if (state.durdu) {
           kayit[UYAP_KORUMA] = { durdu: true, neden: UYAP_KORUMA_MESAJ };
+          if (state.ayrinti) kayit.uhdUyapKorumaAyrinti = state.ayrinti;
           globalThis.UHDUyapKorumaDurdu = true;
         }
         await chrome.storage.local.set(kayit);

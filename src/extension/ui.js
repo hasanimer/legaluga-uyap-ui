@@ -2271,7 +2271,18 @@
         el('div', { class: 'field' }, el('span', null, 'Başsavcılık'), birim), el('div', { class: 'row' }, scan, retry), hint);
     }
 
+    // Ayarlar'daki koruma durumu: kilit açıksa kısa ileti; kilitliyse kilidi koyan asıl neden ve zamanı (kayıtlıysa).
+    function korumaDurumu(koruma, ayrinti) {
+      if (koruma?.durdu !== true) return 'Durum: otomatik işlemler açık.';
+      if (!ayrinti || typeof ayrinti.mesaj !== 'string' || !ayrinti.mesaj) return 'Durum: otomatik işlemler duraklatıldı. Neden kaydedilmedi.';
+      const zaman = Number.isFinite(ayrinti.at) ? ` (${fmtDate(ayrinti.at)})` : '';
+      return `Durum: otomatik işlemler duraklatıldı${zaman}. Neden: ${ayrinti.mesaj}${Number.isInteger(ayrinti.durum) ? ` (HTTP ${ayrinti.durum})` : ''}`;
+    }
+
     function renderSettings() {
+      const korumaSatir = el('div', { class: 'hint', role: 'status' });
+      chrome.storage.local.get(['uhdUyapKoruma', 'uhdUyapKorumaAyrinti'])
+        .then(saved => { korumaSatir.textContent = korumaDurumu(saved.uhdUyapKoruma, saved.uhdUyapKorumaAyrinti); }).catch(() => {});
       const version = (chrome.runtime && chrome.runtime.getManifest) ? chrome.runtime.getManifest().version : '';
       const check = (key, def, label, hint, onChange) => {
         const box = el('input', { type: 'checkbox', 'data-pref': key });
@@ -2514,11 +2525,14 @@
         el('h3', null, 'UYAP bağlantısı ve koruma'),
         el('div', { class: 'box' },
           check('oturumAcik', false, 'UYAP oturumunu koru', 'Varsayılan kapalıdır. Açıkken, siz işlem yapmasanız da eklenti belirli aralıklarla UYAP’a küçük bir okuma isteği gönderir. İşlem koruması bunu da durdurur.'),
+          check('hizliIndirme', false, 'Hızlı evrak indirme', 'Varsayılan kapalıdır. Açıkken toplu indirmede evraklar arasında 3–6 sn yerine 1,5–3 sn beklenir; molalar 45–90 sn yerine 20–40 sn sürer. UYAP’ın otomatik etkinlik korumasını tetikleme olasılığı artar; tetiklenirse bütün otomatik işlemler durur ve kilidi elle açmanız gerekir.'),
+          korumaSatir,
           el('div', { class: 'row' }, (() => {
             const korumaBirak = el('button', { type: 'button', class: 'btn sm' }, 'Otomatik işlemleri yeniden aç');
             korumaBirak.addEventListener('click', async () => {
               try {
                 const res = await chrome.runtime.sendMessage({ type: 'uhd-uyap-koruma-birak' });
+                if (res?.ok) korumaSatir.textContent = korumaDurumu(null, null);
                 setNotice(res?.ok
                   ? 'Otomatik işlem kilidi açıldı. İndirme, tarama ve oturum yoklaması kendiliğinden başlamaz; sürdürmek için ilgili işi yeniden başlatın.'
                   : 'Kilit açılamadı. UYAP sekmesini yenileyip tekrar deneyin.', 'warn');
@@ -2749,7 +2763,7 @@
         if (!records.length) redraw = true;   // ilk kullanım ekranındaki düğmenin durumu
       }
       if (redraw && !editing && settings.hidden) render();
-      if (!settings.hidden && (ch.uhdPrefs || ch.uhdGizli || dizin || (ch.uhdProgress && running() !== ayarKosu))) refreshSettings();
+      if (!settings.hidden && (ch.uhdPrefs || ch.uhdGizli || ch.uhdUyapKoruma || ch.uhdUyapKorumaAyrinti || dizin || (ch.uhdProgress && running() !== ayarKosu))) refreshSettings();
       if (dizin || ch.uhdProgress || ch.uhdJob) renderStatus();
       if (ch.uhdProgress || ch.uhdJob) syncSetupScanNotice();
       if ((ch.uhdProgress || ch.uhdJob) && syncCbsScan) syncCbsScan();
