@@ -50,7 +50,7 @@
     return minutes <= 5 ? '5 dakikadan az' : `yaklaşık ${minutes < 60 ? `${minutes} dk` : `${Math.floor(minutes / 60)} sa${minutes % 60 ? ` ${minutes % 60} dk` : ''}`}`;
   };
   const clock = value => new Date(value).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  const STUCK = { bos: 'UYAP bu evrakı boş döndürüyor', buyuk: 'Bu evrak 128 MiB sınırını aşıyor' };
+  const STUCK = { bos: 'UYAP bu evrakı boş döndürüyor', buyuk: 'Bu evrak 128 MiB sınırını aşıyor', reddedildi: 'UYAP bu evrakı vermiyor' };
   const bytes = value => value >= 1024 * 1024 ? `${(value / (1024 * 1024)).toLocaleString('tr-TR', { maximumFractionDigits: 1 })} MiB`
     : value >= 1024 ? `${(value / 1024).toLocaleString('tr-TR', { maximumFractionDigits: 1 })} KiB` : `${fmt(value)} B`;
 

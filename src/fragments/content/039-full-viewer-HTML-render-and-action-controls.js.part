@@ -698,10 +698,10 @@
       return Number.isSafeInteger(atlanan) && atlanan > 0
         ? `${fmtNum(atlanan)} evrak indirilemediği için atlandı; ZIP içinde yerine “İNDİRİLEMEDİ” notu var. Bu evrakları UYAP’ta elle açabilirsiniz.` : '';
     }
-    // Motor, kalıcı olarak alınamayan evrakı (boş dönen ya da 128 MiB’ı aşan) özetinde bildirir; atlama yalnız onun için sunulur.
+    // Motor, kalıcı olarak alınamayan evrakı (boş dönen, 128 MiB’ı aşan ya da UYAP’ın reddettiği) özetinde bildirir; atlama yalnız onun için sunulur.
     function bulkTakilan() {
       const t = bulkState?.status === 'error' ? bulkState.stuck : null;
-      return t && typeof t.jobId === 'string' && t.jobId && Number.isSafeInteger(t.cursor) && t.cursor >= 0 && ['bos', 'buyuk'].includes(t.neden) ? t : null;
+      return t && typeof t.jobId === 'string' && t.jobId && Number.isSafeInteger(t.cursor) && t.cursor >= 0 && ['bos', 'buyuk', 'reddedildi'].includes(t.neden) ? t : null;
     }
     function bulkEk() {
       if (!bulkState) return '';
