@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "f2e412b9375c8216dfa4081c9eab433fd8fa5829d9d9cdda64b73f31598ddc9f"
+      "sha256": "057e3071f0658db6c291134208af4186163f96e5770f257bff84eef7c38d7a3f"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -236,7 +236,7 @@
     },
     {
       "path": "src/extension/indirme-panel.js",
-      "sha256": "4932a4e3b2aa882dcd6a5104d12451a342d702df74a72b8c26754677e8e20a39"
+      "sha256": "ebd6d598346f4cd4831b890430160e0c12358f204b978ade746ece5b435847ed"
     },
     {
       "path": "src/extension/kunye-ayikla.js",
@@ -556,7 +556,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "db014d2b969860653d7af043cb0ae883bcacb902fa7ecf44c588a2cb0d8a3730"
+      "sha256": "ce5047d71f585f7bbe4fb85027ca79dca6dacca4782c22df764348467458dbde"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -652,7 +652,7 @@
     },
     {
       "path": "tests/indirme-panel.test.js",
-      "sha256": "782e59e39a025d066ac694e7acf962dafb7c9bbc69f8b17bc094ed4563d34531"
+      "sha256": "5996b52cc4e16a31b3d29ad917f31259cdafb695ca65806063dbc34311474a9a"
     },
     {
       "path": "tests/onboarding-ui.test.js",

@@ -320,6 +320,10 @@ test('takılan evrak için atlama düğmesi yalnız motor bildirince görünür 
   assert.match(h.field('error').textContent, /^Bu evrak 128 MiB sınırını aşıyor: Sentetik Bilirkişi Raporu · 03\.10\.2026\. Devam et yeniden dener; “Bu evrakı atla ve sürdür” ZIP’e/);
   assert.equal(h.field('control').textContent, 'Devam et');
   assert.match(h.field('live').textContent, /Bu evrak 128 MiB sınırını aşıyor: Sentetik Bilirkişi Raporu.*“Bu evrakı atla ve sürdür”/, 'duyuru atlama seçeneğini söyler');
+  // UYAP'ın reddettiği evrak da aynı düğmeyle atlanır; neden kartta yazar.
+  h.update([{ ...durdu, error: 'UYAP: Sentetik evrak bulunamadı.', stuck: { jobId: 'plan-a', cursor: 200, neden: 'reddedildi', tur: 'Sentetik Dilekçe', tarih: '03.10.2026' } }]);
+  assert.equal(h.field('skip').hidden, false);
+  assert.match(h.field('error').textContent, /^UYAP bu evrakı vermiyor: Sentetik Dilekçe · 03\.10\.2026\. Devam et yeniden dener; “Bu evrakı atla ve sürdür” ZIP’e/);
   await h.field('skip').click();
   assert.deepEqual(h.calls.filter(call => call[0] === 'resume'), [['resume', 'file-a', { skip: { jobId: 'plan-a', cursor: 200 } }]]);
   // İş yeniden başlayınca düğme kalkar.
