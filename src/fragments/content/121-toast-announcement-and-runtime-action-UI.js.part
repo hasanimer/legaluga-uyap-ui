@@ -46,6 +46,7 @@
   // ya da onu kapatan tutamak; bildirim bu arada kapandıysa tutamak bir şey yapmaz.
   function toast(text, kind = '', ms = 0, action = null, opts = {}) {
     if (!notificationArea) return null;
+    if (typeof bildirimSecenegi === 'function') opts = bildirimSecenegi(opts);
     const id = opts.id || 'genel';
     kind = TOAST_KIND[kind] || kind;
     const actions = (opts.actions || (action ? [action] : [])).filter(Boolean).slice(0, 2);

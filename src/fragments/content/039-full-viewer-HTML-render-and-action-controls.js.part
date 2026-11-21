@@ -1,4 +1,5 @@
   function showEkran(rec, o = {}) {
+    if (typeof panelKilidi !== 'undefined' && panelKilidi?.kilitli()) return;
     const nativeDocument = o.nativeDocument || null;
     let nativeCitations = !!nativeDocument?.showCitations;
     closeDosyaEkrani(false);

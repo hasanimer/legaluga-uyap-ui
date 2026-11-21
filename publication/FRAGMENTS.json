@@ -199,8 +199,8 @@
       "source": "content.js",
       "order": 21,
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "7afe0b38187e7429f1ec02d85f888fef70c930b9489566a9ac9a099213c7383b",
-      "bytes": 109848,
+      "sha256": "8b648e57655d753b069358cbe422603198740e3741ae9faadfce104522202c1e",
+      "bytes": 110827,
       "purpose": "page-shell-full-CSS-docking-and-panel-controls"
     },
     {
@@ -247,8 +247,8 @@
       "source": "content.js",
       "order": 33,
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "ce5047d71f585f7bbe4fb85027ca79dca6dacca4782c22df764348467458dbde",
-      "bytes": 62933,
+      "sha256": "e1650c831b4bd68d43869318e7f335952deeee7b93d78d6668f983923412f361",
+      "bytes": 63011,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -367,8 +367,8 @@
       "source": "content.js",
       "order": 64,
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",
-      "sha256": "f08c52796d98981a24712ccfb3b1b28e781f6c5942ac403fe7503614552007cd",
-      "bytes": 18842,
+      "sha256": "385d0822212b28dfaa3eaf232af3bba878d155fdfd89ad344aa11ad1d978bec8",
+      "bytes": 18921,
       "purpose": "toast-announcement-and-runtime-action-UI"
     },
     {

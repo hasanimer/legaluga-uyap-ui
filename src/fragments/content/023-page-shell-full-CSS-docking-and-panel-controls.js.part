@@ -1370,6 +1370,11 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     });
     if (pageDarkMq && pageDarkMq.addEventListener) pageDarkMq.addEventListener('change', () => applyPagePrefs(pagePrefs));
     observeAccessMenu();
+    // Oturum yokken panel ve dosya ekranı gizli kalır; izleyici ve ölçüt panel-kilidi.js'te (UHDPanelKilidi).
+    try { panelKilidi = globalThis.UHDPanelKilidi.izle({ document, window, MutationObserver, setTimeout, localStorage,
+      girisSayfasi: isLoginPage, aktif: contextAvailable, panelAcik: () => !panel.hidden,
+      gizle: () => { closeDosyaEkrani(false); hidePanel(); }, geriGetir: restorePinnedPanel,
+      kilitlenince: () => { for (const id of [...toasts.keys()]) closeToast(id); }, kilitAcilinca: () => durusmaHatirlat() }); } catch { /* modül yoksa panel eskisi gibi */ }
     launch.addEventListener('click', () => {
       if (!contextAvailable()) return;
       if (panel.hidden) showPanel();
@@ -1418,8 +1423,12 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
       showPanel({ focus: false });
   }
 
+  let panelKilidi = null;
+  // Oturum yokken bildirimin başlığı ve alt satırı (dosya no, birim, taraf) gösterilmez; ileti metni kalır.
+  function bildirimSecenegi(opts) { return panelKilidi?.kilitli() ? { ...opts, title: '', sub: '' } : opts; }
   function showPanel({ focus = true } = {}) {
     if (!panel || accessMenuOpen || !contextAvailable()) return;
+    if (panelKilidi?.kilitli()) { if (focus) toast(globalThis.UHDPanelKilidi.ILETI, 'warn', 6000, null, { id: 'panel' }); return; }
     panelWanted = true;
     ssSet(SS_PANEL, '1');
     if (introTip && !introTip.hidden) dismissLauncherIntro();

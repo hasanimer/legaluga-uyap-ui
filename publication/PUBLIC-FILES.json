@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "e9929de764bd77b80ff1aeb2b853c74fe7591d34d383234f6e443dd3403390d0"
+      "sha256": "4cacd8468271c0b71724d62602eef65d558a75a5d964c4eb17aed3f56461da09"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -244,7 +244,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "49bdf5f62446d8e6a916a3523d16cde3f4badfc04dc00d33f051d5182ffdb404"
+      "sha256": "666bacccde740f4612239e896805c9327c667c61ff99e7104a6b24880968d1ed"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -261,6 +261,10 @@
     {
       "path": "src/extension/options.js",
       "sha256": "bc38f9d484743e2ed9780d5e00a8de5f1c9412d51dd721be0ce0931e59ee3c2a"
+    },
+    {
+      "path": "src/extension/panel-kilidi.js",
+      "sha256": "f90ec05dd777ea5183492f2286122c23f87500f6bc7e2a394196edc74696b26d"
     },
     {
       "path": "src/extension/popup.css",
@@ -296,7 +300,7 @@
     },
     {
       "path": "src/extension/telemetry.js",
-      "sha256": "9d5c06ad0adba2ce3497d4cc641e32ffe7c8a53334b64f988c905178c2086d24"
+      "sha256": "b408cbca5399c0283b168d28b01034f839df4e617d4a9be3c1a472f0f5793b41"
     },
     {
       "path": "src/extension/tiff.js",
@@ -532,7 +536,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "7afe0b38187e7429f1ec02d85f888fef70c930b9489566a9ac9a099213c7383b"
+      "sha256": "8b648e57655d753b069358cbe422603198740e3741ae9faadfce104522202c1e"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -556,7 +560,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "ce5047d71f585f7bbe4fb85027ca79dca6dacca4782c22df764348467458dbde"
+      "sha256": "e1650c831b4bd68d43869318e7f335952deeee7b93d78d6668f983923412f361"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -616,7 +620,7 @@
     },
     {
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",
-      "sha256": "f08c52796d98981a24712ccfb3b1b28e781f6c5942ac403fe7503614552007cd"
+      "sha256": "385d0822212b28dfaa3eaf232af3bba878d155fdfd89ad344aa11ad1d978bec8"
     },
     {
       "path": "src/fragments/content/123-panel-command-action-boundary.js.part",
@@ -657,6 +661,10 @@
     {
       "path": "tests/onboarding-ui.test.js",
       "sha256": "364de3ee22e44dbcc36d943567d408c5c003dbb3cd83d2fb8febab04c549f059"
+    },
+    {
+      "path": "tests/panel-kilidi.test.js",
+      "sha256": "e3e2e468dbf9042daa7b5c45a9b055115617ae345fa462c4a7f70462fffe4a34"
     },
     {
       "path": "tests/publication-boundary.test.js",
