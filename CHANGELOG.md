@@ -2,6 +2,10 @@
 
 Legaluga UYAP Asistanı sürüm notları; en yeni sürüm üsttedir. Mağazada yayımlanan sürüm ayrıca kontrol edilmelidir; buradaki yeni özelliklerin tamamı mağaza sürümünde henüz bulunmayabilir.
 
+## 1.19.65
+
+**İndirme temposu** ayarı: Hızlı evrak indirme onay kutusunun yerine Temkinli (varsayılan), Hızlı ve Özel seçenekleri; Özel'de evrak arası bekleme, mola sıklığı ve mola süresi girilir, Ayarlar 100 evraklık bekleme tahminini gösterir. Eksik ya da geçersiz Özel değerinde temkinli tempo uygulanır; UYAP koruması devreye girdiğinde otomatik işlemler yine kalıcı durur. **UYAP oturumunu koru** açıkken birden çok UYAP sekmesi birlikte yaklaşık iki dakikada tek yoklama gönderir. PDF okuyucu ve hata raporu kitaplığı güncellendi.
+
 ## 1.19.64
 
 Toplu indirmede **Klasör düzeninde indir** seçeneği; UYAP ana sayfasında tanıtım kutularını gizleme ayarı ve Legaluga şeridi; UYAP penceresinde **Legaluga'da aç** ile Ödeme/Evrak Gönder geçişleri, Özet'te duruşma bilgisi. Takılan toplu indirme, Atıflar panelindeki geçici yeniden deneme hatası ve Vergi Takibi devrinin eşzamanlı alımlarda tek kullanımlık kalması düzeltildi; UYAP'ın dosya iznine uymayan veri artık gösterilmez.
