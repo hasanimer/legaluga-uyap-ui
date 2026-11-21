@@ -169,6 +169,15 @@
 .uhd .note-hint,.uhd .note-status{font-size:11px;color:var(--muted)}
 .uhd .note-status{margin-top:6px;min-height:1.4em}
 .uhd .note-status.err{color:var(--warn-tx)}
+.uhd .note-remind{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:12px;color:var(--muted)}
+.uhd .note-remind-label{display:inline-flex;align-items:center;gap:6px}
+.uhd .note-remind-date{min-height:28px;padding:2px 6px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--text);font:inherit;font-size:12px}
+.uhd .note-remind-clear{min-height:28px;padding:3px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--text);font:inherit;font-size:12px;cursor:pointer}
+.uhd .note-remind-clear[hidden]{display:none}
+.uhd :is(.note-remind-date,.note-remind-clear):disabled{opacity:.55;cursor:default}
+.uhd .note-remind-line{margin-top:2px;padding-left:11px;font-size:11.5px;color:var(--muted)}
+.uhd .note-remind-line:is(.today,.past){color:var(--warn-tx);font-weight:600}
+.uhd .note-remind-line.soon{color:var(--accent-text)}
 .uhd mark{background:var(--mark);color:inherit;border-radius:2px}
 .uhd .son{margin-top:2px;font-size:12px;color:var(--muted)}
 .uhd .son b{font-weight:600;color:var(--text2)}
@@ -248,6 +257,7 @@
 .uhd.options .setup{padding:32px 24px 48px}
 @container (max-width:400px){.uhd .setup-head h1{font-size:20px}.uhd .setup-grid{grid-template-columns:1fr}.uhd .setup-actions .btn{width:100%}}
 .uhd .note-line.ro{cursor:default}
+.uhd .note-line.full{display:block;-webkit-line-clamp:unset;white-space:pre-wrap}
 .uhd .view.ozet{flex:none;padding:6px 10px;color:var(--accent-text);background:var(--soft)}
 .uhd .view.ozet:hover{background:var(--bg);color:var(--text)}
 .uhd.options .notice,.uhd.options .settings>*{width:100%;max-width:760px;margin-inline:auto}
@@ -519,7 +529,7 @@
     let yeniMap = new Map();   // kayıt key → en yeni görülmemiş evrakın onay zamanı
     let yeniCount = 0;         // görülmemiş yeni evrak sayısı
     let evrakTracked = false;  // en az bir dosyanın evrakları tarandı mı (evrakAt; görülen evrak izi dizinde değil)
-    const filter = { durum: 'all', tur: [], turPinned: true, onlyClient: false, onlyNew: false, onlyDurusma: false, cbsIl: '', cbsBirim: '', cbsIzin: '' };
+    const filter = { durum: 'all', tur: [], turPinned: true, onlyClient: false, onlyNew: false, onlyNote: false, onlyDurusma: false, cbsIl: '', cbsBirim: '', cbsIzin: '' };
 
     // Tema: ayar "auto" ise sistemin açık/koyu tercihine uyar.
     const darkMq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
@@ -783,7 +793,7 @@
       if (manualNotice) return;
       // Hızlı bakışta duruşma ve yeni evrak üstteki özet satırında, son güncelleme alt şeritte görünür.
       if (quick || optionsPage) return showNotice('');
-      if (filter.onlyDurusma || filter.onlyNew || person || !settings.hidden) return showNotice('');
+      if (filter.onlyDurusma || filter.onlyNew || filter.onlyNote || person || !settings.hidden) return showNotice('');
       dizinDolulugunuSor();
       // Kapatılan uyarı doluluk sonraki %5 basamağına çıkana dek yeniden çıkmaz ve sıradaki bildirimleri gizlemez.
       const yuzde = Math.floor(dizinDolulugu * 100), tavanKey = 'dizinTavan:' + Math.floor(yuzde / 5);
@@ -813,6 +823,11 @@
           : `Yarın ${yakinDur.length} duruşmanız var; ilki ${ilk.saat}, ${ilk.dosyaNo} ${ilk.birimAdi}.`;
         return showNotice(text, '', { label: 'Göster', fn: () => showDurusmalar() }, durKey);
       }
+      // Not hatırlatması: günü gelen ya da geçen notlar yalnız sayıyla bildirilir; kapatılınca o gün yeniden çıkmaz.
+      const notGunu = todayIso(), notKey = 'noteRemind:' + notGunu;
+      const gelenNot = pref('notHatirlatma', true) && !dismissedNotices.has(notKey)
+        ? globalThis.UHD.noteRemindDue(notes, notGunu, records.filter(r => !gizli[r.key]).map(r => r.key)) : 0;
+      if (gelenNot) return showNotice(`${fmtNum(gelenNot)} dosya notunun hatırlatma günü geldi.`, '', { label: 'Göster', fn: () => { input.value = ''; switchView('notes'); } }, notKey);
       const update = { label: 'Güncelle', fn: () => { setNotice(''); opts.onUpdate(false); } };
       if (!records.length || running()) return showNotice('');
       // Taraf yenileme ve güncelleme hatırlatması da kapatılınca sıradaki bildirimi gizlemez.
@@ -866,7 +881,7 @@
       if (sonradan && value?.pinned === false) filter.turPinned = false;
       else readTurFilter(value);
     }
-    const viewName = () => filter.onlyDurusma ? 'hearings' : filter.onlyNew ? 'new' : 'files';
+    const viewName = () => filter.onlyDurusma ? 'hearings' : filter.onlyNew ? 'new' : filter.onlyNote ? 'notes' : 'files';
     const activeFilterCount = () => (filter.durum !== 'all' ? 1 : 0) + filter.tur.length + (filter.onlyClient ? 1 : 0)
       + (cbsOnly() ? (filter.cbsIl ? 1 : 0) + (filter.cbsBirim ? 1 : 0) + (filter.cbsIzin && filter.cbsIzin !== 'all' ? 1 : 0) : 0);
     function clearFilters() {
@@ -881,6 +896,7 @@
       editing = null;
       filter.onlyDurusma = name === 'hearings';
       filter.onlyNew = name === 'new';
+      filter.onlyNote = name === 'notes';
       sel = 0; shownLimit = LIMIT;
       if (!settings.hidden) closeSettings();
       renderFilters(); render(); autoNotice();
@@ -921,7 +937,8 @@
       for (const [name, title, total] of [
         ['files', 'Dosyalarım', gorunur.length],
         ['hearings', 'Duruşmalarım', durSay],
-        ['new', 'Yeni evrak', gorunur.filter(r => yeniMap.has(r.key)).length]
+        ['new', 'Yeni evrak', gorunur.filter(r => yeniMap.has(r.key)).length],
+        ['notes', 'Notlu', gorunur.filter(r => notes[r.key]).length]
       ]) {
         const b = el('button', { class: 'view' + (name === active ? ' on' : ''), 'aria-pressed': String(name === active), 'data-view': name },
           title, total ? el('small', { 'aria-label': fmtNum(total) + ' kayıt' }, fmtNum(total)) : null);
@@ -1136,15 +1153,25 @@
       return el('div', { class: 'prow' }, line, more);
     }
 
+    // Notun hatırlatma tarihi: gün, kalan süre ve yakınlığa göre sınıf. Tarihi kullanıcı girer; süre hesabı yapılmaz.
+    function remindLine(raw) {
+      const gun = globalThis.UHD.noteRemind(raw);
+      if (!gun) return null;
+      const n = daysLeft(gun);
+      return el('div', { class: 'note-remind-line' + (n < 0 ? ' past' : n === 0 ? ' today' : n <= 3 ? ' soon' : '') },
+        'Hatırlatma: ', el('b', null, fmtIso(gun)), ' · ' + (n < 0 ? `${-n} gün geçti` : gunText(n)));
+    }
+
     // Kart ve dosya ekranı aynı notu kullanır; taslaklar yalnız açık panelin belleğinde tutulur.
     function noteBlock(r, toks = []) {
       const draft = noteDrafts.get(r.key);
       const has = !!notes[r.key];
       if (!has && !draft && editing !== r.key) return null;
       if (editing !== r.key) {
-        const line = el('button', { class: 'note-line', 'data-focus': 'noteline', title: draft ? 'Kaydedilmemiş not · düzenlemek için tıklayın' : 'Kişisel not · düzenlemek için tıklayın' }, ...globalThis.UHD.noteDisplay(draft ? draft.text : notes[r.key], text => highlight(text, toks)));
+        const line = el('button', { class: 'note-line' + (filter.onlyNote ? ' full' : ''), 'data-focus': 'noteline', title: draft ? 'Kaydedilmemiş not · düzenlemek için tıklayın' : 'Kişisel not · düzenlemek için tıklayın' }, ...globalThis.UHD.noteDisplay(draft ? draft.text : notes[r.key], text => highlight(text, toks)));
         line.addEventListener('click', e => { e.stopPropagation(); editing = r.key; render(); });
-        return draft ? el('div', null, line, el('div', { class: 'note-status err' }, 'Kaydedilmedi')) : line;
+        const hatirlat = remindLine(draft ? draft.text : notes[r.key]);
+        return draft || hatirlat ? el('div', null, line, hatirlat, draft ? el('div', { class: 'note-status err' }, 'Kaydedilmedi') : null) : line;
       }
       const state = draft || { text: notes[r.key] || '', base: notes[r.key] || '', saving: null, error: false };
       noteDrafts.set(r.key, state);
@@ -1227,6 +1254,8 @@
         control.addEventListener('mousedown', e => { e.preventDefault(); });
         control.addEventListener('blur', leave);
       }
+      // Tarih alanı tıklanınca odağı almalıdır; yalnız alandan dışarı çıkış notu kaydeder.
+      for (const control of [field.remind.input, field.remind.clear]) control.addEventListener('blur', leave);
       save.addEventListener('click', done);
       cancel.addEventListener('click', discard);
       ta.addEventListener('blur', leave);
@@ -1585,6 +1614,7 @@
             teyitRozeti(r))),
         el('div', { class: 'birim' }, highlight(cleanBirim(r.birimAdi), toks)),
         notes[r.key] ? el('div', { class: 'note-line ro', title: 'Kişisel not (yalnız bu bilgisayarda); UYAP’taki panelden düzenlenir' }, ...globalThis.UHD.noteDisplay(notes[r.key], text => highlight(text, toks))) : null,
+        notes[r.key] ? remindLine(notes[r.key]) : null,
         extra || null,
         partyBlock(r, toks, keys),
         el('div', { class: 'ifoot' }, open));
@@ -1611,6 +1641,10 @@
         ib('copy', `Künyeyi kopyala: ${kunye}`, b => copyText(b, kunye), '', 'copy'),
         ib('note', notes[r.key] ? 'Notu düzenle (yalnız bu bilgisayarda)' : 'Not ekle (yalnız bu bilgisayarda)', () => { editing = r.key; sel = i; render(); }, notes[r.key] ? 'on' : '', 'note'),
         ib('hide', 'Bu dosyayı aramalarda gösterme (Ayarlar’dan yeniden gösterilebilir)', () => hideFile(r), '', 'hide'));
+      // Notu olmayan kartta not alanı görünmez; yazılı düğme notun nereden ekleneceğini gösterir.
+      const noteAdd = !notes[r.key] && editing !== r.key && !noteDrafts.has(r.key)
+        ? el('button', { class: 'btn sm note-add', 'data-focus': 'noteadd', title: 'Not ekle (yalnız bu bilgisayarda)' }, icon('note'), el('span', null, 'Not ekle')) : null;
+      if (noteAdd) noteAdd.addEventListener('click', e => { e.stopPropagation(); editing = r.key; sel = i; render(); });
       // Legaluga ile aç her zaman Evrak sekmesini açar; görülmemiş yeni evraklar önce gelir.
       const u = unseenEvrak(r, goruldu);
       const ekranBtn = opts.onDosyaPanel ? el('button', { class: 'btn sm legaluga-open' + (i === sel ? ' primary' : ''), 'data-focus': 'ekran',
@@ -1645,7 +1679,7 @@
         partyBlock(r, toks, keys),
         !filter.onlyDurusma ? evrakBlock(r, toks) : null,
         son,
-        el('div', { class: 'ifoot' }, ekranBtn, open));
+        el('div', { class: 'ifoot' }, noteAdd, ekranBtn, open));
       row.addEventListener('click', e => {
         if (e.target.closest('button, a, input, textarea, select') || String(window.getSelection && window.getSelection()).trim()) return;
         select(i, false, true);
@@ -1761,7 +1795,7 @@
         await tercihYaz({ siralama: sortSelect.value }, null, 'Sıralama tercihi kaydedilemedi. Tekrar deneyin.');
         render(); list.querySelector('.sort')?.focus();
       });
-      if (!res.tokens.length && !res.total && filter.durum === 'all' && !hasTurFilter() && !filter.onlyClient && !filter.onlyNew) {
+      if (!res.tokens.length && !res.total && filter.durum === 'all' && !hasTurFilter() && !filter.onlyClient && !filter.onlyNew && !filter.onlyNote) {
         const byKey = new Map(records.map(r => [r.key, r]));
         current = recent.map(k => byKey.get(k)).filter(r => r && !gizli[r.key]);
         if (!current.length) {
@@ -1779,12 +1813,16 @@
       } else {
         current = res.items;
         if (!res.total) {
-          const narrowed = filter.durum !== 'all' || hasTurFilter() || filter.onlyClient || filter.onlyNew;
+          const narrowed = filter.durum !== 'all' || hasTurFilter() || filter.onlyClient || filter.onlyNew || filter.onlyNote;
           let text = 'Eşleşen dosya yok.';
           let action = narrowed ? { label: 'Filtreleri kaldır', fn: () => { clearFilters(); renderFilters(); render(); } } : null;
-          if (filter.onlyNew && res.tokens.length) action = { label: 'Tüm dosyalarda ara', fn: () => {
-            filter.onlyNew = false; clearFilters(); renderFilters(); render(); input.focus();
+          if ((filter.onlyNew || filter.onlyNote) && res.tokens.length) action = { label: 'Tüm dosyalarda ara', fn: () => {
+            filter.onlyNew = false; filter.onlyNote = false; clearFilters(); renderFilters(); render(); input.focus();
           } };
+          if (filter.onlyNote && !res.tokens.length && activeFilterCount() === 0) {
+            text = 'Henüz notu olan dosya yok.';
+            action = { label: 'Dosyalarıma dön', fn: () => { switchView('files'); input.focus(); } };
+          }
           if (filter.onlyNew && !res.tokens.length) {
             text = evrakTracked ? 'Son güncellemeden bu yana yeni evrak yok.' : 'Evrak takibi henüz açılmadı.';
             action = !evrakTracked ? { label: 'Takibi ayarla', fn: () => openSettingsAt('evrakTakip') }
@@ -1951,7 +1989,7 @@
 
     function exportCsv() {
       const keys = myKeys(myName());
-      const rows = [['Dosya No', 'Birim', 'Yargı Türü', 'Dosya Türü', 'Durum', 'Açılış', 'Müvekkil', 'Diğer Taraflar', 'Karşı Taraf Vekilleri', 'Son Evrak', 'Sonraki Duruşma', 'Not']];
+      const rows = [['Dosya No', 'Birim', 'Yargı Türü', 'Dosya Türü', 'Durum', 'Açılış', 'Müvekkil', 'Diğer Taraflar', 'Karşı Taraf Vekilleri', 'Son Evrak', 'Sonraki Duruşma', 'Not', 'Not Hatırlatma']];
       const sorted = [...records].sort((a, b) =>
         (a.yargiTuruAdi || '').localeCompare(b.yargiTuruAdi || '', 'tr') ||
         (a.birimAdi || '').localeCompare(b.birimAdi || '', 'tr') ||
@@ -1968,7 +2006,8 @@
           vek.join(', '),
           sonText(r),
           (d => (d ? `${fmtIso(d.tarih)} ${d.saat} ${d.islem}` : ''))((durusmaByKey.get(r.key) || [])[0]),
-          globalThis.UHD.noteText(notes[r.key] || '')
+          globalThis.UHD.noteText(notes[r.key] || ''),
+          fmtIso(globalThis.UHD.noteRemind(notes[r.key] || ''))
         ]);
       }
       const csv = '﻿' + rows.map((row, r) => row.map((v, i) => (r > 0 && i === 0 ? csvDosyaNo(v) : csvCell(v))).join(';')).join('\r\n');
@@ -2599,6 +2638,7 @@
         el('div', { class: 'box' },
           check('durusmaBildirim', true, 'Yaklaşan duruşmaları hatırlat', 'Bugün ve yarınki duruşmaları bildirir. Duruşmalar ekranına her zaman ulaşabilirsiniz.', () => autoNotice()),
           cakismaSecim,
+          check('notHatirlatma', true, 'Not hatırlatmalarını göster', 'Dosya notuna eklediğiniz hatırlatma tarihi gelince bildirir. Tarihi siz girersiniz; yasal süre hesaplanmaz.', () => autoNotice()),
           check('duyuruBildirim', true, 'Duyuruları bildirim olarak göster', 'Kesinti duyurusu UYAP Ana Sayfa’da, diğer duyurular sağ altta görünür. Metnin tamamını okuyabilirsiniz. × ile, sayfada boş bir yere tıklayarak ya da asistandan dosya açarak kapanır; başka bir ekrana geçince gizlenir.')),
 
         el('h3', null, 'UYAP bağlantısı ve koruma'),
@@ -2686,7 +2726,7 @@
       if (!settings.hidden) closeSettings();
       else if (person) closePerson();
       else if (input.value) { input.value = ''; sel = 0; shownLimit = LIMIT; render(); input.focus(); }
-      else if (filter.onlyDurusma || filter.onlyNew) { switchView('files'); input.focus(); }
+      else if (filter.onlyDurusma || filter.onlyNew || filter.onlyNote) { switchView('files'); input.focus(); }
       else if (filtersExpanded) { filtersExpanded = false; renderFilters(); input.focus(); }
       else if (opts.onEscape) opts.onEscape();
       else if (opts.onClose) opts.onClose();
@@ -2868,7 +2908,7 @@
       // Dosya ekranındaki "Bu dosyadaki yeni evrakları görüldü say".
       markSeen: (keys, kadar) => dizinTazeyken(() => markSeen(keys, false, kadar)),
       // Popup'taki özet satırından gelen istek: 'hearings' duruşmalar (7 gün), 'hearings-today' bugünküler,
-      // 'hearings-cakisma' çakışanlar, 'new' yeni evrak, diğerleri dosyalar. Dizin tazelenirken arama kutusuna yazılan silinmez.
+      // 'hearings-cakisma' çakışanlar, 'new' yeni evrak, 'notes' notlu dosyalar, diğerleri dosyalar. Dizin tazelenirken arama kutusuna yazılan silinmez.
       showView(name) {
         const arama = input.value;
         return dizinTazeyken(() => {
@@ -2878,7 +2918,7 @@
             return;
           }
           if (input.value === arama) input.value = '';
-          switchView(name === 'new' ? 'new' : 'files');
+          switchView(name === 'new' ? 'new' : name === 'notes' ? 'notes' : 'files');
           input.focus();
         });
       }

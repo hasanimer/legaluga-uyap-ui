@@ -292,11 +292,12 @@
   //      gizli: {key: true} (aramada gösterilmeyecek dosyalar), vekilAra: false (karşı vekillerde arama),
   //      sort: 'relevance' | 'newest' | 'fileNo', limit }
   // Birden çok kelimede, hepsi aynı alanda (ör. mahkeme adında) geçen dosyalar öne çıkar.
+  const SONRA = '9999-99-99';   // hatırlatması olmayan not, tarihli notların arkasına sıralanır
   function search(records, query, o = {}) {
     const ts = tokens(fileNoQuery(query));
     const numberQuery = ts.length === 1 && /^\d+$/.test(ts[0]) ? ts[0] : '';
     const f = o.filter || {};
-    const filtered = (f.durum && f.durum !== 'all') || (Array.isArray(f.tur) ? f.tur.length : f.tur && f.tur !== 'all') || f.onlyClient || f.onlyNew;
+    const filtered = (f.durum && f.durum !== 'all') || (Array.isArray(f.tur) ? f.tur.length : f.tur && f.tur !== 'all') || f.onlyClient || f.onlyNew || f.onlyNote;
     const yeni = o.yeni || new Map();
     const gizli = o.gizli || {};
     const vekilAra = o.vekilAra !== false;
@@ -308,6 +309,7 @@
     for (const r of records) {
       if (!passFilter(r, f)) continue;
       if (f.onlyNew && !yeni.has(r.key)) continue;
+      if (f.onlyNote && !notes[r.key]) continue;
       if (gizli[r.key]) continue;
       const c = info(r, keys, ctx);
       if (f.onlyClient && !c.clients.length) continue;
@@ -330,10 +332,12 @@
       }
       if (ok) {
         const numberRank = !numberQuery || c.fileSequenceText === numberQuery ? 0 : c.fileSequenceText.includes(numberQuery) ? 1 : 2;
-        hits.push({ score, r, c, numberRank, numberLength: numberRank === 1 ? c.fileSequenceText.length : 0 });
+        hits.push({ score, r, c, numberRank, numberLength: numberRank === 1 ? c.fileSequenceText.length : 0, remind: f.onlyNote ? noteRemind(notes[r.key]) || SONRA : '' });
       }
     }
+    // Notlu görünümünde hatırlatması en yakın olan not önce gelir; tarihsiz notlar olağan sırayla arkadan gelir.
     const byRelevance = (a, b) =>
+      (a.remind < b.remind ? -1 : a.remind > b.remind ? 1 : 0) ||
       a.numberRank - b.numberRank ||
       a.numberLength - b.numberLength ||
       b.score - a.score ||

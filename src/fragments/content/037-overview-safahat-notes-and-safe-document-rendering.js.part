@@ -62,6 +62,7 @@
     const actions = el('div', { class: 'ek-not-actions' }, save, cancel, reload);
     const controls = new Set([save, cancel, reload]);
     const dirty = () => textarea.value.trim() !== saved;
+    const kayitli = () => { const gun = globalThis.UHD.noteRemind(saved); return 'Kaydedildi' + (gun ? ' · Hatırlatma ' + gun.split('-').reverse().join('.') : ''); };
     const message = (text, error = false, state = '') => {
       status.textContent = text;
       status.classList.toggle('err', error);
@@ -77,7 +78,7 @@
       buttons();
       if (saving) return;
       save.textContent = 'Kaydet';
-      message(dirty() ? 'Kaydedilmemiş değişiklikler' : saved ? 'Kaydedildi' : 'Henüz not yok', false, dirty() ? 'dirty' : '');
+      message(dirty() ? 'Kaydedilmemiş değişiklikler' : saved ? kayitli() : 'Henüz not yok', false, dirty() ? 'dirty' : '');
     };
     const kaydet = () => {
       if (saving) { again = true; return saving; }
@@ -109,7 +110,7 @@
         } while (again && dirty());
         if (!signal.aborted) {
           save.textContent = 'Kaydet';
-          message(dirty() ? 'Kaydedilmemiş değişiklikler' : 'Kaydedildi', false, dirty() ? 'dirty' : '');
+          message(dirty() ? 'Kaydedilmemiş değişiklikler' : kayitli(), false, dirty() ? 'dirty' : '');
         }
       })().finally(() => { saving = null; buttons(); });
       return saving;
@@ -126,6 +127,7 @@
     };
     textarea.addEventListener('keydown', notKeys);
     editor.toolbar.addEventListener('keydown', notKeys);
+    editor.remind.bar.addEventListener('keydown', notKeys);
     actions.addEventListener('keydown', notKeys);
     const changed = (changes, area) => {
       if (area !== 'local' || !changes.uhdNotes || signal.aborted) return;

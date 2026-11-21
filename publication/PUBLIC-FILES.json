@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "4cacd8468271c0b71724d62602eef65d558a75a5d964c4eb17aed3f56461da09"
+      "sha256": "0d8197b4a2f0d2e423310859f93a69704fa4cc70a0bb9e14538908dc95523e13"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -312,7 +312,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "0ccbce1d8a64e20d804540bda0c3b245a47fd0974b4929ca35e03b1d6ab62bbe"
+      "sha256": "56fdbcac006bd48a8635cb4e069b37fd635bf354fa0ffb687f7c4cd4a03a04e4"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -464,7 +464,7 @@
     },
     {
       "path": "src/fragments/common/001.js.part",
-      "sha256": "07fe83ff9e10d9917083cb5f4a631577091c6a333d0705a5e31bcc998b89c74a"
+      "sha256": "84d1432ca56ceeb6f9da21064208aff6b79974ea9ca2024c58196fa632ca11bf"
     },
     {
       "path": "src/fragments/common/003.js.part",
@@ -492,7 +492,7 @@
     },
     {
       "path": "src/fragments/common/015.js.part",
-      "sha256": "edbec415964df0b65450bd2555d8163ed9c0348158cf1e09d8cbfc61b1995bba"
+      "sha256": "ed631d6e20900091ea490c3fb9f2019e51c76d742ba8b0b919e7760b09e307d6"
     },
     {
       "path": "src/fragments/content/001-bootstrap-shared-request-safety.js.part",
@@ -536,7 +536,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "8b648e57655d753b069358cbe422603198740e3741ae9faadfce104522202c1e"
+      "sha256": "02ac0f43599559e62be1cc7d669e313ca4d4282f9629026a1d39aebcd2b641f4"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -556,7 +556,7 @@
     },
     {
       "path": "src/fragments/content/037-overview-safahat-notes-and-safe-document-rendering.js.part",
-      "sha256": "900b3a1d832cd6bd72fd778f3e9f90f861442a57defd41fbccade66e2be4d8cc"
+      "sha256": "6339533e10868c5f4eff9972ccec805b624ef622d10935e90e9f7239e0eba4aa"
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
@@ -616,7 +616,7 @@
     },
     {
       "path": "src/fragments/content/118-viewer-list-loading-retry-and-error-controls.js.part",
-      "sha256": "30daaf6571b7fdc76e20e4199a8f3ebfe3a18daa95c117806ae49184abe4ce33"
+      "sha256": "5a451fe2cd31bd0a6079c7bf510dea6e1f3757ee78a9b4b0d077800e5c495534"
     },
     {
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",
