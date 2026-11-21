@@ -284,7 +284,7 @@
     },
     {
       "path": "src/extension/storage.js",
-      "sha256": "3eaa48ffcea696e3efc9c8979eea6f4e79b4ecd0135a89ca8dad071d1b20a13a"
+      "sha256": "b0ea926d1db56d2ba9e1099e8cda4953eeb388859954ac0851249be040072c5c"
     },
     {
       "path": "src/extension/tabs.js",
@@ -296,7 +296,7 @@
     },
     {
       "path": "src/extension/telemetry.js",
-      "sha256": "d82606f85045b8a7ee2f3fa8280f5efe8463ce3652e781fa3993b8101a4c58df"
+      "sha256": "9d5c06ad0adba2ce3497d4cc641e32ffe7c8a53334b64f988c905178c2086d24"
     },
     {
       "path": "src/extension/tiff.js",
@@ -432,7 +432,7 @@
     },
     {
       "path": "src/extension/vendor/sentry.bundle.js",
-      "sha256": "40f81c086c1eda396a1296a1fbb891096f8e4cef32089133a1c867ae1278532e"
+      "sha256": "e2449e1145a271dfed63c52d6210451d6f9057ae8cdaa25096c0adceec93087d"
     },
     {
       "path": "src/fragments/background/002.js.part",
