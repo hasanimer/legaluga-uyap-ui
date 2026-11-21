@@ -1,3 +1,23 @@
+  // Aynı oturumu paylaşan sekmelerden yalnız biri yoklar. Çağıran yoklama kilidini tutar; kayıt yalnız son yoklamanın
+  // başladığı zamanı taşır ve aralığı farklı kayan sekmelerin aynı aralıkta ikinci isteği göndermesini önler.
+  async function sessionPingTurn(controller) {
+    let saved, sent = false;
+    try { saved = await chrome.storage.local.get(YOKLAMA_KAYDI); }
+    catch { return; }   // Son yoklama okunamıyorsa UYAP isteği gönderme.
+    const last = saved[YOKLAMA_KAYDI]?.at, now = Date.now();
+    // Gelecekteki (saat değişimi) veya bozuk kayıt yoklamayı kilitlemez; sekme kendi yazdığı kayıt yüzünden kendi turunu atlamaz.
+    if (last !== sessionPingOwnAt && Number.isFinite(last) && last <= now && now - last < YOKLAMA_MS - YOKLAMA_PAYI_MS) return;
+    try {
+      await oturumYoklamaIstegi(controller.signal, () => {
+        const send = sessionPingController === controller && !controller.signal.aborted && canProtect();
+        sent = send;
+        return send;
+      });   // Yanıt kullanılmaz veya saklanmaz.
+    } finally {
+      // Gönderilmemiş yoklama zaman yazmaz: öteki sekme kendi aralığında dener. Yazım hatası yoklamayı etkilemez.
+      if (sent) await chrome.storage.local.set({ [YOKLAMA_KAYDI]: { at: sessionPingOwnAt = now } }).catch(() => {});
+    }
+  }
   async function sessionPing() {
     if (!canProtect()) { abortSessionPing(); return; }
     if (sessionPingController) return;
@@ -14,9 +34,8 @@
       if (scanStateRevision === sessionScanStateRevision)
         sessionScanBlocked = scanState.uhdJob?.paused === 'dogrulama';
       if (!canProtect() || sessionPingController !== controller || controller.signal.aborted) return;
-      await oturumYoklamaIstegi(controller.signal,
-        () => sessionPingController === controller && !controller.signal.aborted && canProtect());
-      // Yanıt kullanılmaz veya saklanmaz.
+      // Kilit beklenmez: başka sekme yokluyorsa bu tur atlanır. UYAP istek kuyruğu gibi, kilit altyapısı yoksa yoklama gönderilmez.
+      await navigator.locks?.request(YOKLAMA_KILIDI, { ifAvailable: true }, lock => lock ? sessionPingTurn(controller) : null);
     } catch { /* Sonraki aralıkta yeniden denenir. */ }
     finally { if (sessionPingController === controller) sessionPingController = null; }
   }

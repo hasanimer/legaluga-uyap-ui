@@ -32,7 +32,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "f2662db6f733dd75189d38e8997818584d81e12f3edd238e6fc4371e39f8e919"
+      "sha256": "fee33a1413ed45e2d816c079d6fa863b6dbc45f167e713173a6ec35e2ae26b24"
     },
     {
       "path": "SECURITY.md",
@@ -60,7 +60,7 @@
     },
     {
       "path": "docs/PRIVACY.md",
-      "sha256": "a86b8c1d386a03c1d5b5e08ff0c132769f127812f7b800e743bf5f10520a13a1"
+      "sha256": "de2cb111d518c6201c7a0ed6e6a2cc2b2b1b88ff4946c9af5da330d39256458f"
     },
     {
       "path": "docs/images/01-uyap-baglantisi.png",
@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "057e3071f0658db6c291134208af4186163f96e5770f257bff84eef7c38d7a3f"
+      "sha256": "e9929de764bd77b80ff1aeb2b853c74fe7591d34d383234f6e443dd3403390d0"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -248,7 +248,7 @@
     },
     {
       "path": "src/extension/onboarding.js",
-      "sha256": "06c005281bb6c443d90a6eb63269bc4bb36452e73cf305ac15bf33bfe1ac3ff7"
+      "sha256": "d1dce3622209e290998f32774037e84d16550d19ac93c5f834d2aedec182c5d6"
     },
     {
       "path": "src/extension/options.css",
@@ -308,7 +308,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "92cf3d564bf99dca4db2759b4ae626bc51bd2384ac0f83bfdd39802b407ffdd4"
+      "sha256": "0ccbce1d8a64e20d804540bda0c3b245a47fd0974b4929ca35e03b1d6ab62bbe"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -628,11 +628,11 @@
     },
     {
       "path": "src/fragments/content/127-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "20ad3df4ff284e9b7f9ffa8bc7cf4f4d4c998b2da506b84102739344259c20a4"
+      "sha256": "ac6ff93aea09b562c457b7a7641a8c3c0c87e8ae74b6f4f05408e49999d29f16"
     },
     {
       "path": "src/fragments/content/129-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "7378521d274ffb3cfa509b8a896c78fcdbf32eec96966e36a3c2a9df89fb1552"
+      "sha256": "d6581195dbf7ac583eb2e888e1ef96c3fb6746b5349457ef6188b2b486f3c14a"
     },
     {
       "path": "tests/atif-ocr-worker.test.js",
@@ -656,7 +656,7 @@
     },
     {
       "path": "tests/onboarding-ui.test.js",
-      "sha256": "fe25fb80e04c0bd72aa85f2d44908983838810a56aa8b74bb18f49a11be4e11d"
+      "sha256": "364de3ee22e44dbcc36d943567d408c5c003dbb3cd83d2fb8febab04c549f059"
     },
     {
       "path": "tests/publication-boundary.test.js",
@@ -668,7 +668,7 @@
     },
     {
       "path": "tests/ui-downloads.test.js",
-      "sha256": "a2093069474c00c480f940d34c3dcfdbc957dad69503a7a97ef13fc11e92acf3"
+      "sha256": "967cdc0305d66bc719df8ce77a5ce1ca4fb67fb760202354c8f85d6769cf6e93"
     },
     {
       "path": "tests/update-inventory.test.js",

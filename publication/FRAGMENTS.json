@@ -391,16 +391,16 @@
       "source": "content.js",
       "order": 70,
       "path": "src/fragments/content/127-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "20ad3df4ff284e9b7f9ffa8bc7cf4f4d4c998b2da506b84102739344259c20a4",
-      "bytes": 1647,
+      "sha256": "ac6ff93aea09b562c457b7a7641a8c3c0c87e8ae74b6f4f05408e49999d29f16",
+      "bytes": 2102,
       "purpose": "session-protection-lifecycle-and-visible-safety-gates"
     },
     {
       "source": "content.js",
       "order": 75,
       "path": "src/fragments/content/129-session-protection-lifecycle-and-visible-safety-gates.js.part",
-      "sha256": "7378521d274ffb3cfa509b8a896c78fcdbf32eec96966e36a3c2a9df89fb1552",
-      "bytes": 1911,
+      "sha256": "d6581195dbf7ac583eb2e888e1ef96c3fb6746b5349457ef6188b2b486f3c14a",
+      "bytes": 3322,
       "purpose": "session-protection-lifecycle-and-visible-safety-gates"
     }
   ]

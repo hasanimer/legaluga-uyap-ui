@@ -8,7 +8,7 @@
   const DEFAULTS = {
     taramaDurum: 'tum', savcilik: 'kapali', myName: '', tema: 'auto', panelSabit: true,
     acilisSekme: 'yok', evrakTakip: false, safahatTakipOptIn: false, otoGuncelle: 'kapali',
-    durusmaBildirim: true, cakismaBildirim: true, duyuruBildirim: true, oturumAcik: false, hataRaporu: false
+    durusmaBildirim: true, cakismaBildirim: true, duyuruBildirim: true, oturumAcik: false, indirmeTempo: 'temkinli', hataRaporu: false
   };
   const OPTIONS = {
     taramaDurum: [['tum', 'Açık ve kapalı dosyalar'], ['acik', 'Yalnız açık dosyalar'], ['kapali', 'Yalnız kapalı dosyalar']],
@@ -16,7 +16,8 @@
     // Kurulumda sorulmaz; yalnız kayıtlı değerin geçerli olduğunu doğrulamak için tutulur.
     tema: [['auto'], ['light'], ['dark']],
     acilisSekme: [['yok'], ['evrak'], ['taraf']],
-    otoGuncelle: [['kapali'], ['6s'], ['gunluk']]
+    otoGuncelle: [['kapali'], ['6s'], ['gunluk']],
+    indirmeTempo: [['temkinli'], ['hizli'], ['ozel']]
   };
   const labelOf = (key, value) => OPTIONS[key].find(([code]) => code === value)?.[1] || value;
 
@@ -27,6 +28,8 @@
         if (OPTIONS[key].some(([value]) => value === prefs[key])) draft[key] = prefs[key];
       } else if (typeof prefs[key] === typeof DEFAULTS[key]) draft[key] = prefs[key];
     }
+    // İndirme temposu seçilmemiş eski profilde açık “Hızlı evrak indirme” işareti hızlı tempo olarak devralınır.
+    if (prefs.indirmeTempo == null && prefs.hizliIndirme === true) draft.indirmeTempo = 'hizli';
     const knownTypes = new Set(TURLER.map(type => type.kod));
     draft.taramaTurleri = Array.isArray(prefs.taramaTurleri)
       ? [...new Set(prefs.taramaTurleri.map(String).filter(code => knownTypes.has(code)))]
