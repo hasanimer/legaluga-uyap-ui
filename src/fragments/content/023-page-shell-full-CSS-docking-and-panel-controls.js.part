@@ -429,6 +429,14 @@
 .viewer .note-format:hover,.viewer .note-format[aria-pressed=true]{background:var(--shell-soft);border-color:var(--shell-line)}
 .viewer .note-format:focus-visible{outline:2px solid var(--shell-focus);outline-offset:2px}
 .viewer .note-format:disabled{opacity:.5;cursor:default}
+.viewer .note-remind{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 18px;border-top:1px solid var(--shell-line);font-size:12px;color:var(--shell-muted)}
+.viewer .note-remind-label{display:inline-flex;align-items:center;gap:8px}
+.viewer .note-remind-date,.viewer .note-remind-clear{border:1px solid var(--shell-line);border-radius:6px;background:var(--shell-bg);color:var(--shell-text);padding:5px 8px;font:inherit;font-size:12px}
+.viewer .note-remind-clear{cursor:pointer}
+.viewer .note-remind-clear[hidden],.viewer .note-remind-hint[hidden]{display:none}.viewer .note-remind-hint{flex-basis:100%}
+.viewer :is(.note-remind-date,.note-remind-clear):focus-visible{outline:2px solid var(--shell-focus);outline-offset:2px}
+.viewer :is(.note-remind-date,.note-remind-clear):disabled{opacity:.5;cursor:default}
+.viewer .ek-sekmeler [role=tab].notlu::after{content:'';display:inline-block;width:6px;height:6px;margin-left:6px;border-radius:50%;background:var(--shell-accent);vertical-align:middle}
 .viewer .note-format[data-format=bold]{font-weight:700}
 .viewer .note-red,.viewer .note-format[data-format=red]{color:var(--note-red,#b42318)}
 :host([data-theme=dark]) .viewer{--note-red:#ff8f87}
@@ -1216,6 +1224,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     if (typeof sessionRequestHooks !== 'undefined') sessionRequestHooks?.preferencesChanged();
     if (typeof dosyaEkrani !== 'undefined') dosyaEkrani?.atifAyariniUygula?.();
     if (pagePrefs.durusmaBildirim === false || (oncekiCakismaAcik && (pagePrefs.cakismaTarama !== true || pagePrefs.cakismaBildirim === false))) closeToast('durusma');
+    if (pagePrefs.notHatirlatma === false) closeToast('not-hatirlatma');
     const theme = pagePrefs.tema || 'auto';
     if (shadowRoot) {
       shadowRoot.host.dataset.theme = theme === 'auto' ? (pageDarkMq && pageDarkMq.matches ? 'dark' : 'light') : theme;
@@ -1374,7 +1383,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     try { panelKilidi = globalThis.UHDPanelKilidi.izle({ document, window, MutationObserver, setTimeout, localStorage,
       girisSayfasi: isLoginPage, aktif: contextAvailable, panelAcik: () => !panel.hidden,
       gizle: () => { closeDosyaEkrani(false); hidePanel(); }, geriGetir: restorePinnedPanel,
-      kilitlenince: () => { for (const id of [...toasts.keys()]) closeToast(id); }, kilitAcilinca: () => durusmaHatirlat() }); } catch { /* modül yoksa panel eskisi gibi */ }
+      kilitlenince: () => { for (const id of [...toasts.keys()]) closeToast(id); }, kilitAcilinca: () => { durusmaHatirlat(); notHatirlat(); } }); } catch { /* modül yoksa panel eskisi gibi */ }
     launch.addEventListener('click', () => {
       if (!contextAvailable()) return;
       if (panel.hidden) showPanel();

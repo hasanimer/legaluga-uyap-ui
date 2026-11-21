@@ -8,6 +8,8 @@
       return b;
     });
     sekmeCubugu.append(...sekmeDugmeleri);
+    const notDugmesi = ui && typeof ui.getNote === 'function' && sekmeDugmeleri.find(b => b.dataset.sekme === 'notlar');
+    if (notDugmesi) globalThis.UHD.notSekmesiIsareti(notDugmesi, rec.key, ui.getNote, notlarAc.signal);
     sekmeCubugu.addEventListener('keydown', ev => {
       const i = SEKMELER.findIndex(t => t[0] === aktif);
       const n = SEKMELER.length;

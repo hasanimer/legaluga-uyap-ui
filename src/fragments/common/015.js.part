@@ -221,23 +221,52 @@
     }
     return out;
   }
+  // Hatırlatma tarihi notun içinde, yalnız gerçek bir YYYY-AA-GG günü olarak saklanır; başka her değer yok sayılır.
+  function noteRemindDate(value) {
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return '';
+    const t = Date.parse(value + 'T00:00:00Z');
+    return Number.isFinite(t) && new Date(t).toISOString().slice(0, 10) === value ? value : '';
+  }
   function noteDecode(raw) {
     const value = typeof raw === 'string' ? raw : '';
     if (value.startsWith(NOTE_PREFIX)) {
       try {
         const data = JSON.parse(value.slice(NOTE_PREFIX.length));
-        if (data && data.v === 1 && typeof data.text === 'string' && Array.isArray(data.runs)) return { text: data.text, runs: noteRuns(data.text, data.runs) };
+        if (data && data.v === 1 && typeof data.text === 'string' && Array.isArray(data.runs)) {
+          const remind = noteRemindDate(data.remind);
+          return { text: data.text, runs: noteRuns(data.text, data.runs), ...(remind ? { remind } : {}) };
+        }
       } catch { /* eski veya bozuk metin olduğu gibi, güvenli düz metin olarak gösterilir */ }
     }
     return { text: value, runs: [] };
   }
-  function noteEncode(text, runs = []) {
+  function noteEncode(text, runs = [], remind = '') {
     text = typeof text === 'string' ? text : '';
     const leading = text.length - text.trimStart().length, clean = text.trim();
     const marks = noteRuns(clean, noteRuns(text, runs).map(run => ({ ...run, s: Math.max(0, run.s - leading), e: Math.min(clean.length, run.e - leading) })));
-    return marks.length ? NOTE_PREFIX + JSON.stringify({ v: 1, text: clean, runs: marks }) : clean;
+    const day = clean ? noteRemindDate(remind) : '';
+    return marks.length || day ? NOTE_PREFIX + JSON.stringify({ v: 1, text: clean, runs: marks, ...(day ? { remind: day } : {}) }) : clean;
   }
   const noteText = raw => noteDecode(raw).text;
+  const noteRemind = raw => noteDecode(raw).remind || '';
+  // Günü gelen ya da geçen hatırlatması olan notların sayısı; `keys` verilirse yalnız o dosyalar sayılır.
+  const noteRemindDue = (notes, today = todayIso(), keys = null) =>
+    (keys || Object.keys(notes || {})).filter(key => { const gun = noteRemind(notes?.[key]); return gun && gun <= today; }).length;
+  // Dosya ekranındaki Notlar sekmesi, dosyanın notu varken işaretlenir: not sekme açılmadan da fark edilir.
+  function notSekmesiIsareti(dugme, key, getNote, signal) {
+    const isaretle = () => {
+      const notVar = !!getNote(key);
+      dugme.classList.toggle('notlu', notVar);
+      if (notVar) { dugme.setAttribute('aria-label', 'Notlar, not var'); dugme.setAttribute('title', 'Bu dosyada not var'); }
+      else { dugme.removeAttribute('aria-label'); dugme.removeAttribute('title'); }
+    };
+    const changed = (changes, area) => {
+      if (area === 'local' && changes.uhdNotes) isaretle();
+    };
+    chrome.storage.onChanged.addListener(changed);
+    signal.addEventListener('abort', () => chrome.storage.onChanged.removeListener(changed), { once: true });
+    isaretle();
+  }
   function noteDisplay(raw, highlightFn) {
     const data = noteDecode(raw), out = []; let offset = 0;
     const children = text => {
@@ -261,9 +290,21 @@
     toolbar.className = 'note-toolbar'; toolbar.setAttribute('role', 'toolbar'); toolbar.setAttribute('aria-label', 'Not biçimlendirme');
     input.className = 'note-input'; input.contentEditable = 'true'; input.setAttribute('role', 'textbox'); input.setAttribute('aria-multiline', 'true');
     input.setAttribute('aria-label', label); input.setAttribute('data-placeholder', placeholder); input.setAttribute('spellcheck', 'true'); input.tabIndex = 0;
-    root.append(toolbar, input);
+    // Hatırlatma tarihi biçim araç çubuğundan ayrı bir satırdadır; değeri notla birlikte okunur ve yazılır.
+    const remindBar = document.createElement('div'), remindLabel = document.createElement('label'), remindInput = document.createElement('input'), remindClear = document.createElement('button'), remindHint = document.createElement('span');
+    remindBar.className = 'note-remind';
+    remindLabel.className = 'note-remind-label'; remindLabel.textContent = 'Hatırlat';
+    remindInput.type = 'date'; remindInput.className = 'note-remind-date'; remindInput.setAttribute('aria-label', 'Hatırlatma tarihi'); remindInput.setAttribute('min', todayIso());
+    remindClear.type = 'button'; remindClear.className = 'note-remind-clear'; remindClear.textContent = 'Kaldır'; remindClear.setAttribute('aria-label', 'Hatırlatmayı kaldır'); remindClear.hidden = true;
+    // Metinsiz not saklanmaz: tarih seçilip metin yazılmadıysa bunu söyleyen satır.
+    remindHint.className = 'note-remind-hint'; remindHint.setAttribute('role', 'status'); remindHint.textContent = 'Hatırlatma için önce not yazın; metinsiz not kaydedilmez.'; remindHint.hidden = true;
+    remindLabel.append(remindInput); remindBar.append(remindLabel, remindClear, remindHint);
+    root.append(toolbar, input, remindBar);
     const doc = input.ownerDocument, win = doc.defaultView || globalThis, listeners = [];
-    let disabled = false, destroyed = false, lastRange = null;
+    let disabled = false, destroyed = false, lastRange = null, remind = '';
+    const showHint = () => { remindHint.hidden = !remind || !!read().text.trim(); };
+    // Alan yalnız değeri farklıyken yazılır: Chrome yarım girişte değeri '' bildirir, yeniden '' yazmak kalan bölümleri de siler.
+    const showRemind = () => { if (remindInput.value !== remind) remindInput.value = remind; remindClear.hidden = !remind; showHint(); };
     const owns = target => !!target && (target === root || root.contains(target));
     const listen = (node, event, fn, options) => { node.addEventListener(event, fn, options); listeners.push(() => node.removeEventListener(event, fn, options)); };
     const redColors = new Set(['red', '#b42318', '#dc2626', '#ff8f87', '#ff9292', '#ff8e82', 'rgb(180,35,24)', 'rgb(220,38,38)', 'rgb(255,143,135)', 'rgb(255,146,146)', 'rgb(255,142,130)']);
@@ -368,12 +409,12 @@
       listen(button, 'pointerdown', hold); listen(button, 'mousedown', hold); listen(button, 'click', () => apply(action));
     }
     Object.defineProperty(input, 'value', {
-      get() { const model = read(); return noteEncode(model.text, model.runs); },
-      set(raw) { const data = noteDecode(raw); input.replaceChildren(...(data.text ? noteDisplay(raw) : [])); lastRange = null; capture(); }, configurable: true
+      get() { const model = read(); return noteEncode(model.text, model.runs, remind); },
+      set(raw) { const data = noteDecode(raw); input.replaceChildren(...(data.text ? noteDisplay(raw) : [])); remind = data.remind || ''; showRemind(); lastRange = null; capture(); }, configurable: true
     });
     Object.defineProperty(input, 'disabled', {
       get: () => disabled,
-      set(isDisabled) { disabled = !!isDisabled; input.contentEditable = disabled ? 'false' : 'true'; input.setAttribute('aria-disabled', String(disabled)); for (const button of Object.values(buttons)) button.disabled = disabled; }, configurable: true
+      set(isDisabled) { disabled = !!isDisabled; input.contentEditable = disabled ? 'false' : 'true'; input.setAttribute('aria-disabled', String(disabled)); for (const button of [...Object.values(buttons), remindInput, remindClear]) button.disabled = disabled; }, configurable: true
     });
     listen(input, 'input', capture); listen(input, 'keyup', capture); listen(input, 'pointerup', capture); listen(input, 'focus', capture); listen(doc, 'selectionchange', capture);
     listen(input, 'keydown', event => { if ((event.ctrlKey || event.metaKey) && String(event.key).toLowerCase() === 'b') { event.preventDefault(); apply('b'); } });
@@ -389,8 +430,16 @@
     listen(input, 'paste', event => { event.preventDefault(); if (!disabled) insertText(event.clipboardData?.getData('text/plain') || ''); });
     listen(input, 'drop', event => { event.preventDefault(); if (!disabled) insertText(event.dataTransfer?.getData('text/plain') || ''); });
     listen(toolbar, 'focusout', event => { if (!owns(event.relatedTarget)) input.dispatchEvent(new win.FocusEvent('blur', { relatedTarget: event.relatedTarget })); });
+    listen(remindBar, 'focusout', event => { if (!owns(event.relatedTarget)) input.dispatchEvent(new win.FocusEvent('blur', { relatedTarget: event.relatedTarget })); });
+    const setRemind = next => { if (disabled || destroyed) return; remind = noteRemindDate(next); showRemind(); emit(); };
+    // Yarım giriş (bir bölümü silinmiş tarih) hatırlatmayı silmez; alandan çıkılınca kayıtlı tarih geri yazılır.
+    listen(remindInput, 'change', () => { if (!remindInput.value && remindInput.validity?.badInput) return; setRemind(remindInput.value); });
+    listen(remindInput, 'blur', () => { if (remindInput.validity?.badInput) remindInput.value = remind; });
+    // Odaktaki düğme gizlenince tarayıcı blur üretir ve düzenleme bitmiş sayılır; odak önce tarih alanına alınır.
+    listen(remindClear, 'click', () => { if (disabled || destroyed) return; remindInput.focus({ preventScroll: true }); setRemind(''); });
+    listen(input, 'input', showHint);
     input.value = value;
-    return { root, input, toolbar, owns, focus: () => input.focus({ preventScroll: true }), destroy() { if (destroyed) return; destroyed = true; for (const off of listeners) off(); } };
+    return { root, input, toolbar, remind: { bar: remindBar, input: remindInput, clear: remindClear, hint: remindHint }, owns, focus: () => input.focus({ preventScroll: true }), destroy() { if (destroyed) return; destroyed = true; for (const off of listeners) off(); } };
   }
 
   // Sayfa içi onay. Tarayıcının confirm() penceresi içerik betiğinden çağrılınca "avukat.uyap.gov.tr şunu diyor" başlığıyla
@@ -444,5 +493,5 @@
     });
   }
 
-  globalThis.UHD = { onayIste, TURLER, taramaKapsami, kurulumGerekli, TARAMA_BAYAT_MS, taramaCanli, TARAF_V, SON_ACILAN_MAX, CBS, ILLER, ilSirasi, cbsIlleri, cbsKapsam, ilAdi, evrakKilidi, dosyaTurAdi, ORIGIN, BRAND, norm, nameKey, detectMyName, myKeys, isClient, passFilter, fileNoQuery, search, openPath, fmtNum, fmtDate, fmtTrDate, csvCell, csvDosyaNo, evrakKey, trDateTs, parseEvraklar, diffEvrak, unseenEvrak, sonEvrak, lastEvrak, personFiles, parseSafahat, checkBalanceSnapshot, checkBalanceStore, checkSafahatSnapshot, checkSafahatStore, safahatState, safahatFileKey, SAFAHAT_REFRESH_MS, SAFAHAT_LEASE_MS, sonIslemOf, fmtTL, trTitle, cleanDurum, cleanBirim, vergiAktarimi, kunyeOf, toastPlan, openErrorPlan, htmlKodlamasi, ekleriYerlestir, evrakKategorileri, evrakSayim, evrakTeyit, evrakTeyitMetni, sayiIyelik, noteText, noteDisplay, noteEditor, evrakTakipAcik, evrakIziniAyir, evrakIziniGom, BACKUP_APP, BACKUP_FORMAT, BACKUP_KEYS, checkBackup, todayIso, daysLeft, parseDurusma, upcomingDurusmalar, dosyaDurusmalari, durusmaGunu, durusmaOzeti, adliyeAdi, CAKISMA_DK, durusmaCakismalari, uyapDate, durusmaIcs, ihbarCevabiMi, bankaAdi, bankaUnvanAdi };
+  globalThis.UHD = { onayIste, TURLER, taramaKapsami, kurulumGerekli, TARAMA_BAYAT_MS, taramaCanli, TARAF_V, SON_ACILAN_MAX, CBS, ILLER, ilSirasi, cbsIlleri, cbsKapsam, ilAdi, evrakKilidi, dosyaTurAdi, ORIGIN, BRAND, norm, nameKey, detectMyName, myKeys, isClient, passFilter, fileNoQuery, search, openPath, fmtNum, fmtDate, fmtTrDate, csvCell, csvDosyaNo, evrakKey, trDateTs, parseEvraklar, diffEvrak, unseenEvrak, sonEvrak, lastEvrak, personFiles, parseSafahat, checkBalanceSnapshot, checkBalanceStore, checkSafahatSnapshot, checkSafahatStore, safahatState, safahatFileKey, SAFAHAT_REFRESH_MS, SAFAHAT_LEASE_MS, sonIslemOf, fmtTL, trTitle, cleanDurum, cleanBirim, vergiAktarimi, kunyeOf, toastPlan, openErrorPlan, htmlKodlamasi, ekleriYerlestir, evrakKategorileri, evrakSayim, evrakTeyit, evrakTeyitMetni, sayiIyelik, noteText, noteRemind, noteRemindDue, notSekmesiIsareti, noteDisplay, noteEditor, evrakTakipAcik, evrakIziniAyir, evrakIziniGom, BACKUP_APP, BACKUP_FORMAT, BACKUP_KEYS, checkBackup, todayIso, daysLeft, parseDurusma, upcomingDurusmalar, dosyaDurusmalari, durusmaGunu, durusmaOzeti, adliyeAdi, CAKISMA_DK, durusmaCakismalari, uyapDate, durusmaIcs, ihbarCevabiMi, bankaAdi, bankaUnvanAdi };
 })();
