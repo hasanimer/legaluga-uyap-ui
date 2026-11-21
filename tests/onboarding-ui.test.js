@@ -60,7 +60,8 @@ class Node {
 }
 // Kurulumda sorulmayan tercihler ve yeni kullanıcıda yazılan varsayılanları.
 const SORULMAYAN = { tema: 'auto', panelSabit: true, acilisSekme: 'yok', evrakTakip: false, safahatTakipOptIn: false,
-  otoGuncelle: 'kapali', durusmaBildirim: true, cakismaBildirim: true, duyuruBildirim: true, oturumAcik: false, hataRaporu: false };
+  otoGuncelle: 'kapali', durusmaBildirim: true, cakismaBildirim: true, duyuruBildirim: true, oturumAcik: false, indirmeTempo: 'temkinli',
+  hataRaporu: false };
 const all = root => [root, ...root.kids.filter(child => child instanceof Node).flatMap(all)];
 
 function harness({ shortcut = 'Alt+Shift+D', prefs = {}, hasFiles = false, stored = prefs, fallback = false, patch, set, onConnection, onOpenUyap, onComplete } = {}) {
@@ -360,6 +361,24 @@ test('mevcut tercihleri devralır ve doğrudan storage kaydında diğer tercihle
   assert.equal(h.store.siralama, 'newest');
   assert.equal(h.store.vekilAra, false);
   assert.deepEqual(h.store.taramaTurleri, ['2']);
+});
+
+// İndirme temposu kurulumda sorulmaz: kayıtlı seçim ve Özel değerleri korunur, eski “Hızlı evrak indirme” işareti hızlı
+// tempo olarak devralınır, bilinmeyen değer temkinli yazılır.
+test('kurulum indirme temposunu korur; eski hızlı kip işaretini devralır, bilinmeyen değeri temkinli yazar', async () => {
+  const taban = { savcilik: 'kapali', taramaTurleri: ['2'], myName: 'Vekil Adı' };
+  const ozel = { indirmeTempo: 'ozel', indirmeAraMin: 2, indirmeAraMax: 4, indirmeMolaHer: 0, indirmeMolaMin: 0, indirmeMolaMax: 0 };
+  for (const [kayitli, beklenen] of [[{}, 'temkinli'], [{ hizliIndirme: true }, 'hizli'], [{ hizliIndirme: false }, 'temkinli'],
+    [{ indirmeTempo: 'temkinli', hizliIndirme: true }, 'temkinli'], [{ indirmeTempo: 'hizli' }, 'hizli'], [ozel, 'ozel'],
+    [{ indirmeTempo: 'turbo', hizliIndirme: true }, 'temkinli'], [{ indirmeTempo: 7 }, 'temkinli']]) {
+    const prefs = { ...taban, ...kayitli };
+    const h = harness({ prefs, fallback: true });
+    assert.equal(h.field('indirmeTempo'), undefined, 'kurulumda sorulmaz');
+    await h.next();
+    await h.button('Kurulumu tamamla').click();
+    assert.equal(h.store.indirmeTempo, beklenen, JSON.stringify(kayitli));
+    for (const [key, value] of Object.entries(kayitli)) if (key !== 'indirmeTempo') assert.equal(h.store[key], value, key + ' korunur');
+  }
 });
 
 test('kaydetme hatasında taslağı korur ve başarılı kayıttan sonra taramayı çağırır', async () => {

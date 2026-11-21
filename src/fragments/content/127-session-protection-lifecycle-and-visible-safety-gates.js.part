@@ -1,5 +1,9 @@
   const YOKLAMA_MS = 2 * 60000;
-  let sessionPingController = null, sessionDisposed = false;
+  // Sekmelerin aralıkları birbirine göre kayar: son yoklamadan bu yana aralıktan en çok bu pay kadar az süre geçmişse yoklanır.
+  const YOKLAMA_PAYI_MS = 15000, YOKLAMA_KILIDI = 'legaluga-oturum-yoklama-v1';
+  // Gizli pencerenin UYAP oturumu ve kilidi ayrıdır; ortak depolamadaki zaman kaydı da ayrı tutulur.
+  const YOKLAMA_KAYDI = chrome.extension?.inIncognitoContext ? 'uhdOturumYoklamaGizli' : 'uhdOturumYoklama';
+  let sessionPingController = null, sessionDisposed = false, sessionPingOwnAt = 0;
   let sessionRevision = 0, sessionLoginState = null;
   let sessionScanBlocked = false, sessionScanStateRevision = 0;
   const keepAliveOn = () => pagePrefs.oturumAcik === true;

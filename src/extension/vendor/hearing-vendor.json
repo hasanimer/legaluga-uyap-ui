@@ -50,8 +50,8 @@
     },
     {
       "file": "vendor/pdfjs-reader.js",
-      "bytes": 1638370,
-      "sha256": "462d5ec705d88282080aa845d7a4d2d52d3be00b3353d767b796381f00e95967"
+      "bytes": 1659133,
+      "sha256": "1f1d4361b0aec3a0acf0939e04708235bbfb13ac00900966a1de41f87046543a"
     },
     {
       "file": "vendor/fonts/LICENSE",
