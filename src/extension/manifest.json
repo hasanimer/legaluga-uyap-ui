@@ -84,6 +84,7 @@
         "onboarding.js",
         "ana-sayfa.js",
         "uyap-dosya-penceresi.js",
+        "panel-kilidi.js",
         "content.js",
         "uyap-document-native.js"
       ],
