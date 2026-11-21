@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "0d8197b4a2f0d2e423310859f93a69704fa4cc70a0bb9e14538908dc95523e13"
+      "sha256": "cc1eae93653a4f4fd3a54982fcb0f9dd6c873141a4a9292fe92fc61eac582937"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -312,7 +312,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "56fdbcac006bd48a8635cb4e069b37fd635bf354fa0ffb687f7c4cd4a03a04e4"
+      "sha256": "8431f4c99f5b6b542a5720ee8b0553b54235b8dad5e930257bf63e13d75a58c7"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -464,7 +464,7 @@
     },
     {
       "path": "src/fragments/common/001.js.part",
-      "sha256": "84d1432ca56ceeb6f9da21064208aff6b79974ea9ca2024c58196fa632ca11bf"
+      "sha256": "461c4d32f4208d9f39b0c13f704448d680ca22449e2c16888fd864322ea5e2ce"
     },
     {
       "path": "src/fragments/common/003.js.part",
@@ -492,7 +492,7 @@
     },
     {
       "path": "src/fragments/common/015.js.part",
-      "sha256": "ed631d6e20900091ea490c3fb9f2019e51c76d742ba8b0b919e7760b09e307d6"
+      "sha256": "de9deb61f0762504fa35925931d477a2c4ca2223aa5c30debfc05253eeb8416a"
     },
     {
       "path": "src/fragments/content/001-bootstrap-shared-request-safety.js.part",
@@ -536,7 +536,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "02ac0f43599559e62be1cc7d669e313ca4d4282f9629026a1d39aebcd2b641f4"
+      "sha256": "c219325461d2a9fb2a5c0edfbe7309d9322198dbca3fe66d0c31184582631db4"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -616,7 +616,7 @@
     },
     {
       "path": "src/fragments/content/118-viewer-list-loading-retry-and-error-controls.js.part",
-      "sha256": "5a451fe2cd31bd0a6079c7bf510dea6e1f3757ee78a9b4b0d077800e5c495534"
+      "sha256": "29ab664f057488934f19c0ecfb9d52be83ca0ead7401c06eeae5d7690ae1e637"
     },
     {
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",

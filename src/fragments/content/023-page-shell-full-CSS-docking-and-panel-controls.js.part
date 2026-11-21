@@ -433,7 +433,7 @@
 .viewer .note-remind-label{display:inline-flex;align-items:center;gap:8px}
 .viewer .note-remind-date,.viewer .note-remind-clear{border:1px solid var(--shell-line);border-radius:6px;background:var(--shell-bg);color:var(--shell-text);padding:5px 8px;font:inherit;font-size:12px}
 .viewer .note-remind-clear{cursor:pointer}
-.viewer .note-remind-clear[hidden]{display:none}
+.viewer .note-remind-clear[hidden],.viewer .note-remind-hint[hidden]{display:none}.viewer .note-remind-hint{flex-basis:100%}
 .viewer :is(.note-remind-date,.note-remind-clear):focus-visible{outline:2px solid var(--shell-focus);outline-offset:2px}
 .viewer :is(.note-remind-date,.note-remind-clear):disabled{opacity:.5;cursor:default}
 .viewer .ek-sekmeler [role=tab].notlu::after{content:'';display:inline-block;width:6px;height:6px;margin-left:6px;border-radius:50%;background:var(--shell-accent);vertical-align:middle}

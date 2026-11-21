@@ -173,7 +173,8 @@
 .uhd .note-remind-label{display:inline-flex;align-items:center;gap:6px}
 .uhd .note-remind-date{min-height:28px;padding:2px 6px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--text);font:inherit;font-size:12px}
 .uhd .note-remind-clear{min-height:28px;padding:3px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--text);font:inherit;font-size:12px;cursor:pointer}
-.uhd .note-remind-clear[hidden]{display:none}
+.uhd .note-remind-clear[hidden],.uhd .note-remind-hint[hidden]{display:none}
+.uhd .note-remind-hint{flex-basis:100%;color:var(--warn-tx)}
 .uhd :is(.note-remind-date,.note-remind-clear):disabled{opacity:.55;cursor:default}
 .uhd .note-remind-line{margin-top:2px;padding-left:11px;font-size:11.5px;color:var(--muted)}
 .uhd .note-remind-line:is(.today,.past){color:var(--warn-tx);font-weight:600}
@@ -827,7 +828,7 @@
       const notGunu = todayIso(), notKey = 'noteRemind:' + notGunu;
       const gelenNot = pref('notHatirlatma', true) && !dismissedNotices.has(notKey)
         ? globalThis.UHD.noteRemindDue(notes, notGunu, records.filter(r => !gizli[r.key]).map(r => r.key)) : 0;
-      if (gelenNot) return showNotice(`${fmtNum(gelenNot)} dosya notunun hatırlatma günü geldi.`, '', { label: 'Göster', fn: () => { input.value = ''; switchView('notes'); } }, notKey);
+      if (gelenNot) return showNotice(`${fmtNum(gelenNot)} dosya notunun hatırlatma günü geldi.`, '', { label: 'Göster', fn: () => showView('notes', { hatirlatma: true }) }, notKey);
       const update = { label: 'Güncelle', fn: () => { setNotice(''); opts.onUpdate(false); } };
       if (!records.length || running()) return showNotice('');
       // Taraf yenileme ve güncelleme hatırlatması da kapatılınca sıradaki bildirimi gizlemez.
@@ -884,11 +885,14 @@
     const viewName = () => filter.onlyDurusma ? 'hearings' : filter.onlyNew ? 'new' : filter.onlyNote ? 'notes' : 'files';
     const activeFilterCount = () => (filter.durum !== 'all' ? 1 : 0) + filter.tur.length + (filter.onlyClient ? 1 : 0)
       + (cbsOnly() ? (filter.cbsIl ? 1 : 0) + (filter.cbsBirim ? 1 : 0) + (filter.cbsIzin && filter.cbsIzin !== 'all' ? 1 : 0) : 0);
-    function clearFilters() {
+    const dosyaFiltreyeUyar = (r, mk) => passFilter(r, filter) && (!filter.onlyClient || (r.taraflar || []).some(p => isClient(p, mk)));
+    function clearFilters(kaydet = true) {
       filter.durum = 'all'; filter.tur = []; filter.onlyClient = false;
       filter.cbsIl = ''; filter.cbsBirim = ''; filter.cbsIzin = '';
-      filter.turPinned = true;
-      saveTurFilter();
+      if (kaydet) {
+        filter.turPinned = true;
+        saveTurFilter();
+      }
       shownLimit = LIMIT;
     }
     function switchView(name) {
@@ -931,7 +935,7 @@
       const active = viewName();
       // Sayaçlar listenin gösterdiğini sayar: gizlenen dosyalar hariç ve seçili filtrelerle; duruşmalar seçili aralıkta.
       const mk = filter.onlyClient ? myKeys(myName()) : [];
-      const gorunur = records.filter(r => !gizli[r.key] && passFilter(r, filter) && (!filter.onlyClient || (r.taraflar || []).some(p => isClient(p, mk))));
+      const gorunur = records.filter(r => !gizli[r.key] && dosyaFiltreyeUyar(r, mk));
       const durSay = upcomingDurusmalar(durusmaMeta && durusmaMeta.list)
         .filter(d => (hearingRange === 'cakisma' ? cakismalar.has(d.id) : hearingRange === 'all' || daysLeft(d.tarih) < (hearingRange === 'today' ? 1 : 7))).length;
       for (const [name, title, total] of [
@@ -1239,16 +1243,12 @@
       editor.addEventListener('keydown', e => {
         e.stopPropagation();
         if (e.key === 'Escape') { e.preventDefault(); discard(); if (!state.saving) input.focus(); }
+        else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.isComposing) { e.preventDefault(); done(); }
       });
       ta.addEventListener('focus', () => { editing = r.key; fit(); });
       ta.addEventListener('input', () => {
         if (state.editor !== editor || state.saving) return;
         state.text = ta.value; state.error = false; fit(); sync();
-      });
-      ta.addEventListener('keydown', e => {
-        e.stopPropagation();
-        if (e.key === 'Escape') { e.preventDefault(); discard(); if (!state.saving) input.focus(); }
-        else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.isComposing) { e.preventDefault(); done(); }
       });
       for (const control of [save, cancel, ...field.toolbar.querySelectorAll('button')]) {
         control.addEventListener('mousedown', e => { e.preventDefault(); });
@@ -2886,9 +2886,29 @@
       if (dizin || ch.uhdProgress || ch.uhdJob) renderStatus();
       if (ch.uhdProgress || ch.uhdJob) syncSetupScanNotice();
       if ((ch.uhdProgress || ch.uhdJob) && syncCbsScan) syncCbsScan();
-      if (dizin || ch.uhdProgress || ch.uhdEvrakGoruldu || ch.uhdDurusmalar || ch.uhdPrefs) autoNotice();
+      if (dizin || ch.uhdProgress || ch.uhdEvrakGoruldu || ch.uhdDurusmalar || ch.uhdPrefs || ch.uhdNotes || ch.uhdGizli) autoNotice();
     });
     setInterval(renderStatus, 5000);
+
+    // Popup ve bildirimlerden gelen görünüm isteği. Dizin tazelenirken arama kutusuna yeni yazılan metin korunur.
+    function showView(name, { hatirlatma = false } = {}) {
+      const arama = input.value;
+      return dizinTazeyken(() => {
+        if (hasDownloads && !downloadArea.hidden) showDownloads(false);
+        if (name === 'hearings' || name === 'hearings-today' || name === 'hearings-cakisma') {
+          showDurusmalar(name === 'hearings-today' ? 'today' : name === 'hearings-cakisma' ? 'cakisma' : 'week');
+          return;
+        }
+        if (input.value === arama) input.value = '';
+        if (name === 'notes' && hatirlatma && activeFilterCount()) {
+          const mk = filter.onlyClient ? myKeys(myName()) : [];
+          const filtrelenen = records.filter(r => notes[r.key] && !gizli[r.key] && !dosyaFiltreyeUyar(r, mk)).map(r => r.key);
+          if (globalThis.UHD.noteRemindDue(notes, todayIso(), filtrelenen)) clearFilters(false);
+        }
+        switchView(name === 'new' ? 'new' : name === 'notes' ? 'notes' : 'files');
+        input.focus();
+      });
+    }
 
     return {
       root,
@@ -2907,21 +2927,7 @@
       showDownloads,
       // Dosya ekranındaki "Bu dosyadaki yeni evrakları görüldü say".
       markSeen: (keys, kadar) => dizinTazeyken(() => markSeen(keys, false, kadar)),
-      // Popup'taki özet satırından gelen istek: 'hearings' duruşmalar (7 gün), 'hearings-today' bugünküler,
-      // 'hearings-cakisma' çakışanlar, 'new' yeni evrak, 'notes' notlu dosyalar, diğerleri dosyalar. Dizin tazelenirken arama kutusuna yazılan silinmez.
-      showView(name) {
-        const arama = input.value;
-        return dizinTazeyken(() => {
-          if (hasDownloads && !downloadArea.hidden) showDownloads(false);
-          if (name === 'hearings' || name === 'hearings-today' || name === 'hearings-cakisma') {
-            showDurusmalar(name === 'hearings-today' ? 'today' : name === 'hearings-cakisma' ? 'cakisma' : 'week');
-            return;
-          }
-          if (input.value === arama) input.value = '';
-          switchView(name === 'new' ? 'new' : name === 'notes' ? 'notes' : 'files');
-          input.focus();
-        });
-      }
+      showView
     };
   }
 

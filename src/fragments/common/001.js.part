@@ -335,9 +335,10 @@
         hits.push({ score, r, c, numberRank, numberLength: numberRank === 1 ? c.fileSequenceText.length : 0, remind: f.onlyNote ? noteRemind(notes[r.key]) || SONRA : '' });
       }
     }
-    // Notlu görünümünde hatırlatması en yakın olan not önce gelir; tarihsiz notlar olağan sırayla arkadan gelir.
+    // Notlu görünümünde hatırlatması en yakın olan not, seçili sıralama ne olursa olsun önce gelir; tarihsiz notlar seçili
+    // sırayla arkadan gelir. Öteki görünümlerde `remind` boştur, sıralamaya katılmaz.
+    const byRemind = (a, b) => (a.remind < b.remind ? -1 : a.remind > b.remind ? 1 : 0);
     const byRelevance = (a, b) =>
-      (a.remind < b.remind ? -1 : a.remind > b.remind ? 1 : 0) ||
       a.numberRank - b.numberRank ||
       a.numberLength - b.numberLength ||
       b.score - a.score ||
@@ -345,10 +346,10 @@
       (a.r.sorguDurum || 0) - (b.r.sorguDurum || 0) ||
       (b.r.acilisTs || 0) - (a.r.acilisTs || 0);
     const sirala = o.sort === 'newest'
-      ? (a, b) => (b.r.acilisTs || 0) - (a.r.acilisTs || 0) || byRelevance(a, b)
+      ? (a, b) => byRemind(a, b) || (b.r.acilisTs || 0) - (a.r.acilisTs || 0) || byRelevance(a, b)
       : o.sort === 'fileNo'
-        ? (a, b) => b.c.fileYear - a.c.fileYear || b.c.fileSequence - a.c.fileSequence || byRelevance(a, b)
-        : byRelevance;
+        ? (a, b) => byRemind(a, b) || b.c.fileYear - a.c.fileYear || b.c.fileSequence - a.c.fileSequence || byRelevance(a, b)
+        : (a, b) => byRemind(a, b) || byRelevance(a, b);
     const limit = o.limit || 60;
     // Çok sonuçta yalnız ilk `limit` kararlı biçimde seçilir (sort + slice ile aynı sıra).
     let top;

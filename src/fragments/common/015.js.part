@@ -253,9 +253,7 @@
   const noteRemindDue = (notes, today = todayIso(), keys = null) =>
     (keys || Object.keys(notes || {})).filter(key => { const gun = noteRemind(notes?.[key]); return gun && gun <= today; }).length;
   // Dosya ekranındaki Notlar sekmesi, dosyanın notu varken işaretlenir: not sekme açılmadan da fark edilir.
-  // Dinleyici kendi kendini söker: düğme ekrandan kalktıktan sonraki ilk depo değişikliğinde kaldırılır.
-  function notSekmesiIsareti(dugme, key, getNote) {
-    let gorundu = false;
+  function notSekmesiIsareti(dugme, key, getNote, signal) {
     const isaretle = () => {
       const notVar = !!getNote(key);
       dugme.classList.toggle('notlu', notVar);
@@ -263,12 +261,10 @@
       else { dugme.removeAttribute('aria-label'); dugme.removeAttribute('title'); }
     };
     const changed = (changes, area) => {
-      gorundu ||= dugme.isConnected;
-      if (gorundu && !dugme.isConnected) { chrome.storage.onChanged.removeListener(changed); return; }
       if (area === 'local' && changes.uhdNotes) isaretle();
     };
-    gorundu = dugme.isConnected;
     chrome.storage.onChanged.addListener(changed);
+    signal.addEventListener('abort', () => chrome.storage.onChanged.removeListener(changed), { once: true });
     isaretle();
   }
   function noteDisplay(raw, highlightFn) {
@@ -295,16 +291,20 @@
     input.className = 'note-input'; input.contentEditable = 'true'; input.setAttribute('role', 'textbox'); input.setAttribute('aria-multiline', 'true');
     input.setAttribute('aria-label', label); input.setAttribute('data-placeholder', placeholder); input.setAttribute('spellcheck', 'true'); input.tabIndex = 0;
     // Hatırlatma tarihi biçim araç çubuğundan ayrı bir satırdadır; değeri notla birlikte okunur ve yazılır.
-    const remindBar = document.createElement('div'), remindLabel = document.createElement('label'), remindInput = document.createElement('input'), remindClear = document.createElement('button');
+    const remindBar = document.createElement('div'), remindLabel = document.createElement('label'), remindInput = document.createElement('input'), remindClear = document.createElement('button'), remindHint = document.createElement('span');
     remindBar.className = 'note-remind';
     remindLabel.className = 'note-remind-label'; remindLabel.textContent = 'Hatırlat';
     remindInput.type = 'date'; remindInput.className = 'note-remind-date'; remindInput.setAttribute('aria-label', 'Hatırlatma tarihi'); remindInput.setAttribute('min', todayIso());
     remindClear.type = 'button'; remindClear.className = 'note-remind-clear'; remindClear.textContent = 'Kaldır'; remindClear.setAttribute('aria-label', 'Hatırlatmayı kaldır'); remindClear.hidden = true;
-    remindLabel.append(remindInput); remindBar.append(remindLabel, remindClear);
+    // Metinsiz not saklanmaz: tarih seçilip metin yazılmadıysa bunu söyleyen satır.
+    remindHint.className = 'note-remind-hint'; remindHint.setAttribute('role', 'status'); remindHint.textContent = 'Hatırlatma için önce not yazın; metinsiz not kaydedilmez.'; remindHint.hidden = true;
+    remindLabel.append(remindInput); remindBar.append(remindLabel, remindClear, remindHint);
     root.append(toolbar, input, remindBar);
     const doc = input.ownerDocument, win = doc.defaultView || globalThis, listeners = [];
     let disabled = false, destroyed = false, lastRange = null, remind = '';
-    const showRemind = () => { remindInput.value = remind; remindClear.hidden = !remind; };
+    const showHint = () => { remindHint.hidden = !remind || !!read().text.trim(); };
+    // Alan yalnız değeri farklıyken yazılır: Chrome yarım girişte değeri '' bildirir, yeniden '' yazmak kalan bölümleri de siler.
+    const showRemind = () => { if (remindInput.value !== remind) remindInput.value = remind; remindClear.hidden = !remind; showHint(); };
     const owns = target => !!target && (target === root || root.contains(target));
     const listen = (node, event, fn, options) => { node.addEventListener(event, fn, options); listeners.push(() => node.removeEventListener(event, fn, options)); };
     const redColors = new Set(['red', '#b42318', '#dc2626', '#ff8f87', '#ff9292', '#ff8e82', 'rgb(180,35,24)', 'rgb(220,38,38)', 'rgb(255,143,135)', 'rgb(255,146,146)', 'rgb(255,142,130)']);
@@ -432,10 +432,14 @@
     listen(toolbar, 'focusout', event => { if (!owns(event.relatedTarget)) input.dispatchEvent(new win.FocusEvent('blur', { relatedTarget: event.relatedTarget })); });
     listen(remindBar, 'focusout', event => { if (!owns(event.relatedTarget)) input.dispatchEvent(new win.FocusEvent('blur', { relatedTarget: event.relatedTarget })); });
     const setRemind = next => { if (disabled || destroyed) return; remind = noteRemindDate(next); showRemind(); emit(); };
-    listen(remindInput, 'change', () => setRemind(remindInput.value));
-    listen(remindClear, 'click', () => setRemind(''));
+    // Yarım giriş (bir bölümü silinmiş tarih) hatırlatmayı silmez; alandan çıkılınca kayıtlı tarih geri yazılır.
+    listen(remindInput, 'change', () => { if (!remindInput.value && remindInput.validity?.badInput) return; setRemind(remindInput.value); });
+    listen(remindInput, 'blur', () => { if (remindInput.validity?.badInput) remindInput.value = remind; });
+    // Odaktaki düğme gizlenince tarayıcı blur üretir ve düzenleme bitmiş sayılır; odak önce tarih alanına alınır.
+    listen(remindClear, 'click', () => { if (disabled || destroyed) return; remindInput.focus({ preventScroll: true }); setRemind(''); });
+    listen(input, 'input', showHint);
     input.value = value;
-    return { root, input, toolbar, remind: { bar: remindBar, input: remindInput, clear: remindClear }, owns, focus: () => input.focus({ preventScroll: true }), destroy() { if (destroyed) return; destroyed = true; for (const off of listeners) off(); } };
+    return { root, input, toolbar, remind: { bar: remindBar, input: remindInput, clear: remindClear, hint: remindHint }, owns, focus: () => input.focus({ preventScroll: true }), destroy() { if (destroyed) return; destroyed = true; for (const off of listeners) off(); } };
   }
 
   // Sayfa içi onay. Tarayıcının confirm() penceresi içerik betiğinden çağrılınca "avukat.uyap.gov.tr şunu diyor" başlığıyla
