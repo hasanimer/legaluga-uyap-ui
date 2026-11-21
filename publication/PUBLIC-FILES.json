@@ -420,7 +420,7 @@
     },
     {
       "path": "src/extension/vendor/hearing-vendor.json",
-      "sha256": "3b80f9df3a57aa38f3f94d6ce55e75f760c2c04e30bfb942f680212d5385b734"
+      "sha256": "75d737b3983fe9d7d57f53a403600209ef75a71d155850465895aa9d81396db4"
     },
     {
       "path": "src/extension/vendor/pdf-lib.min.js",
@@ -428,11 +428,11 @@
     },
     {
       "path": "src/extension/vendor/pdfjs-reader.js",
-      "sha256": "462d5ec705d88282080aa845d7a4d2d52d3be00b3353d767b796381f00e95967"
+      "sha256": "1f1d4361b0aec3a0acf0939e04708235bbfb13ac00900966a1de41f87046543a"
     },
     {
       "path": "src/extension/vendor/sentry.bundle.js",
-      "sha256": "6771b508042d37cc176703ec17c4fc8be2dad2a6f59dfda1c70be67c308ec06a"
+      "sha256": "40f81c086c1eda396a1296a1fbb891096f8e4cef32089133a1c867ae1278532e"
     },
     {
       "path": "src/fragments/background/002.js.part",
