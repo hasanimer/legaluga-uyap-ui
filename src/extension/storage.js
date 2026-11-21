@@ -542,9 +542,12 @@
     const trusted = sender => sender.id === chrome.runtime.id && (String(sender.url || '').startsWith(chrome.runtime.getURL('')) || (sender.frameId === 0 && String(sender.url || '').startsWith('https://avukat.uyap.gov.tr/')));
     chrome.runtime.onMessage.addListener((message, sender, reply) => {
       if (message?.type !== 'uhd-storage' || !trusted(sender)) return;
-      broker(message.operation, message.args).then(result => reply({ ok: true, ...result }), error => reply({ ok: false, error: error?.code === 'storage-size' ? 'Şifreli depolama işlemi 32 MiB sınırını aşıyor. Mevcut veriler değiştirilmedi.'
-        : acilisHatasi && error === acilisHatasi.error && !acilisHatasi.kalici ? 'Şifreli depolama geçici olarak açılamadı. Veriler sıfırlanmadı; birkaç saniye sonra yeniden deneyin.'
-          : 'Şifreli depolama açılamadı veya yazılamadı. Veriler sıfırlanmadı; aynı Chrome profilinde tekrar deneyin.' }));
+      // Kod, istemcinin geçici açılış hatasını yeniden denemesine ve kalıcı hatanın raporda türüyle görünmesine yarar.
+      broker(message.operation, message.args).then(result => reply({ ok: true, ...result }), error => reply(error?.code === 'storage-size'
+        ? { ok: false, code: 'depo-boyut', error: 'Şifreli depolama işlemi 32 MiB sınırını aşıyor. Mevcut veriler değiştirilmedi.' }
+        : acilisHatasi && error === acilisHatasi.error && !acilisHatasi.kalici
+          ? { ok: false, code: 'depo-gecici', error: 'Şifreli depolama geçici olarak açılamadı. Veriler sıfırlanmadı; birkaç saniye sonra yeniden deneyin.' }
+          : { ok: false, code: 'depo-acilamadi', error: 'Şifreli depolama açılamadı veya yazılamadı. Veriler sıfırlanmadı; aynı Chrome profilinde tekrar deneyin.' }));
       return true;
     });
     rawListen((changes, area) => {
@@ -571,12 +574,21 @@
       }).catch(() => {});
     });
   }
+  // Yalnız okuyan işlemler geçici hatada yinelenir: worker açılışı (SW yeniden başlarken) ya da kasanın 5 sn sonra yeniden
+  // açılışı beklenir. Yazılar yinelenmez (çift yan etki olmasın); kalıcı hata ve süre dolan deneme kodlu hatayla düşer.
+  const OKUMALAR = new Set(['get', 'indexMeta', 'findRecord', 'getSafahat', 'getBalance', 'getBulkDownload', 'listBulkDownloads', 'status']);
+  const GECICI = new Set(['depo-gecici', 'depo-yanitsiz']), TEKRAR_MS = [1000, 5000];
   async function request(operation, args) {
     checkMessage({ operation, args });
     if (broker) return broker(operation, args);
-    const result = await chrome.runtime.sendMessage({ type: 'uhd-storage', operation, args });
-    if (!result?.ok) throw new Error(result?.error || 'Şifreli depolama yanıt vermedi. Sayfayı yenileyin.');
-    return result;
+    for (let deneme = 0; ; deneme++) {
+      const result = await chrome.runtime.sendMessage({ type: 'uhd-storage', operation, args });
+      if (result?.ok) return result;
+      const code = typeof result?.code === 'string' ? result.code : result ? 'depo-acilamadi' : 'depo-yanitsiz';
+      if (!GECICI.has(code) || !OKUMALAR.has(operation) || deneme >= TEKRAR_MS.length)
+        throw Object.assign(new Error(result?.error || 'Şifreli depolama yanıt vermedi. Sayfayı yenileyin.'), { code });
+      await new Promise(resolve => { setTimeout(resolve, TEKRAR_MS[deneme]); });
+    }
   }
   // Okunan anahtar yanıttan sonra yalnız sürümle duyurulduysa (REREAD) yanıt yamanamaz: okuma yinelenir (en çok üç kez).
   async function duyuruyaKadarOku(query, istenen) {
