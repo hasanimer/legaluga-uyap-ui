@@ -248,7 +248,7 @@
     },
     {
       "path": "src/extension/mazeret-dilekcesi.js",
-      "sha256": "b31148e01f8f47a37a304b58e727598b44e9cce2f667fa880212f0dd9e1820a7"
+      "sha256": "a2bbbd55c76387b7e95fa331ac05371154c7623f4dc1ec46c5778ae46c84a020"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -316,7 +316,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "d226a74a290f74b69a378175e198295170156b4c98a493014bb7b021cc2da3c3"
+      "sha256": "8028c44ddbf9825e1c7269d6b2078fc1f5315540ed4251972a9af92648c3833c"
     },
     {
       "path": "src/extension/vault-crypto.js",
