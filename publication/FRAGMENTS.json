@@ -343,8 +343,8 @@
       "source": "content.js",
       "order": 58,
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "6424da2e4fc85fd16d2d0c45dae299f46132170a622b3dc1a574ad6c38dd5404",
-      "bytes": 37361,
+      "sha256": "c24136fa6e9d11e24e3905808d7b4d25c8efda9aae6d8b43628278ed351ba71f",
+      "bytes": 37480,
       "purpose": "full-viewer-HTML-render-and-action-controls"
     },
     {
@@ -359,8 +359,8 @@
       "source": "content.js",
       "order": 62,
       "path": "src/fragments/content/118-viewer-list-loading-retry-and-error-controls.js.part",
-      "sha256": "29ab664f057488934f19c0ecfb9d52be83ca0ead7401c06eeae5d7690ae1e637",
-      "bytes": 13761,
+      "sha256": "722b4d8b0f7df67ee4b634af6f5596d831c4e7278be800172c6625f211572d39",
+      "bytes": 13768,
       "purpose": "viewer-list-loading-retry-and-error-controls"
     },
     {

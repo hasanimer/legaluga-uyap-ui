@@ -55,3 +55,24 @@ test('EYP açılması ve belge seçimi iptal edilebilir', async () => {
   await assert.rejects(p.oku(0, { signal: ac.signal }), { name: 'AbortError' });
   await assert.rejects(p.oku(-1), /seçimi/);
 });
+
+test('UYAP düz EYP gönderisinde ana evrak üst yazı sayılır; ek adındaki "ustyazi" üst yazı sayılmaz', async () => {
+  const p = await zip.eyp(paket([{ ad: '(Ek 1)1-ustyazi.pdf', veri: '%PDF-ek' }, { ad: 'ana_evrak.pdf', veri: pdf }]));
+  assert.deepEqual(p.belgeler.map(x => [x.ad, x.ustYazi]), [['ana_evrak.pdf', true], ['(Ek 1)1-ustyazi.pdf', false]]);
+  assert.equal(p.ilk, 0);
+  assert.equal(await (await p.oku(0)).blob.text(), pdf);
+});
+test('EYP tanıma: klasörlü ya da düz yapı ve _eyp.zip adı tanınır; sıradan ZIP tanınmaz', async () => {
+  const liste = adlar => adlar.map(ad => ({ ad }));
+  assert.equal(zip.eypMi(liste(['UstYazi/yazi.pdf'])), true);
+  assert.equal(zip.eypMi(liste(['Ekler\\ek.pdf'])), true);
+  assert.equal(zip.eypMi(liste(['ana_evrak.pdf', '(Ek 1)a.pdf'])), true);
+  assert.equal(zip.eypMi(liste(['ANA_EVRAK.udf'])), true);
+  assert.equal(zip.eypMi(liste(['belge.pdf']), 'Sentetik_eyp.zip'), true);
+  assert.equal(zip.eypMi(liste(['belge.pdf']), 'Sentetik.zip'), false);
+  assert.equal(zip.eypMi(liste(['klasor/ana_evrak.pdf', 'content.xml'])), false);
+  const siradan = paket([{ ad: 'belge.pdf', veri: pdf }]);
+  await assert.rejects(zip.eyp(siradan, { zipAdi: 'Sentetik.zip' }), error => error.code === 'eyp-degil');
+  assert.equal((await zip.eyp(siradan, { zipAdi: 'Sentetik_eyp.zip' })).ilk, 0);
+  assert.equal((await zip.eyp(siradan)).ilk, 0);
+});

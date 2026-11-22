@@ -437,7 +437,7 @@
       const eypKur = paket => {
         s.eypUrl = URL.createObjectURL(new Blob([paket.doc.blob], { type: 'application/octet-stream' }));
         indir.href = s.eypUrl;
-        indir.download = zipTools.documentName(rec, x, 'eyp');
+        indir.download = zipTools.documentName(rec, x, documentExtension(paket.doc));
         indir.hidden = false;
         indir.title = 'Özgün EYP paketini indir';
         const secim = el('select', { class: 'eyp-picker', 'aria-label': 'EYP üst yazısı veya eki' },
@@ -460,10 +460,10 @@
       };
       indir.title = 'Özgün evrakı indir';
       if (eypPaket) eypKur(eypPaket);
-      if (ext === 'eyp' && !eypPaket) {
+      if ((ext === 'eyp' || ext === 'zip') && !eypPaket) {
         icerik(el('div', { class: 'docyer', role: 'status' }, 'EYP üst yazısı ve ekleri hazırlanıyor…'));
         (async () => {
-          const paket = await globalThis.DurusmaPaketiZip.eyp(doc.blob, { signal: s.ac.signal });
+          const paket = await globalThis.DurusmaPaketiZip.eyp(doc.blob, { signal: s.ac.signal, zipAdi: ext === 'zip' ? doc.filename || '' : null });
           if (!gecerli()) return;
           paket.doc = doc;
           eypKur(paket);
@@ -476,8 +476,8 @@
           }
         })().catch(err => {
           if (!gecerli()) return;
-          icerik(unsupportedDoc(rec, e, ext, indirUrl, name, doc.type, err?.code === 'zip' ? err.message : 'EYP paketi açılamadı; özgün paketi indirin.'));
-          atifBelge('diger', { ext: 'eyp' });
+          icerik(unsupportedDoc(rec, e, ext, indirUrl, name, doc.type, err?.code === 'eyp-degil' ? '' : err?.code === 'zip' ? err.message : 'EYP paketi açılamadı; özgün paketi indirin.'));
+          atifBelge('diger', { ext });
         });
         return;
       }

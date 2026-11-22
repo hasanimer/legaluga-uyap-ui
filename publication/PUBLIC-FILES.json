@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "7e5f6bc29161fc5c0bb4aaf5f2a2c850c264e404f701db77fff59f89861f36ff"
+      "sha256": "a8bd5efb33e35201ce647d3f0e6be3481209a17cb5eebec7fc96e0b399d74a4f"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -208,7 +208,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-zip.js",
-      "sha256": "708f199e40decb32c1f7cc5b6bf18b715b75ca0efc0c289f51d464782df091db"
+      "sha256": "2bc9d71ab56403836f2f825322176978dc71d662229cfb4dcca81ff561df7eaa"
     },
     {
       "path": "src/extension/durusma-paketi.html",
@@ -612,7 +612,7 @@
     },
     {
       "path": "src/fragments/content/103-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "6424da2e4fc85fd16d2d0c45dae299f46132170a622b3dc1a574ad6c38dd5404"
+      "sha256": "c24136fa6e9d11e24e3905808d7b4d25c8efda9aae6d8b43628278ed351ba71f"
     },
     {
       "path": "src/fragments/content/105-viewer-document-load-and-list-ready.js.part",
@@ -620,7 +620,7 @@
     },
     {
       "path": "src/fragments/content/118-viewer-list-loading-retry-and-error-controls.js.part",
-      "sha256": "29ab664f057488934f19c0ecfb9d52be83ca0ead7401c06eeae5d7690ae1e637"
+      "sha256": "722b4d8b0f7df67ee4b634af6f5596d831c4e7278be800172c6625f211572d39"
     },
     {
       "path": "src/fragments/content/121-toast-announcement-and-runtime-action-UI.js.part",
@@ -692,7 +692,7 @@
     },
     {
       "path": "tests/eyp-paketi.test.js",
-      "sha256": "e42cf0ac888946d13db6987b2e18468ae7518abe305161552425413988e29dfd"
+      "sha256": "10bddbf69220f56b4f2a881ab36f38ea6bf464ee7115f662560526f95aa748c3"
     },
     {
       "path": "tests/zip-yardimci.js",
