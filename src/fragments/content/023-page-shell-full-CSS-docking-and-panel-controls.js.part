@@ -1305,7 +1305,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
       downloads: downloadView,
       openDownload,
       showDownloadPart,
-      isVisible: () => !!panel && !panel.hidden,
+      isVisible: () => !!panel && !panel.hidden, kilitli: () => !!panelKilidi?.kilitli(),
       onOpen: r => openFile(r),
       onOpenEvrak: (r, k, group, baglam) => openEvrak(r, k, group, baglam),
       onDosyaPanel: (r, tab, baglam) => openDosyaPanel(r, tab, baglam),
