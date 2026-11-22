@@ -432,9 +432,10 @@
     listen(toolbar, 'focusout', event => { if (!owns(event.relatedTarget)) input.dispatchEvent(new win.FocusEvent('blur', { relatedTarget: event.relatedTarget })); });
     listen(remindBar, 'focusout', event => { if (!owns(event.relatedTarget)) input.dispatchEvent(new win.FocusEvent('blur', { relatedTarget: event.relatedTarget })); });
     const setRemind = next => { if (disabled || destroyed) return; remind = noteRemindDate(next); showRemind(); emit(); };
-    // Yarım giriş (bir bölümü silinmiş tarih) hatırlatmayı silmez; alandan çıkılınca kayıtlı tarih geri yazılır.
+    // Yarım giriş (bir bölümü silinmiş tarih) hatırlatmayı silmez; alandan çıkılınca kayıtlı tarih geri yazılır. Bölümler tek tek
+    // silinerek tümüyle boşaltılan alan change üretmez (değer zaten ''): alandan çıkışta alanla kayıt uzlaştırılır.
     listen(remindInput, 'change', () => { if (!remindInput.value && remindInput.validity?.badInput) return; setRemind(remindInput.value); });
-    listen(remindInput, 'blur', () => { if (remindInput.validity?.badInput) remindInput.value = remind; });
+    listen(remindInput, 'blur', () => { if (remindInput.validity?.badInput) remindInput.value = remind; else if (remindInput.value !== remind) setRemind(remindInput.value); });
     // Odaktaki düğme gizlenince tarayıcı blur üretir ve düzenleme bitmiş sayılır; odak önce tarih alanına alınır.
     listen(remindClear, 'click', () => { if (disabled || destroyed) return; remindInput.focus({ preventScroll: true }); setRemind(''); });
     listen(input, 'input', showHint);
