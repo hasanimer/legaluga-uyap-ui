@@ -176,7 +176,7 @@
           el('small', null, 'Her parçada en çok 100 evrak veya yaklaşık 32 MiB; daha büyük tek evrak ayrı parçaya konur (üst sınır 128 MiB). Parça en geç birkaç dakikada bir diske yazılır. UYAP sekmesi açıkken bu ekranı kapatsanız da indirme sürer. Sekme veya tarayıcı kapanırsa diske yazılmış parçadan devam edebilirsiniz.'))),
         el('label', { class: 'ti-secenek' }, zipKlasor, el('span', null, 'Klasör düzeninde indir',
           el('small', null, 'ZIP içinde Avukat / Yargı türü / Birim türü / Mahkeme ve esas no klasörü açılır; evraklar özgün biçimleriyle kategori klasörlerine, ekler evrakın yanındaki _ekler klasörüne konur. Dosya bilgileri uyap-project.json kaydına yazılır. Parçalı indirmede tüm parçaları aynı klasöre çıkarın; kayıtlı plan devam ederken başladığı düzeni korur.')))),
-      bulkCard,
+      globalThis.UHDBulkPanel?.tempoAyari?.({ el }), bulkCard,
       el('div', { class: 'ti-eylem' }, zipIndir, zipDurdur, zipTekrar, zipKaydet, zipPanel), zipEngel,
       zipProgress, zipStatus);
     // Duruşma paketi: listede evraklar işaretlenir (önizleme sürer), sıra ve PDF bu ekranda; PDF görünmez uzantı çerçevesinde

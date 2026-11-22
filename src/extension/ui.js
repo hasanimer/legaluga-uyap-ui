@@ -2319,14 +2319,6 @@
       return `Durum: otomatik işlemler duraklatıldı${zaman}. Neden: ${ayrinti.mesaj}${Number.isInteger(ayrinti.durum) ? ` (HTTP ${ayrinti.durum})` : ''}`;
     }
 
-    // Ayarlar'daki tempo tahmini: service worker'ın verdiği 100 evraklık bekleme bütçesini ([en az, en çok] ms) dakikayla yazar.
-    function tempoTahmini(bekleme) {
-      if (!Array.isArray(bekleme) || bekleme.length !== 2 || !bekleme.every(ms => Number.isFinite(ms) && ms >= 0)) return '';
-      const [az, cok] = bekleme.map(ms => Math.round(ms / 60000)).sort((a, b) => a - b);
-      const sure = cok < 1 ? '1 dakikadan az' : az < 1 ? `en çok yaklaşık ${cok} dakika` : az === cok ? `yaklaşık ${az} dakika` : `yaklaşık ${az}–${cok} dakika`;
-      return `100 evrakta ${sure} bekleme (indirme süresi hariç).`;
-    }
-
     function renderSettings() {
       const korumaSatir = el('div', { class: 'hint', role: 'status' });
       chrome.storage.local.get(['uhdUyapKoruma', 'uhdUyapKorumaAyrinti'])
@@ -2349,77 +2341,6 @@
         });
         return el('div', { class: 'field' }, el('span', null, label), picker);
       };
-      // İndirme temposu: hazır kiplerin sayıları ve Özel değerlerinin son denetimi service worker'dadır; bu dosyada yalnız
-      // Özel alanlarının giriş sınırları durur. Sayfa etkin kipi, 100 evraklık bekleme bütçesini ve Özel alanlarının başlangıç
-      // değerlerini service worker'a sorar; yanıt gelmezse tahmin satırı boş kalır, tercih yine kaydedilir.
-      const tempoAyari = () => {
-        const KIPLER = [['temkinli', 'Temkinli (varsayılan)'], ['hizli', 'Hızlı'], ['ozel', 'Özel']];
-        // [tercih, etiket, üst sınır, tam sayı alanında sıfırdan sonraki en küçük değer]
-        const ALANLAR = [['indirmeAraMin', 'Evrak arası bekleme, en az (sn)', 60], ['indirmeAraMax', 'Evrak arası bekleme, en çok (sn)', 60],
-          ['indirmeMolaHer', 'Kaç evrakta bir mola (0 = mola yok)', 1000, 5],
-          ['indirmeMolaMin', 'Mola süresi, en az (sn)', 600], ['indirmeMolaMax', 'Mola süresi, en çok (sn)', 600]];
-        // Kayıtlı kip: yeni tercih yoksa eski “Hızlı evrak indirme” işareti okunur; bilinmeyen değer temkinlidir.
-        const kip = () => {
-          const v = pref('indirmeTempo', null);
-          if (v == null) return pref('hizliIndirme', false) === true ? 'hizli' : 'temkinli';
-          return KIPLER.some(([kod]) => kod === v) ? v : 'temkinli';
-        };
-        const yazi = v => (typeof v === 'number' && Number.isFinite(v) ? String(v) : '');
-        const sor = async () => {
-          const istek = { indirmeTempo: kip() };
-          for (const [key] of ALANLAR) istek[key] = pref(key, null);
-          try {
-            const yanit = await chrome.runtime.sendMessage({ type: 'uhd-indirme-tempo', prefs: istek });
-            return yanit?.ok === true ? yanit : null;
-          } catch { return null; }
-        };
-        const tahmin = el('div', { class: 'hint', role: 'status' });
-        let soru = 0;
-        const tahminYaz = async () => {
-          const no = ++soru, secili = kip(), yanit = await sor();
-          if (no !== soru) return;   // daha yeni bir soru yolda
-          tahmin.textContent = !yanit ? ''
-            : (secili === 'ozel' && yanit.kip !== 'ozel' ? 'Özel değerler eksik ya da geçersiz; düzeltilene kadar temkinli tempo uygulanır. ' : '') + tempoTahmini(yanit.bekleme);
-        };
-        const girisler = ALANLAR.map(([key, label, ust, enKucuk]) => {
-          const giris = el('input', { type: 'number', inputmode: enKucuk ? 'numeric' : 'decimal', min: '0', max: String(ust), step: enKucuk ? '1' : 'any', 'aria-label': label, 'data-pref': key });
-          giris.addEventListener('change', async () => {
-            const v = String(giris.value).trim() === '' ? NaN : Number(giris.value);
-            if (!(Number.isFinite(v) && v >= 0 && v <= ust && (!enKucuk || (Number.isInteger(v) && (v === 0 || v >= enKucuk))))) {
-              giris.value = yazi(pref(key));
-              return setNotice(enKucuk ? `${label}: 0 ya da ${enKucuk}–${ust} arasında tam sayı girin.` : `${label}: 0–${ust} arasında bir sayı girin.`, 'err');
-            }
-            if (await tercihYaz({ [key]: v }, () => { giris.value = yazi(pref(key)); })) tahminYaz();
-          });
-          return giris;
-        });
-        const ozelKutu = el('div', { role: 'group', 'aria-label': 'Özel tempo değerleri' },
-          girisler.map((giris, i) => el('div', { class: 'field' }, el('span', null, ALANLAR[i][1]), giris)),
-          el('div', { class: 'hint' }, `Her evraktan sonra en az ile en çok arasında rastgele bir süre beklenir; en az değeri büyükse ikisi yer değiştirir. Bekleme en çok ${ALANLAR[0][2]} sn, mola süresi en çok ${ALANLAR[3][2]} sn, mola sıklığı 0 ya da ${ALANLAR[2][3]}–${ALANLAR[2][2]} evrak olabilir. Bekleme 0 olsa da istekler arasındaki kısa alt sınır korunur.`));
-        const secim = el('select', { 'aria-label': 'İndirme temposu', 'data-pref': 'indirmeTempo' }, KIPLER.map(([kod, ad]) => el('option', { value: kod }, ad)));
-        const ciz = () => {
-          secim.value = kip();
-          ozelKutu.hidden = kip() !== 'ozel';
-          girisler.forEach((giris, i) => { giris.value = yazi(pref(ALANLAR[i][0])); });
-          tahminYaz();
-        };
-        secim.addEventListener('change', async () => {
-          const secilen = secim.value;
-          // Eski işaret de eşitlenir: eski sürüme dönülürse seçilmemiş hızlı kip geri gelmez.
-          const yama = { indirmeTempo: secilen, hizliIndirme: secilen === 'hizli' };
-          if (secilen === 'ozel' && ALANLAR.some(([key]) => typeof pref(key) !== 'number')) {
-            // Özel ilk kez seçiliyor: boş alanlar o an geçerli temponun değerleriyle dolar.
-            const ilk = (await sor())?.alanlar;
-            for (const [key] of ALANLAR) if (typeof pref(key) !== 'number' && typeof ilk?.[key] === 'number') yama[key] = ilk[key];
-          }
-          if (await tercihYaz(yama, () => { secim.value = kip(); })) ciz();
-        });
-        ciz();
-        return [el('div', { class: 'field' }, el('span', null, 'İndirme temposu'), secim),
-          el('div', { class: 'hint' }, 'Toplu indirmede evraklar arasındaki bekleme ve molalar. Temkinli tempo varsayılandır. Kısa aralık indirmeyi hızlandırır ama UYAP’ın otomatik etkinlik korumasına takılma olasılığını artırır; koruma devreye girerse bütün otomatik işlemler yine durur, kendiliğinden devam etmez ve kilidi elle açmanız gerekir.'),
-          ozelKutu, tahmin];
-      };
-
       // Duruşmalarım’daki düğmeyle aynı anahtar: kontrol ve bildirim birlikte açılır, birlikte kapanır.
       const cakismaKutu = el('input', { type: 'checkbox', 'data-pref': 'cakismaTarama' });
       cakismaKutu.checked = cakismaTaramaAcik();
@@ -2644,7 +2565,6 @@
         el('h3', null, 'UYAP bağlantısı ve koruma'),
         el('div', { class: 'box' },
           check('oturumAcik', false, 'UYAP oturumunu koru', 'Varsayılan kapalıdır. Açıkken, siz işlem yapmasanız da eklenti belirli aralıklarla UYAP’a küçük bir okuma isteği gönderir. İşlem koruması bunu da durdurur.'),
-          tempoAyari(),
           korumaSatir,
           el('div', { class: 'row' }, (() => {
             const korumaBirak = el('button', { type: 'button', class: 'btn sm' }, 'Otomatik işlemleri yeniden aç');

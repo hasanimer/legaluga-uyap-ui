@@ -262,60 +262,16 @@ test('popup/options veya yöneticisi/bileşeni olmayan ekran indirme UI’sı ve
   }
 });
 
-// İndirme temposu: sayılar ve son denetim tam eklentinin service worker'ındadır; burada onun yanıtı sentetik verilir.
-test('Ayarlar’da indirme temposu seçilir; sayı alanları yalnız Özel’de görünür, seçim ve değerler kaydedilir', async () => {
-  const ALANLAR = ['indirmeAraMin', 'indirmeAraMax', 'indirmeMolaHer', 'indirmeMolaMin', 'indirmeMolaMax'];
+// İndirme temposu dosyanın Toplu indir sekmesine taşındı (indirme-panel.js, indirme-panel.test.js); Ayarlar onu çizmez.
+test('Ayarlar’da indirme temposu denetimi yoktur; service worker’a tempo sorulmaz', async () => {
   const sorular = [];
-  const h = harness({ sendMessage: async msg => {
-    if (msg.type !== 'uhd-indirme-tempo') return {};
-    sorular.push(plain(msg));
-    const tam = ALANLAR.every(alan => typeof msg.prefs[alan] === 'number');
-    return { ok: true, kip: msg.prefs.indirmeTempo === 'ozel' && !tam ? 'temkinli' : msg.prefs.indirmeTempo, bekleme: [120000, 300000],
-      alanlar: { indirmeAraMin: 2, indirmeAraMax: 4, indirmeMolaHer: 30, indirmeMolaMin: 10, indirmeMolaMax: 12 } };
-  } });
+  const h = harness({ sendMessage: async msg => { sorular.push(msg.type); return {}; } });
   await flush();
   await h.find('.settings-toggle').click(); await flush();
   const settings = h.find('.settings');
-  const secim = settings.querySelector('select[data-pref=indirmeTempo]'), kutu = settings.querySelector('div[role=group]');
-  const girisler = settings.querySelectorAll('input[type=number]');
-  const tahmin = () => settings.querySelectorAll('div[role=status]').map(node => node.textContent).find(text => /100 evrakta/.test(text));
-  assert.equal(secim.attrs['aria-label'], 'İndirme temposu');
-  assert.deepEqual(plain(secim.kids.map(option => [option.attrs.value, option.textContent])), [['temkinli', 'Temkinli (varsayılan)'], ['hizli', 'Hızlı'], ['ozel', 'Özel']]);
-  assert.equal(secim.value, 'temkinli');
-  assert.equal(kutu.hidden, true);
-  assert.deepEqual(plain(girisler.map(giris => giris.attrs['data-pref'])), ALANLAR);
-  assert.equal(girisler.every(giris => kutu.contains(giris) && giris.attrs['aria-label']), true);
-  assert.equal(tahmin(), '100 evrakta yaklaşık 2–5 dakika bekleme (indirme süresi hariç).');
-  assert.match(settings.textContent, /Kısa aralık indirmeyi hızlandırır ama UYAP’ın otomatik etkinlik korumasına takılma olasılığını artırır/);
-  assert.equal(settings.querySelector('input[data-pref=hizliIndirme]'), null);
-  assert.deepEqual(sorular.at(-1).prefs, { indirmeTempo: 'temkinli', ...Object.fromEntries(ALANLAR.map(alan => [alan, null])) });
-
-  await secim.choose('ozel'); await flush();
-  assert.equal(kutu.hidden, false);
-  assert.deepEqual(plain(girisler.map(giris => giris.value)), ['2', '4', '30', '10', '12']);
-  assert.deepEqual(plain(ALANLAR.map(alan => h.storage.uhdPrefs[alan])), [2, 4, 30, 10, 12]);
-  assert.equal(h.storage.uhdPrefs.indirmeTempo, 'ozel');
-  assert.equal(h.storage.uhdPrefs.hizliIndirme, false);
-  assert.equal(h.storage.uhdPrefs.myName, 'Sentetik Vekil', 'öteki tercihler korunur');
-
-  await girisler[0].choose('1'); await flush();
-  assert.equal(h.storage.uhdPrefs.indirmeAraMin, 1);
-  assert.equal(sorular.at(-1).prefs.indirmeAraMin, 1, 'tahmin kaydedilen değerle yeniden sorulur');
-  for (const [i, girdi] of [[0, '-3'], [0, ''], [1, '61'], [2, '3'], [2, '2.5'], [3, '601']]) {
-    const onceki = girisler[i].value;
-    await girisler[i].choose(girdi); await flush();
-    assert.equal(girisler[i].value, onceki, `${ALANLAR[i]}: ${girdi}`);
-    assert.equal(h.storage.uhdPrefs[ALANLAR[i]], Number(onceki));
-  }
-  await girisler[2].choose('0'); await flush();
-  assert.equal(h.storage.uhdPrefs.indirmeMolaHer, 0, 'mola yok seçilebilir');
-
-  await secim.choose('hizli'); await flush();
-  assert.equal(kutu.hidden, true);
-  assert.equal(h.storage.uhdPrefs.indirmeTempo, 'hizli');
-  assert.equal(h.storage.uhdPrefs.hizliIndirme, true);
-  await secim.choose('temkinli'); await flush();
-  assert.equal(h.storage.uhdPrefs.indirmeTempo, 'temkinli');
-  assert.equal(h.storage.uhdPrefs.hizliIndirme, false);
-  assert.equal(h.storage.uhdPrefs.indirmeAraMin, 1, 'Özel değerleri kip değişince silinmez');
+  for (const key of ['indirmeTempo', 'hizliIndirme', 'indirmeAraMin', 'indirmeAraMax', 'indirmeMolaHer', 'indirmeMolaMin', 'indirmeMolaMax'])
+    assert.equal(settings.querySelector(`[data-pref=${key}]`), null, key);
+  assert.doesNotMatch(settings.textContent, /İndirme temposu|100 evrakta/);
+  assert.equal(sorular.includes('uhd-indirme-tempo'), false);
+  assert.ok(settings.querySelector('input[data-pref=oturumAcik]'), 'koruma bölümünün öteki seçenekleri yerinde kalır');
 });
