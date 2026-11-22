@@ -99,13 +99,20 @@
     if (crc32(sonuc) !== g.crc) throw hata('ZIP girdisinin bütünlük denetimi başarısız');
     return sonuc;
   }
+  // EYP iki yapıda gelir: klasörlü (UstYazi/, Ekler/) ya da UYAP'ın .zip adıyla verdiği düz gönderi (kökte ana_evrak.*).
+  const sade = ad => ad.replace(/\\/g, '/').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/ı/g, 'i').toLowerCase();
+  const eypUstYazi = yol => /(^|\/)ustyazi\//.test(yol) || /(^|\/)ustyazi\.[a-z0-9]+$/.test(yol) || /^ana_evrak\.[a-z0-9]+$/.test(yol);
+  function eypMi(liste, dosyaAdi = '') {
+    return /_eyp\.zip$/i.test(String(dosyaAdi || '')) || liste.some(g => { const yol = sade(g.ad); return eypUstYazi(yol) || /(^|\/)ekler\//.test(yol); });
+  }
   // EYP'nin üst yazısı ve ekleri yerel paket içinden açılır. İmza/üstveri dosyaları belge yerine gösterilmez.
-  async function eyp(blob, /** @type {{ signal?: AbortSignal }} */ { signal } = {}) {
+  // zipAdi verilirse (.zip adlı evrak) paket ancak EYP yapısındaysa ya da adı _eyp.zip ise açılır.
+  async function eyp(blob, /** @type {{ signal?: AbortSignal, zipAdi?: string | null }} */ { signal, zipAdi = null } = {}) {
     signal?.throwIfAborted();
     if (!blob?.size || blob.size > SINIR.boyut) throw hata('EYP paketi 64 MiB görüntüleme sınırını aşıyor.');
     const zip = girdiler(await blob.arrayBuffer());
     signal?.throwIfAborted();
-    const sade = ad => ad.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/ı/g, 'i').toLowerCase();
+    if (zipAdi != null && !eypMi(zip.liste, zipAdi)) throw Object.assign(hata('Bu ZIP bir EYP paketi değil.'), { code: 'eyp-degil' });
     const adlar = new Set();
     let toplam = 0;
     const belgeler = [];
@@ -119,7 +126,7 @@
       if (toplam > SINIR.boyut) throw hata('EYP paketinin açılmış boyutu 64 MiB sınırını aşıyor.');
       if (ad.endsWith('/')) continue;
       const yol = sade(ad);
-      const ustYazi = /(^|\/)ustyazi\//.test(yol) || /(^|\/)ustyazi\.[a-z0-9]+$/.test(yol);
+      const ustYazi = eypUstYazi(yol);
       const ek = /(^|\/)ekler\//.test(yol);
       const belge = /\.(pdf|udf|usf|html?|txt|jpe?g|png|gif|bmp|tiff?|docx?|odt|rtf|xlsx?|pptx?)$/i.test(ad);
       if (belge || (ustYazi || ek) && /\.xml$/i.test(ad)) belgeler.push({ ad, ustYazi, girdi });
@@ -138,7 +145,7 @@
       return { filename, type: 'application/octet-stream', blob: new Blob([b]), bas: Array.from(b.subarray(0, 8)) };
     } };
   }
-  const api = { girdiler, ac, eyp, crc32, SINIR };
+  const api = { girdiler, ac, eyp, eypMi, crc32, SINIR };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else globalThis.DurusmaPaketiZip = api;
 })();

@@ -216,7 +216,7 @@
     if (!doc || !(doc.blob instanceof Blob) || !doc.blob.size || doc.blob.size > 64 * 1024 * 1024)
       throw new Error('Belge boş veya görüntüleme sınırını aşıyor (64 MiB).');
     const ext = documentExtension(doc);
-    if (!['pdf', 'udf', 'eyp'].includes(ext)) throw new Error('Bu belge PDF, UDF veya EYP biçiminde değil.');
+    if (!['pdf', 'udf', 'eyp', 'zip'].includes(ext)) throw new Error('Bu belge PDF, UDF veya EYP biçiminde değil.');
     const label = [...String(title || e?.tur || doc.filename || 'UYAP evrakı').slice(0, 1024)]
       .map(char => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127 ? ' ' : char).join('').trim().slice(0, 256) || 'UYAP evrakı';
     const event = { tur: label, onaylandigiTarih: '' };
