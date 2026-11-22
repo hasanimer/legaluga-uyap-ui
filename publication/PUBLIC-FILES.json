@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "cc1eae93653a4f4fd3a54982fcb0f9dd6c873141a4a9292fe92fc61eac582937"
+      "sha256": "e2937ae73bce6279a1ccac4dde35cc7c1034b050f1b1425907238acf6ce926c0"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -536,7 +536,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "c219325461d2a9fb2a5c0edfbe7309d9322198dbca3fe66d0c31184582631db4"
+      "sha256": "d1ee7d4229f2f72896e001c780240619da8449d26aae44b360ebeaffd65b59e2"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",

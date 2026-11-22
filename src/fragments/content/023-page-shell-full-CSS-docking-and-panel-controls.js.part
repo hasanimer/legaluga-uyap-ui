@@ -747,10 +747,8 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     return true;
   }
 
-  // Ölçüm sırasında kilitli öğelerin geçişi (transition) durdurulur: aksi hâlde kilit kalkınca başlayan geçişin
-  // ilk değeri (ör. menünün dar genişliği) okunup yeniden kilitlenir.
+  // Ölçümde geçişi durdur, böylece geçişin ilk karesi yerine UYAP'ın yeni yerleşimi okunur.
   let dockMeasureStyle;
-
   function fitPageBesidePanel() {
     dockFrame = 0;
     if (!panel || panel.hidden || !document.body) return;
@@ -758,11 +756,10 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
     collectDockCandidates();
     if (!dockMeasureStyle) {
       dockMeasureStyle = document.createElement('style');
-      dockMeasureStyle.textContent = `[${DOCK_FIXED_ATTR}]{transition:none!important}`;
+      dockMeasureStyle.textContent = `[${DOCK_FIXED_ATTR}],#av-sidebar-wrapper,#av-sidebar-wrapper+#page-content-wrapper{transition:none!important}`;
     }
     document.documentElement.append(dockMeasureStyle);
     try {
-      // Ölçüleri özgün sayfadan al; aynı kare içinde yeni stil yerleşir.
       if (dockStyle) dockStyle.remove();
       const width = window.innerWidth, height = window.innerHeight;
       const viewportWidth = document.documentElement.clientWidth || width;
@@ -779,6 +776,8 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
       const ratio = availableWidth / width;
       const bodyCss = getComputedStyle(document.body);
       const zoom = (Number.parseFloat(bodyCss.zoom) || 1) * ratio;
+      const content = stacked ? null : document.getElementById('page-content-wrapper');
+      const sidebar = content?.previousElementSibling?.id === 'av-sidebar-wrapper' ? content.previousElementSibling : null;
       const host = shadowRoot.host;
       host.dataset.dock = stacked ? 'bottom' : 'side';
       setPanelGeometry(panelWidth * pageZoom, panelHeight * pageZoom);
@@ -789,13 +788,15 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
           (stacked ? `height:${availableHeight / zoom}px!important;max-height:${availableHeight / zoom}px!important;overflow:auto!important;` :
             (bodyCss.overflowY !== 'visible' && document.body.getBoundingClientRect().height <= height + 1 ? `height:${availableHeight / zoom}px!important;` : '')) + '}'
       ];
-      // DevExtreme katmanları konumu ve yüksekliği getBoundingClientRect ile (zoom'lu, görsel px) ölçüp translate/height olarak
-      // yerel px'e yazar; zoom'lu gövdede küçültme iki kez uygulanır (dosya penceresinin altında boş şerit, kayan açılır listeler,
-      // imleçten yavaş ayırıcı). Pencereye bağlı katmanlar ters zoom ile UYAP'ın kendi ölçeğine döner, modal pencere sol alana
-      // sığdırılır (fitDockedModals). Modal yokken sayfaya bağlı açılır listenin içeriği sayfa ölçeğine çekilir: sarmalayıcısı
-      // editörün üstünde durduğu için konumu kesin kalır. Kapsayıcıya bağlı modal sayfa ölçeğinde kalır; içerik yüksekliğini
-      // DevExtreme'in ölçümü yerine esnek kutu verir. `position: fixed` DevExtreme'in sarmalayıcıya yazdığı satır içi stildir.
-      // Kapanırken DevExtreme gölge sınıfını hemen kaldırır; etiketli pencerenin sarmalayıcısı kaybolana dek sol alanda kalır.
+      // Sol menü ve içerikteki payı UYAP'ın doğal boyutunda kalsın. Pay, menünün açık veya dar durumundan okunur.
+      if (sidebar) {
+        const menuZoom = Number.parseFloat(getComputedStyle(sidebar).zoom) || 1;
+        const margin = Number.parseFloat(getComputedStyle(content).marginLeft) || 0;
+        rules.push(`#av-sidebar-wrapper{zoom:${menuZoom / ratio}!important}`,
+          `#av-sidebar-wrapper+#page-content-wrapper{margin-left:${margin / ratio}px!important}`);
+      }
+      // DevExtreme görsel pikselleri yerel piksel olarak yazar. Ters zoom çift ölçeklemeyi önler.
+      // Kapanırken gölge sınıfı kalksa bile etiketli pencere kaybolana dek sol alanda kalır.
       dockOverlay = stacked ? null : { base: zoom / ratio, availableWidth };
       if (!stacked) {
         const fixedModal = 'body>.dx-overlay-wrapper.dx-overlay-shader[style*="position: fixed"]';
@@ -815,12 +816,10 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
         rules.push(`[${DOCK_FIXED_ATTR}="${id}"]{${horizontal}${bottom}}`);
       };
       const hLock = css => `left:${css.left}!important;right:auto!important;width:${css.width}!important;max-width:${availableWidth / zoom}px!important;`;
-      // Zoom tek başına viewport'a bağlı right:0 başlığı sağda bırakır: sağa yaslı fixed öğelerin özgün yatay
-      // ölçüleri sabitlenir. Sol yarıdaki öğeler (UYAP'ın sol menüsü) serbest kalır; kilitlenirse menü açılıp
-      // kapanınca eski genişliğinde donar. Alt yerleşimde oran 1 olduğu için yatay kilide gerek yoktur.
+      // Sağa yaslanan sabit öğelerin yatay ölçülerini tut. Soldakiler serbest kalır, alt yerleşimde yatay kilit gerekmez.
       const free = [];
       for (const node of dockCandidates) {
-        if (node.classList.contains('dx-overlay-wrapper') || !viewportFixed(node)) continue;
+        if (sidebar?.contains(node) || node.classList.contains('dx-overlay-wrapper') || !viewportFixed(node)) continue;
         const css = getComputedStyle(node);
         const bottom = stacked && css.bottom !== 'auto' ? `bottom:calc(${css.bottom} + ${panelHeight / zoom}px)!important;` : '';
         if (stacked) { if (bottom) lock(node, '', bottom); continue; }
@@ -831,6 +830,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
       if (!dockStyle) dockStyle = document.createElement('style');
       dockStyle.textContent = rules.join('\n');
       document.documentElement.append(dockStyle);
+      if (sidebar) sidebar.getBoundingClientRect();
       fitDockedModals();
       // Bekçi: yüzde ya da viewport birimli ölçü zoom ile küçülmez ve içeriğin üstüne biner; öyleyse eskisi gibi kilitlenir.
       const count = rules.length;
