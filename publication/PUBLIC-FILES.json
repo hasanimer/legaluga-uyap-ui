@@ -32,7 +32,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "16849bd16eee8e2603457d5c8657c7d85b2881b2aa937408c739c2367ef05424"
+      "sha256": "77f9de5813d203cee17d86a1355d9f5ab0e46eddda4cdf6909756e36633f2339"
     },
     {
       "path": "SECURITY.md",
@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "5b814f8feca1f7fe21e78a565e8afe6b24e88a59ea988e6f74e0deb342ae4de4"
+      "sha256": "65866ff5ea90ff09ba41aa3d88499c85d3f2856be6b651db9098ba30dab51270"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -236,7 +236,7 @@
     },
     {
       "path": "src/extension/indirme-panel.js",
-      "sha256": "ebd6d598346f4cd4831b890430160e0c12358f204b978ade746ece5b435847ed"
+      "sha256": "82dc795a81632df2b5d6968dcbd5dbc639069b3db4baae964f5bedfee3259089"
     },
     {
       "path": "src/extension/kunye-ayikla.js",
@@ -312,7 +312,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "8431f4c99f5b6b542a5720ee8b0553b54235b8dad5e930257bf63e13d75a58c7"
+      "sha256": "df28dda10739d7b302de0bd7f753ed2a657d7187b81cdaa734b1416980d55f48"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -560,7 +560,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "e1650c831b4bd68d43869318e7f335952deeee7b93d78d6668f983923412f361"
+      "sha256": "817e22d8632e48ada5df536acdb36b76d77e82fbf740219f7a2c3b12b04ac2f2"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -656,7 +656,7 @@
     },
     {
       "path": "tests/indirme-panel.test.js",
-      "sha256": "5996b52cc4e16a31b3d29ad917f31259cdafb695ca65806063dbc34311474a9a"
+      "sha256": "933df38fe963f0e4985f57b2d072008602faaeec7303ab12abcf4baeda66393f"
     },
     {
       "path": "tests/onboarding-ui.test.js",
@@ -676,7 +676,7 @@
     },
     {
       "path": "tests/ui-downloads.test.js",
-      "sha256": "967cdc0305d66bc719df8ce77a5ce1ca4fb67fb760202354c8f85d6769cf6e93"
+      "sha256": "6010836a2bd71d861fca5b8b51dbb63069fd890113b82f33b7d101e4e5efd271"
     },
     {
       "path": "tests/update-inventory.test.js",

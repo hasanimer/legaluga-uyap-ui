@@ -429,3 +429,97 @@ test('biten tek ZIP eksikleri rapora yönlendirir; durdurulan tek ZIP sürdürü
   assert.equal(zipField(h, 'skipped').hidden, true);
   h.api.destroy();
 });
+
+// İndirme temposu (Toplu indir sekmesi): sayılar ve son denetim tam eklentinin service worker'ındadır; burada onun yanıtı sentetik verilir.
+function tempoHarness(prefs = {}, { depo = false } = {}) {
+  const context = vm.createContext({ require, __dirname });
+  vm.runInContext(domSource + '\nglobalThis.ExistingDOM = { Node, all };', context);
+  vm.runInContext(source, context);
+  const { Node, all } = context.ExistingDOM, document = {};
+  const plain = value => JSON.parse(JSON.stringify(value));
+  const el = (tag, attrs, ...kids) => { const node = new Node(tag, attrs, document); node.append(...kids); return node; };
+  const ALANLAR = ['indirmeAraMin', 'indirmeAraMax', 'indirmeMolaHer', 'indirmeMolaMin', 'indirmeMolaMax'];
+  const h = { ALANLAR, storage: { uhdPrefs: prefs }, sorular: [], yamalar: [], plain };
+  const chrome = { storage: { local: { get: async () => ({ uhdPrefs: plain(h.storage.uhdPrefs) }), set: async value => { Object.assign(h.storage, plain(value)); } } },
+    runtime: { sendMessage: async msg => {
+      h.sorular.push(plain(msg));
+      const tam = ALANLAR.every(alan => typeof msg.prefs[alan] === 'number');
+      return { ok: true, kip: msg.prefs.indirmeTempo === 'ozel' && !tam ? 'temkinli' : msg.prefs.indirmeTempo, bekleme: [120000, 300000],
+        alanlar: { indirmeAraMin: 2, indirmeAraMax: 4, indirmeMolaHer: 30, indirmeMolaMin: 10, indirmeMolaMax: 12 } };
+    } } };
+  const patchPrefs = async yama => { h.yamalar.push(plain(yama)); return (h.storage.uhdPrefs = { ...h.storage.uhdPrefs, ...yama }); };
+  h.kok = context.UHDBulkPanel.tempoAyari({ el, chrome, depo: depo ? { patchPrefs } : null });
+  h.bul = kosul => all(h.kok).filter(kosul);
+  return h;
+}
+
+test('Toplu indir sekmesinde indirme temposu seçilir; sayı alanları yalnız Özel’de görünür, seçim ve değerler kaydedilir', async () => {
+  for (const depo of [false, true]) {
+    const h = tempoHarness({ myName: 'Sentetik Vekil' }, { depo }), ALANLAR = h.ALANLAR, plain = h.plain;
+    await flush();
+    const [secim] = h.bul(node => node.tag === 'select'), [kutu] = h.bul(node => node.attrs.role === 'group');
+    const girisler = h.bul(node => node.tag === 'input'), [tahmin] = h.bul(node => node.attrs['data-tempo'] === 'tahmin'), [hata] = h.bul(node => node.attrs['data-tempo'] === 'hata');
+    assert.equal(h.kok.tag, 'fieldset');
+    assert.equal(h.kok.attrs['data-zip'], 'tempo');
+    assert.equal(h.bul(node => node.tag === 'legend')[0].textContent, 'İndirme temposu');
+    assert.equal(secim.attrs['aria-label'], 'İndirme temposu');
+    assert.equal(secim.attrs['data-pref'], 'indirmeTempo');
+    assert.deepEqual(plain(secim.kids.map(option => [option.attrs.value, option.textContent])), [['temkinli', 'Temkinli (varsayılan)'], ['hizli', 'Hızlı'], ['ozel', 'Özel']]);
+    assert.equal(secim.value, 'temkinli');
+    assert.equal(kutu.hidden, true);
+    assert.deepEqual(plain(girisler.map(giris => giris.attrs['data-pref'])), ALANLAR);
+    assert.equal(girisler.every(giris => h.bul(node => node === giris).length && giris.attrs.type === 'number' && giris.attrs['aria-label']), true);
+    assert.equal(tahmin.attrs.role, 'status');
+    assert.equal(tahmin.textContent, '100 evrakta yaklaşık 2–5 dakika bekleme (indirme süresi hariç).');
+    assert.equal(hata.attrs.role, 'alert');
+    assert.equal(hata.hidden, true);
+    assert.match(h.kok.textContent, /bütün dosyalardaki toplu indirmeler için geçerlidir/);
+    assert.match(h.kok.textContent, /Kısa aralık indirmeyi hızlandırır ama UYAP’ın otomatik etkinlik korumasına takılma olasılığını artırır/);
+    assert.equal(h.bul(node => node.attrs['data-pref'] === 'hizliIndirme').length, 0);
+    assert.deepEqual(h.sorular.at(-1), { type: 'uhd-indirme-tempo', prefs: { indirmeTempo: 'temkinli', ...Object.fromEntries(ALANLAR.map(alan => [alan, null])) } });
+
+    await secim.choose('ozel'); await flush();
+    assert.equal(kutu.hidden, false);
+    assert.deepEqual(plain(girisler.map(giris => giris.value)), ['2', '4', '30', '10', '12']);
+    assert.deepEqual(plain(ALANLAR.map(alan => h.storage.uhdPrefs[alan])), [2, 4, 30, 10, 12]);
+    assert.equal(h.storage.uhdPrefs.indirmeTempo, 'ozel');
+    assert.equal(h.storage.uhdPrefs.hizliIndirme, false);
+    assert.equal(h.storage.uhdPrefs.myName, 'Sentetik Vekil', 'öteki tercihler korunur');
+    if (depo) assert.equal(h.yamalar.length, 1, 'kip ve başlangıç değerleri tek yazmada kaydedilir');
+
+    await girisler[0].choose('1'); await flush();
+    assert.equal(h.storage.uhdPrefs.indirmeAraMin, 1);
+    assert.equal(h.sorular.at(-1).prefs.indirmeAraMin, 1, 'tahmin kaydedilen değerle yeniden sorulur');
+    for (const [i, girdi] of [[0, '-3'], [0, ''], [1, '61'], [2, '3'], [2, '2.5'], [3, '601']]) {
+      const onceki = girisler[i].value;
+      await girisler[i].choose(girdi); await flush();
+      assert.equal(girisler[i].value, onceki, `${ALANLAR[i]}: ${girdi}`);
+      assert.equal(h.storage.uhdPrefs[ALANLAR[i]], Number(onceki));
+      assert.equal(hata.hidden, false);
+      assert.ok(hata.textContent.startsWith(girisler[i].attrs['aria-label'] + ': '), hata.textContent);
+    }
+    await girisler[2].choose('0'); await flush();
+    assert.equal(h.storage.uhdPrefs.indirmeMolaHer, 0, 'mola yok seçilebilir');
+    assert.equal(hata.hidden, true, 'geçerli kayıt hatayı kaldırır');
+
+    await secim.choose('hizli'); await flush();
+    assert.equal(kutu.hidden, true);
+    assert.equal(h.storage.uhdPrefs.indirmeTempo, 'hizli');
+    assert.equal(h.storage.uhdPrefs.hizliIndirme, true);
+    await secim.choose('temkinli'); await flush();
+    assert.equal(h.storage.uhdPrefs.indirmeTempo, 'temkinli');
+    assert.equal(h.storage.uhdPrefs.hizliIndirme, false);
+    assert.equal(h.storage.uhdPrefs.indirmeAraMin, 1, 'Özel değerleri kip değişince silinmez');
+  }
+});
+
+test('tempo denetimi chrome erişimi olmadan da çizilir: Temkinli gösterir, tahmin boş kalır', async () => {
+  const context = vm.createContext({ require, __dirname });
+  vm.runInContext(domSource + '\nglobalThis.ExistingDOM = { Node, all };', context);
+  vm.runInContext(source, context);
+  const { Node, all } = context.ExistingDOM;
+  const kok = context.UHDBulkPanel.tempoAyari({ el: (tag, attrs, ...kids) => { const node = new Node(tag, attrs, {}); node.append(...kids); return node; } });
+  await flush();
+  assert.equal(all(kok).find(node => node.tag === 'select').value, 'temkinli');
+  assert.equal(all(kok).find(node => node.attrs['data-tempo'] === 'tahmin').textContent, '');
+});

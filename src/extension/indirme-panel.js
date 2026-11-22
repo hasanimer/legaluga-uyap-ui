@@ -303,7 +303,122 @@
     return state ? state.saved === 0 && !state.partCount && !state.persistentPending
       : !!job && job.cursor === 0 && !job.parts?.length && !job.pendingDownload;
   }
-  const api = { CSS, mount, planEngeli, bosPlan };
+  // Tempo tahmini: service worker'ın verdiği 100 evraklık bekleme bütçesini ([en az, en çok] ms) dakikayla yazar.
+  function tempoTahmini(bekleme) {
+    if (!Array.isArray(bekleme) || bekleme.length !== 2 || !bekleme.every(ms => Number.isFinite(ms) && ms >= 0)) return '';
+    const [az, cok] = bekleme.map(ms => Math.round(ms / 60000)).sort((a, b) => a - b);
+    const sure = cok < 1 ? '1 dakikadan az' : az < 1 ? `en çok yaklaşık ${cok} dakika` : az === cok ? `yaklaşık ${az} dakika` : `yaklaşık ${az}–${cok} dakika`;
+    return `100 evrakta ${sure} bekleme (indirme süresi hariç).`;
+  }
+  const TEMPO_CSS = `
+.ti-tempo :is(select,input){box-sizing:border-box;max-width:100%;min-width:0;border:1px solid var(--shell-line);border-radius:7px;padding:9px;background:var(--shell-bg);color:var(--shell-text);font:inherit}
+.ti-tempo select{align-self:flex-start}
+.ti-tempo-ozel:not([hidden]){display:flex;flex-direction:column;gap:6px}
+.ti-tempo label{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px}
+.ti-tempo label input{width:110px}
+.ti-tempo [role=alert]{color:var(--shell-error,#b42318)}
+`;
+  const TEMPO_KIPLER = [['temkinli', 'Temkinli (varsayılan)'], ['hizli', 'Hızlı'], ['ozel', 'Özel']];
+  // [tercih, etiket, üst sınır, tam sayı alanında sıfırdan sonraki en küçük değer]
+  const TEMPO_ALANLAR = /** @type {[string, string, number, number?][]} */ ([['indirmeAraMin', 'Evrak arası bekleme, en az (sn)', 60], ['indirmeAraMax', 'Evrak arası bekleme, en çok (sn)', 60],
+    ['indirmeMolaHer', 'Kaç evrakta bir mola (0 = mola yok)', 1000, 5],
+    ['indirmeMolaMin', 'Mola süresi, en az (sn)', 600], ['indirmeMolaMax', 'Mola süresi, en çok (sn)', 600]]);
+  const tempoIzi = prefs => JSON.stringify(['indirmeTempo', 'hizliIndirme', ...TEMPO_ALANLAR.map(([key]) => key)].map(key => prefs?.[key] ?? null));
+  const baglamGitti = error => /context invalidated|Extension context/i.test(String(error?.message || error));
+  // Tercih değişikliği tek dinleyiciyle izlenir ve son çizilen denetime gider: dosya ekranı her açılışta yeniden kurulur.
+  let tempoDinlenen = null, tempoGuncel = null;
+
+  // İndirme temposu denetimi (Toplu indir sekmesi). Tercihler uhdPrefs'te durur ve bütün toplu indirmelere uygulanır. Hazır kiplerin
+  // sayıları ve Özel değerlerinin son denetimi service worker'dadır; burada yalnız Özel alanlarının giriş sınırları durur. Denetim
+  // etkin kipi, 100 evraklık bekleme bütçesini ve Özel alanlarının başlangıç değerlerini service worker'a sorar; yanıt gelmezse
+  // tahmin satırı boş kalır, tercih yine kaydedilir.
+  function tempoAyari(/** @type {{ el?: any, chrome?: any, depo?: any }} */ { el, chrome: api = globalThis.chrome, depo = globalThis.UHDStorage } = {}) {
+    let prefs = {}, soru = 0;
+    const pref = key => prefs[key];
+    // Kayıtlı kip: yeni tercih yoksa eski “Hızlı evrak indirme” işareti okunur; bilinmeyen değer temkinlidir.
+    const kip = () => {
+      const v = pref('indirmeTempo');
+      if (v == null) return pref('hizliIndirme') === true ? 'hizli' : 'temkinli';
+      return TEMPO_KIPLER.some(([kod]) => kod === v) ? v : 'temkinli';
+    };
+    const yazi = v => (typeof v === 'number' && Number.isFinite(v) ? String(v) : '');
+    const tahmin = el('p', { class: 'dp-muted', role: 'status', 'data-tempo': 'tahmin' }), hata = el('p', { class: 'dp-muted', role: 'alert', 'data-tempo': 'hata' });
+    const hataYaz = ileti => { hata.textContent = ileti; hata.hidden = !ileti; };
+    const sor = async () => {
+      const istek = { indirmeTempo: kip() };
+      for (const [key] of TEMPO_ALANLAR) istek[key] = pref(key) ?? null;
+      try {
+        const yanit = await api.runtime.sendMessage({ type: 'uhd-indirme-tempo', prefs: istek });
+        return yanit?.ok === true ? yanit : null;
+      } catch { return null; }
+    };
+    const tahminYaz = async () => {
+      const no = ++soru, secili = kip(), yanit = await sor();
+      if (no !== soru) return;   // daha yeni bir soru yolda
+      tahmin.textContent = !yanit ? ''
+        : (secili === 'ozel' && yanit.kip !== 'ozel' ? 'Özel değerler eksik ya da geçersiz; düzeltilene kadar temkinli tempo uygulanır. ' : '') + tempoTahmini(yanit.bekleme);
+    };
+    // Kayıt reddedilirse denetim geri alınır ve hata gösterilir. Eklenti güncellenince eski sayfadaki kayıt "context invalidated"
+    // ile düşer; bu hata yutulmaz ki sayfa “Yenile”yi göstersin, kullanıcıya yanlış “kaydedilemedi” yazılmasın.
+    const yaz = async (yama, geriAl) => {
+      try {
+        if (depo?.patchPrefs) prefs = await depo.patchPrefs(yama);
+        else {
+          const next = { ...((await api.storage.local.get('uhdPrefs')).uhdPrefs || {}), ...yama };
+          await api.storage.local.set({ uhdPrefs: next });
+          prefs = next;
+        }
+        hataYaz('');
+        return true;
+      } catch (error) { if (baglamGitti(error)) throw error; geriAl(); hataYaz('Tercih kaydedilemedi. Tekrar deneyin.'); return false; }
+    };
+    const girisler = TEMPO_ALANLAR.map(([key, label, ust, enKucuk]) => {
+      const giris = el('input', { type: 'number', inputmode: enKucuk ? 'numeric' : 'decimal', min: '0', max: String(ust), step: enKucuk ? '1' : 'any', 'aria-label': label, 'data-pref': key });
+      giris.addEventListener('change', async () => {
+        const v = String(giris.value).trim() === '' ? NaN : Number(giris.value);
+        if (!(Number.isFinite(v) && v >= 0 && v <= ust && (!enKucuk || (Number.isInteger(v) && (v === 0 || v >= enKucuk))))) {
+          giris.value = yazi(pref(key));
+          return hataYaz(enKucuk ? `${label}: 0 ya da ${enKucuk}–${ust} arasında tam sayı girin.` : `${label}: 0–${ust} arasında bir sayı girin.`);
+        }
+        if (await yaz({ [key]: v }, () => { giris.value = yazi(pref(key)); })) tahminYaz();
+      });
+      return giris;
+    });
+    const ozelKutu = el('div', { class: 'ti-tempo-ozel', role: 'group', 'aria-label': 'Özel tempo değerleri' },
+      girisler.map((giris, i) => el('label', null, el('span', null, TEMPO_ALANLAR[i][1]), giris)),
+      el('p', { class: 'dp-muted' }, `Her evraktan sonra en az ile en çok arasında rastgele bir süre beklenir; en az değeri büyükse ikisi yer değiştirir. Bekleme en çok ${TEMPO_ALANLAR[0][2]} sn, mola süresi en çok ${TEMPO_ALANLAR[3][2]} sn, mola sıklığı 0 ya da ${TEMPO_ALANLAR[2][3]}–${TEMPO_ALANLAR[2][2]} evrak olabilir. Bekleme 0 olsa da istekler arasındaki kısa alt sınır korunur.`));
+    const secim = el('select', { 'aria-label': 'İndirme temposu', 'data-pref': 'indirmeTempo' }, TEMPO_KIPLER.map(([kod, ad]) => el('option', { value: kod }, ad)));
+    const ciz = () => {
+      secim.value = kip();
+      ozelKutu.hidden = kip() !== 'ozel';
+      girisler.forEach((giris, i) => { giris.value = yazi(pref(TEMPO_ALANLAR[i][0])); });
+      tahminYaz();
+    };
+    secim.addEventListener('change', async () => {
+      const secilen = secim.value;
+      // Eski işaret de eşitlenir: eski sürüme dönülürse seçilmemiş hızlı kip geri gelmez.
+      const yama = { indirmeTempo: secilen, hizliIndirme: secilen === 'hizli' };
+      if (secilen === 'ozel' && TEMPO_ALANLAR.some(([key]) => typeof pref(key) !== 'number')) {
+        // Özel ilk kez seçiliyor: boş alanlar o an geçerli temponun değerleriyle dolar.
+        const ilk = (await sor())?.alanlar;
+        for (const [key] of TEMPO_ALANLAR) if (typeof pref(key) !== 'number' && typeof ilk?.[key] === 'number') yama[key] = ilk[key];
+      }
+      if (await yaz(yama, () => { secim.value = kip(); })) ciz();
+    });
+    hataYaz('');
+    // Başka sekmede ya da yedekten yüklemeyle değişen tempo açık denetime yansır; tempo dışındaki tercihler yeniden sorulmaz.
+    tempoGuncel = yeni => { const degisti = tempoIzi(yeni) !== tempoIzi(prefs); prefs = yeni || {}; if (degisti) ciz(); };
+    const olaylar = api?.storage?.onChanged;
+    if (olaylar?.addListener && tempoDinlenen !== olaylar) {
+      tempoDinlenen = olaylar;
+      olaylar.addListener((ch, area) => { if (area === 'local' && ch.uhdPrefs) tempoGuncel?.(ch.uhdPrefs.newValue); });
+    }
+    Promise.resolve(api?.storage?.local?.get?.('uhdPrefs')).then(v => { prefs = v?.uhdPrefs || {}; }).catch(() => {}).then(ciz);
+    return el('fieldset', { class: 'ti-alan ti-tempo', 'data-zip': 'tempo' }, el('legend', null, 'İndirme temposu'), secim,
+      el('p', { class: 'dp-muted', 'data-tempo': 'aciklama' }, 'Evraklar arasındaki bekleme ve molalar. Bu seçim kaydedilir ve bütün dosyalardaki toplu indirmeler için geçerlidir. Temkinli tempo varsayılandır. Kısa aralık indirmeyi hızlandırır ama UYAP’ın otomatik etkinlik korumasına takılma olasılığını artırır; koruma devreye girerse bütün otomatik işlemler yine durur, kendiliğinden devam etmez ve kilidi Ayarlar’daki “Otomatik işlemleri yeniden aç” düğmesiyle elle açmanız gerekir.'),
+      ozelKutu, tahmin, hata, el('style', null, TEMPO_CSS));
+  }
+  const api = { CSS, mount, planEngeli, bosPlan, tempoAyari, tempoTahmini };
   globalThis.UHDBulkPanel = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })();
