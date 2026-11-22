@@ -795,7 +795,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
         rules.push(`#av-sidebar-wrapper{zoom:${menuZoom / ratio}!important}`,
           `#av-sidebar-wrapper+#page-content-wrapper{margin-left:${margin / ratio}px!important}`);
       }
-      // DevExtreme görsel pikselleri yerel piksel olarak yazar. Ters zoom çift ölçeklemeyi önler.
+      // DevExtreme görsel pikselleri yerel piksel olarak yazar. Ters zoom çift ölçeklemeyi önler; açılır listede yüksekliğin yazıldığı kap da ters ölçeklenir.
       // Kapanırken gölge sınıfı kalksa bile etiketli pencere kaybolana dek sol alanda kalır.
       dockOverlay = stacked ? null : { base: zoom / ratio, availableWidth };
       if (!stacked) {
@@ -804,7 +804,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
         const aw = availableWidth / (zoom / ratio);
         rules.push(`body>.dx-overlay-wrapper:not(.dx-overlay-shader),${fixedModal}{zoom:${1 / ratio}!important}`,
           `${fixedModal},body>.dx-overlay-wrapper:has(>.dx-overlay-content[data-legaluga-dock-modal]){width:${aw}px!important;max-width:${aw}px!important}`,
-          `html:not(:has(${fixedModal})) body>.dx-dropdowneditor-overlay>.dx-overlay-content{zoom:${ratio}!important}`,
+          ...[['', ratio], ['>.dx-popup-content', 1 / ratio], ['>.dx-popup-content>*', ratio]].map(([alt, z]) => `html:not(:has(${fixedModal})) body>.dx-dropdowneditor-overlay>.dx-overlay-content${alt}{zoom:${z}!important}`),
           `${boundStatic}{display:flex!important;flex-direction:column!important}`,
           `${boundStatic}>.dx-toolbar{flex:none!important}`,
           `${boundStatic}>.dx-popup-content{flex:1 1 auto!important;height:auto!important;min-height:0!important;max-height:none!important}`);
