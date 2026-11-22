@@ -1490,7 +1490,7 @@
         const keys = myKeys(myName());
         const taraf = ((r && r.taraflar) || d.taraflar || []).find(p => isClient(p, keys));
         modul.ac({ kok: root, durusma: d, cakisanlar: cak, sifat: taraf && taraf.sifat ? trTitle(taraf.sifat) : '', vekil: trTitle(myNames()[0] || detected || ''),
-          baro: String(pref('baro', '') || ''), sicil: String(pref('baroSicil', '') || '') });
+          baro: String(pref('baro', '') || ''), sicil: String(pref('baroSicil', '') || ''), bugun: todayIso() });
       });
       return b;
     }

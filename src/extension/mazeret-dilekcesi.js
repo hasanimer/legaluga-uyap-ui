@@ -9,9 +9,8 @@
   if (!globalThis.UHD || globalThis.UHD.mazeretDilekcesi) return;
 
   const YER = Object.freeze({ sifat: '[DAVACI/DAVALI]', vekil: '[AD SOYAD]', baro: '[BARO]', sicil: '[SİCİL NO]' });
-  const EK = 'Çakışan duruşmaya ilişkin UYAP kaydı';
   const NOT = 'Legaluga dilekçeyi göndermez ve imzalamaz. Dosyayı UYAP Doküman Editörü’nde açıp kontrol edin, köşeli ayraçlı '
-    + 'yerleri ve eki tamamlayın; imzalama ve gönderme sizde kalır.';
+    + 'yerleri tamamlayın; ek sunacaksanız belgeyi siz eklersiniz. İmzalama ve gönderme sizde kalır.';
   // Heyet hâlinde çalışan birimlerde hitap başkanlığadır; öteki mahkemelerde hâkimliğe. Alan pencerede düzenlenebilir.
   const HEYET = /ticaret|ağır ceza|idare|vergi|bölge|dairesi|yargıtay|danıştay/;
 
@@ -35,7 +34,7 @@
   }
 
   // Düzenlenebilir alanlar. cakisanlar: durusmaCakismalari'nin bu duruşma için verdiği liste ([{ d }]).
-  function alanlar(/** @type {{ durusma?: any, cakisanlar?: any[], sifat?: string, vekil?: string, baro?: string, sicil?: string }} */ { durusma, cakisanlar, sifat, vekil, baro, sicil } = {}) {
+  function alanlar(/** @type {{ durusma?: any, cakisanlar?: any[], sifat?: string, vekil?: string, baro?: string, sicil?: string, bugun?: string }} */ { durusma, cakisanlar, sifat, vekil, baro, sicil, bugun } = {}) {
     const liste = (cakisanlar || []).map(c => c && c.d).filter(Boolean);
     if (!durusma || !liste.length) return null;
     const yerler = liste.map(d => `${birim(d.birimAdi)} ${esas(d.dosyaNo)} sayılı dosyasında (saat ${temiz(d.saat)})`);
@@ -47,33 +46,40 @@
       tarih: trTarih(durusma.tarih),
       saat: temiz(durusma.saat),
       gerekce: `${yerler.join(' ve ')} ${liste.length > 1 ? 'duruşmalarım' : 'duruşmam'} bulunması`,
-      ek: EK,
-      baro: baroSatiri(baro, sicil)
+      ek: '',   // ek anılmaz; avukat belge ekleyecekse adını yazar
+      baro: baroSatiri(baro, sicil),
+      duzenleme: trTarih(bugun)
     };
   }
 
   // Dilekçe iskeleti: paragraf = { hiza, parcalar: [{ metin, kalin }] }. Numaralar düz metindir; liste kullanılmaz.
+  // Metin her yargı kolunda kullanılabilsin diye kanun maddesi anmaz ve baştan sona birinci tekil kişiyle yazılır. Ek alanı
+  // boşsa dilekçe eke atıf yapmaz: ek cümlesi ve EK satırı birlikte gelir ya da birlikte kalkar.
   function paragraflar(a) {
     const t = Object.fromEntries(Object.entries(a || {}).map(([k, v]) => [k, temiz(v)]));
     const p = (hiza, ...parcalar) => ({ hiza, parcalar: parcalar.filter(x => x.metin) });
     const duz = metin => ({ metin, kalin: false }), kalin = metin => ({ metin, kalin: true });
     const bos = () => p('left');
+    const cogul = /duruşmalarım/.test(t.gerekce);
+    const belge = t.ek ? `Mazeretimi gösteren ${ilkKucuk(t.ek)} dilekçem ekinde sunulmuştur.`
+      : `${cogul ? 'Anılan duruşmalar' : 'Anılan duruşma'} UYAP kayıtlarında yer almaktadır.`;
     return [
       p('center', kalin(t.hitap)),
       bos(),
       p('left', kalin('DOSYA NO'), duz(` : ${t.dosyaNo}`)),
       p('left', kalin('MAZERET BİLDİREN'), duz(` : ${t.sifat} vekili Av. ${t.vekil}`)),
-      p('left', kalin('KONU'), duz(` : ${t.tarih} tarihli duruşmaya ilişkin mazeretimizin sunulmasıdır.`)),
+      p('left', kalin('KONU'), duz(` : ${t.tarih} tarihli duruşmaya ilişkin mazeretin bildirilmesi ve duruşmanın başka bir güne bırakılması istemidir.`)),
       bos(),
       p('center', kalin('AÇIKLAMALAR')),
-      p('justify', duz(`1. Yukarıda esas numarası yazılı dosyanın duruşması ${t.tarih} günü ${t.saat} saatine bırakılmıştır.`)),
-      p('justify', duz(`2. Aynı gün ${t.gerekce} nedeniyle duruşmada hazır bulunmam mümkün olmayacaktır. Mazeretimi gösteren ${ilkKucuk(t.ek)} dilekçemiz ekinde sunulmuştur.`)),
-      p('justify', duz('3. Mazeretimizin kabulü ile yeni bir duruşma günü verilmesini, aksi hâlde dosyanın işlemden kaldırılmaması bakımından beyanlarımızın dikkate alınmasını talep etme zorunluluğu doğmuştur.')),
+      p('justify', duz(`1. Yukarıda esas numarası yazılı dosyanın duruşması ${t.tarih} günü saat ${t.saat} olarak belirlenmiştir.`)),
+      p('justify', duz(`2. Aynı gün ${t.gerekce} nedeniyle ${cogul ? 'bu duruşmaların tümünde' : 'her iki duruşmada birlikte'} hazır bulunmam mümkün değildir. ${belge}`)),
+      p('justify', duz('3. Bu nedenle mazeretimin kabulünü ve duruşmanın başka bir güne bırakılmasını talep etme zorunluluğu doğmuştur.')),
       bos(),
-      p('justify', kalin('SONUÇ VE İSTEM'), duz(' : Mazeretimizin '), kalin('KABULÜ'),
-        duz(' ile duruşmanın başka bir güne bırakılmasına ve tarafımıza yeni duruşma gününün bildirilmesine karar verilmesini vekâleten talep ederim.')),
-      p('left', kalin('EK'), duz(` : ${ilkBuyuk(t.ek)}`)),
+      p('justify', kalin('SONUÇ VE İSTEM'), duz(' : Yukarıda açıklanan nedenlerle mazeretimin '), kalin('KABULÜ'),
+        duz(' ile duruşmanın başka bir güne bırakılmasına ve yeni duruşma gününün tarafıma bildirilmesine karar verilmesini saygıyla arz ve talep ederim.')),
+      ...(t.ek ? [p('left', kalin('EK'), duz(` : ${ilkBuyuk(t.ek)}`))] : []),
       bos(),
+      ...(t.duzenleme ? [p('right', duz(t.duzenleme))] : []),
       p('right', duz(`${t.sifat} Vekili`)),
       p('right', duz(`Av. ${t.vekil}`)),
       p('right', duz(t.baro)),
@@ -155,11 +161,13 @@
   const DUZEN = [['hitap', 'Hitap', 'Heyetli birimde BAŞKANLIĞINA, tek hâkimli mahkemede HÂKİMLİĞİNE.'],
     ['sifat', 'Vekili olduğunuz tarafın sıfatı', 'Örnek: Davacı, Davalı, Katılan.'], ['vekil', 'Avukat adı soyadı'],
     ['gerekce', 'Mazeret gerekçesi', 'Cümlede “Aynı gün … nedeniyle” arasına girer.'],
-    ['ek', 'Ek', 'Belgeyi dilekçeye siz eklersiniz.'], ['baro', 'Baro ve sicil', 'Ayarlar’a yazarsanız her taslakta kendiliğinden dolar.']];
+    ['ek', 'Ek (isteğe bağlı)', 'Belge ekleyecekseniz adını yazın. Boş bırakılırsa dilekçe eke atıf yapmaz.'],
+    ['baro', 'Baro ve sicil', 'Ayarlar’a yazarsanız her taslakta kendiliğinden dolar.'], ['duzenleme', 'Dilekçe tarihi']];
+  const ISTEGE_BAGLI = new Set(['ek', 'duzenleme']);
 
   // kok: pencerenin ekleneceği öğe (panelin kökü). indir/kopyala verilmezse tarayıcınınki kullanılır.
-  function ac({ kok, durusma, cakisanlar, sifat, vekil, baro, sicil, indir = tarayiciIndir, kopyala = metin => navigator.clipboard.writeText(metin) }) {
-    const a = alanlar({ durusma, cakisanlar, sifat, vekil, baro, sicil });
+  function ac({ kok, durusma, cakisanlar, sifat, vekil, baro, sicil, bugun, indir = tarayiciIndir, kopyala = metin => navigator.clipboard.writeText(metin) }) {
+    const a = alanlar({ durusma, cakisanlar, sifat, vekil, baro, sicil, bugun });
     if (!a || !kok) return null;
     const E = (tag, oz, ...kids) => {
       const e = document.createElement(tag);
@@ -182,7 +190,7 @@
       }));
       let n = 0;
       for (const [ad, girdi] of girdiler) {
-        const bos = !temiz(a[ad]) || YER_TUTUCU.test(a[ad]);
+        const bos = (!temiz(a[ad]) && !ISTEGE_BAGLI.has(ad)) || YER_TUTUCU.test(a[ad]);
         if (bos) n++;
         girdi.setAttribute('class', bos ? 'eksik' : '');
       }
