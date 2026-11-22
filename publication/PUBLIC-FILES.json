@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "65866ff5ea90ff09ba41aa3d88499c85d3f2856be6b651db9098ba30dab51270"
+      "sha256": "7e5f6bc29161fc5c0bb4aaf5f2a2c850c264e404f701db77fff59f89861f36ff"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -244,11 +244,15 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "666bacccde740f4612239e896805c9327c667c61ff99e7104a6b24880968d1ed"
+      "sha256": "a4c8ba2753cdd3892ec39f3e3b72115b314e27c7daac34c83fb32387309429d5"
+    },
+    {
+      "path": "src/extension/mazeret-dilekcesi.js",
+      "sha256": "b31148e01f8f47a37a304b58e727598b44e9cce2f667fa880212f0dd9e1820a7"
     },
     {
       "path": "src/extension/onboarding.js",
-      "sha256": "d1dce3622209e290998f32774037e84d16550d19ac93c5f834d2aedec182c5d6"
+      "sha256": "61f7d331540d4130e0325dc02d254cae67bc212daf26ff0cc13c3d4e1a99c700"
     },
     {
       "path": "src/extension/options.css",
@@ -256,7 +260,7 @@
     },
     {
       "path": "src/extension/options.html",
-      "sha256": "b37c14a02490bfbe3e56cf469fa2c6f04d363eb6d42ef76ed5f05f5f03528d2e"
+      "sha256": "750485ef125216d52826e099ebb089e8d1175b347d490ecf24b9598544e4cf82"
     },
     {
       "path": "src/extension/options.js",
@@ -300,7 +304,7 @@
     },
     {
       "path": "src/extension/telemetry.js",
-      "sha256": "b408cbca5399c0283b168d28b01034f839df4e617d4a9be3c1a472f0f5793b41"
+      "sha256": "c351bf4b86e39d964a4145df8e38597cbab3e58e5bd996985e4f0a50e1f13227"
     },
     {
       "path": "src/extension/tiff.js",
@@ -312,7 +316,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "df28dda10739d7b302de0bd7f753ed2a657d7187b81cdaa734b1416980d55f48"
+      "sha256": "d226a74a290f74b69a378175e198295170156b4c98a493014bb7b021cc2da3c3"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -536,7 +540,7 @@
     },
     {
       "path": "src/fragments/content/023-page-shell-full-CSS-docking-and-panel-controls.js.part",
-      "sha256": "d1ee7d4229f2f72896e001c780240619da8449d26aae44b360ebeaffd65b59e2"
+      "sha256": "8c679fbd09a7f497149c323dc59849ec5c1dc6cbb56afc45acee89c169e72c9f"
     },
     {
       "path": "src/fragments/content/025-document-source-and-attachment-identity-validators.js.part",
@@ -660,7 +664,7 @@
     },
     {
       "path": "tests/onboarding-ui.test.js",
-      "sha256": "364de3ee22e44dbcc36d943567d408c5c003dbb3cd83d2fb8febab04c549f059"
+      "sha256": "7929af7d06a63e6d56382333012f5bedc244182512049111dbc60a614d10ac29"
     },
     {
       "path": "tests/panel-kilidi.test.js",

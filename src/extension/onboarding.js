@@ -6,7 +6,7 @@
 (() => {
   const { el, TURLER, ILLER, norm } = globalThis.UHD;
   const DEFAULTS = {
-    taramaDurum: 'tum', savcilik: 'kapali', myName: '', tema: 'auto', panelSabit: true,
+    taramaDurum: 'tum', savcilik: 'kapali', myName: '', baro: '', baroSicil: '', tema: 'auto', panelSabit: true,
     acilisSekme: 'yok', evrakTakip: false, safahatTakipOptIn: false, otoGuncelle: 'kapali',
     durusmaBildirim: true, cakismaBildirim: true, duyuruBildirim: true, oturumAcik: false, indirmeTempo: 'temkinli', hataRaporu: false
   };
@@ -228,9 +228,20 @@
       nameInput = name;
       name.value = draft.myName;
       name.addEventListener('input', () => { draft.myName = name.value; nameEdited = true; changed(); });
+      const metin = (key, attrs) => {
+        const input = track(el('input', { type: 'text', name: key, autocomplete: 'off', 'data-pref': key, ...attrs }));
+        input.value = draft[key];
+        input.addEventListener('input', () => { draft[key] = input.value; changed(); });
+        return input;
+      };
+      const baro = group('Baro bilgileri (isteğe bağlı)',
+        el('label', { class: 'setup-field' }, 'Baronuz', metin('baro', { maxlength: '60', placeholder: 'Örnek: İstanbul' })),
+        el('label', { class: 'setup-field' }, 'Baro sicil numaranız', metin('baroSicil', { maxlength: '20', placeholder: 'Örnek: 12345' })),
+        hint('Mazeret dilekçesi taslağının imza bölümüne yazılır. Yalnız bu bilgisayarda saklanır; Legaluga’ya ya da başka bir yere gönderilmez. Boş bırakıp daha sonra Ayarlar’dan yazabilirsiniz.'));
       return [group('Vekil adı',
         el('label', { class: 'setup-field' }, 'Vekil adınız', name,
           hint('İlk UYAP bağlantısında hesabınızın adı otomatik alınır. Bu adın vekil olduğu taraflar “Müvekkil” olarak gösterilir. Gerekirse değiştirebilir veya birden fazla adı virgülle ayırabilirsiniz.'))),
+      baro,
       group('Tarama seçiminiz', el('div', { class: 'setup-summary' },
         el('p', null, el('strong', null, 'Dosya türleri: '), draft.taramaTurleri.length ? TURLER.filter(type => draft.taramaTurleri.includes(type.kod)).map(type => type.ad).join(', ') : 'Yalnız savcılık'),
         el('p', null, el('strong', null, 'Dosya durumu: '), labelOf('taramaDurum', draft.taramaDurum)),
@@ -249,7 +260,7 @@
       let saved = Boolean(savedPrefs);
       try {
         if (!savedPrefs) {
-          const patch = { ...draft, myName: draft.myName.trim(), taramaTurleri: [...draft.taramaTurleri],
+          const patch = { ...draft, myName: draft.myName.trim(), baro: draft.baro.trim(), baroSicil: draft.baroSicil.trim(), taramaTurleri: [...draft.taramaTurleri],
             savcilikIller: [...draft.savcilikIller], kurulumTamamlandi: true, kurulumSurumu: 1,
             kurulumVekilBekliyor: !draft.myName.trim() };
           if (globalThis.UHDStorage?.patchPrefs) savedPrefs = await globalThis.UHDStorage.patchPrefs(patch);

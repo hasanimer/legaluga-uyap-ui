@@ -132,6 +132,33 @@
 .uhd .pill.cak{background:var(--amber-bg);color:var(--amber)}
 .uhd .pill.teyit{background:var(--warn-bg);color:var(--warn-tx)}
 .uhd .cakline{margin-top:2px;font-size:12px;color:var(--warn-tx)}
+.uhd .mazeret-btn{margin-top:4px}
+.uhd .mazeret{width:min(1040px,96vw);height:min(760px,92vh);padding:0;border:1px solid var(--line2);border-radius:14px;background:var(--card);color:var(--text);font:inherit;overflow:hidden;box-shadow:0 24px 64px #0005}
+.uhd .mazeret[open]{display:flex;flex-direction:column}
+.uhd .mazeret::backdrop{background:#0009}
+.uhd .mazeret-ust{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);background:var(--card)}
+.uhd .mazeret-ust h3{margin:0;font-size:16px;color:var(--text)}
+.uhd .mazeret-ust p{margin:3px 0 0;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.uhd .mazeret-ust p b{color:var(--text2)}
+.uhd .mazeret-govde{flex:1;min-height:0;display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr)}
+.uhd .mazeret-govde h4{margin:0 0 10px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.uhd .mazeret-alanlar{overflow:auto;padding:16px 18px;border-right:1px solid var(--line);overscroll-behavior:contain}
+.uhd .mazeret-alan{display:block;margin:0 0 12px}
+.uhd .mazeret-alan>span{display:block;margin-bottom:4px;font-size:12px;font-weight:600;color:var(--text2)}
+.uhd .mazeret-alan small{display:block;margin-top:3px;font-size:11px;color:var(--muted)}
+.uhd .mazeret-alan :is(input,textarea){display:block;width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--line2);border-radius:8px;background:var(--bg);color:var(--text);font:inherit;resize:vertical}
+.uhd .mazeret-alan :is(input,textarea).eksik{border-color:var(--note-bd);background:var(--note-bg)}
+.uhd .mazeret-eksik{margin:4px 0 0;padding:7px 10px;border-radius:8px;background:var(--warn-bg);color:var(--warn-tx);font-size:12px}
+.uhd .mazeret-onizleme{overflow:auto;padding:16px 18px 22px;background:var(--bg);overscroll-behavior:contain}
+.uhd .mazeret-kagit{max-width:640px;margin:0 auto;padding:36px 34px 40px 44px;border:1px solid #d9dee8;border-radius:3px;background:#fff;color:#111;font:12pt/1.4 "Times New Roman",Times,serif;box-shadow:0 2px 10px #0002}
+.uhd .mazeret-kagit p{margin:1pt 0;color:#111;overflow-wrap:anywhere}
+.uhd .mazeret-kagit mark{background:#fde68a;color:#111;border-radius:2px;padding:0 1px}
+.uhd .mazeret-alt{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 18px;border-top:1px solid var(--line);background:var(--card)}
+.uhd .mazeret-not{flex:1;min-width:0;margin:0;font-size:11.5px;line-height:1.4;color:var(--muted)}
+.uhd .mazeret-isler{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px}
+.uhd .mazeret-durum{margin:0;font-size:12px;color:var(--green)}
+.uhd .mazeret-durum.hata{color:var(--red)}
+@media (max-width:760px){.uhd .mazeret{height:94vh}.uhd .mazeret-govde{display:block;overflow:auto}.uhd .mazeret-alanlar{overflow:visible;border-right:0;border-bottom:1px solid var(--line)}.uhd .mazeret-onizleme{overflow:visible}.uhd .mazeret-kagit{padding:22px 18px}.uhd .mazeret-alt{flex-direction:column;align-items:stretch}}
 .uhd .icons{flex:none;display:flex;gap:0}
 .uhd .ifoot{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:4px}
 .uhd .ifoot .open{margin-left:auto}
@@ -1450,6 +1477,41 @@
         cak.length ? el('span', { class: 'pill cak', title: 'Çakışan duruşma:\n' + cak.join('\n') }, 'Çakışma') : null);
     }
 
+    // Çakışan duruşma için mazeret dilekçesi taslağı (mazeret-dilekcesi.js): yalnız hazırlar; gönderme ve imza kullanıcıdadır.
+    // Oturumsuz panel kilitliyken ve hızlı pencerede çıkmaz. Müvekkil adı taslağa verilmez, yalnız sıfatı.
+    function mazeretDugmesi(d, r) {
+      const modul = globalThis.UHD.mazeretDilekcesi, cak = cakismalar.get(d.id);
+      const kilitli = () => !!(opts.kilitli && opts.kilitli());
+      if (!modul || quick || !cak || kilitli()) return null;
+      const b = el('button', { type: 'button', class: 'btn sm mazeret-btn', title: 'Bu duruşma için mazeret dilekçesi taslağı hazırlar. Legaluga dilekçeyi göndermez; UDF olarak indirirsiniz.' }, 'Mazeret dilekçesi hazırla');
+      b.addEventListener('click', e => {
+        e.stopPropagation();
+        if (kilitli()) return;
+        const keys = myKeys(myName());
+        const taraf = ((r && r.taraflar) || d.taraflar || []).find(p => isClient(p, keys));
+        modul.ac({ kok: root, durusma: d, cakisanlar: cak, sifat: taraf && taraf.sifat ? trTitle(taraf.sifat) : '', vekil: trTitle(myNames()[0] || detected || ''),
+          baro: String(pref('baro', '') || ''), sicil: String(pref('baroSicil', '') || '') });
+      });
+      return b;
+    }
+
+    // Ayarlar'daki baro ve sicil: mazeret dilekçesi taslağının imza satırına yazılır. Öteki tercihler gibi yalnız tarayıcının
+    // yerel deposunda (uhdPrefs) durur; hata raporuna girmez, hiçbir sunucuya gönderilmez.
+    function baroAlanlari() {
+      const alan = (ad, etiket, uzunluk, ornek) => {
+        const girdi = el('input', { type: 'text', 'data-pref': ad, maxlength: String(uzunluk), placeholder: ornek, autocomplete: 'off', spellcheck: 'false' });
+        girdi.value = String(pref(ad, '') || '');
+        girdi.addEventListener('change', async () => {
+          const v = girdi.value.trim();
+          girdi.value = v;
+          if (v !== String(pref(ad, '') || '')) await tercihYaz({ [ad]: v }, null, 'Baro bilgisi kaydedilemedi. Tekrar deneyin.');
+        });
+        return el('label', { class: 'field' }, el('span', null, etiket), girdi);
+      };
+      return el('div', { class: 'box' }, alan('baro', 'Baro', 60, 'Örnek: İstanbul'), alan('baroSicil', 'Baro sicil numarası', 20, 'Örnek: 12345'),
+        el('div', { class: 'hint' }, 'İsteğe bağlı. Mazeret dilekçesi taslağının imza bölümüne yazılır. Yalnız bu bilgisayarda saklanır; Legaluga’ya ya da başka bir yere gönderilmez.'));
+    }
+
     function showDurusmalar(range) {
       hearingRange = typeof range === 'string' ? range : 'week';
       input.value = '';
@@ -1507,7 +1569,7 @@
         const cak = cakismalar.get(d.id);
         const cakSatir = cak ? el('div', { class: 'cakline' }, 'Çakışıyor: ', cak.map(cakismaYazi).join(' · ')) : null;
         const info = el('div', { class: 'durline' }, el('b', null, `${d.saat} · ${d.islem}`), d.sonuc ? ` · ${d.sonuc}` : '',
-          cak ? el('span', { class: 'pill cak' }, 'Çakışma') : null, cakSatir);
+          cak ? el('span', { class: 'pill cak' }, 'Çakışma') : null, cakSatir, mazeretDugmesi(d, r));
         if (r) {
           out.push(item(r, current.length, toks, keys, info));
           current.push(r);
@@ -1517,7 +1579,7 @@
             el('div', { class: 'info' },
               el('div', { class: 'title' }, el('b', null, d.dosyaNo), ' · ', el('span', null, cleanBirim(d.birimAdi))),
               el('div', { class: 'meta' }, [d.islem, d.dosyaTur].filter(Boolean).join(' · '), cak ? el('span', { class: 'pill cak' }, 'Çakışma') : null),
-              cakSatir,
+              cakSatir, mazeretDugmesi(d, null),
               el('div', { class: 'parties' }, (d.taraflar || []).map(t => `${t.sifat ? trTitle(t.sifat) + ': ' : ''}${trTitle(t.ad)}`).join(' · ')),
               el('div', { class: 'meta' }, 'Bu dosya indekste yok; açmak için Güncelle’ye basın.'))));
         }
@@ -2501,6 +2563,9 @@
           tags,
           el('div', { class: 'field' }, nameIn, addBtn),
           el('div', { class: 'hint' }, 'İlk UYAP bağlantısında hesabınızın adı otomatik alınır. Hesabınızın adının vekil olduğu taraflar kartta “Müvekkil” olarak gösterilir. Buraya eklediğiniz diğer vekil adları için de aynı ayrım yapılır. Hiç ad yoksa dosyalarda en çok vekil olarak geçen ad kullanılır.')),
+
+        el('h3', null, 'Baro bilgileri'),
+        baroAlanlari(),
 
         el('h3', null, 'Arama ve görünüm'),
         el('div', { class: 'box' },

@@ -234,6 +234,27 @@ test('ağ ve güvenlik engelinde anlaşılır rehber gösterilir; giriş açma h
   }
 });
 
+test('baro ve sicil kurulumda isteğe bağlı sorulur, kırpılarak kaydedilir ve kayıtlı değer korunur', async () => {
+  const h = harness();
+  await h.next();
+  assert.equal(h.field('baro').value, '');
+  assert.match(h.root.textContent, /Yalnız bu bilgisayarda saklanır/);
+  await h.field('baro').fill('  Örnekköy ');
+  await h.field('baroSicil').fill(' 12345 ');
+  await h.button('Kurulumu tamamla').click();
+  assert.equal(h.store.baro, 'Örnekköy');
+  assert.equal(h.store.baroSicil, '12345');
+  const bos = harness();
+  await bos.next();
+  await bos.button('Kurulumu tamamla').click();
+  assert.equal(bos.store.baro, '');
+  assert.equal(bos.store.baroSicil, '');
+  const kayitli = harness({ prefs: { baro: 'Sentetikpınar', baroSicil: '678' } });
+  await kayitli.next();
+  assert.equal(kayitli.field('baro').value, 'Sentetikpınar');
+  assert.equal(kayitli.field('baroSicil').value, '678');
+});
+
 test('ilk kurulum güvenli varsayılanları gösterir ve tamamlanana kadar ayar yazmaz', async () => {
   const h = harness({ stored: { vekilAra: false, unrelated: 'korunsun' } });
   assert.equal(h.nodes().filter(node => node.attrs['data-tur'] != null && node.checked).length, 7);
@@ -242,8 +263,8 @@ test('ilk kurulum güvenli varsayılanları gösterir ve tamamlanana kadar ayar 
   assert.equal(h.nodes().filter(node => node.attrs['data-il'] != null).length, 81);
   assert.equal(h.writes.length, 0);
   await h.next();
-  // Son adım yalnız vekil adını sorar; öbür tercihler sorulmadan varsayılanıyla yazılır ve Ayarlar'dan değiştirilir.
-  assert.deepEqual(h.nodes().filter(node => node.attrs['data-pref'] != null).map(node => node.attrs['data-pref']), ['myName']);
+  // Son adım yalnız vekil adını, baroyu ve sicil numarasını sorar; öbür tercihler sorulmadan varsayılanıyla yazılır ve Ayarlar'dan değiştirilir.
+  assert.deepEqual(h.nodes().filter(node => node.attrs['data-pref'] != null).map(node => node.attrs['data-pref']), ['myName', 'baro', 'baroSicil']);
   for (const key of Object.keys(SORULMAYAN)) assert.equal(h.field(key), undefined, key + ' kurulumda sorulmaz');
   assert.doesNotMatch(h.root.textContent, /Sentry|çakışma/i);
   assert.match(h.root.textContent, /Hepsini daha sonra Ayarlar’dan değiştirebilirsiniz/);
