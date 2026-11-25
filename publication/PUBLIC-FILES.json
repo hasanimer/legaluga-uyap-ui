@@ -32,7 +32,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "77f9de5813d203cee17d86a1355d9f5ab0e46eddda4cdf6909756e36633f2339"
+      "sha256": "edbfe783d7f3ceac87d951f25623db19459a8b072d4c43c35bc203e605ebb3c4"
     },
     {
       "path": "SECURITY.md",
@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "6119e7d5f58557db86703d64c2709e048c6e267a2cf9561fabc29280391e6546"
+      "sha256": "fbec24ab08ad00d0e9f4a718c2fc68a7905efa58db90623f0d1b44d8de641961"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -169,6 +169,10 @@
     {
       "path": "src/extension/belge-pdf.js",
       "sha256": "619f1d8cd6907ad073de2dbe84317814dcbc63bb9b4c310473ed423b9a477035"
+    },
+    {
+      "path": "src/extension/dilekce-sablonu.js",
+      "sha256": "0468b1298993f30fbbe3fbd9e4b5933d9c5e044f2ed2f76311d9f92c72605a54"
     },
     {
       "path": "src/extension/durusma-paketi-bootstrap.js",
@@ -244,11 +248,11 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "efd69473b289984f17c1d2cf30f5551f149b58e6bf249831fe16295c8c3c5320"
+      "sha256": "89593700f1c184108e1363ed6814d7f20873f455c96a204157196bc6ddee88af"
     },
     {
       "path": "src/extension/mazeret-dilekcesi.js",
-      "sha256": "9490db9ea0ac93daf5f2ae8e0de1b415c1f5609c7a89d6bdd911b89b5ca7e20a"
+      "sha256": "a4112c9243651485a770bec71a1e01ca5ae020be15d02523a94b92ecfc25a3aa"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -304,7 +308,7 @@
     },
     {
       "path": "src/extension/telemetry.js",
-      "sha256": "0f1b6f90b7e854a43fa702440d5904e36f9ea648170a68b82256a9161d0e4155"
+      "sha256": "2aaddadf467c54ed397aa4d1dac20309214e5af71fa637c9274c80939e3587f4"
     },
     {
       "path": "src/extension/tiff.js",
@@ -316,7 +320,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "df5d104c5811da3ff50eed4d99db507bf92be9ca61bd0b0fc7eed123abc15bb5"
+      "sha256": "1ebb4820cbf8207d2aa6f11f2a1f525560d3437d55b7015cbeb44c215e25f48d"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -564,7 +568,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "367a4967565373a0771e31e43e53a8fe6d675f6687dfa549ae2cfdec5290eceb"
+      "sha256": "be69548e0e47497c31883ac269267c67e5f61af390ceab438e2b75757325e552"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",

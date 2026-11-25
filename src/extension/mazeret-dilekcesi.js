@@ -245,5 +245,7 @@
     return pencere;
   }
 
-  globalThis.UHD.mazeretDilekcesi = Object.freeze({ hitap, alanlar, paragraflar, duzMetin, icerikXml, udf, dosyaAdi, ac, NOT });
+  // ortak: boş dilekçe şablonunun (dilekce-sablonu.js) aynı kurallarla yazması için paylaşılan yardımcılar.
+  const ortak = Object.freeze({ temiz, birim, esas, trTarih, baroSatiri, buyuk, indir: tarayiciIndir, YER });
+  globalThis.UHD.mazeretDilekcesi = Object.freeze({ hitap, alanlar, paragraflar, duzMetin, icerikXml, udf, dosyaAdi, ac, NOT, ortak });
 })();

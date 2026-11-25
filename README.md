@@ -46,6 +46,7 @@ UYAP sekmesinde Legaluga simgesi veya **Alt+Shift+D** paneli açar. Panel yeni k
 - **Daralt:** Yargı türü, dosya durumu, müvekkil ve yeni evrak filtrelerini kullanın; sonuçları uygunluğa, açılış tarihine veya dosya numarasına göre sıralayın.
 - **Aç:** **UYAP’tan aç** dosya ekranını, **Legaluga ile aç** doğrudan evrakları açar. Kişi adına tıklayarak aynı adın geçtiği dosyaları görebilirsiniz.
 - **Takip et:** **Duruşmalarım** ve **Yeni evrak** görünümlerini kullanın. Yeni evrak takibini ayarlardan açın; ilk tarama başlangıç listesi oluşturur.
+- **Dilekçe şablonu:** Kartta ya da dosya ekranının üst çubuğunda **Dilekçe şablonu (UDF)** mahkeme hitabı, esas numarası ve kayıttaki taraflarla vekilleri yazılı, gövdesi boş bir UDF dilekçe indirir; imza bölümüne Ayarlar'daki ad, baro ve sicil yazılır. UYAP'a istek atılmaz; dilekçeyi UYAP Doküman Editörü'nde tamamlayıp imzalamak ve göndermek size kalır.
 
 Arama kutusunda **↑ ↓** ile sonuç seçin, **Enter** ile açın, **Esc** ile geri dönün. Arama ve filtreler kayıtlı yerel veriler üzerinde çalışır. Güncelleme ve yeni belge okuma için UYAP bağlantısı gerekir.
 

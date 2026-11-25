@@ -32,8 +32,12 @@
       ileri.addEventListener('click', () => dosyaGec(1));
     }
     const dosyaBasligi = nativeDocument ? String(nativeDocument.e.tur || 'UYAP evrakı').slice(0, 256) : [cleanBirim(rec.birimAdi), rec.dosyaNo].filter(Boolean).join(' ');
+    // Boş dilekçe şablonu (dilekce-sablonu.js): UYAP'a istek atmadan kayıttaki birim, esas numarası ve taraflarla UDF indirir.
+    const sablon = nativeDocument || !globalThis.UHD.dilekceSablonu ? null : el('button', { type: 'button', class: 'ek-sablon', title: 'Mahkeme, esas numarası ve tarafları yazılı boş dilekçeyi UDF olarak indirir. Legaluga dilekçeyi göndermez.' }, 'Dilekçe şablonu (UDF)');
+    sablon?.addEventListener('click', () => globalThis.UHD.dilekceSablonu.indir({ kayit: rec, adlar: pagePrefs.myName, baro: pagePrefs.baro, sicil: pagePrefs.baroSicil })
+      .catch(() => toast('Dilekçe şablonu hazırlanamadı. Tekrar deneyin.', 'err')));
     const box = el('div', { class: 'box ekran', role: 'dialog', 'aria-modal': String(!beside), 'aria-label': `Dosya ekranı ${dosyaBasligi}`, tabindex: '-1' },
-      el('div', { class: 'bar' }, el('b', { title: dosyaBasligi }, dosyaBasligi), siraBar, close), sekmeBar, govde);
+      el('div', { class: 'bar' }, el('b', { title: dosyaBasligi }, dosyaBasligi), siraBar, sablon, close), sekmeBar, govde);
     const viewer = el('div', { lang: 'tr', class: 'viewer' }, box);
     // Ekranın onayları eklentinin kendi penceresinde sorulur; pencere açıkken ikinci bir onay açılmaz.
     let onayAcik = false;

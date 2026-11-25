@@ -1546,7 +1546,23 @@
       return b;
     }
 
-    // Ayarlar'daki baro ve sicil: mazeret dilekçesi taslağının imza satırına yazılır. Öteki tercihler gibi yalnız tarayıcının
+    // Dosyanın boş dilekçe şablonu (dilekce-sablonu.js): kayıttaki birim, esas numarası ve taraflarla UDF indirir; UYAP'a
+    // istek atmaz. Hızlı pencerede ve oturumsuz panel kilitliyken çıkmaz.
+    function sablonDugmesi(r) {
+      const modul = globalThis.UHD.dilekceSablonu, kilitli = () => !!(opts.kilitli && opts.kilitli());
+      if (!modul || quick || kilitli()) return null;
+      const b = el('button', { type: 'button', class: 'btn sm', 'data-focus': 'sablon', title: 'Mahkeme, esas numarası ve tarafları yazılı boş dilekçeyi UDF olarak indirir. Legaluga dilekçeyi göndermez.' }, 'Dilekçe şablonu (UDF)');
+      b.addEventListener('click', async e => {
+        e.stopPropagation();
+        if (kilitli()) return;
+        try {
+          await modul.indir({ kayit: r, adlar: myName(), baro: String(pref('baro', '') || ''), sicil: String(pref('baroSicil', '') || ''), bugun: todayIso() });
+        } catch { infoNotice('Dilekçe şablonu hazırlanamadı. Tekrar deneyin.', 'err'); }
+      });
+      return b;
+    }
+
+    // Ayarlar'daki baro ve sicil: mazeret dilekçesi taslağının ve dilekçe şablonunun imza satırına yazılır. Öteki tercihler gibi yalnız tarayıcının
     // yerel deposunda (uhdPrefs) durur; hata raporuna girmez, hiçbir sunucuya gönderilmez.
     function baroAlanlari() {
       const alan = (ad, etiket, uzunluk, ornek) => {
@@ -1560,7 +1576,7 @@
         return el('label', { class: 'field' }, el('span', null, etiket), girdi);
       };
       return el('div', { class: 'box' }, alan('baro', 'Baro', 60, 'Örnek: İstanbul'), alan('baroSicil', 'Baro sicil numarası', 20, 'Örnek: 12345'),
-        el('div', { class: 'hint' }, 'İsteğe bağlı. Mazeret dilekçesi taslağının imza bölümüne yazılır. Yalnız bu bilgisayarda saklanır; Legaluga’ya ya da başka bir yere gönderilmez.'));
+        el('div', { class: 'hint' }, 'İsteğe bağlı. Mazeret dilekçesi taslağının ve dilekçe şablonunun imza bölümüne yazılır. Yalnız bu bilgisayarda saklanır; Legaluga’ya ya da başka bir yere gönderilmez.'));
     }
 
     function showDurusmalar(range) {
@@ -1792,7 +1808,7 @@
         partyBlock(r, toks, keys),
         !filter.onlyDurusma ? evrakBlock(r, toks) : null,
         son,
-        el('div', { class: 'ifoot' }, noteAdd, ekranBtn, open));
+        el('div', { class: 'ifoot' }, noteAdd, sablonDugmesi(r), ekranBtn, open));
       row.addEventListener('click', e => {
         if (e.target.closest('button, a, input, textarea, select') || String(window.getSelection && window.getSelection()).trim()) return;
         select(i, false, true);
