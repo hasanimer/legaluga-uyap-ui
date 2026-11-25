@@ -62,6 +62,8 @@
     };
     const group = (title, ...children) => el('fieldset', { class: 'setup-card' }, el('legend', null, title), ...children);
     const focus = () => { if (!destroyed) heading?.focus(); };
+    // Bağlantı adımı yeniden çizilince odaktaki düğme DOM'dan çıkar; odak içerideyse yeni başlığa taşınır.
+    const odakIcinde = () => { const etkin = root.getRootNode?.()?.activeElement; return !!etkin && root.contains(etkin); };
     const showError = text => {
       if (destroyed) return;
       errorBox.textContent = text;
@@ -134,7 +136,7 @@
       }
       const advance = connection.ready && step === 0;
       if (advance) step = 1;
-      if (step === 0 || advance) { render(); if (advance) focus(); }
+      if (step === 0 || advance) { const tasi = advance || odakIcinde(); render(); if (tasi) focus(); }
       else for (const box of connectionBoxes) box.textContent = connectionText();
     }
 
@@ -143,7 +145,9 @@
       const run = ++connectionRun;
       checking = true;
       connection = { ...connection, status: 'checking' };
+      const tasi = odakIcinde();
       render();
+      if (tasi) focus();
       try {
         const result = await onConnection({ manual });
         if (!destroyed && run === connectionRun) setConnection(result);

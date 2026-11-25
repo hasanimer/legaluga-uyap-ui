@@ -42,7 +42,7 @@
         const toggle = el('button', { type: 'button', class: 'chip ek-banka-grup-ac', 'aria-label': name + ' cevaplarını ' + (group.open ? 'kapat' : 'aç'), 'aria-expanded': String(group.open) }, group.open ? 'Kapat' : 'Aç');
         const update = () => { toggle.textContent = group.open ? 'Kapat' : 'Aç'; toggle.setAttribute('aria-expanded', String(group.open)); toggle.setAttribute('aria-label', name + ' cevaplarını ' + (group.open ? 'kapat' : 'aç')); };
         toggle.addEventListener('click', event => { event.preventDefault(); event.stopPropagation(); group.open = !group.open; bankaTumAcik = false; update(); });
-        group.addEventListener('toggle', () => { if (bankaGovde.contains(group)) update(); });
+        group.addEventListener('toggle', () => { if (!bankaGovde.contains(group)) return; if (!group.open) bankaTumAcik = false; update(); });   // başlıktan kapatılan grup "Tümünü aç" bayrağını düşürür
         group.children[0].append(toggle);
         return group;
       }));

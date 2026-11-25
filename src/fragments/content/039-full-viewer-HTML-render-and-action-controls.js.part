@@ -498,7 +498,6 @@
       ogeler.setAttribute('aria-label', kategorili ? 'Evrak türleri ve evraklar' : 'Evraklar');
       kategoriGorunum.setAttribute('aria-pressed', String(!kategorili));
       kategoriGorunum.title = kategorili ? 'Düz listeye geç' : 'Klasör görünümüne geç';
-      kategoriGorunum.setAttribute('aria-label', kategorili ? 'Evrakları düz listede göster' : 'Evrakları dosya ve tür klasörlerinde göster');
       tarihSirasi.textContent = tarihArtan ? 'Tarih ↑' : 'Tarih ↓';
       tarihSirasi.title = tarihArtan ? 'En eski önce' : 'En yeni önce';
       tarihSirasi.setAttribute('aria-label', `Tarih sırası: ${tarihArtan ? 'en eski' : 'en yeni'} önce. ${tarihArtan ? 'En yeni' : 'En eski'} önce sıralamak için basın.`);

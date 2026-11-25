@@ -95,7 +95,8 @@
     if (value instanceof Date || typeof value === 'number') {
       const date = value instanceof Date ? value : new Date(value);
       if (!Number.isFinite(date.getTime())) return null;
-      return [date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds()];
+      // ZIP zaman damgası yerel saattir; metin tarihler de (UYAP onay tarihi) yerel duvar saati olarak yazılır.
+      return [date.getFullYear(), date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds()];
     }
     const text = String(value || '').trim();
     let m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?/.exec(text);
@@ -325,7 +326,8 @@
     const text = typeKeyRaw([r.yargiTuruAdi, r.birimAdi, r.dosyaTur].filter(Boolean).join(' '));
     if (/\bicra\b/.test(text)) return 'İcra';
     if (/\b(?:idar[ie]|idari|vergi mahkemesi|danistay)\b/.test(text)) return 'İdari';
-    if (/\b(?:ceza|savcilik|bassavcilig|cbs)\b/.test(text)) return 'Ceza';
+    // "Başsavcılığı" gibi çekimlerde kökten sonra harf gelir; savcılık kökü sözcük sonu aranmadan eşleşir.
+    if (/\b(?:ceza|cbs)\b|savcili[kg]/.test(text)) return 'Ceza';
     return 'Hukuk';
   }
   function birimTuru(rec) {

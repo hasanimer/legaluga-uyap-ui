@@ -32,7 +32,7 @@
     // Cevabın ya da talebin ekleri: ek listesindeki ekler ve anaEvrakId ile ona bağlı ayrı kayıtlar (ek listesinde de geçen bir kez).
     const bankEkleri = x => { const ekler = tum.filter(y => y.ana && y.ana.k === x.k && y.ana.dosya === x.dosya), ekIdleri = new Set(ekler.map(y => String(y.ekId)));
       return [...ekler, ...tum.filter(y => y.yetimEk && y.dosya === x.dosya && !ekIdleri.has(String(y.e.evrakId)) && bankAnaEvrak(y)?.k === x.k)]; };
-    const bankCandidates = () => tum.filter(x => bankOwn(x) && !ihbarCevabiMi(x.tur) && /talep|haciz|m[üu]zekkere|ihbar/i.test(x.tur));
+    const bankCandidates = () => tum.filter(x => bankOwn(x) && !ihbarCevabiMi(x.tur) && /talep|haciz|muzekkere|ihbar/.test(norm(x.tur)));   // norm: /i bayrağı İ ile i'yi eşlemez
     // "Tam listeyi al" sürerken (teyitAlim) banka listesi ikinci kez istenmez.
     const bankBusy = () => mesgul('banka', 'bankaOkuma', 'zip', 'paket', 'paketKosu', 'tebligat', 'teyit', 'belgePdf');
     const bankFullList = () => !!kaynak && !kaynak.list.kilit && !kaynak.list.morePages && !kaynak.list.scopeUnknown &&

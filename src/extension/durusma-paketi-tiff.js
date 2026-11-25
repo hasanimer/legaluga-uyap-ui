@@ -34,7 +34,10 @@
     const warnings = [];
     if (page.birim === 3) { dx *= 2.54; dy *= 2.54; }
     if (page.birim === 1 || !valid(dx) || !valid(dy)) {
-      dx = dy = DEFAULT_DPI;
+      // Birim 1'de mutlak ölçü yoktur ama X/Y oranı piksel en-boy oranıdır; görüntüleyicideki kıstırmayla korunur.
+      const oran = page.birim === 1 && dx > 0 && dy > 0 ? Math.min(4, Math.max(0.25, dx / dy)) : 1;
+      dx = oran < 1 ? DEFAULT_DPI * oran : DEFAULT_DPI;
+      dy = dx / oran;
       warnings.push('DPI eksik veya geçersiz; 200 DPI varsayıldı.');
     }
     const rotated = page.yon >= 5;

@@ -20,6 +20,13 @@ function harness(states = [], options = {}) {
   document.createElement = tag => new Node(tag, null, document);
   const container = new Node('main', null, document);
   context.document = document;
+  // Gölge kökü: içerideki odak yalnız kökün activeElement'inde görünür, belge gölge ana öğesini gösterir.
+  const shadow = options.shadow ? { activeElement: null } : null;
+  if (shadow) {
+    const host = new Node('div', null, document);
+    Node.prototype.getRootNode = () => shadow;
+    Node.prototype.focus = function () { shadow.activeElement = this; document.activeElement = host; };
+  }
   const calls = [], subscribers = new Set();
   let snapshot = states, retained;
   const manager = {
@@ -41,7 +48,7 @@ function harness(states = [], options = {}) {
     }) });
   const field = (name, key) => all(key ? all(container).find(node => node.attrs['data-file-key'] === key) : container)
     .find(node => node.attrs['data-download'] === name);
-  return { api, manager, calls, container, document, field, all: () => all(container),
+  return { api, manager, calls, container, document, shadow, field, all: () => all(container),
     update(next) { snapshot = next; for (const fn of subscribers) fn(next); },
     late(next) { retained(next); } };
 }
@@ -217,6 +224,16 @@ test('canlı ilerleme düğmeyi yeniden yaratmaz; tamamlanan/kaldırılan işte 
   h.update([]);
   assert.equal(h.document.activeElement.tag, 'h3');
   assert.equal(h.field('count').textContent, '0 indirme');
+  h.api.destroy();
+});
+
+test('gölge kökü içinde de gizlenen ya da kaldırılan düğmenin odağı görünür hedefe geçer', () => {
+  const state = job({ status: 'running', phase: 'fetching' }), h = harness([state], { shadow: true });
+  h.field('control', 'file-a').focus();
+  h.update([job({ status: 'complete', saved: 10840, lastPart: { downloadId: 7, completedAt: 1900000000000 } })]);
+  assert.equal(h.shadow.activeElement, h.field('folder', 'file-a'));
+  h.update([]);
+  assert.equal(h.shadow.activeElement.tag, 'h3');
   h.api.destroy();
 });
 

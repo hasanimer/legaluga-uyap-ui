@@ -89,8 +89,9 @@
     };
     const attr = (name, extra = {}) => ({ 'data-tebligat': name, ...extra });
     const all = el('input', attr('select-all', { type: 'checkbox', id: `${id}-all` }));
-    const submit = el('button', attr('query', { type: 'submit', class: 'dp-go' }), 'Seçilenleri sorgula');
-    const stop = el('button', attr('stop', { type: 'button', class: 'chip', hidden: true }), 'Durdur');
+    // Sorgula ile Durdur aynı odak anahtarını taşır: biri devre dışı kalınca ya da gizlenince odak ötekine geçer.
+    const submit = el('button', attr('query', { type: 'submit', class: 'dp-go', 'data-focus': 'is' }), 'Seçilenleri sorgula');
+    const stop = el('button', attr('stop', { type: 'button', class: 'chip', hidden: true, 'data-focus': 'is' }), 'Durdur');
     const status = el('p', attr('status', { role: 'status', 'aria-live': 'polite', class: 'dp-muted te-status' }));
     const summary = el('span', attr('summary', { class: 'dp-muted te-summary' }));
     const filters = el('div', attr('filters', { class: 'te-filters', role: 'group', 'aria-label': 'Tebligat türüne göre süz' }));
@@ -209,15 +210,17 @@
           (provider === 'ptt-file' ? value.fileLabel : value.sourceLabel) ? el('span', { class: 'dp-muted' }, provider === 'ptt-file' ? value.fileLabel : value.sourceLabel) : null));
         if (facts.length) nodes.push(el('dl', { class: 'te-facts' }, facts.map(detail => el('div', null,
           el('dt', null, String(detail.label || '')), el('dd', null, String(detail.value || ''))))));
-        nodes.push(events.length ? el('details', { class: 'te-events', open: provider === 'uets' || events.length <= 4 },
+        // Liste her çizimde yeniden kurulur; kullanıcının açtığı ya da kapattığı ayrıntı satır durumunda saklanır.
+        const details = events.length ? el('details', { class: 'te-events', open: value.eventsOpen?.[provider] ?? (provider === 'uets' || events.length <= 4) },
           el('summary', null, `${provider === 'uets' ? 'Mazbata kayıtları' : 'Gönderi hareketleri'} (${events.length})`),
           el('div', { class: 'te-tablewrap' }, el('table', { class: 'te-table' },
             el('thead', null, el('tr', null, ['Tarih', 'İşlem', 'Ayrıntı'].map(text => el('th', { scope: 'col' }, text)))),
             el('tbody', null, events.map(event => el('tr', null,
               el('td', { class: 'te-date', 'data-label': 'Tarih' }, String(event.time || '—')),
               el('td', { 'data-label': 'İşlem' }, `${event.mazbata === true ? 'Mazbata · ' : ''}${String(event.status || '—')}`),
-              el('td', { 'data-label': 'Ayrıntı' }, [event.detail, event.location].filter(Boolean).map(String).join(' · ') || '—')))))))
-          : el('p', { class: 'dp-muted' }, provider === 'uets'
+              el('td', { 'data-label': 'Ayrıntı' }, [event.detail, event.location].filter(Boolean).map(String).join(' · ') || '—'))))))) : null;
+        details?.addEventListener('toggle', () => { (value.eventsOpen ||= {})[provider] = !!details.open; });
+        nodes.push(details || el('p', { class: 'dp-muted' }, provider === 'uets'
             ? 'Mazbata eşleşti; olay tarihleri ayrı okunamadı. Belgeden kontrol edin.'
             : 'PTT bu sorgu için hareket kaydı döndürmedi.'));
         nodes.push(el('p', { class: 'te-source' }, `${provider === 'uets' ? 'Kaynak: Bu dosyanın barkodla eşleşen e-tebliğ mazbatası.'
@@ -252,8 +255,12 @@
         button.addEventListener('click', async () => {
           if (destroyed || current || opening || stateFor(item) !== value || !items.some(row => row.key === item.key && stamp(row) === stamp(item))) return;
           opening = true; sync();
-          try { await openPttPage(value.barcode); }
-          catch (error) { if (!destroyed && stateFor(item) === value) { value.message = error?.message || 'PTT sayfası açılamadı.'; value.error = true; } }
+          // Sayfa açma hatası sorgu durumunu değiştirmez: alınmış sonuç geçerli kalır, hata yalnız durum satırına yazılır.
+          try {
+            await openPttPage(value.barcode);
+            if (!destroyed && openError && status.textContent === openError) message('');
+            openError = '';
+          } catch (error) { if (!destroyed) { openError = error?.message || 'PTT sayfası açılamadı. Yeniden deneyin.'; message(openError, true); } }
           finally { opening = false; if (!destroyed) sync(); }
         });
         actions.push(button);
@@ -331,7 +338,9 @@
     };
     const restoreFocus = key => {
       if (!key || typeof form.querySelectorAll !== 'function') return;
-      [...form.querySelectorAll('[data-focus]')].find(node => node.getAttribute('data-focus') === key && !node.disabled)?.focus();
+      // Odaktaki öğe çizimde kalktıysa (süzgeçten çıkan satır) ya da devre dışı kaldıysa odak seçili sorgu süzgecine geçer.
+      const adaylar = [...form.querySelectorAll('[data-focus]')].filter(node => !node.disabled && !node.hidden);
+      (adaylar.find(node => node.getAttribute('data-focus') === key) || adaylar.find(node => node.getAttribute('data-focus') === `sorgu-filtre|${queryFilter}`))?.focus();
     };
     function sync() {
       if (destroyed) return;
@@ -392,6 +401,8 @@
           });
           return button;
         }));
+      // Sorgu durumu değişip süzgeçten çıkan satır seçili kalmaz; yoksa görünmeyen tebligat sonraki gönderimde yeniden sorgulanır.
+      if (!current) for (const item of items) if (!visible(item)) selected.delete(item.key);
       pickUnqueried.disabled = !!current || !queryCounts.unqueried;
       pickCheck.disabled = !!current || !queryCounts.check;
       clearSelection.disabled = !!current || !selected.size;

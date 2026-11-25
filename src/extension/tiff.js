@@ -419,7 +419,8 @@
     if (!(dx > 0)) dx = 0;
     if (!(dy > 0)) dy = 0;
     if (birim === 3) { dx *= 2.54; dy *= 2.54; }
-    if (birim === 1 || !dx || !dy) dx = dy = dx || dy || 200;
+    // Birim 1 (mutlak ölçü yok) X/Y oranını yine piksel en-boy oranı olarak verir; oran atılmaz.
+    if (!dx || !dy) dx = dy = dx || dy || 200;
     const oranKat = kistir(dx / dy, 0.25, 4);           // dikey uzatma katsayısı
     const dpi = kistir(dx, 50, 2400);
     let en = g, boyu = y * oranKat;                       // görünen oran (döndürmeden önce)
@@ -443,7 +444,7 @@
       return img;
     };
     return {
-      g, y, bps, spp, c, p, pc, birBit, dosemeli, tw, th, rps, ofs, say, yon, rawYon, rawDx, rawDy, birim,
+      g, y, bps, spp, c, p, pc, fo, birBit, dosemeli, tw, th, rps, ofs, say, yon, rawYon, rawDx, rawDy, birim,
       truncatedStrip, allocation, oran: boyu / en, taban: tabanEn, tanim,
       satirBayt: Math.ceil(g * bps * (pc === 2 ? 1 : spp) / 8)
     };
@@ -521,10 +522,12 @@
       toplam = guvenliTopla(toplam, n);
       if (toplam > allocation.decodedCapacity) throw hata('boyut', 'şerit toplamı');
     }
-    const buffer = new ArrayBuffer(Math.max(1, toplam));
+    // UTIF bayt sırasını tamponun ilk iki baytından okur (16 bit örnekler); özgün imza başa taşınır.
+    const buffer = new ArrayBuffer(2 + toplam);
     const hepsi = new Uint8Array(buffer);
+    hepsi[0] = u8[0]; hepsi[1] = u8[1];
     const ofs = [], say = [];
-    let o = 0;
+    let o = 2;
     for (const p of parcalar) { hepsi.set(p, o); ofs.push(o); say.push(p.length); o += p.length; }
     return { buffer, ofs, say };
   }
@@ -557,6 +560,12 @@
       for (let k = 0; k + 1 < serit.length; k++) if (serit[k] === 0xff && serit[k + 1] === 0xda && ++tarama > SINIR.jpegTarama) throw new Error('jpeg tarama');
     }
   }
+
+  const BIT_TERS = new Uint8Array(256).map((_, b) => {
+    let r = 0;
+    for (let i = 0; i < 8; i++) r |= ((b >> i) & 1) << (7 - i);
+    return r;
+  });
 
   // Siyah-beyaz sayfa tam boy RGBA'ya çevrilmeden, bitler kutu ortalamasıyla hedef boyuta indirilir.
   function birBitKucult(veri, g, y, beyazSifir, tg, ty) {
@@ -607,6 +616,11 @@
     koruma.satir = Math.max(s.g, s.tw || 0) + 64;
     sessiz(() => UTIF.decodeImage(buffer, img, [img]));
     if (!img.data || !img.data.length) throw new Error('boş');
+    // UTIF FillOrder'ı yalnız CCITT çözücülerine uygular; öteki 1 bit sayfada bitler burada en yüksek bit öne çevrilir.
+    if (s.birBit && s.fo === 2 && s.c !== 3 && s.c !== 4) {
+      const d = img.data;
+      for (let i = 0; i < d.length; i++) if (d[i]) d[i] = BIT_TERS[d[i]];
+    }
     return img;
   }
 

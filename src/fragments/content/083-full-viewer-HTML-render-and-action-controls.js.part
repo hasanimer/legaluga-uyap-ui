@@ -82,7 +82,7 @@
         }
         if (!valid()) return;
         if (!doc?.blob || !doc.blob.size) throw new Error('Özgün cevap evrakı alınamadı.');
-        const ext = documentExtension(doc), label = `${target.tur} · ${tarihYaz(target.onay)}${sourceEntry ? ` · ${sourceEntry.ad}` : ''}`;
+        const ext = onizlemeUzantisi(documentExtension(doc)), label = `${target.tur} · ${tarihYaz(target.onay)}${sourceEntry ? ` · ${sourceEntry.ad}` : ''}`;
         const saveUrl = URL.createObjectURL(new Blob([doc.blob], { type: 'application/octet-stream' }));
         state.urls.add(saveUrl);
         state.download.href = saveUrl;

@@ -315,11 +315,14 @@
         catch { fail('pdf-load', `${it.title || it.id}: PDF açılamadı veya şifreli`, it.id); }
         inspectFeatures(doc, it.id);
         const pages = doc.getPages();
-        inspectedPages += pages.length;
-        if (inspectedPages > cap.pages) fail('page-limit', 'Kaynak sayfa sayısı sınırı aşıldı', it.id);
-        for (const page of pages) annotations(doc, page, it.id);
+        // Sayfalar yalnız evrak kabul edilince sayılır: reddedilen evrak sonrakilerin sınırını tüketmez.
+        if (inspectedPages + pages.length > cap.pages) fail('page-limit', 'Kaynak sayfa sayısı sınırı aşıldı', it.id);
+        // İç bağlantının hedef sayfası burada doğrulanır; birleştirme aşamasındaki hata evrakı değil paketi düşürür.
+        for (const a of pages.flatMap(page => annotations(doc, page, it.id)))
+          if (a.subtype === '/Link') sourceTarget(doc, a.target, it.id);
         const texts = await extractedTexts(pdfjs, it.bytes);
         if (texts.length !== pages.length) fail('pdf-text', 'PDF metin denetimi sayfa sayısı uyuşmuyor', it.id);
+        inspectedPages += pages.length;
         docs.push({ item: it, doc, pages }); sourceTexts.push(texts);
         onProgress({ phase: 'inspect', itemId: it.id,
           message: `${docs.length}/${ordered.length} evrak kontrol edildi · ${it.title || 'Evrak'}` });

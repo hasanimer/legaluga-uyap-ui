@@ -318,6 +318,8 @@
     const havuzSinir = Number.isInteger(havuzSure) && havuzSure >= 1 && havuzSure <= 120000 ? havuzSure : 16000;
     const havuzOnbellek = new Map();
     const havuzUcus = new Set();
+    // 20 künye sınırını aşıp sorulmayanlar: yalnız açık evrak için geçerlidir, temizle() boşaltır.
+    const havuzAsan = new Set();
     let havuzZaman = null;
     const ayarAcik = () => { try { return acikMi() !== false; } catch { return false; } };
     let sonAyar = ayarAcik();
@@ -674,7 +676,7 @@
         const d = havuzYuku(kunyeler[i]);
         if (!d) { havuzBoya(rozet, { hukum: 'denetlenemedi' }); return; }
         const anahtar = JSON.stringify(d);
-        const kayit = havuzOnbellek.get(anahtar) || (gecici && gecici.get(anahtar));
+        const kayit = havuzOnbellek.get(anahtar) || (gecici && gecici.get(anahtar)) || (havuzAsan.has(anahtar) ? { hukum: 'denetlenemedi' } : null);
         if (kayit) havuzBoya(rozet, kayit);
       });
     }
@@ -704,12 +706,12 @@
         const d = havuzYuku(kunyeler[i]);
         if (!d) continue;
         const anahtar = JSON.stringify(d);
-        if (havuzOnbellek.has(anahtar) || havuzUcus.has(anahtar) || gorulen.has(anahtar)) continue;
+        if (havuzOnbellek.has(anahtar) || havuzUcus.has(anahtar) || havuzAsan.has(anahtar) || gorulen.has(anahtar)) continue;
         gorulen.add(anahtar);
         aday.push({ anahtar, d });
       }
       const giden = aday.slice(0, HAVUZ_EN_COK);
-      for (const b of aday.slice(HAVUZ_EN_COK)) havuzOnbellek.set(b.anahtar, { hukum: 'denetlenemedi' });
+      for (const b of aday.slice(HAVUZ_EN_COK)) havuzAsan.add(b.anahtar);
       if (aday.length > HAVUZ_EN_COK) havuzSatirlariniBoya();
       if (!giden.length) return;
       for (const b of giden) havuzUcus.add(b.anahtar);
@@ -735,6 +737,8 @@
       goster(satirlar.length ? '' : ILETI.yok, String(satirlar.length));
       secilenCiz();
       if (satirlar.length) duyur(`Evrakta ${satirlar.length} karar atfı bulundu.`);
+      // Liste panel açıkken geldiyse (tarama sürerken açılan panel, OCR sonucu) havuz denetimi yeni satırlar için planlanır.
+      if (acik) havuzPlanla();
     }
 
     // Alt çizginin menüsü: Tam metni aç, Künyeyi kopyala, Listede göster. Esc, dışarı tıklama ve evrak değişimi kapatır.
@@ -1248,6 +1252,7 @@
       secimKapat();
       panelKapat(false);
       havuzPlanIptal();
+      havuzAsan.clear();
       for (const t of zamanlayicilar) clearTimeout(t);
       zamanlayicilar.clear();
       // Ayar kapanırken evrak DOM'u yerinde kalır: yalnız bizim eklediğimiz UDF alt çizgilerini kaldır.

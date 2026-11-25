@@ -233,6 +233,21 @@ test('panel tekrar odaklanınca açık çekmecenin başlığı odakta kalır; do
   assert.equal(h.document.activeElement, h.api.input);
 });
 
+// Çekmece aramayı ve listeyi örter: Escape önce çekmeceyi kapatır; görünmeyen arama metnini silmez.
+test('çekmece açıkken Escape çekmeceyi kapatır; gizli arama metni silinmez, odak İndirmeler düğmesine döner', async () => {
+  const h = harness(); await flush();
+  const button = h.find('.downloads-toggle'), area = h.find('.download-area');
+  h.api.input.value = 'sentetik';
+  await button.click();
+  let durdu = false;
+  for (const fn of h.root.events.keydown) fn({ key: 'Escape', target: h.document.activeElement, defaultPrevented: false, preventDefault() { durdu = true; }, stopPropagation() {} });
+  assert.equal(area.hidden, true);
+  assert.equal(durdu, true);
+  assert.equal(button.attrs['aria-expanded'], 'false');
+  assert.equal(h.api.input.value, 'sentetik');
+  assert.equal(h.document.activeElement, button);
+});
+
 test('arka plan güncellemeleri kapalı çekmeceyi açmaz; durmuş iş kullanıcı devam edene kadar bekler', async () => {
   const h = harness({ states: [job()] }); await flush();
   h.update([job({ status: 'error', phase: 'idle', saved: 25, inPart: 0, error: 'Sentetik bağlantı hatası' })]);
