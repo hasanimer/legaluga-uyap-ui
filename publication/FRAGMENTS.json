@@ -95,8 +95,8 @@
       "source": "background.js",
       "order": 7,
       "path": "src/fragments/background/015.js.part",
-      "sha256": "ca0657fb09272cfdca389f5b21f961a3cbf9d911fa4e8b0b714f8dcc369425e8",
-      "bytes": 391,
+      "sha256": "40fc9e1a31a3c71aab09ffeb640eb738780fa20910185223b53e6cdf6986aec5",
+      "bytes": 686,
       "purpose": "Extension/current main-frame/origin/document-lifecycle authorization"
     },
     {
@@ -111,8 +111,8 @@
       "source": "background.js",
       "order": 10,
       "path": "src/fragments/background/019.js.part",
-      "sha256": "68949785b569e26f298964f2832b7e892bd0dfb476e6c0da74a23a21e9ddff02",
-      "bytes": 6658,
+      "sha256": "0315aac9f6ce36fdb91cc273bd71779ed2440cd9e6617080c5474fb3e7c359ff",
+      "bytes": 6384,
       "purpose": "Panel-ready, popup focus-tab, page-zoom and shortcut messages with sender authorization; panel toggle, popup fallback and one-time Vergi Takibi handoff"
     },
     {

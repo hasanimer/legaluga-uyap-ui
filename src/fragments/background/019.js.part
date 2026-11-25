@@ -1,8 +1,7 @@
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if (!msg || sender.id !== chrome.runtime.id) return;
   if (msg.type === 'uhd-panel-ready') {
-    if (!sender.tab || sender.frameId !== 0 || !uyapUrl(sender.url)) return;
-    if (sender.documentLifecycle && sender.documentLifecycle !== 'active') return;
+    if (!uyapUstCerceve(sender)) return;
     // Uyuyan service worker iletiyi geç işleyebilir; sekme bu arada başka siteye geçtiyse popup kaldırılmaz.
     chrome.tabs.get(sender.tab.id)
       .then(tab => (uyapUrl(tab.url) ? chrome.action.setPopup({ tabId: tab.id, popup: '' }) : null))
@@ -15,8 +14,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
       .then(() => (Number.isInteger(msg.windowId) ? chrome.windows.update(msg.windowId, { focused: true }) : null))
       .catch(() => {});
   } else if (msg.type === 'uhd-page-zoom') {
-    if (!sender.tab || sender.frameId !== 0 || !uyapUrl(sender.url)) return;
-    if (sender.documentLifecycle && sender.documentLifecycle !== 'active') return;
+    if (!uyapUstCerceve(sender)) return;
     chrome.tabs.getZoom(sender.tab.id)
       .then(zoom => reply({ zoom }), () => reply({ zoom: 1 }));
     return true;
@@ -79,7 +77,7 @@ function vergiDevirleri(degistir = d => d) {
 vergiDevirleri().catch(() => {});
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if (msg?.type !== 'uhd-vergi-devir' || sender.id !== chrome.runtime.id) return;
-  if (!sender.tab || sender.frameId !== 0 || !uyapUrl(sender.url) || !vergiAktarimiMi(msg.metin)) { reply({ ok: false }); return; }
+  if (!uyapUstCerceve(sender) || !vergiAktarimiMi(msg.metin)) { reply({ ok: false }); return; }
   const jeton = crypto.randomUUID();
   (async () => {
     await vergiDevirleri(d => {

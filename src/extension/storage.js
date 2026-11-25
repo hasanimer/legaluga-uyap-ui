@@ -539,6 +539,7 @@
       }
       throw new Error('Depolama işlemi desteklenmiyor.');
     }, !dizinsiz(operation, args));
+    // setupSender'dan farkı bilerek: depo aracısı ön-işlenen (prerender) UYAP belgesine de yanıt verir; içerik betiği sekme etkinleşmeden yüklenir ve önce depodan okur.
     const trusted = sender => sender.id === chrome.runtime.id && (String(sender.url || '').startsWith(chrome.runtime.getURL('')) || (sender.frameId === 0 && String(sender.url || '').startsWith('https://avukat.uyap.gov.tr/')));
     chrome.runtime.onMessage.addListener((message, sender, reply) => {
       if (message?.type !== 'uhd-storage' || !trusted(sender)) return;

@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "40aec693cfbddcde69edad8da07ecd4753434764e9cb2eb6576f1f0f0157ea7c"
+      "sha256": "71d5a77071124967e7565e969e1c1f17d2a912d2ab25e6ace5d9a2771b960494"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -292,11 +292,11 @@
     },
     {
       "path": "src/extension/storage.js",
-      "sha256": "b0ea926d1db56d2ba9e1099e8cda4953eeb388859954ac0851249be040072c5c"
+      "sha256": "76d6c2c4d135e66886a050ef1d753ddbcb0dbccfd3af823e013d55581121a7a1"
     },
     {
       "path": "src/extension/tabs.js",
-      "sha256": "88d73c980ef8bcde7b3d8826874dfe7b6c08d272a6ee5b747407ff5e1f61a79e"
+      "sha256": "e8f633cd014565ceff7629f39d521ea91f1b5fb22422514ac97670b83bbbbf7d"
     },
     {
       "path": "src/extension/tebligat-ui.js",
@@ -456,7 +456,7 @@
     },
     {
       "path": "src/fragments/background/015.js.part",
-      "sha256": "ca0657fb09272cfdca389f5b21f961a3cbf9d911fa4e8b0b714f8dcc369425e8"
+      "sha256": "40fc9e1a31a3c71aab09ffeb640eb738780fa20910185223b53e6cdf6986aec5"
     },
     {
       "path": "src/fragments/background/017.js.part",
@@ -464,7 +464,7 @@
     },
     {
       "path": "src/fragments/background/019.js.part",
-      "sha256": "68949785b569e26f298964f2832b7e892bd0dfb476e6c0da74a23a21e9ddff02"
+      "sha256": "0315aac9f6ce36fdb91cc273bd71779ed2440cd9e6617080c5474fb3e7c359ff"
     },
     {
       "path": "src/fragments/common/001.js.part",
