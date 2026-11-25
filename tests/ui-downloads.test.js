@@ -81,7 +81,7 @@ test('mini durum alınan evrakla ilerler; diske kaydedilen sayı ayrı yazılır
   assert.equal(h.field('percent').textContent, '%75');
   h.update([job({ saved: 25, inPart: 75, phase: 'saving' })]);
   assert.equal(progress.value, 100);
-  assert.match(mini.textContent, /Diske kaydediliyor.*100\/100 alındı · 25 diske kaydedildi/);
+  assert.match(mini.textContent, /ZIP diske kaydediliyor.*100\/100 alındı · 25 diske kaydedildi/);
   await mini.click();
   assert.equal(h.find('.download-area').hidden, false);
   assert.equal(h.field('status').textContent, 'ZIP diske kaydediliyor');

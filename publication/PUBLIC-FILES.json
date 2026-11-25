@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "089ec1eafea75ae72e8e5faa555ec9861de7f62330a628f5b4cfc748473b803e"
+      "sha256": "2bcced6c6dde2df025a2798ef9cad4b60eb148ae64fb47d8e9491d22ef2502bd"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -200,7 +200,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-ui.js",
-      "sha256": "49d4e6a7b63a79e2d74ba015f28e339baca3ad1b0825012aec3ca504a4a23113"
+      "sha256": "b9a3df0db4b5fe6d7177566231a79c92c5f25b4405f59ee4539092fc0584c950"
     },
     {
       "path": "src/extension/durusma-paketi-worker.js",
@@ -236,7 +236,7 @@
     },
     {
       "path": "src/extension/indirme-panel.js",
-      "sha256": "7f158ea10909e55b4478bfc40856ab0566c245cb2a04699cf0fdc0013c530067"
+      "sha256": "ce863c60f2863748692313632e4826624737dc210505e5130329d2c1b4f15e56"
     },
     {
       "path": "src/extension/kunye-ayikla.js",
@@ -316,7 +316,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "9731e1a29156ddddcf4d044921247954fc37df9385a369c4dbfa89bf35a45aef"
+      "sha256": "86e81e3097261f171a5487e5d165e5a324e34ecd9809c1c61c9bbec72b786116"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -564,7 +564,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "1c0591090a51ad2ee7ce74be4533426f9a8159a37feb44e8d96a4b98ae2b7024"
+      "sha256": "367a4967565373a0771e31e43e53a8fe6d675f6687dfa549ae2cfdec5290eceb"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -684,7 +684,7 @@
     },
     {
       "path": "tests/ui-downloads.test.js",
-      "sha256": "2f6eb53bec0f35345688773910ddc5035d8bf21f8e744ede032d2e8a330ce0dd"
+      "sha256": "ba4f126fac67b65e2c8f0c675df4304888ffeb62c8f9dda836ca3d620be18285"
     },
     {
       "path": "tests/update-inventory.test.js",

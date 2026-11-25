@@ -489,7 +489,7 @@
         if (!state) return;
         const saved = Math.min(state.saved || 0, state.total || 0), total = state.total || 0;
         const fetched = state.kind === 'zip' ? saved : Math.min(total, saved + (state.inPart || 0));   // alınan evrakla ilerler
-        const phase = state.status === 'paused' ? 'Duraklatılıyor…' : { waiting: 'Sırada', fetching: 'Evraklar alınıyor', packing: 'ZIP hazırlanıyor', saving: 'Diske kaydediliyor' }[state.phase] || 'İndiriliyor';
+        const phase = state.status === 'paused' ? 'Duraklatılıyor…' : { waiting: 'Sırada', fetching: 'Evraklar alınıyor', packing: 'ZIP hazırlanıyor', saving: 'ZIP diske kaydediliyor' }[state.phase] || 'İndiriliyor';
         downloadText.textContent = `${state.rec?.dosyaNo || 'Dosya'} · ${phase} · ${fetched.toLocaleString('tr-TR')}/${total.toLocaleString('tr-TR')} alındı${state.kind === 'zip' ? '' : ` · ${saved.toLocaleString('tr-TR')} diske kaydedildi`}`;
         downloadProgress.value = total ? Math.floor(100 * fetched / total) : 0;
         downloadProgress.setAttribute('aria-label', 'Alınan evraklar');
@@ -533,6 +533,7 @@
     const noteDrafts = new Map();
     let manualNotice = false;
     let undoNotice = false;    // görünen bildirim “Geri al” taşıyor: bilgi amaçlı bildirim onun yerine geçmez
+    let noticeImza = '', noticeEylem = null;   // görünen bildirimin imzası ve eylem düğmesinin çağıracağı en son eylem
     let goruldu = {};
     let gizli = {};            // aramada gösterilmeyecek dosyalar (uhdGizli): { key: { dosyaNo, birimAdi, at } }
     const allParties = new Set();// tüm tarafları gösterilen kartlar
@@ -785,13 +786,21 @@
     // ------------------------------------------------ bildirim
 
     function showNotice(text, kind, action, noticeKey) {
+      // Görünen bildirimin aynısı yeniden istenirse (depolama değişimiyle yinelenen autoNotice, kurulum taraması hatası)
+      // yuvaya dokunulmaz: ekran okuyucu aynı uyarıyı yeniden okumaz. Eylem düğmesi en son verilen işlevi çağırır.
+      const imza = JSON.stringify([text, kind === 'err', action?.label, !!action?.undo, noticeKey]);
+      if (text && !notice.hidden && imza === noticeImza && !(noticeKey && dismissedNotices.has(noticeKey))) { noticeEylem = action; return; }
+      noticeImza = imza; noticeEylem = action;
       notice.replaceChildren();
       undoNotice = false;
       if (!text || (noticeKey && dismissedNotices.has(noticeKey))) { notice.hidden = true; return; }
       undoNotice = !!(action && action.undo);
       notice.className = 'notice' + (kind === 'err' ? ' err' : '');
+      // Hata ekran okuyucuda araya girer; bilgi bildirimi sırasını bekler. Rol, metin yuvaya girmeden önce ayarlanır.
+      notice.setAttribute('role', kind === 'err' ? 'alert' : 'status');
+      notice.setAttribute('aria-live', kind === 'err' ? 'assertive' : 'polite');
       notice.append(el('span', null, text));
-      if (action) notice.append(el('button', { onclick: action.fn }, action.label));
+      if (action) notice.append(el('button', { onclick: e => noticeEylem.fn(e) }, action.label));
       const dismiss = el('button', { class: 'dismiss', title: 'Bildirimi kapat', 'aria-label': 'Bildirimi kapat' }, '×');
       dismiss.addEventListener('click', () => {
         if (noticeKey) dismissedNotices.add(noticeKey);

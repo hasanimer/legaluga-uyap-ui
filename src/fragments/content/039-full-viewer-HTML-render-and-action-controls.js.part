@@ -723,7 +723,7 @@
         if (!zipRun || zipRun.bulk) zipRun = { bulk: true, managed: true, ac: new AbortController(), packAc: new AbortController() };
         zipProgress.max = bulkState.total; zipProgress.value = Math.min(bulkState.total, bulkState.saved + (bulkState.inPart || 0)); zipProgress.hidden = false;
       } else if (zipRun?.managed) { zipRun = null; zipProgress.hidden = true; }
-      const stage = { waiting: 'Kuyrukta', fetching: 'Evrak alınıyor', packing: 'ZIP hazırlanıyor', saving: 'Diske kaydediliyor' }[bulkState.phase];
+      const stage = { waiting: 'Sırada', fetching: 'Evraklar alınıyor', packing: 'ZIP hazırlanıyor', saving: 'ZIP diske kaydediliyor' }[bulkState.phase];
       const result = bulkState.status === 'complete' ? 'İndirme tamamlandı.' : bulkState.status === 'error' ? bulkState.error :
         bulkState.status === 'paused' && !active ? 'Duraklatıldı. Kaldığı yerden devam edebilirsiniz.' : stage || 'İndirme sürüyor';
       zipMessage(`${result} ${fmtNum(bulkState.saved)}/${fmtNum(bulkState.total)} evrak diske kaydedildi${bulkState.inPart > 0 ? ` · ${fmtNum(bulkState.inPart)} evrak alındı, henüz diske yazılmadı` : ''}.${bulkEk()}${bulkAtlanan() ? ` ${bulkAtlanan()}` : ''}`, bulkState.status === 'error');
