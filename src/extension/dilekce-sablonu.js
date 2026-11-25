@@ -16,13 +16,15 @@
 
   // İcra dairesi müdürlüğe yazılır; "-lığı/-lüğü" ile biten makam (Başsavcılığı, Başkanlığı, Memurluğu) adında mahkeme ya
   // da Yargıtay geçse de yönelme ekini alır. Mahkeme ve daireler mazeret dilekçesinin kuralıyla (heyet → BAŞKANLIĞINA,
-  // tek hâkim → HÂKİMLİĞİNE) yazılır. Tanınmayan birimde "MAKAMINA" her ada uyar.
+  // tek hâkim → HÂKİMLİĞİNE) yazılır. Tanınmayan birimin adı iyelik ünlüsüyle bitiyorsa adın kendisi ünlü uyumlu yönelme
+  // ekini alır (BÜROSUNA, HEYETİNE, KOMİSYONUNA, KURULUNA); öteki adlarda "MAKAMINA" her ada uyar.
   function hitap(birimAdi) {
     const ad = birim(birimAdi), kucuk = ad.toLocaleLowerCase('tr-TR');
     if (!ad) return YER_BIRIM;
     if (/(?:^|\s)icra (?:dairesi|müdürlüğü)$/.test(kucuk)) return `${buyuk(ad.slice(0, ad.lastIndexOf(' ')))} MÜDÜRLÜĞÜNE`;
     if (/ğ[ıiuü]$/.test(kucuk)) return `${buyuk(ad)}${/[ıu]$/.test(kucuk) ? 'NA' : 'NE'}`;
     if (/mahkeme|dairesi|yargıtay|danıştay/.test(kucuk)) return M.hitap(ad);
+    if (/[ıiuü]$/.test(kucuk)) return `${buyuk(ad)}${/[ıu]$/.test(kucuk) ? 'NA' : 'NE'}`;
     return `${buyuk(ad)} MAKAMINA`;
   }
 
@@ -31,21 +33,23 @@
     ? { noEtiketi: 'SORUŞTURMA NO', dosyaNo: temiz(k.dosyaNo) || YER_SORUSTURMA }
     : { noEtiketi: 'DOSYA NO', dosyaNo: esas(k.dosyaNo) || `${YER_ESAS} Esas` });
 
+  // Taraf ve vekil adları UYAP'taki yazımıyla kalır (unvanlar bozulmaz); yalnız baştaki "Av." öneki düşer, şablon kendisi yazar.
+  const avsiz = s => temiz(s).replace(/^av(?:\.\s*|\s+)/i, '');
   // kayit: dizindeki dosya kaydı ({ birimAdi, dosyaNo, yargiTuru, taraflar: [{ rol, adi, vekil: [] }] }). adlar: Ayarlar'daki
   // avukat adları ("Ad Soyad, Ad Soyad"); ilki imzaya yazılır, hepsi müvekkili bulmakta kullanılır.
   function alanlar(kayit, /** @type {{ adlar?: string, baro?: string, sicil?: string, bugun?: string }} */ { adlar, baro, sicil, bugun } = {}) {
     const { trTitle, myKeys, isClient } = UHD, k = kayit || {};
-    const anahtarlar = myKeys(adlar), ad = s => trTitle(temiz(s));
+    const anahtarlar = myKeys(adlar);
     const gruplar = new Map();
     for (const p of Array.isArray(k.taraflar) ? k.taraflar : []) {
       if (!p || !temiz(p.adi)) continue;
-      const rol = ad(p.rol) || 'Taraf';
+      const rol = temiz(p.rol).split('/').map(x => trTitle(x)).join('/') || 'Taraf';
       if (!gruplar.has(rol)) gruplar.set(rol, []);
-      gruplar.get(rol).push({ rol, ad: ad(p.adi), muvekkil: isClient(p, anahtarlar),
-        vekiller: (Array.isArray(p.vekil) ? p.vekil : []).map(v => ad(temiz(v).replace(/^av(?:\.\s*|\s+)/i, ''))).filter(Boolean) });
+      gruplar.get(rol).push({ rol, ad: temiz(p.adi), muvekkil: isClient(p, anahtarlar),
+        vekiller: (Array.isArray(p.vekil) ? p.vekil : []).map(avsiz).filter(Boolean) });
     }
     const taraflar = [...gruplar.values()].flat(), muvekkil = taraflar.find(t => t.muvekkil);
-    const vekil = ad(String(adlar || '').split(/[,;]/)[0]);
+    const vekil = trTitle(avsiz(String(adlar || '').split(/[,;]/)[0]));
     return {
       hitap: hitap(k.birimAdi),
       ...numara(k),

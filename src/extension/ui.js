@@ -704,12 +704,12 @@
       if (pendingJob?.id === setupScanNoticeId && pendingJob.setupPending && !pendingJob.stop) {
         if (progress?.error && progress.text) {
           const id = setupScanNoticeId;
-          setNotice(progress.text, 'err', { label: 'UYAP’ı aç', fn: () => opts.onSetupOpenUyap ? opts.onSetupOpenUyap() : chrome.runtime.sendMessage({ type: 'uhd-setup-open' }) });
+          setNotice(progress.text, 'err', { label: 'UYAP’ı aç', fn: () => opts.onSetupOpenUyap ? opts.onSetupOpenUyap() : chrome.runtime.sendMessage({ type: 'uhd-setup-open' }) }, true);
           setupScanNoticeId = id;
         }
         return;
       }
-      setNotice(running() ? 'Seçtiğiniz dosyaların taraması başlatıldı.' : progress?.text || 'İlk tarama durumu güncellendi.');
+      setNotice(running() ? 'Seçtiğiniz dosyaların taraması başlatıldı.' : progress?.text || 'İlk tarama durumu güncellendi.', '', null, true);
     }
 
     const myNames = () => String(prefs.myName || '').split(/[,;]/).map(x => x.trim()).filter(Boolean);
@@ -792,11 +792,13 @@
 
     // ------------------------------------------------ bildirim
 
-    function showNotice(text, kind, action, noticeKey) {
-      // Görünen bildirimin aynısı yeniden istenirse (depolama değişimiyle yinelenen autoNotice, kurulum taraması hatası)
-      // yuvaya dokunulmaz: ekran okuyucu aynı uyarıyı yeniden okumaz. Eylem düğmesi en son verilen işlevi çağırır.
+    // yineleneBilir: kendiliğinden çağrı (autoNotice, kurulum taraması bildirimi). Kullanıcı eylemi (setNotice) false verir.
+    function showNotice(text, kind, action, noticeKey, yineleneBilir = true) {
+      // Kendiliğinden gelen bildirimin aynısı yeniden istenirse (depolama değişimiyle yinelenen autoNotice, kurulum taraması
+      // hatası) yuvaya dokunulmaz: ekran okuyucu aynı uyarıyı yeniden okumaz. Eylem düğmesi en son verilen işlevi çağırır.
+      // Kullanıcının yinelediği eylemin aynı hatası yuvayı yeniden yazar: ikinci denemenin de düştüğü okunur.
       const imza = JSON.stringify([text, kind === 'err', action?.label, !!action?.undo, noticeKey]);
-      if (text && !notice.hidden && imza === noticeImza && !(noticeKey && dismissedNotices.has(noticeKey))) { noticeEylem = action; return; }
+      if (yineleneBilir && text && !notice.hidden && imza === noticeImza && !(noticeKey && dismissedNotices.has(noticeKey))) { noticeEylem = action; return; }
       noticeImza = imza; noticeEylem = action;
       notice.replaceChildren();
       undoNotice = false;
@@ -821,10 +823,10 @@
       notice.hidden = false;
     }
 
-    function setNotice(text, kind, action) {
+    function setNotice(text, kind, action, kendiliginden = false) {
       setupScanNoticeId = null;
       manualNotice = !!text;
-      if (text) showNotice(text, kind, action);
+      if (text) showNotice(text, kind, action, undefined, kendiliginden);
       else autoNotice();
     }
 
@@ -1298,7 +1300,14 @@
         state.saving = pending;
         return pending;
       };
-      const leave = ev => { if (!field.owns(ev.relatedTarget) && !editor.contains(ev.relatedTarget)) return basiBitince(done); };
+      // Güncel düzenleyiciden fareyle çıkışta ertelenen iş bu kuruluma değil taslağın güncel düzenleyicisine
+      // bağlıdır: tıklanan düğme listeyi yeniden çizerse kart yeni düzenleyiciyle kurulur, eski kapanış boş döner.
+      state.bitir = done;
+      const bitir = () => (noteDrafts.get(r.key) === state ? state.bitir() : undefined);
+      const leave = ev => {
+        if (field.owns(ev.relatedTarget) || editor.contains(ev.relatedTarget)) return;
+        return state.editor === editor ? basiBitince(bitir) : done();
+      };
       editor.addEventListener('click', e => e.stopPropagation());
       editor.addEventListener('mousedown', e => e.stopPropagation());
       editor.addEventListener('keydown', e => {
@@ -1557,7 +1566,7 @@
         if (kilitli()) return;
         try {
           await modul.indir({ kayit: r, adlar: myName(), baro: String(pref('baro', '') || ''), sicil: String(pref('baroSicil', '') || ''), bugun: todayIso() });
-        } catch { infoNotice('Dilekçe şablonu hazırlanamadı. Tekrar deneyin.', 'err'); }
+        } catch { setNotice('Dilekçe şablonu hazırlanamadı. Tekrar deneyin.', 'err'); }
       });
       return b;
     }
@@ -3023,6 +3032,8 @@
       showDownloads,
       // Dosya ekranındaki "Bu dosyadaki yeni evrakları görüldü say".
       markSeen: (keys, kadar) => dizinTazeyken(() => markSeen(keys, false, kadar)),
+      // Dosya ekranının dilekçe şablonu kart düğmesiyle aynı adı kullanır: Ayarlar'daki ad, boşsa otomatik bulunan ad.
+      vekilAdi: () => myName(),
       showView
     };
   }

@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "fbec24ab08ad00d0e9f4a718c2fc68a7905efa58db90623f0d1b44d8de641961"
+      "sha256": "90706c9128ee4367ea603dbf7402b8db8d56d87935e11f40dd43cc18d6adf14b"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -156,7 +156,7 @@
     },
     {
       "path": "src/extension/atif-ocr.js",
-      "sha256": "501f11ad043b2c7b42c672365d8fbd83f13db59b4fb1e375e8efb4723b74134c"
+      "sha256": "f9d875273fbe87e024c0fa64db285ca5973613e8cbbb0606be6fbc0980a0d045"
     },
     {
       "path": "src/extension/atif-ocr-worker.js",
@@ -172,7 +172,7 @@
     },
     {
       "path": "src/extension/dilekce-sablonu.js",
-      "sha256": "0468b1298993f30fbbe3fbd9e4b5933d9c5e044f2ed2f76311d9f92c72605a54"
+      "sha256": "29eeae2b425fc3c10240f2b278481d4c3bb1c054f7caf0ee6cd8a58f48780aeb"
     },
     {
       "path": "src/extension/durusma-paketi-bootstrap.js",
@@ -244,7 +244,7 @@
     },
     {
       "path": "src/extension/kunye-ayikla.js",
-      "sha256": "2210c6234b9d16862f59fe96757584130e6cf925990190bebe465ab19dd594ac"
+      "sha256": "f88cdc438251b6a78b4ffa74deb09e2261c0ac04b124a432da3ef5f9c54019f4"
     },
     {
       "path": "src/extension/manifest.json",
@@ -320,7 +320,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "1ebb4820cbf8207d2aa6f11f2a1f525560d3437d55b7015cbeb44c215e25f48d"
+      "sha256": "d005167c5a14225c8da8030260dfc66c39a9f5baa18d75466ae8f9992a3b3757"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -568,7 +568,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "be69548e0e47497c31883ac269267c67e5f61af390ceab438e2b75757325e552"
+      "sha256": "e161b84386ebafccdd062b28ed705f4403b2529fe96533a65c74cd0956172189"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -620,7 +620,7 @@
     },
     {
       "path": "src/fragments/content/105-viewer-document-load-and-list-ready.js.part",
-      "sha256": "4fccc6dc2ae47b217396ad4eea679fe4647fd473c6c79d0562c1665ee1cf8ec3"
+      "sha256": "711a5c10622dda378b7331fee1005a2773762b65fe109010d565755c544a41bd"
     },
     {
       "path": "src/fragments/content/118-viewer-list-loading-retry-and-error-controls.js.part",

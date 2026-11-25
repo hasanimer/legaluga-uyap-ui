@@ -8,7 +8,7 @@
         try { e = bul(); } catch { e = null; }
         if (e) {
           try { doc = await evrakOkuma.getir(e, ac.signal); }
-          catch (err) { if (err instanceof Fatal || err instanceof Blocked || err?.name === 'AbortError' || ['zaman', 'belgeYok', 'baglanti'].includes(err?.kind)) throw err; }
+          catch (err) { if (evrakOkuma.kesin(err, ac.signal)) throw err; }
         }
         if (!doc) {
           // Kimlikler eskimiş olabilir: liste bir kez yenilenir.

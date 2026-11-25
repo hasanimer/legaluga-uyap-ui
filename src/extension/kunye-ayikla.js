@@ -134,10 +134,11 @@
   const TARIH_RE = new RegExp(TARIH, 'g');
   // Numara ile tarih arasında en çok üç bağlayıcı. Nokta yalnız kısaltmadan (K.T., T.) sonra geçer; "kararı. 12.05.2011"
   // yeni cümledir. "kararı ve/ile <tarih>" başka bir belgeyi, "<tarih> tarihinde" başka bir olayı (tebliğ) anlatır;
-  // "tarihinde verilen/verdiği" ise kararın kendi tarihidir.
+  // "tarihinde verilen/verdiği" ise kararın kendi tarihidir; araya oylama zarfı ("oybirliğiyle", "oy çokluğu ile") girebilir.
   const T_ARA = '[ ,;:()-]{0,4}';
+  const OYLAMA = '(?: oy ?(?:birligi(?:yle| ile)|coklugu(?:yla| ile)))?';
   const SONRA_TARIH_RE = new RegExp(`^(?:${T_ARA}(?:(?:kararlari|karari|ilami)(?![a-z])(?!${T_ARA}(?:ve|ile)(?![a-z]))|` +
-    `(?:sayili|ve|ile|tarihli|tarihinde|tarihi|tarih|karar tarihi)(?![a-z])|(?:k\\.? ?t|t)(?![a-z])\\.?)){0,3}${T_ARA}${TARIH}(?! tarihinde(?![a-z])(?! (?:veril|verdi|karar)))`);
+    `(?:sayili|ve|ile|tarihli|tarihinde|tarihi|tarih|karar tarihi)(?![a-z])|(?:k\\.? ?t|t)(?![a-z])\\.?)){0,3}${T_ARA}${TARIH}(?! tarihinde(?![a-z])(?!${OYLAMA} (?:veril|verdi|karar)))`);
   const SIRA_RE = new RegExp(`(\\d{1,2})|(${SIRA})`);
   const BIRLER = { birinci: 1, ikinci: 2, ucuncu: 3, dorduncu: 4, besinci: 5, altinci: 6, yedinci: 7, sekizinci: 8, dokuzuncu: 9 };
   const KISALTMA = new Set(['yarg', 'prof', 'mahk']);   // nokta ve büyük harfle sürse de cümle sonu sayılmaz
