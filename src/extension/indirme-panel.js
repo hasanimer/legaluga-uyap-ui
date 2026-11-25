@@ -36,7 +36,7 @@
 `;
   let sequence = 0;
   const labels = { queued: 'Sırada', running: 'İndiriliyor', paused: 'Duraklatıldı', complete: 'Tamamlandı', error: 'İndirme durdu' };
-  const phases = { waiting: 'Sırasını bekliyor', fetching: 'Evraklar alınıyor', packing: 'ZIP hazırlanıyor', saving: 'ZIP diske kaydediliyor', idle: '' };
+  const phases = { waiting: 'Sırada', fetching: 'Evraklar alınıyor', packing: 'ZIP hazırlanıyor', saving: 'ZIP diske kaydediliyor', idle: '' };
   const literal = (value, max = 220) => typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, max) : '';
   const number = value => Number.isSafeInteger(value) && value >= 0 ? value : 0;
   const fmt = value => number(value).toLocaleString('tr-TR');

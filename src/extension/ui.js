@@ -80,6 +80,7 @@
 .uhd .section{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 2px 10px;font-size:12px;color:var(--muted)}
 .uhd .section b{font-weight:600;color:var(--text2)}
 .uhd .section.eylem{justify-content:flex-start;flex-wrap:wrap;margin-top:-4px}
+.uhd .section.sarmal{flex-wrap:wrap}
 .uhd .sort{max-width:180px;min-height:30px;padding:4px 6px;border:1px solid var(--line);border-radius:7px;font:inherit;font-size:11px;color:var(--text2);background:var(--card)}
 .uhd .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .uhd .empty strong{display:block;color:var(--text);font-size:15px;margin-bottom:6px}
@@ -90,6 +91,7 @@
 .uhd .onboard b{display:block;font-size:14px;color:var(--navy);margin-bottom:6px}
 .uhd .onboard ol{margin:0 0 14px;padding-left:20px;color:var(--text2)}
 .uhd .onboard li{margin:4px 0}
+.uhd .onboard .gizlilik{margin:12px 0 0;font-size:12px;color:var(--muted)}
 .uhd .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--card);color:var(--text);border-radius:8px;padding:6px 11px;cursor:pointer;white-space:nowrap}
 .uhd .btn:hover{border-color:var(--focus)}
 .uhd .btn.primary{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:600}
@@ -236,6 +238,7 @@
 .uhd .person .sum{margin-top:4px}
 .uhd .person .warn{margin-top:6px;padding:5px 8px;border-radius:6px;background:var(--warn-bg);color:var(--warn-tx)}
 .uhd .person .hint,.uhd .durhead .hint{margin-top:6px;color:var(--muted);font-size:11px}
+.uhd .durhead .teyit{color:var(--muted);font-size:11px}
 .uhd .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
 .uhd .dayhead{display:flex;justify-content:space-between;align-items:baseline;padding:8px 4px 5px;font-size:12px;font-weight:700;color:var(--deep)}
 .uhd[data-theme=dark] .dayhead{color:var(--accent-text)}
@@ -298,6 +301,7 @@
 .uhd[data-theme=dark] .tag{color:var(--accent-text)}
 .uhd .tag.auto{background:var(--grey-bg);color:var(--muted);padding-right:9px}
 .uhd .tag button{flex:none;border:0;background:none;cursor:pointer;color:inherit;padding:0 2px;line-height:1;font-size:14px}
+.uhd .settings .gizli-baslik{margin-top:10px}
 .uhd .gz{display:flex;align-items:center;gap:8px;padding:4px 0;border-top:1px solid var(--line)}
 .uhd .gz span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .uhd .status{padding:6px 12px 0;color:var(--muted);font-size:12px;border-top:1px solid var(--line);background:var(--card)}
@@ -464,7 +468,10 @@
       btnSettings.title = 'Ayarlar (yeni sekmede)';
       views.setAttribute('aria-label', 'Özet');
     }
-    container.append(el('style', null, CSS + (hasDownloads ? globalThis.UHDBulkPanel.CSS : '')), root);
+    // Uzantı sayfasında stil belgeye CSSOM ile bağlanır (CSP satır içi <style>'a izin vermez); UYAP panelinin gölge
+    // kökünde <style> öğesiyle gelir.
+    const css = CSS + (hasDownloads ? globalThis.UHDBulkPanel.CSS : '');
+    container.append(...(globalThis.UHD.belgeStili(container, css) ? [] : [el('style', null, css)]), root);
     function showDownloads(on = true) {
       if (!hasDownloads) return;
       downloadArea.hidden = !on;
@@ -489,7 +496,7 @@
         if (!state) return;
         const saved = Math.min(state.saved || 0, state.total || 0), total = state.total || 0;
         const fetched = state.kind === 'zip' ? saved : Math.min(total, saved + (state.inPart || 0));   // alınan evrakla ilerler
-        const phase = state.status === 'paused' ? 'Duraklatılıyor…' : { waiting: 'Sırada', fetching: 'Evraklar alınıyor', packing: 'ZIP hazırlanıyor', saving: 'Diske kaydediliyor' }[state.phase] || 'İndiriliyor';
+        const phase = state.status === 'paused' ? 'Duraklatılıyor…' : { waiting: 'Sırada', fetching: 'Evraklar alınıyor', packing: 'ZIP hazırlanıyor', saving: 'ZIP diske kaydediliyor' }[state.phase] || 'İndiriliyor';
         downloadText.textContent = `${state.rec?.dosyaNo || 'Dosya'} · ${phase} · ${fetched.toLocaleString('tr-TR')}/${total.toLocaleString('tr-TR')} alındı${state.kind === 'zip' ? '' : ` · ${saved.toLocaleString('tr-TR')} diske kaydedildi`}`;
         downloadProgress.value = total ? Math.floor(100 * fetched / total) : 0;
         downloadProgress.setAttribute('aria-label', 'Alınan evraklar');
@@ -533,6 +540,7 @@
     const noteDrafts = new Map();
     let manualNotice = false;
     let undoNotice = false;    // görünen bildirim “Geri al” taşıyor: bilgi amaçlı bildirim onun yerine geçmez
+    let noticeImza = '', noticeEylem = null;   // görünen bildirimin imzası ve eylem düğmesinin çağıracağı en son eylem
     let goruldu = {};
     let gizli = {};            // aramada gösterilmeyecek dosyalar (uhdGizli): { key: { dosyaNo, birimAdi, at } }
     const allParties = new Set();// tüm tarafları gösterilen kartlar
@@ -696,12 +704,12 @@
       if (pendingJob?.id === setupScanNoticeId && pendingJob.setupPending && !pendingJob.stop) {
         if (progress?.error && progress.text) {
           const id = setupScanNoticeId;
-          setNotice(progress.text, 'err', { label: 'UYAP’ı aç', fn: () => opts.onSetupOpenUyap ? opts.onSetupOpenUyap() : chrome.runtime.sendMessage({ type: 'uhd-setup-open' }) });
+          setNotice(progress.text, 'err', { label: 'UYAP’ı aç', fn: () => opts.onSetupOpenUyap ? opts.onSetupOpenUyap() : chrome.runtime.sendMessage({ type: 'uhd-setup-open' }) }, true);
           setupScanNoticeId = id;
         }
         return;
       }
-      setNotice(running() ? 'Seçtiğiniz dosyaların taraması başlatıldı.' : progress?.text || 'İlk tarama durumu güncellendi.');
+      setNotice(running() ? 'Seçtiğiniz dosyaların taraması başlatıldı.' : progress?.text || 'İlk tarama durumu güncellendi.', '', null, true);
     }
 
     const myNames = () => String(prefs.myName || '').split(/[,;]/).map(x => x.trim()).filter(Boolean);
@@ -764,7 +772,7 @@
         dizinBayat = false;
         setIndex(v.uhdIndex);
         renderFilters();
-        if (!editing && settings.hidden) render();
+        if (!editing && settings.hidden) render({ yalnizDizin: true, sekmeler: false });
         if (!settings.hidden) refreshSettings();
         renderStatus();
         autoNotice();
@@ -784,14 +792,24 @@
 
     // ------------------------------------------------ bildirim
 
-    function showNotice(text, kind, action, noticeKey) {
+    // yineleneBilir: kendiliğinden çağrı (autoNotice, kurulum taraması bildirimi). Kullanıcı eylemi (setNotice) false verir.
+    function showNotice(text, kind, action, noticeKey, yineleneBilir = true) {
+      // Kendiliğinden gelen bildirimin aynısı yeniden istenirse (depolama değişimiyle yinelenen autoNotice, kurulum taraması
+      // hatası) yuvaya dokunulmaz: ekran okuyucu aynı uyarıyı yeniden okumaz. Eylem düğmesi en son verilen işlevi çağırır.
+      // Kullanıcının yinelediği eylemin aynı hatası yuvayı yeniden yazar: ikinci denemenin de düştüğü okunur.
+      const imza = JSON.stringify([text, kind === 'err', action?.label, !!action?.undo, noticeKey]);
+      if (yineleneBilir && text && !notice.hidden && imza === noticeImza && !(noticeKey && dismissedNotices.has(noticeKey))) { noticeEylem = action; return; }
+      noticeImza = imza; noticeEylem = action;
       notice.replaceChildren();
       undoNotice = false;
       if (!text || (noticeKey && dismissedNotices.has(noticeKey))) { notice.hidden = true; return; }
       undoNotice = !!(action && action.undo);
       notice.className = 'notice' + (kind === 'err' ? ' err' : '');
+      // Hata ekran okuyucuda araya girer; bilgi bildirimi sırasını bekler. Rol, metin yuvaya girmeden önce ayarlanır.
+      notice.setAttribute('role', kind === 'err' ? 'alert' : 'status');
+      notice.setAttribute('aria-live', kind === 'err' ? 'assertive' : 'polite');
       notice.append(el('span', null, text));
-      if (action) notice.append(el('button', { onclick: action.fn }, action.label));
+      if (action) notice.append(el('button', { onclick: e => noticeEylem.fn(e) }, action.label));
       const dismiss = el('button', { class: 'dismiss', title: 'Bildirimi kapat', 'aria-label': 'Bildirimi kapat' }, '×');
       dismiss.addEventListener('click', () => {
         if (noticeKey) dismissedNotices.add(noticeKey);
@@ -805,10 +823,10 @@
       notice.hidden = false;
     }
 
-    function setNotice(text, kind, action) {
+    function setNotice(text, kind, action, kendiliginden = false) {
       setupScanNoticeId = null;
       manualNotice = !!text;
-      if (text) showNotice(text, kind, action);
+      if (text) showNotice(text, kind, action, undefined, kendiliginden);
       else autoNotice();
     }
 
@@ -1282,7 +1300,14 @@
         state.saving = pending;
         return pending;
       };
-      const leave = ev => { if (!field.owns(ev.relatedTarget) && !editor.contains(ev.relatedTarget)) return basiBitince(done); };
+      // Güncel düzenleyiciden fareyle çıkışta ertelenen iş bu kuruluma değil taslağın güncel düzenleyicisine
+      // bağlıdır: tıklanan düğme listeyi yeniden çizerse kart yeni düzenleyiciyle kurulur, eski kapanış boş döner.
+      state.bitir = done;
+      const bitir = () => (noteDrafts.get(r.key) === state ? state.bitir() : undefined);
+      const leave = ev => {
+        if (field.owns(ev.relatedTarget) || editor.contains(ev.relatedTarget)) return;
+        return state.editor === editor ? basiBitince(bitir) : done();
+      };
       editor.addEventListener('click', e => e.stopPropagation());
       editor.addEventListener('mousedown', e => e.stopPropagation());
       editor.addEventListener('keydown', e => {
@@ -1487,7 +1512,7 @@
           list.querySelector('[data-action="cakisma-tarama"]')?.focus();
         }
       });
-      return el('div', { class: 'section', style: 'flex-wrap:wrap' },
+      return el('div', { class: 'section sarmal' },
         el('div', null, el('b', null, 'Duruşma çakışma kontrolü'), el('div', null, !acik ? 'Kapalı'
           : cakismaSessiz() ? 'Açık · bildirim kapalı. Bildirim için kapatıp yeniden açın.' : 'Açık · çakışmalar bildirilir')), btn);
     }
@@ -1530,7 +1555,23 @@
       return b;
     }
 
-    // Ayarlar'daki baro ve sicil: mazeret dilekçesi taslağının imza satırına yazılır. Öteki tercihler gibi yalnız tarayıcının
+    // Dosyanın boş dilekçe şablonu (dilekce-sablonu.js): kayıttaki birim, esas numarası ve taraflarla UDF indirir; UYAP'a
+    // istek atmaz. Hızlı pencerede ve oturumsuz panel kilitliyken çıkmaz.
+    function sablonDugmesi(r) {
+      const modul = globalThis.UHD.dilekceSablonu, kilitli = () => !!(opts.kilitli && opts.kilitli());
+      if (!modul || quick || kilitli()) return null;
+      const b = el('button', { type: 'button', class: 'btn sm', 'data-focus': 'sablon', title: 'Mahkeme, esas numarası ve tarafları yazılı boş dilekçeyi UDF olarak indirir. Legaluga dilekçeyi göndermez.' }, 'Dilekçe şablonu (UDF)');
+      b.addEventListener('click', async e => {
+        e.stopPropagation();
+        if (kilitli()) return;
+        try {
+          await modul.indir({ kayit: r, adlar: myName(), baro: String(pref('baro', '') || ''), sicil: String(pref('baroSicil', '') || ''), bugun: todayIso() });
+        } catch { setNotice('Dilekçe şablonu hazırlanamadı. Tekrar deneyin.', 'err'); }
+      });
+      return b;
+    }
+
+    // Ayarlar'daki baro ve sicil: mazeret dilekçesi taslağının ve dilekçe şablonunun imza satırına yazılır. Öteki tercihler gibi yalnız tarayıcının
     // yerel deposunda (uhdPrefs) durur; hata raporuna girmez, hiçbir sunucuya gönderilmez.
     function baroAlanlari() {
       const alan = (ad, etiket, uzunluk, ornek) => {
@@ -1544,7 +1585,7 @@
         return el('label', { class: 'field' }, el('span', null, etiket), girdi);
       };
       return el('div', { class: 'box' }, alan('baro', 'Baro', 60, 'Örnek: İstanbul'), alan('baroSicil', 'Baro sicil numarası', 20, 'Örnek: 12345'),
-        el('div', { class: 'hint' }, 'İsteğe bağlı. Mazeret dilekçesi taslağının imza bölümüne yazılır. Yalnız bu bilgisayarda saklanır; Legaluga’ya ya da başka bir yere gönderilmez.'));
+        el('div', { class: 'hint' }, 'İsteğe bağlı. Mazeret dilekçesi taslağının ve dilekçe şablonunun imza bölümüne yazılır. Yalnız bu bilgisayarda saklanır; Legaluga’ya ya da başka bir yere gönderilmez.'));
     }
 
     function showDurusmalar(range) {
@@ -1588,7 +1629,7 @@
         ranges,
         el('div', null, el('b', null, `${fmtNum(rows.length)} duruşma`), toks.length ? ` (“${input.value.trim()}” içeren)` : '', ' · ', src),
         el('div', { class: 'row' }, rows.length ? ics : null,
-          el('span', { style: 'color:var(--muted);font-size:11px' }, 'Saatleri UYAP’ta teyit edin; liste yalnız Güncelle’de yenilenir.')));
+          el('span', { class: 'teyit' }, 'Saatleri UYAP’ta teyit edin; liste yalnız Güncelle’de yenilenir.')));
       const out = [cakismaKontrol(), head];
       current = [];
       let day = null;
@@ -1776,7 +1817,7 @@
         partyBlock(r, toks, keys),
         !filter.onlyDurusma ? evrakBlock(r, toks) : null,
         son,
-        el('div', { class: 'ifoot' }, noteAdd, ekranBtn, open));
+        el('div', { class: 'ifoot' }, noteAdd, sablonDugmesi(r), ekranBtn, open));
       row.addEventListener('click', e => {
         if (e.target.closest('button, a, input, textarea, select') || String(window.getSelection && window.getSelection()).trim()) return;
         select(i, false, true);
@@ -1823,23 +1864,37 @@
       }
     }
 
-    function render() {
+    // Çizimden önce listedeki odağın yeri: kart içindeyse kart ve denetimi; kart dışındaki liste denetimiyse (sıralama,
+    // “Daha fazla göster”) data-focus adı. Listede değilse ya da adsız denetimdeyse null.
+    function odakYeri(act) {
+      if (!act || !list.contains(act)) return null;
+      const card = act.closest('.item');
+      if (card) return { key: card.dataset.key, idx: card.dataset.idx, f: act.dataset.focus || '' };
+      return act.dataset.focus ? { denetim: act.dataset.focus } : null;
+    }
+    function odagiGeriYukle(rn, restore) {
+      const byFocus = (kap, f) => f && kap && [...kap.querySelectorAll('[data-focus]')].find(x => x.dataset.focus === f);
+      let target;
+      if (restore.denetim) target = byFocus(list, restore.denetim);
+      else {
+        const cards = [...list.querySelectorAll('.item')];
+        const next = cards.find(x => x.dataset.key === restore.key && x.dataset.idx === restore.idx) || cards.find(x => x.dataset.key === restore.key);
+        // Silinen notun yerine not düğmesine dönülür; hiçbiri yoksa kartın açma düğmesine.
+        target = next && (byFocus(next, restore.f) || (restore.f === 'noteline' && byFocus(next, 'note')) || next.querySelector('.ifoot .open'));
+      }
+      if (target) { target.focus({ preventScroll: true }); if (!restore.denetim) target.scrollIntoView({ block: 'nearest' }); }
+      else if (!list.contains(rn.activeElement)) input.focus({ preventScroll: true });
+    }
+
+    // yalnizDizin: çizimin tek nedeni dizin olayı; gösterilen kartlar değişmediyse liste yeniden kurulmaz (renderList).
+    // sekmeler false: sekme satırını hemen önce renderFilters kurdu; olay başına bir kez kurulur.
+    function render({ yalnizDizin = false, sekmeler = true } = {}) {
       if (syncSetup()) return;
       if (optionsPage) return;   // ayarlar sayfasında liste yok
-      for (const draft of noteDrafts.values()) draft.rich?.destroy?.();
       const rn = root.getRootNode();
-      const act = rn && rn.activeElement;
-      const card = act && list.contains(act) ? act.closest('.item') : null;
-      const restore = card ? { key: card.dataset.key, idx: card.dataset.idx, f: act.dataset.focus || '' } : null;
-      renderList();
-      if (!restore) return;
-      const cards = [...list.querySelectorAll('.item')];
-      const next = cards.find(x => x.dataset.key === restore.key && x.dataset.idx === restore.idx) || cards.find(x => x.dataset.key === restore.key);
-      const byFocus = f => f && next && [...next.querySelectorAll('[data-focus]')].find(x => x.dataset.focus === f);
-      // Silinen notun yerine not düğmesine dönülür; hiçbiri yoksa kartın açma düğmesine.
-      const target = next && (byFocus(restore.f) || (restore.f === 'noteline' && byFocus('note')) || next.querySelector('.ifoot .open'));
-      if (target) { target.focus({ preventScroll: true }); target.scrollIntoView({ block: 'nearest' }); }
-      else if (!list.contains(rn.activeElement)) input.focus({ preventScroll: true });
+      const restore = odakYeri(rn && rn.activeElement);
+      if (renderList(yalnizDizin, sekmeler) === false) return;   // liste yerinde kaldı; odak da yerinde
+      if (restore) odagiGeriYukle(rn, restore);
     }
 
     let lastSaid = '';
@@ -1849,14 +1904,41 @@
       live.textContent = text;
     }
 
-    function renderList() {
-      renderViews();   // sekme sayaçları aralık, gizleme ve filtre değişince de güncel kalsın
+    // Son kurulan kart listesinin imzası: kartta görünen her durum (kayıtlar, toplam, yeni evrak, not ve hatırlatması,
+    // duruşma satırı, gün, sorgu, filtre, sıralama, sayfa). Kart listesi dışındaki çizimde (boş liste, kişi, duruşmalar) null.
+    let listeImzasi = null;
+    function kartImzasi(gosterilen, res, keys, sonAcilan) {
+      return JSON.stringify([todayIso(), input.value, filter, prefs, shownLimit, res.total, res.tokens, keys, sonAcilan, quick,
+        editing, [...noteDrafts.keys()], [...expandedEvrak], [...allParties],
+        gosterilen.map(r => [r, yeniMap.get(r.key) || 0, notes[r.key] || '', (durusmaByKey.get(r.key) || []).map(d => [d, cakismalar.get(d.id) || null])])]);
+    }
+
+    // yalnizDizin ve gösterilen kartların imzası değişmediyse liste olduğu gibi kalır (düğümler, odak, açık sıralama menüsü,
+    // metin seçimi); yalnız sekme satırı güncellenir ve false döner (çizen dallar değer döndürmez).
+    function renderList(yalnizDizin = false, sekmeler = true) {
+      // Sekme sayaçları aralık, gizleme ve filtre değişince de güncel kalsın. Savcılık görünümünde renderFilters kaybolan
+      // il/birim seçimini sekme satırından sonra temizleyebilir; sayaçlar yeniden hesaplanır.
+      if (sekmeler || cbsOnly()) renderViews();
       const scroll = list.scrollTop;
-      list.replaceChildren();
-      current = [];
       btnQClear.hidden = !input.value;
       views.hidden = optionsPage || !loaded || (!records.length && !durusmaMeta) || !!person || !settings.hidden || (quick && !views.childElementCount);
       filters.hidden = quick || optionsPage || !records.length || !!person || !settings.hidden || filter.onlyDurusma;
+      const kartlar = loaded && !(dizinBayat && !records.length) && !person && !filter.onlyDurusma && records.length > 0;
+      const keys = kartlar ? myKeys(myName()) : null;
+      const q = input.value;
+      const res = kartlar ? search(records, q, { myName: myName(), notes, filter, yeni: yeniMap, gizli, vekilAra: pref('vekilAra', true), sort: pref('siralama', 'relevance'), limit: shownLimit }) : null;
+      const sonAcilan = kartlar && !res.tokens.length && !res.total && filter.durum === 'all' && !hasTurFilter() && !filter.onlyClient && !filter.onlyNew && !filter.onlyNote;
+      let gosterilen = [];
+      if (sonAcilan) {
+        const byKey = new Map(records.map(r => [r.key, r]));
+        gosterilen = recent.map(k => byKey.get(k)).filter(r => r && !gizli[r.key]);
+      } else if (kartlar) gosterilen = res.items;
+      const imza = gosterilen.length ? kartImzasi(gosterilen, res, keys, sonAcilan) : null;
+      if (yalnizDizin && imza && imza === listeImzasi) { current = gosterilen; return false; }
+      listeImzasi = imza;
+      for (const draft of noteDrafts.values()) draft.rich?.destroy?.();
+      list.replaceChildren();
+      current = [];
       if (!loaded || (dizinBayat && !records.length)) {   // kapalı açılan panelin dizini gösterimde okunur
         list.append(dizinHatasi
           ? el('div', { class: 'empty', role: 'alert' }, el('p', null, 'Dosyalarınız okunamadı.'), el('button', { class: 'btn sm', onclick: dizinYenidenDene }, 'Tekrar dene'))
@@ -1877,14 +1959,11 @@
             el('li', null, '“Şimdi güncelle”ye basın. Vekili olduğunuz dosyaların listesi, taraf adları, vekilleri ve duruşmalarınız UYAP’tan alınıp bu Chrome profilinde şifreli saklanır. Bu bilgiler başka bir sunucuya gönderilmez. Evrak ve banka cevabı araçları, seçtiğiniz belgeleri tarayıcınızda işler. Banka sorgusu ayrıca siz başlatınca, UYAP’ın uygunluk ve ücret kontrolünden sonra çalışır; ücrete ayrıca onay sorulur. İlk güncelleme birkaç dakika sürebilir.'),
             el('li', null, 'Ad, soyad, dosya no veya mahkeme yazın; “UYAP’tan aç” ile dosya UYAP’ta açılır.')),
           go,
-          el('p', { style: 'margin:12px 0 0;font-size:12px;color:var(--muted)' }, 'Ayrıntılar: ', el('a', { href: 'https://github.com/hasanimer/legaluga-uyap-ui/blob/main/docs/PRIVACY.md', target: '_blank', rel: 'noopener' }, 'gizlilik politikası'), '.')));
+          el('p', { class: 'gizlilik' }, 'Ayrıntılar: ', el('a', { href: 'https://github.com/hasanimer/legaluga-uyap-ui/blob/main/docs/PRIVACY.md', target: '_blank', rel: 'noopener' }, 'gizlilik politikası'), '.')));
         return;
       }
-      const keys = myKeys(myName());
-      const q = input.value;
-      const res = search(records, q, { myName: myName(), notes, filter, yeni: yeniMap, gizli, vekilAra: pref('vekilAra', true), sort: pref('siralama', 'relevance'), limit: shownLimit });
       say(`${fmtNum(res.total)} dosya bulundu.`);
-      const sortSelect = el('select', { class: 'sort', 'aria-label': 'Dosya sıralaması' },
+      const sortSelect = el('select', { class: 'sort', 'data-focus': 'sort', 'aria-label': 'Dosya sıralaması' },
         [['relevance', 'En uygun'], ['newest', 'Açılış: yeniden eskiye'], ['fileNo', 'Dosya no: büyükten küçüğe']].map(([value, label]) => el('option', { value }, label)));
       sortSelect.value = pref('siralama', 'relevance');
       sortSelect.addEventListener('change', async () => {
@@ -1893,9 +1972,8 @@
         await tercihYaz({ siralama: sortSelect.value }, null, 'Sıralama tercihi kaydedilemedi. Tekrar deneyin.');
         render(); list.querySelector('.sort')?.focus();
       });
-      if (!res.tokens.length && !res.total && filter.durum === 'all' && !hasTurFilter() && !filter.onlyClient && !filter.onlyNew && !filter.onlyNote) {
-        const byKey = new Map(records.map(r => [r.key, r]));
-        current = recent.map(k => byKey.get(k)).filter(r => r && !gizli[r.key]);
+      if (sonAcilan) {
+        current = gosterilen;
         if (!current.length) {
           const openFiles = quick ? null : el('button', { class: 'btn sm' }, 'Açık dosyalar');
           if (openFiles) openFiles.addEventListener('click', () => { filter.durum = 'acik'; renderFilters(); render(); input.focus(); });
@@ -1967,7 +2045,7 @@
       if (res.tokens.length && !pref('vekilAra', true)) list.append(el('div', { class: 'more' }, 'Karşı taraf vekillerinde arama kapalı (Ayarlar).'));
       if (quick && current.length) list.append(el('div', { class: 'more' }, 'Evrak, Safahat ve notlar UYAP’taki Legaluga panelinde.'));
       if (res.total > current.length) {
-        const more = el('button', { class: 'btn sm load-more' }, `Daha fazla göster · ${fmtNum(current.length)} / ${fmtNum(res.total)}`);
+        const more = el('button', { class: 'btn sm load-more', 'data-focus': 'loadmore' }, `Daha fazla göster · ${fmtNum(current.length)} / ${fmtNum(res.total)}`);
         more.addEventListener('click', () => {
           const previous = current.length;
           shownLimit += LIMIT; render();
@@ -2038,7 +2116,7 @@
         list.append(item(f.r, i, [], keys, el('div', { class: 'rolein' + (bizde ? '' : ' other') }, `Bu dosyada: ${rolText}`)));
       });
       if (files.length > shown.length) {
-        const more = el('button', { class: 'btn sm load-more' }, `Daha fazla göster · ${fmtNum(shown.length)} / ${fmtNum(files.length)}`);
+        const more = el('button', { class: 'btn sm load-more', 'data-focus': 'loadmore' }, `Daha fazla göster · ${fmtNum(shown.length)} / ${fmtNum(files.length)}`);
         more.addEventListener('click', () => {
           const previous = current.length;
           personLimit += LIMIT; render();
@@ -2686,7 +2764,7 @@
         el('div', { class: 'box' },
           el('div', { class: 'row' }, btnExport, btnBackup, btnRestore, fileIn),
           el('div', { class: 'hint' }, 'Şifreli yedek dosya listesini, notları, duruşmaları ve ayarları içerir; belirlediğiniz parolayla şifrelenir. CSV çıktısı şifresizdir; güvenli bir yerde saklayın.'),
-          el('div', { style: 'margin-top:10px' }, `Gizlenen dosyalar (${fmtNum(gz.length)})`),
+          el('div', { class: 'gizli-baslik' }, `Gizlenen dosyalar (${fmtNum(gz.length)})`),
           gzBox),
 
         el('h3', null, 'Hata raporlama'),
@@ -2880,32 +2958,35 @@
     window.addEventListener('pageshow', e => { if (e.persisted && loaded) loadInitial(); });
     chrome.storage.onChanged.addListener((ch, area) => {
       if (area !== 'local') return;
-      let redraw = false;
+      // redraw: dizin dışındaki çizim nedeni; filtre: filtre satırı ve sekme sayaçları yenilenir.
+      let redraw = false, filtre = false;
       if (ch.uhdPrefs) { prefsRevision++; prefs = ch.uhdPrefs.newValue || {}; applyTheme(); redraw = true; }
       if (ch.uhdTurFilter && !quick) {
         turFilterRevision++;
         if (!pendingTurWrites) {
           turFilterAl(ch.uhdTurFilter.newValue, true);
           sel = 0; shownLimit = LIMIT;
-          renderFilters(); redraw = true;
+          filtre = redraw = true;
         }
       }
       if (ch.uhdEvrakGoruldu) goruldu = ch.uhdEvrakGoruldu.newValue || {};
       if (ch.uhdJob) pendingJob = ch.uhdJob.newValue || null;
-      if (ch.uhdGizli) { gizli = ch.uhdGizli.newValue || {}; renderFilters(); redraw = true; }
+      if (ch.uhdGizli) { gizli = ch.uhdGizli.newValue || {}; filtre = redraw = true; }
       if (ch.uhdDurusmalar) durusmaMeta = ch.uhdDurusmalar.newValue || null;
-      if (ch.uhdDurusmalar || ch.uhdPrefs) { computeDurusma(); renderFilters(); redraw = true; }
+      if (ch.uhdDurusmalar || ch.uhdPrefs) { computeDurusma(); filtre = redraw = true; }
       // Görünmeyen panelde dizin okunmaz, bayat işaretlenir; sürüm duyurusunu görünür panel okuyup sonra çizer.
       const dizin = (!!ch.uhdIndex || !!ch.uhdIndexRev) && dizinDegisti(ch.uhdIndex);
       if (!dizin && ch.uhdEvrakGoruldu) computeYeni();
-      if (dizin || ch.uhdEvrakGoruldu) { renderFilters(); redraw = true; }
+      if (ch.uhdEvrakGoruldu) filtre = redraw = true;
       if (ch.uhdNotes) { notes = ch.uhdNotes.newValue || {}; redraw = true; }
       if (ch.uhdRecent) recent = ch.uhdRecent.newValue || [];
       if (ch.uhdProgress) {
         progress = ch.uhdProgress.newValue || null;
         if (!records.length) redraw = true;   // ilk kullanım ekranındaki düğmenin durumu
       }
-      if (redraw && !editing && settings.hidden) render();
+      // Sekme satırını renderFilters kurduysa liste çizimi yeniden kurmaz; tek nedeni dizin olan çizim değişmeyen kartları korur.
+      if (filtre || dizin) renderFilters();
+      if ((redraw || dizin) && !editing && settings.hidden) render({ yalnizDizin: !redraw, sekmeler: !filtre && !dizin });
       if (!settings.hidden && (ch.uhdPrefs || ch.uhdGizli || ch.uhdUyapKoruma || ch.uhdUyapKorumaAyrinti || dizin || (ch.uhdProgress && running() !== ayarKosu))) refreshSettings();
       if (dizin || ch.uhdProgress || ch.uhdJob) renderStatus();
       if (ch.uhdProgress || ch.uhdJob) syncSetupScanNotice();
@@ -2951,6 +3032,8 @@
       showDownloads,
       // Dosya ekranındaki "Bu dosyadaki yeni evrakları görüldü say".
       markSeen: (keys, kadar) => dizinTazeyken(() => markSeen(keys, false, kadar)),
+      // Dosya ekranının dilekçe şablonu kart düğmesiyle aynı adı kullanır: Ayarlar'daki ad, boşsa otomatik bulunan ad.
+      vekilAdi: () => myName(),
       showView
     };
   }

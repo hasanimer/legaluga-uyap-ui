@@ -3,7 +3,7 @@
 (() => {
   if (globalThis.UHDReporter) return;
   const FILES = new Set(['background.js', 'common.js', 'content.js', 'popup.js', 'options.js', 'onboarding.js', 'tabs.js', 'ui.js', 'udf.js', 'tiff.js', 'kunye-ayikla.js', 'atif-paneli.js',
-    'ana-sayfa.js', 'atif-ocr.js', 'banka-api.js', 'banka-takip.js', 'belge-pdf.js', 'durusma-paketi-bridge.js', 'durusma-paketi-metin.js', 'durusma-paketi-zip.js',
+    'ana-sayfa.js', 'atif-ocr.js', 'banka-api.js', 'banka-takip.js', 'belge-pdf.js', 'dilekce-sablonu.js', 'durusma-paketi-bridge.js', 'durusma-paketi-metin.js', 'durusma-paketi-zip.js',
     'evrak-indirme.js', 'evrak-indirme-motoru.js', 'evrak-zip.js', 'havuz-denetim.js', 'indirme-panel.js', 'mazeret-dilekcesi.js', 'panel-kilidi.js', 'ptt-report.js', 'storage.js',
     'tebligat-barkod.js', 'tebligat-ptt.js', 'tebligat-ui.js', 'uyap-document-native.js', 'uyap-dosya-penceresi.js', 'uyap-kapi.js', 'vault-crypto.js']);
   const TYPES = new Set(['Error', 'TypeError', 'ReferenceError', 'SyntaxError', 'RangeError', 'DOMException', 'Fatal', 'UdfHatasi', 'TiffHatasi']);
@@ -15,7 +15,8 @@
     update: 'Güncelleme hatası', 'file-open': 'Dosya açma hatası', 'evrak-open': 'Evrak açma hatası',
     safahat: 'Safahat görüntüleme hatası', ozet: 'Dosya özeti hatası', 'ozet-kalan-kaydi': 'Dosya özeti kalan kaydı hatası',
     udf: 'UDF görüntüleme hatası', tiff: 'TIFF görüntüleme hatası', html: 'HTML evrak görüntüleme hatası', storage: 'Yerel depolama hatası',
-    session: 'Oturum denetimi hatası', atif: 'Atıf tarama hatası', havuz: 'Künye havuzu hatası', test: 'Legaluga Sentry kurulum testi'
+    atif: 'Atıf tarama hatası', havuz: 'Künye havuzu hatası', setup: 'Kurulum bağlantısı hatası', download: 'Parçalı indirme hatası',
+    vergi: 'Vergi Takibi devri hatası', test: 'Legaluga Sentry kurulum testi'
   });
   const SOURCES = new Set(['background', 'popup', 'content']);
   const source = typeof document === 'undefined' ? 'background' : location.protocol === 'chrome-extension:' ? 'popup' : 'content';
@@ -45,8 +46,6 @@
     const out = { operation: value.operation, source: value.source, type: TYPES.has(value.type) ? value.type : 'Error' };
     if (CODES.has(value.code)) out.code = value.code;
     if (Number.isInteger(value.status) && value.status >= 400 && value.status <= 599) out.status = value.status;
-    const uyapCode = String(value.uyapCode || '');
-    if (/^[A-Z0-9_]{1,60}$/i.test(uyapCode)) out.uyapCode = uyapCode;
     out.frames = (Array.isArray(value.frames) ? value.frames.slice(0, 10) : []).map(cleanFrame).filter(Boolean);
     return out;
   }
@@ -56,14 +55,13 @@
     const tags = { operation: normalized.operation, source: normalized.source };
     if (normalized.code) tags.code = normalized.code;
     if (normalized.status) tags.http_status = String(normalized.status);
-    if (normalized.uyapCode) tags.uyap_code = normalized.uyapCode;
     const exception = { type: normalized.type, value: OPERATIONS[normalized.operation] };
     if (normalized.frames.length) exception.stacktrace = { frames: normalized.frames.map(f => ({
       filename: 'app:///' + f.file, lineno: f.line, ...(f.column ? { colno: f.column } : {}), in_app: true
     })) };
     const top = normalized.frames.at(-1);
     return { level: normalized.operation === 'test' ? 'info' : 'error', tags, exception: { values: [exception] },
-      fingerprint: [normalized.operation, normalized.type, normalized.code || '', String(normalized.status || ''), normalized.uyapCode || '', top ? `${top.file}:${top.line}` : ''] };
+      fingerprint: [normalized.operation, normalized.type, normalized.code || '', String(normalized.status || ''), top ? `${top.file}:${top.line}` : ''] };
   }
   function report(error, operation = 'unhandled') {
     try {
@@ -73,7 +71,7 @@
           (error.name === 'Fatal' && (error.status === 401 || error.status === 403)) ||
           // UYAP'tan gelen beklenen hatalar (ağ, HTTP, bakım sayfası, UYAP hata yanıtı) eklenti hatası sayılmaz.
           error.uyap === true) return;
-      const value = normalize({ operation, source, type: error.name, code: error.code, status: error.status, uyapCode: error.uyapCode, frames: framesOf(error.stack) });
+      const value = normalize({ operation, source, type: error.name, code: error.code, status: error.status, frames: framesOf(error.stack) });
       if (!value) return;
       const task = sender ? sender(value) : chrome.runtime.sendMessage({ type: 'uhd-error-report', report: value });
       Promise.resolve(task).catch(() => {}); // raporlama hatası kullanıcı işlemini kesmez

@@ -32,7 +32,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "77f9de5813d203cee17d86a1355d9f5ab0e46eddda4cdf6909756e36633f2339"
+      "sha256": "edbfe783d7f3ceac87d951f25623db19459a8b072d4c43c35bc203e605ebb3c4"
     },
     {
       "path": "SECURITY.md",
@@ -56,7 +56,7 @@
     },
     {
       "path": "docs/DEVELOPMENT.md",
-      "sha256": "ed033674b4c57555d25a4eeebb38770866673242ecee985ecf96a35b34316d8c"
+      "sha256": "0c31ff3f3bb5aa92a24654b332d172f6cc372a92a7ecc5ad301f28931e882665"
     },
     {
       "path": "docs/PRIVACY.md",
@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "40aec693cfbddcde69edad8da07ecd4753434764e9cb2eb6576f1f0f0157ea7c"
+      "sha256": "90706c9128ee4367ea603dbf7402b8db8d56d87935e11f40dd43cc18d6adf14b"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -156,7 +156,7 @@
     },
     {
       "path": "src/extension/atif-ocr.js",
-      "sha256": "501f11ad043b2c7b42c672365d8fbd83f13db59b4fb1e375e8efb4723b74134c"
+      "sha256": "f9d875273fbe87e024c0fa64db285ca5973613e8cbbb0606be6fbc0980a0d045"
     },
     {
       "path": "src/extension/atif-ocr-worker.js",
@@ -169,6 +169,10 @@
     {
       "path": "src/extension/belge-pdf.js",
       "sha256": "619f1d8cd6907ad073de2dbe84317814dcbc63bb9b4c310473ed423b9a477035"
+    },
+    {
+      "path": "src/extension/dilekce-sablonu.js",
+      "sha256": "29eeae2b425fc3c10240f2b278481d4c3bb1c054f7caf0ee6cd8a58f48780aeb"
     },
     {
       "path": "src/extension/durusma-paketi-bootstrap.js",
@@ -200,7 +204,7 @@
     },
     {
       "path": "src/extension/durusma-paketi-ui.js",
-      "sha256": "49d4e6a7b63a79e2d74ba015f28e339baca3ad1b0825012aec3ca504a4a23113"
+      "sha256": "b9a3df0db4b5fe6d7177566231a79c92c5f25b4405f59ee4539092fc0584c950"
     },
     {
       "path": "src/extension/durusma-paketi-worker.js",
@@ -236,19 +240,19 @@
     },
     {
       "path": "src/extension/indirme-panel.js",
-      "sha256": "7f158ea10909e55b4478bfc40856ab0566c245cb2a04699cf0fdc0013c530067"
+      "sha256": "ce863c60f2863748692313632e4826624737dc210505e5130329d2c1b4f15e56"
     },
     {
       "path": "src/extension/kunye-ayikla.js",
-      "sha256": "2210c6234b9d16862f59fe96757584130e6cf925990190bebe465ab19dd594ac"
+      "sha256": "f88cdc438251b6a78b4ffa74deb09e2261c0ac04b124a432da3ef5f9c54019f4"
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "a4c8ba2753cdd3892ec39f3e3b72115b314e27c7daac34c83fb32387309429d5"
+      "sha256": "89593700f1c184108e1363ed6814d7f20873f455c96a204157196bc6ddee88af"
     },
     {
       "path": "src/extension/mazeret-dilekcesi.js",
-      "sha256": "9490db9ea0ac93daf5f2ae8e0de1b415c1f5609c7a89d6bdd911b89b5ca7e20a"
+      "sha256": "a4112c9243651485a770bec71a1e01ca5ae020be15d02523a94b92ecfc25a3aa"
     },
     {
       "path": "src/extension/onboarding.js",
@@ -292,11 +296,11 @@
     },
     {
       "path": "src/extension/storage.js",
-      "sha256": "b0ea926d1db56d2ba9e1099e8cda4953eeb388859954ac0851249be040072c5c"
+      "sha256": "bbd481c7ddeb5960c98ea2e2ef9ec5a6422e7a424005a6e30d20ea5d4911aef3"
     },
     {
       "path": "src/extension/tabs.js",
-      "sha256": "88d73c980ef8bcde7b3d8826874dfe7b6c08d272a6ee5b747407ff5e1f61a79e"
+      "sha256": "e8f633cd014565ceff7629f39d521ea91f1b5fb22422514ac97670b83bbbbf7d"
     },
     {
       "path": "src/extension/tebligat-ui.js",
@@ -304,7 +308,7 @@
     },
     {
       "path": "src/extension/telemetry.js",
-      "sha256": "c351bf4b86e39d964a4145df8e38597cbab3e58e5bd996985e4f0a50e1f13227"
+      "sha256": "2aaddadf467c54ed397aa4d1dac20309214e5af71fa637c9274c80939e3587f4"
     },
     {
       "path": "src/extension/tiff.js",
@@ -316,7 +320,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "9731e1a29156ddddcf4d044921247954fc37df9385a369c4dbfa89bf35a45aef"
+      "sha256": "d005167c5a14225c8da8030260dfc66c39a9f5baa18d75466ae8f9992a3b3757"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -448,7 +452,7 @@
     },
     {
       "path": "src/fragments/background/010.js.part",
-      "sha256": "fc1080478a4f08d0f1fe50a64a40826e3313781865e815759ea75565af40b014"
+      "sha256": "ef30d7ead747713c91832104ee5d55f9b53c442aecdf7ce3449e7bbdcd66a191"
     },
     {
       "path": "src/fragments/background/011.js.part",
@@ -456,15 +460,15 @@
     },
     {
       "path": "src/fragments/background/015.js.part",
-      "sha256": "ca0657fb09272cfdca389f5b21f961a3cbf9d911fa4e8b0b714f8dcc369425e8"
+      "sha256": "40fc9e1a31a3c71aab09ffeb640eb738780fa20910185223b53e6cdf6986aec5"
     },
     {
       "path": "src/fragments/background/017.js.part",
-      "sha256": "d33f4b11e5ac7005e55b49e68e02564f46329924b9f2420fc995e17bf94eb070"
+      "sha256": "fe6671f7cab38148ef1cd527d00ae4e8fed16cf4c4e374de67f53be37331f469"
     },
     {
       "path": "src/fragments/background/019.js.part",
-      "sha256": "68949785b569e26f298964f2832b7e892bd0dfb476e6c0da74a23a21e9ddff02"
+      "sha256": "fc55d0b41164cd157b3b4ba2526feb244a45fadc5fd5ee58e3617f536e36e001"
     },
     {
       "path": "src/fragments/common/001.js.part",
@@ -496,7 +500,7 @@
     },
     {
       "path": "src/fragments/common/015.js.part",
-      "sha256": "60bee25ffd6a0cc3a2e0d872f7d234bb88190d530376e83527855ef651d9a008"
+      "sha256": "3e0d0fd4f119cb34b4c4ba61c215ba12c6f24e41c5646310193e5de01e279b63"
     },
     {
       "path": "src/fragments/content/001-bootstrap-shared-request-safety.js.part",
@@ -564,7 +568,7 @@
     },
     {
       "path": "src/fragments/content/039-full-viewer-HTML-render-and-action-controls.js.part",
-      "sha256": "1c0591090a51ad2ee7ce74be4533426f9a8159a37feb44e8d96a4b98ae2b7024"
+      "sha256": "e161b84386ebafccdd062b28ed705f4403b2529fe96533a65c74cd0956172189"
     },
     {
       "path": "src/fragments/content/041-full-viewer-HTML-render-and-action-controls.js.part",
@@ -616,7 +620,7 @@
     },
     {
       "path": "src/fragments/content/105-viewer-document-load-and-list-ready.js.part",
-      "sha256": "1de65516a3dd2a4d89de8e3e3a978a2de8eca2c427f2e724b4494798821d8601"
+      "sha256": "711a5c10622dda378b7331fee1005a2773762b65fe109010d565755c544a41bd"
     },
     {
       "path": "src/fragments/content/118-viewer-list-loading-retry-and-error-controls.js.part",
@@ -644,7 +648,7 @@
     },
     {
       "path": "tests/atif-ocr-worker.test.js",
-      "sha256": "a4d81d0f102cfa692cfd54531b1cc3508305c82709f676e2d3acd77b401cf28c"
+      "sha256": "1557443733c77c8b239201ab492c1b40f81819a93472b1b017d962a29e31ae87"
     },
     {
       "path": "tests/crypto-invariants.test.js",
@@ -659,12 +663,16 @@
       "sha256": "06b7062935688d7973aac4966efc08878c97c9bfee0b4b56bb405221c88bc220"
     },
     {
+      "path": "tests/dom-taklidi.js",
+      "sha256": "b052493f3170902590949759ec3673b24f968a5c0dda4cf25fc2bb81f1a70011"
+    },
+    {
       "path": "tests/indirme-panel.test.js",
-      "sha256": "b75c5c98b7febd61167b01e273462974546a3dfac97da8787adc03fdd640c172"
+      "sha256": "6b29c19d1a284cefdc0d7e2db79a10bb7962d30063b6c280fd47a67a45850131"
     },
     {
       "path": "tests/onboarding-ui.test.js",
-      "sha256": "a1876d4f02c42e669fef307244ec75588eaf8ffc8772fcf4c8ae82b725f16a3a"
+      "sha256": "f821c662a3406429a14eeed8eee0149fa89f78c05dca59fc25037ae536ed206f"
     },
     {
       "path": "tests/panel-kilidi.test.js",
@@ -680,7 +688,7 @@
     },
     {
       "path": "tests/ui-downloads.test.js",
-      "sha256": "87919c0a18a83c4ce87122860b3c14b464c065be58726742ba85f9605ca001fc"
+      "sha256": "ba4f126fac67b65e2c8f0c675df4304888ffeb62c8f9dda836ca3d620be18285"
     },
     {
       "path": "tests/update-inventory.test.js",

@@ -12,7 +12,8 @@
   const YAKIN = /esas|karar|(?<![A-Za-zÇĞİÖŞÜçğıöşü])[eEkK]\./iu;
   const SONRA = /^\s*(?:[EK]\.|esas|karar)/iu;
   // Etiket ile numara arasında yalnız boşluk, nokta ya da iki nokta olabilir: "Esas 2018 123", "E.: …", "K.No: …".
-  const ONCE = /(?<![A-Za-zÇĞİÖŞÜçğıöşü])(?:(?:esas|karar)(?:\s*(?:no|numarası|sayısı))?|[EK](?:\.(?:\s*no)?|\s*no))\s*[.:]?\s*$/iu;
+  // Büyük "I" /iu altında "ı" ile eşleşmez; "ESAS NUMARASI", "KARAR SAYISI" için ikisi de yazılır.
+  const ONCE = /(?<![A-Za-zÇĞİÖŞÜçğıöşü])(?:(?:esas|karar)(?:\s*(?:no|numaras[ıI]|say[ıI]s[ıI]))?|[EK](?:\.(?:\s*no)?|\s*no))\s*[.:]?\s*$/iu;
 
   // Bitişik ("201812345") ve boşluklu ("2018 12345") biçim tutar, tarih ya da sayı çiftiyle karışır; bu ikisi yalnız
   // numaranın hemen yanında esas/karar işareti varken (isaretli) düzeltilir. Bitişik numara sıfırla başlamaz.

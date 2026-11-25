@@ -11,7 +11,7 @@
   function stopWorker() {
     clearTimeout(workerTimer); workerTimer = null;
     preparse?.abort(); preparse = null;
-    if (worker) { worker.onmessage = null; worker.onerror = null; worker.terminate(); }
+    if (worker) { worker.onmessage = null; worker.onerror = null; worker.onmessageerror = null; worker.terminate(); }
     worker = null;
   }
 
@@ -152,11 +152,14 @@
           filename: result.incomplete ? 'Durusma_Paketi_eksik-paket.pdf' : 'Durusma_Paketi.pdf' });
       }
     };
-    instance.onerror = () => {
+    const dustu = (reason, ileti) => () => {
       if (worker !== instance) return;
-      stopWorker(); send('WORKER_FAILED', { runId, failures: [{ id: '', reason: 'PDF hazırlayıcı durdu.' }] });
-      dispatch({ type: 'ERROR', runId, message: 'PDF hazırlanamadı.' });
+      stopWorker(); send('WORKER_FAILED', { runId, failures: [{ id: '', reason }] });
+      dispatch({ type: 'ERROR', runId, message: ileti });
     };
+    instance.onerror = dustu('PDF hazırlayıcı durdu.', 'PDF hazırlanamadı.');
+    // Yanıt çözülemezse (yapısal klon hatası) süre sınırı beklenmez; öteki işçi oturumları gibi hemen kapanır.
+    instance.onmessageerror = dustu('PDF hazırlayıcının yanıtı okunamadı.', 'PDF hazırlayıcının yanıtı okunamadı.');
     const transfer = workItems.map(item => item.bytes).filter(bytes => bytes instanceof ArrayBuffer);
     try {
       instance.postMessage({ type: 'INIT', runId, items: workItems, excluded: workExcluded }, transfer);

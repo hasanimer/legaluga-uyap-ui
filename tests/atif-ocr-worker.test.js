@@ -134,23 +134,21 @@ test('metinsiz PDF çiziminde pdf.js\'in geçici tuvali document olmayan işçid
 // Uzantı sayfaları (popup, Ayarlar, Duruşma Paketi, görünmeyen PTT belgesi), service worker ve işçileri için yönerge
 // bazlı izin listesi; her yönerge yalnız burada yazılı değerleri taşır. Yazılmayan yükleme türleri (resim, yazı tipi,
 // medya) default-src 'self' ile yalnız paketten. Betik yalnız paketten (WebAssembly derlemesi dahil; işçiler script-src'ye
-// düşer). Stil paketten ve satır içi: arayüz stilini <style> öğesi ve style öznitelikleriyle yazar; satır içi CSS ağa
-// ancak url() ile çıkar, o da img-src/font-src'ye (default-src) takılır. Ağ: paket, Tesseract çekirdeğinin gömülü wasm'ı
-// (data:), künye havuzu, Sentry alım adresi ve görünmeyen PTT sorgusu. Çerçeve yalnız resmî PTT formu (görünmez Duruşma
+// düşer). Stil yalnız paketten: arayüz stilini stil dosyası, CSSOM (adoptedStyleSheets) ve sınıfla yazar; satır içi
+// <style> öğesi ve style özniteliği yoktur (JS'ten el.style ataması CSP'ye takılmaz). Ağ: paket, Tesseract çekirdeğinin
+// gömülü wasm'ı (data:), künye havuzu, Sentry alım adresi ve görünmeyen PTT sorgusu. Çerçeve yalnız resmî PTT formu (görünmez Duruşma
 // Paketi çerçevesi önizleme göstermez). Kaynaklar yalnız kökendir, yol taşımaz.
 // İçerik betikleri bu politikaya tabi değildir.
 const CSP_IZINLERI = {
   'default-src': ["'self'"],
   'script-src': ["'self'", "'wasm-unsafe-eval'"],
   'object-src': ["'self'"],
-  'style-src': ["'self'", "'unsafe-inline'"],
+  'style-src': ["'self'"],
   'connect-src': ["'self'", 'data:', 'https://legaluga.com', 'https://o4511620723703808.ingest.de.sentry.io', 'https://www.ptt.gov.tr'],
   'frame-src': ['https://www.ptt.gov.tr'],
   'base-uri': ["'none'"],
   'form-action': ["'none'"]
 };
-// 'unsafe-*' yalnız satır içi stil için; betik, işçi ve ağ yönergelerinde yoktur.
-const GEVSEK_IZINLER = new Set(["style-src 'unsafe-inline'"]);
 
 test('uzantı sayfası CSP yönerge bazlı izin listesine uyar: varsayılan paket, betik paketten, ağ ve çerçeve yalnız bilinen kökenlere', () => {
   const csp = MANIFEST.content_security_policy;
@@ -162,7 +160,8 @@ test('uzantı sayfası CSP yönerge bazlı izin listesine uyar: varsayılan pake
   assert.deepEqual(Object.fromEntries(yonergeler.map(([ad, ...degerler]) => [ad, degerler])), CSP_IZINLERI);
   for (const [ad, ...degerler] of yonergeler) {
     for (const deger of degerler) {
-      if (!GEVSEK_IZINLER.has(`${ad} ${deger}`)) assert.doesNotMatch(deger, /^'unsafe-|\*|^https?:$/, `${ad} ${deger}`);
+      // Hiçbir yönergede 'unsafe-*' kaynak değeri yoktur ('wasm-unsafe-eval' yalnız WebAssembly derlemesidir).
+      assert.doesNotMatch(deger, /^'unsafe-|\*|^https?:$/, `${ad} ${deger}`);
       if (/^https?:/.test(deger)) assert.equal(deger, new URL(deger).origin, `${ad}: kaynak yol taşımaz (${deger})`);
     }
   }

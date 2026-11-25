@@ -6,65 +6,12 @@ const vm = require('node:vm');
 
 const read = name => fs.readFileSync(path.join(__dirname, '../src/extension', name), 'utf8');
 const plain = value => JSON.parse(JSON.stringify(value));
+const { Node, all } = require('./dom-taklidi.js')();
 
-class Node {
-  constructor(tag, attrs, document) {
-    this.tag = tag;
-    this.attrs = {};
-    this.kids = [];
-    this.events = {};
-    this.document = document;
-    this.value = '';
-    this.checked = false;
-    this.disabled = false;
-    this.hidden = false;
-    for (const [key, value] of Object.entries(attrs || {})) {
-      if (value === false || value == null) continue;
-      if (key.startsWith('on')) this.addEventListener(key.slice(2), value);
-      else this.setAttribute(key, value === true ? '' : value);
-    }
-  }
-  setAttribute(key, value) {
-    this.attrs[key] = String(value);
-    if (key === 'value') this.value = String(value);
-    if (key === 'hidden') this.hidden = true;
-  }
-  append(...kids) {
-    for (const child of kids.flat(Infinity).filter(child => child != null && child !== false)) {
-      this.kids.push(child);
-      if (child instanceof Node) child.parentNode = this;
-    }
-  }
-  replaceChildren(...kids) {
-    for (const child of this.kids) if (child instanceof Node) child.parentNode = null;
-    this.kids = [];
-    this.append(...kids);
-  }
-  get textContent() { return this.kids.map(child => child instanceof Node ? child.textContent : String(child)).join(''); }
-  set textContent(value) { this.replaceChildren(String(value)); }
-  addEventListener(type, fn) { (this.events[type] ||= []).push(fn); }
-  async fire(type) {
-    if (this.disabled) return;
-    const event = { target: this, preventDefault() {} };
-    await Promise.all((this.events[type] || []).map(fn => fn(event)));
-  }
-  async click() {
-    if (this.disabled) return;
-    if (this.tag === 'input' && this.attrs.type === 'checkbox') { this.checked = !this.checked; await this.fire('change'); }
-    await this.fire('click');
-  }
-  async choose(value) { this.value = value; await this.fire('change'); }
-  async fill(value) { this.value = value; await this.fire('input'); }
-  focus() { this.document.activeElement = this; }
-  getRootNode() { return this.document; }
-  contains(node) { return all(this).includes(node); }
-  remove() { if (this.parentNode) this.parentNode.kids = this.parentNode.kids.filter(child => child !== this); this.parentNode = null; }
-}
 // Kurulumda sorulmayan tercihler ve yeni kullanıcıda yazılan varsayılanları.
 const SORULMAYAN = { tema: 'auto', panelSabit: true, acilisSekme: 'yok', evrakTakip: false, safahatTakipOptIn: false,
   otoGuncelle: 'kapali', durusmaBildirim: true, cakismaBildirim: true, duyuruBildirim: true, oturumAcik: false, indirmeTempo: 'temkinli',
   hataRaporu: false };
-const all = root => [root, ...root.kids.filter(child => child instanceof Node).flatMap(all)];
 
 function harness({ shortcut = 'Alt+Shift+D', prefs = {}, hasFiles = false, stored = prefs, fallback = false, patch, set, onConnection, onOpenUyap, onComplete } = {}) {
   const document = {};
