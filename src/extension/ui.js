@@ -772,7 +772,7 @@
         dizinBayat = false;
         setIndex(v.uhdIndex);
         renderFilters();
-        if (!editing && settings.hidden) render();
+        if (!editing && settings.hidden) render({ yalnizDizin: true, sekmeler: false });
         if (!settings.hidden) refreshSettings();
         renderStatus();
         autoNotice();
@@ -1839,23 +1839,37 @@
       }
     }
 
-    function render() {
+    // Çizimden önce listedeki odağın yeri: kart içindeyse kart ve denetimi; kart dışındaki liste denetimiyse (sıralama,
+    // “Daha fazla göster”) data-focus adı. Listede değilse ya da adsız denetimdeyse null.
+    function odakYeri(act) {
+      if (!act || !list.contains(act)) return null;
+      const card = act.closest('.item');
+      if (card) return { key: card.dataset.key, idx: card.dataset.idx, f: act.dataset.focus || '' };
+      return act.dataset.focus ? { denetim: act.dataset.focus } : null;
+    }
+    function odagiGeriYukle(rn, restore) {
+      const byFocus = (kap, f) => f && kap && [...kap.querySelectorAll('[data-focus]')].find(x => x.dataset.focus === f);
+      let target;
+      if (restore.denetim) target = byFocus(list, restore.denetim);
+      else {
+        const cards = [...list.querySelectorAll('.item')];
+        const next = cards.find(x => x.dataset.key === restore.key && x.dataset.idx === restore.idx) || cards.find(x => x.dataset.key === restore.key);
+        // Silinen notun yerine not düğmesine dönülür; hiçbiri yoksa kartın açma düğmesine.
+        target = next && (byFocus(next, restore.f) || (restore.f === 'noteline' && byFocus(next, 'note')) || next.querySelector('.ifoot .open'));
+      }
+      if (target) { target.focus({ preventScroll: true }); if (!restore.denetim) target.scrollIntoView({ block: 'nearest' }); }
+      else if (!list.contains(rn.activeElement)) input.focus({ preventScroll: true });
+    }
+
+    // yalnizDizin: çizimin tek nedeni dizin olayı; gösterilen kartlar değişmediyse liste yeniden kurulmaz (renderList).
+    // sekmeler false: sekme satırını hemen önce renderFilters kurdu; olay başına bir kez kurulur.
+    function render({ yalnizDizin = false, sekmeler = true } = {}) {
       if (syncSetup()) return;
       if (optionsPage) return;   // ayarlar sayfasında liste yok
-      for (const draft of noteDrafts.values()) draft.rich?.destroy?.();
       const rn = root.getRootNode();
-      const act = rn && rn.activeElement;
-      const card = act && list.contains(act) ? act.closest('.item') : null;
-      const restore = card ? { key: card.dataset.key, idx: card.dataset.idx, f: act.dataset.focus || '' } : null;
-      renderList();
-      if (!restore) return;
-      const cards = [...list.querySelectorAll('.item')];
-      const next = cards.find(x => x.dataset.key === restore.key && x.dataset.idx === restore.idx) || cards.find(x => x.dataset.key === restore.key);
-      const byFocus = f => f && next && [...next.querySelectorAll('[data-focus]')].find(x => x.dataset.focus === f);
-      // Silinen notun yerine not düğmesine dönülür; hiçbiri yoksa kartın açma düğmesine.
-      const target = next && (byFocus(restore.f) || (restore.f === 'noteline' && byFocus('note')) || next.querySelector('.ifoot .open'));
-      if (target) { target.focus({ preventScroll: true }); target.scrollIntoView({ block: 'nearest' }); }
-      else if (!list.contains(rn.activeElement)) input.focus({ preventScroll: true });
+      const restore = odakYeri(rn && rn.activeElement);
+      if (renderList(yalnizDizin, sekmeler) === false) return;   // liste yerinde kaldı; odak da yerinde
+      if (restore) odagiGeriYukle(rn, restore);
     }
 
     let lastSaid = '';
@@ -1865,14 +1879,41 @@
       live.textContent = text;
     }
 
-    function renderList() {
-      renderViews();   // sekme sayaçları aralık, gizleme ve filtre değişince de güncel kalsın
+    // Son kurulan kart listesinin imzası: kartta görünen her durum (kayıtlar, toplam, yeni evrak, not ve hatırlatması,
+    // duruşma satırı, gün, sorgu, filtre, sıralama, sayfa). Kart listesi dışındaki çizimde (boş liste, kişi, duruşmalar) null.
+    let listeImzasi = null;
+    function kartImzasi(gosterilen, res, keys, sonAcilan) {
+      return JSON.stringify([todayIso(), input.value, filter, prefs, shownLimit, res.total, res.tokens, keys, sonAcilan, quick,
+        editing, [...noteDrafts.keys()], [...expandedEvrak], [...allParties],
+        gosterilen.map(r => [r, yeniMap.get(r.key) || 0, notes[r.key] || '', (durusmaByKey.get(r.key) || []).map(d => [d, cakismalar.get(d.id) || null])])]);
+    }
+
+    // yalnizDizin ve gösterilen kartların imzası değişmediyse liste olduğu gibi kalır (düğümler, odak, açık sıralama menüsü,
+    // metin seçimi); yalnız sekme satırı güncellenir ve false döner (çizen dallar değer döndürmez).
+    function renderList(yalnizDizin = false, sekmeler = true) {
+      // Sekme sayaçları aralık, gizleme ve filtre değişince de güncel kalsın. Savcılık görünümünde renderFilters kaybolan
+      // il/birim seçimini sekme satırından sonra temizleyebilir; sayaçlar yeniden hesaplanır.
+      if (sekmeler || cbsOnly()) renderViews();
       const scroll = list.scrollTop;
-      list.replaceChildren();
-      current = [];
       btnQClear.hidden = !input.value;
       views.hidden = optionsPage || !loaded || (!records.length && !durusmaMeta) || !!person || !settings.hidden || (quick && !views.childElementCount);
       filters.hidden = quick || optionsPage || !records.length || !!person || !settings.hidden || filter.onlyDurusma;
+      const kartlar = loaded && !(dizinBayat && !records.length) && !person && !filter.onlyDurusma && records.length > 0;
+      const keys = kartlar ? myKeys(myName()) : null;
+      const q = input.value;
+      const res = kartlar ? search(records, q, { myName: myName(), notes, filter, yeni: yeniMap, gizli, vekilAra: pref('vekilAra', true), sort: pref('siralama', 'relevance'), limit: shownLimit }) : null;
+      const sonAcilan = kartlar && !res.tokens.length && !res.total && filter.durum === 'all' && !hasTurFilter() && !filter.onlyClient && !filter.onlyNew && !filter.onlyNote;
+      let gosterilen = [];
+      if (sonAcilan) {
+        const byKey = new Map(records.map(r => [r.key, r]));
+        gosterilen = recent.map(k => byKey.get(k)).filter(r => r && !gizli[r.key]);
+      } else if (kartlar) gosterilen = res.items;
+      const imza = gosterilen.length ? kartImzasi(gosterilen, res, keys, sonAcilan) : null;
+      if (yalnizDizin && imza && imza === listeImzasi) { current = gosterilen; return false; }
+      listeImzasi = imza;
+      for (const draft of noteDrafts.values()) draft.rich?.destroy?.();
+      list.replaceChildren();
+      current = [];
       if (!loaded || (dizinBayat && !records.length)) {   // kapalı açılan panelin dizini gösterimde okunur
         list.append(dizinHatasi
           ? el('div', { class: 'empty', role: 'alert' }, el('p', null, 'Dosyalarınız okunamadı.'), el('button', { class: 'btn sm', onclick: dizinYenidenDene }, 'Tekrar dene'))
@@ -1896,11 +1937,8 @@
           el('p', { class: 'gizlilik' }, 'Ayrıntılar: ', el('a', { href: 'https://github.com/hasanimer/legaluga-uyap-ui/blob/main/docs/PRIVACY.md', target: '_blank', rel: 'noopener' }, 'gizlilik politikası'), '.')));
         return;
       }
-      const keys = myKeys(myName());
-      const q = input.value;
-      const res = search(records, q, { myName: myName(), notes, filter, yeni: yeniMap, gizli, vekilAra: pref('vekilAra', true), sort: pref('siralama', 'relevance'), limit: shownLimit });
       say(`${fmtNum(res.total)} dosya bulundu.`);
-      const sortSelect = el('select', { class: 'sort', 'aria-label': 'Dosya sıralaması' },
+      const sortSelect = el('select', { class: 'sort', 'data-focus': 'sort', 'aria-label': 'Dosya sıralaması' },
         [['relevance', 'En uygun'], ['newest', 'Açılış: yeniden eskiye'], ['fileNo', 'Dosya no: büyükten küçüğe']].map(([value, label]) => el('option', { value }, label)));
       sortSelect.value = pref('siralama', 'relevance');
       sortSelect.addEventListener('change', async () => {
@@ -1909,9 +1947,8 @@
         await tercihYaz({ siralama: sortSelect.value }, null, 'Sıralama tercihi kaydedilemedi. Tekrar deneyin.');
         render(); list.querySelector('.sort')?.focus();
       });
-      if (!res.tokens.length && !res.total && filter.durum === 'all' && !hasTurFilter() && !filter.onlyClient && !filter.onlyNew && !filter.onlyNote) {
-        const byKey = new Map(records.map(r => [r.key, r]));
-        current = recent.map(k => byKey.get(k)).filter(r => r && !gizli[r.key]);
+      if (sonAcilan) {
+        current = gosterilen;
         if (!current.length) {
           const openFiles = quick ? null : el('button', { class: 'btn sm' }, 'Açık dosyalar');
           if (openFiles) openFiles.addEventListener('click', () => { filter.durum = 'acik'; renderFilters(); render(); input.focus(); });
@@ -1983,7 +2020,7 @@
       if (res.tokens.length && !pref('vekilAra', true)) list.append(el('div', { class: 'more' }, 'Karşı taraf vekillerinde arama kapalı (Ayarlar).'));
       if (quick && current.length) list.append(el('div', { class: 'more' }, 'Evrak, Safahat ve notlar UYAP’taki Legaluga panelinde.'));
       if (res.total > current.length) {
-        const more = el('button', { class: 'btn sm load-more' }, `Daha fazla göster · ${fmtNum(current.length)} / ${fmtNum(res.total)}`);
+        const more = el('button', { class: 'btn sm load-more', 'data-focus': 'loadmore' }, `Daha fazla göster · ${fmtNum(current.length)} / ${fmtNum(res.total)}`);
         more.addEventListener('click', () => {
           const previous = current.length;
           shownLimit += LIMIT; render();
@@ -2054,7 +2091,7 @@
         list.append(item(f.r, i, [], keys, el('div', { class: 'rolein' + (bizde ? '' : ' other') }, `Bu dosyada: ${rolText}`)));
       });
       if (files.length > shown.length) {
-        const more = el('button', { class: 'btn sm load-more' }, `Daha fazla göster · ${fmtNum(shown.length)} / ${fmtNum(files.length)}`);
+        const more = el('button', { class: 'btn sm load-more', 'data-focus': 'loadmore' }, `Daha fazla göster · ${fmtNum(shown.length)} / ${fmtNum(files.length)}`);
         more.addEventListener('click', () => {
           const previous = current.length;
           personLimit += LIMIT; render();
@@ -2896,32 +2933,35 @@
     window.addEventListener('pageshow', e => { if (e.persisted && loaded) loadInitial(); });
     chrome.storage.onChanged.addListener((ch, area) => {
       if (area !== 'local') return;
-      let redraw = false;
+      // redraw: dizin dışındaki çizim nedeni; filtre: filtre satırı ve sekme sayaçları yenilenir.
+      let redraw = false, filtre = false;
       if (ch.uhdPrefs) { prefsRevision++; prefs = ch.uhdPrefs.newValue || {}; applyTheme(); redraw = true; }
       if (ch.uhdTurFilter && !quick) {
         turFilterRevision++;
         if (!pendingTurWrites) {
           turFilterAl(ch.uhdTurFilter.newValue, true);
           sel = 0; shownLimit = LIMIT;
-          renderFilters(); redraw = true;
+          filtre = redraw = true;
         }
       }
       if (ch.uhdEvrakGoruldu) goruldu = ch.uhdEvrakGoruldu.newValue || {};
       if (ch.uhdJob) pendingJob = ch.uhdJob.newValue || null;
-      if (ch.uhdGizli) { gizli = ch.uhdGizli.newValue || {}; renderFilters(); redraw = true; }
+      if (ch.uhdGizli) { gizli = ch.uhdGizli.newValue || {}; filtre = redraw = true; }
       if (ch.uhdDurusmalar) durusmaMeta = ch.uhdDurusmalar.newValue || null;
-      if (ch.uhdDurusmalar || ch.uhdPrefs) { computeDurusma(); renderFilters(); redraw = true; }
+      if (ch.uhdDurusmalar || ch.uhdPrefs) { computeDurusma(); filtre = redraw = true; }
       // Görünmeyen panelde dizin okunmaz, bayat işaretlenir; sürüm duyurusunu görünür panel okuyup sonra çizer.
       const dizin = (!!ch.uhdIndex || !!ch.uhdIndexRev) && dizinDegisti(ch.uhdIndex);
       if (!dizin && ch.uhdEvrakGoruldu) computeYeni();
-      if (dizin || ch.uhdEvrakGoruldu) { renderFilters(); redraw = true; }
+      if (ch.uhdEvrakGoruldu) filtre = redraw = true;
       if (ch.uhdNotes) { notes = ch.uhdNotes.newValue || {}; redraw = true; }
       if (ch.uhdRecent) recent = ch.uhdRecent.newValue || [];
       if (ch.uhdProgress) {
         progress = ch.uhdProgress.newValue || null;
         if (!records.length) redraw = true;   // ilk kullanım ekranındaki düğmenin durumu
       }
-      if (redraw && !editing && settings.hidden) render();
+      // Sekme satırını renderFilters kurduysa liste çizimi yeniden kurmaz; tek nedeni dizin olan çizim değişmeyen kartları korur.
+      if (filtre || dizin) renderFilters();
+      if ((redraw || dizin) && !editing && settings.hidden) render({ yalnizDizin: !redraw, sekmeler: !filtre && !dizin });
       if (!settings.hidden && (ch.uhdPrefs || ch.uhdGizli || ch.uhdUyapKoruma || ch.uhdUyapKorumaAyrinti || dizin || (ch.uhdProgress && running() !== ayarKosu))) refreshSettings();
       if (dizin || ch.uhdProgress || ch.uhdJob) renderStatus();
       if (ch.uhdProgress || ch.uhdJob) syncSetupScanNotice();
