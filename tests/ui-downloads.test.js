@@ -5,8 +5,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const read = name => fs.readFileSync(path.join(__dirname, '../src/extension', name), 'utf8');
-// Kurulum testinin sentetik düğümleri; test kayıtları ve harness'i çalıştırılmaz.
-const domSource = fs.readFileSync(path.join(__dirname, 'onboarding-ui.test.js'), 'utf8').split('function harness(')[0];
+// Kurulum ve panel testlerinin ortak sentetik DOM'u.
+const domTaklidi = require('./dom-taklidi.js');
 const plain = value => JSON.parse(JSON.stringify(value));
 const flush = () => new Promise(resolve => setImmediate(resolve));
 const job = (extra = {}) => ({ id: 'plan-a', fileKey: 'file-a', rec: { dosyaNo: '2031/100', birimAdi: 'Sentetik İcra Dairesi' },
@@ -14,61 +14,10 @@ const job = (extra = {}) => ({ id: 'plan-a', fileKey: 'file-a', rec: { dosyaNo: 
   partBytes: 1024, currentTitle: 'Sentetik belge', elapsedMs: 1000, lastPart: null, ...extra });
 
 function harness({ mode = 'page', states = [], downloads = true, panel = true, sendMessage = async () => ({}) } = {}) {
-  const context = vm.createContext({ require, __dirname });
-  vm.runInContext(domSource + '\nglobalThis.ExistingDOM = { Node, all };', context);
-  const { Node, all } = context.ExistingDOM;
+  const context = vm.createContext({});
+  const { Node, all } = domTaklidi();
   const document = { activeElement: null, hidden: false, addEventListener() {} };
-  const originalSet = Node.prototype.setAttribute;
-  Node.prototype.setAttribute = function (key, value) {
-    originalSet.call(this, key, value);
-    if (key === 'disabled') this.disabled = true;
-    if (key === 'class') this.classes = new Set(String(value).split(/\s+/).filter(Boolean));
-  };
-  Node.prototype.removeAttribute = function (key) { delete this.attrs[key]; if (key === 'hidden') this.hidden = false; };
-  Object.defineProperties(Node.prototype, {
-    ownerDocument: { get() { return this.document; } },
-    childElementCount: { get() { return this.kids.filter(child => child instanceof Node).length; } },
-    dataset: { get() { return this.data ||= {}; } },
-    style: { get() { return this.inlineStyle ||= {}; } },
-    classList: { get() {
-      const classes = this.classes ||= new Set();
-      return { contains: name => classes.has(name), add: name => classes.add(name), remove: name => classes.delete(name),
-        toggle(name, force) { const on = force === undefined ? !classes.has(name) : force; if (on) classes.add(name); else classes.delete(name); return on; } };
-    } }
-  });
-  Node.prototype.matches = function (selector) {
-    let pattern = selector;
-    const exclusions = [...pattern.matchAll(/:not\(([^)]+)\)/g)].map(match => match[1]);
-    if (exclusions.some(part => this.matches(part))) return false;
-    pattern = pattern.replace(/:not\([^)]+\)/g, '');
-    const tag = /^[a-z][a-z0-9-]*/i.exec(pattern)?.[0];
-    if (tag && this.tag !== tag) return false;
-    if ([...pattern.matchAll(/\.([\w-]+)/g)].some(match => !this.classList.contains(match[1]))) return false;
-    for (const match of pattern.matchAll(/\[([^=\]]+)(?:=["']?([^\]"']*)["']?)?\]/g)) {
-      const key = match[1];
-      if (match[2] === undefined) { if (!(key in this.attrs) || key === 'hidden' && !this.hidden) return false; }
-      else if (this.attrs[key] !== match[2]) return false;
-    }
-    return true;
-  };
-  Node.prototype.querySelectorAll = function (selector) {
-    return all(this).slice(1).filter(node => selector.split(',').some(part => {
-      const parts = part.trim().split(/\s+/);
-      if (!node.matches(parts.pop())) return false;
-      let ancestor = node.parentNode;
-      while (parts.length) {
-        const match = parts.pop();
-        while (ancestor && !ancestor.matches(match)) ancestor = ancestor.parentNode;
-        if (!ancestor) return false;
-        ancestor = ancestor.parentNode;
-      }
-      return true;
-    }));
-  };
-  Node.prototype.querySelector = function (selector) { return this.querySelectorAll(selector)[0] || null; };
-  Node.prototype.getRootNode = () => document;
-  Node.prototype.contains = function (node) { return all(this).includes(node); };
-  Node.prototype.select = function () { this.selectionStart = 0; this.selectionEnd = this.value.length; };
+  domTaklidi.tarayiciEkleri(Node, all, document);
   document.createElement = tag => new Node(tag, null, document);
   document.createElementNS = (namespace, tag) => document.createElement(tag);
   document.createDocumentFragment = () => document.createElement('fragment');

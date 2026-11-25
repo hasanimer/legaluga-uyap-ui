@@ -659,12 +659,16 @@
       "sha256": "06b7062935688d7973aac4966efc08878c97c9bfee0b4b56bb405221c88bc220"
     },
     {
+      "path": "tests/dom-taklidi.js",
+      "sha256": "b052493f3170902590949759ec3673b24f968a5c0dda4cf25fc2bb81f1a70011"
+    },
+    {
       "path": "tests/indirme-panel.test.js",
-      "sha256": "b75c5c98b7febd61167b01e273462974546a3dfac97da8787adc03fdd640c172"
+      "sha256": "6b29c19d1a284cefdc0d7e2db79a10bb7962d30063b6c280fd47a67a45850131"
     },
     {
       "path": "tests/onboarding-ui.test.js",
-      "sha256": "a1876d4f02c42e669fef307244ec75588eaf8ffc8772fcf4c8ae82b725f16a3a"
+      "sha256": "f821c662a3406429a14eeed8eee0149fa89f78c05dca59fc25037ae536ed206f"
     },
     {
       "path": "tests/panel-kilidi.test.js",
@@ -680,7 +684,7 @@
     },
     {
       "path": "tests/ui-downloads.test.js",
-      "sha256": "87919c0a18a83c4ce87122860b3c14b464c065be58726742ba85f9605ca001fc"
+      "sha256": "2f6eb53bec0f35345688773910ddc5035d8bf21f8e744ede032d2e8a330ce0dd"
     },
     {
       "path": "tests/update-inventory.test.js",
