@@ -56,7 +56,7 @@
     },
     {
       "path": "docs/DEVELOPMENT.md",
-      "sha256": "ed033674b4c57555d25a4eeebb38770866673242ecee985ecf96a35b34316d8c"
+      "sha256": "0c31ff3f3bb5aa92a24654b332d172f6cc372a92a7ecc5ad301f28931e882665"
     },
     {
       "path": "docs/PRIVACY.md",
@@ -116,7 +116,7 @@
     },
     {
       "path": "publication/FRAGMENTS.json",
-      "sha256": "2bcced6c6dde2df025a2798ef9cad4b60eb148ae64fb47d8e9491d22ef2502bd"
+      "sha256": "6119e7d5f58557db86703d64c2709e048c6e267a2cf9561fabc29280391e6546"
     },
     {
       "path": "publication/PUBLIC-FILES.json",
@@ -244,7 +244,7 @@
     },
     {
       "path": "src/extension/manifest.json",
-      "sha256": "a4c8ba2753cdd3892ec39f3e3b72115b314e27c7daac34c83fb32387309429d5"
+      "sha256": "efd69473b289984f17c1d2cf30f5551f149b58e6bf249831fe16295c8c3c5320"
     },
     {
       "path": "src/extension/mazeret-dilekcesi.js",
@@ -316,7 +316,7 @@
     },
     {
       "path": "src/extension/ui.js",
-      "sha256": "86e81e3097261f171a5487e5d165e5a324e34ecd9809c1c61c9bbec72b786116"
+      "sha256": "b278babd2ad96f658c09ebe2855a02d70ce7af887b396a739b4c1d84b7ecdb7c"
     },
     {
       "path": "src/extension/vault-crypto.js",
@@ -496,7 +496,7 @@
     },
     {
       "path": "src/fragments/common/015.js.part",
-      "sha256": "60bee25ffd6a0cc3a2e0d872f7d234bb88190d530376e83527855ef651d9a008"
+      "sha256": "3e0d0fd4f119cb34b4c4ba61c215ba12c6f24e41c5646310193e5de01e279b63"
     },
     {
       "path": "src/fragments/content/001-bootstrap-shared-request-safety.js.part",
@@ -644,7 +644,7 @@
     },
     {
       "path": "tests/atif-ocr-worker.test.js",
-      "sha256": "a4d81d0f102cfa692cfd54531b1cc3508305c82709f676e2d3acd77b401cf28c"
+      "sha256": "1557443733c77c8b239201ab492c1b40f81819a93472b1b017d962a29e31ae87"
     },
     {
       "path": "tests/crypto-invariants.test.js",

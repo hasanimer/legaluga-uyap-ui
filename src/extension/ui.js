@@ -80,6 +80,7 @@
 .uhd .section{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 2px 10px;font-size:12px;color:var(--muted)}
 .uhd .section b{font-weight:600;color:var(--text2)}
 .uhd .section.eylem{justify-content:flex-start;flex-wrap:wrap;margin-top:-4px}
+.uhd .section.sarmal{flex-wrap:wrap}
 .uhd .sort{max-width:180px;min-height:30px;padding:4px 6px;border:1px solid var(--line);border-radius:7px;font:inherit;font-size:11px;color:var(--text2);background:var(--card)}
 .uhd .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .uhd .empty strong{display:block;color:var(--text);font-size:15px;margin-bottom:6px}
@@ -90,6 +91,7 @@
 .uhd .onboard b{display:block;font-size:14px;color:var(--navy);margin-bottom:6px}
 .uhd .onboard ol{margin:0 0 14px;padding-left:20px;color:var(--text2)}
 .uhd .onboard li{margin:4px 0}
+.uhd .onboard .gizlilik{margin:12px 0 0;font-size:12px;color:var(--muted)}
 .uhd .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--card);color:var(--text);border-radius:8px;padding:6px 11px;cursor:pointer;white-space:nowrap}
 .uhd .btn:hover{border-color:var(--focus)}
 .uhd .btn.primary{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:600}
@@ -236,6 +238,7 @@
 .uhd .person .sum{margin-top:4px}
 .uhd .person .warn{margin-top:6px;padding:5px 8px;border-radius:6px;background:var(--warn-bg);color:var(--warn-tx)}
 .uhd .person .hint,.uhd .durhead .hint{margin-top:6px;color:var(--muted);font-size:11px}
+.uhd .durhead .teyit{color:var(--muted);font-size:11px}
 .uhd .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
 .uhd .dayhead{display:flex;justify-content:space-between;align-items:baseline;padding:8px 4px 5px;font-size:12px;font-weight:700;color:var(--deep)}
 .uhd[data-theme=dark] .dayhead{color:var(--accent-text)}
@@ -298,6 +301,7 @@
 .uhd[data-theme=dark] .tag{color:var(--accent-text)}
 .uhd .tag.auto{background:var(--grey-bg);color:var(--muted);padding-right:9px}
 .uhd .tag button{flex:none;border:0;background:none;cursor:pointer;color:inherit;padding:0 2px;line-height:1;font-size:14px}
+.uhd .settings .gizli-baslik{margin-top:10px}
 .uhd .gz{display:flex;align-items:center;gap:8px;padding:4px 0;border-top:1px solid var(--line)}
 .uhd .gz span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .uhd .status{padding:6px 12px 0;color:var(--muted);font-size:12px;border-top:1px solid var(--line);background:var(--card)}
@@ -464,7 +468,10 @@
       btnSettings.title = 'Ayarlar (yeni sekmede)';
       views.setAttribute('aria-label', 'Özet');
     }
-    container.append(el('style', null, CSS + (hasDownloads ? globalThis.UHDBulkPanel.CSS : '')), root);
+    // Uzantı sayfasında stil belgeye CSSOM ile bağlanır (CSP satır içi <style>'a izin vermez); UYAP panelinin gölge
+    // kökünde <style> öğesiyle gelir.
+    const css = CSS + (hasDownloads ? globalThis.UHDBulkPanel.CSS : '');
+    container.append(...(globalThis.UHD.belgeStili(container, css) ? [] : [el('style', null, css)]), root);
     function showDownloads(on = true) {
       if (!hasDownloads) return;
       downloadArea.hidden = !on;
@@ -1496,7 +1503,7 @@
           list.querySelector('[data-action="cakisma-tarama"]')?.focus();
         }
       });
-      return el('div', { class: 'section', style: 'flex-wrap:wrap' },
+      return el('div', { class: 'section sarmal' },
         el('div', null, el('b', null, 'Duruşma çakışma kontrolü'), el('div', null, !acik ? 'Kapalı'
           : cakismaSessiz() ? 'Açık · bildirim kapalı. Bildirim için kapatıp yeniden açın.' : 'Açık · çakışmalar bildirilir')), btn);
     }
@@ -1597,7 +1604,7 @@
         ranges,
         el('div', null, el('b', null, `${fmtNum(rows.length)} duruşma`), toks.length ? ` (“${input.value.trim()}” içeren)` : '', ' · ', src),
         el('div', { class: 'row' }, rows.length ? ics : null,
-          el('span', { style: 'color:var(--muted);font-size:11px' }, 'Saatleri UYAP’ta teyit edin; liste yalnız Güncelle’de yenilenir.')));
+          el('span', { class: 'teyit' }, 'Saatleri UYAP’ta teyit edin; liste yalnız Güncelle’de yenilenir.')));
       const out = [cakismaKontrol(), head];
       current = [];
       let day = null;
@@ -1886,7 +1893,7 @@
             el('li', null, '“Şimdi güncelle”ye basın. Vekili olduğunuz dosyaların listesi, taraf adları, vekilleri ve duruşmalarınız UYAP’tan alınıp bu Chrome profilinde şifreli saklanır. Bu bilgiler başka bir sunucuya gönderilmez. Evrak ve banka cevabı araçları, seçtiğiniz belgeleri tarayıcınızda işler. Banka sorgusu ayrıca siz başlatınca, UYAP’ın uygunluk ve ücret kontrolünden sonra çalışır; ücrete ayrıca onay sorulur. İlk güncelleme birkaç dakika sürebilir.'),
             el('li', null, 'Ad, soyad, dosya no veya mahkeme yazın; “UYAP’tan aç” ile dosya UYAP’ta açılır.')),
           go,
-          el('p', { style: 'margin:12px 0 0;font-size:12px;color:var(--muted)' }, 'Ayrıntılar: ', el('a', { href: 'https://github.com/hasanimer/legaluga-uyap-ui/blob/main/docs/PRIVACY.md', target: '_blank', rel: 'noopener' }, 'gizlilik politikası'), '.')));
+          el('p', { class: 'gizlilik' }, 'Ayrıntılar: ', el('a', { href: 'https://github.com/hasanimer/legaluga-uyap-ui/blob/main/docs/PRIVACY.md', target: '_blank', rel: 'noopener' }, 'gizlilik politikası'), '.')));
         return;
       }
       const keys = myKeys(myName());
@@ -2695,7 +2702,7 @@
         el('div', { class: 'box' },
           el('div', { class: 'row' }, btnExport, btnBackup, btnRestore, fileIn),
           el('div', { class: 'hint' }, 'Şifreli yedek dosya listesini, notları, duruşmaları ve ayarları içerir; belirlediğiniz parolayla şifrelenir. CSV çıktısı şifresizdir; güvenli bir yerde saklayın.'),
-          el('div', { style: 'margin-top:10px' }, `Gizlenen dosyalar (${fmtNum(gz.length)})`),
+          el('div', { class: 'gizli-baslik' }, `Gizlenen dosyalar (${fmtNum(gz.length)})`),
           gzBox),
 
         el('h3', null, 'Hata raporlama'),
