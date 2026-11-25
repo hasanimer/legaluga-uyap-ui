@@ -1,7 +1,7 @@
 function setupAccountName() {
     const clean = value => String(value || '').normalize('NFC').replace(/^\s*Av(?:ukat|\.)?\s+/iu, '').trim().replace(/\s+/g, ' ');
     const valid = value => value.length >= 5 && value.length <= 100 && value.split(' ').length >= 2 &&
-      /^[\p{L}\p{M} '’.-]+$/u.test(value) && !/\b(?:uyap|portal|bilgi|sistemi|giriş|çıkış|ayarlar|avukat)\b/iu.test(value);
+      /^[\p{L}\p{M} '’.-]+$/u.test(value) && !/\b(?:uyap|portal|bilgi|sistemi|giris|cikis|ayarlar|avukat)\b/.test(norm(value));   // norm(): \b Türkçe harfte sözcük sınırı görmez
     const scope = '#root header, #root .navbar, #root .topbar, #root .header, #root [role="banner"], #root .user-info, #root .user-menu';
     for (const region of document.querySelectorAll(scope)) {
       for (const node of region.querySelectorAll('[data-testid="user-name"], .user-name, .userName, .username, .user-fullname, .userFullName')) {

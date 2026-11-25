@@ -131,7 +131,7 @@
 .toast.success{--k:var(--shell-success)}.toast.warn{--k:var(--shell-warn)}.toast.danger{--k:var(--shell-error);background:var(--shell-error-bg)}
 .sr{position:fixed;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .panel:not([hidden]) ~ .notifications{right:calc(var(--dock-width,480px) + 44px);max-width:min(440px,calc(100vw - var(--dock-width,480px) - 60px))}
-@media(max-width:800px){:host .panel:not([hidden]) ~ .notifications{right:56px;bottom:80px;max-width:calc(100vw - 68px);max-height:calc(100dvh - 92px)}.notifications{right:56px;bottom:12px;max-width:calc(100vw - 68px)}}
+@media(max-width:800px){:host(:not([data-dock=side])) .panel:not([hidden]) ~ .notifications{right:56px;bottom:80px;max-width:calc(100vw - 68px);max-height:calc(100dvh - 92px)}.notifications{right:56px;bottom:12px;max-width:calc(100vw - 68px)}}
 :host([data-dock=bottom]) .panel{top:auto;bottom:0;box-shadow:0 -8px 36px rgba(0,0,0,.2)}
 :host([data-dock=bottom]) .panel:not([hidden]) ~ .notifications{right:56px;bottom:calc(var(--dock-height) + 12px);max-width:calc(100vw - 68px);max-height:calc(100dvh - var(--dock-height) - 24px)}
 .announcement{width:360px;max-height:60vh;max-height:60dvh;overflow:auto;overscroll-behavior:contain;pointer-events:auto;padding:10px 12px;border:1px solid var(--shell-line);border-left:3px solid var(--shell-accent);border-radius:12px;background:var(--shell-bg);color:var(--shell-text);box-shadow:0 6px 24px #0002;font:12px/1.45 "Segoe UI",system-ui,sans-serif}
@@ -615,7 +615,7 @@ ${(globalThis.UHD.udf && globalThis.UHD.udf.CSS) || ''}${(globalThis.UHD.tiff &&
 
   function applyLauncherIntro(pending) {
     launcherIntroPending = !!pending;
-    if (!pending || !introTip) return;
+    if (!pending || !introTip) { if (introTip) introTip.hidden = true; return; }   // başka sekmede kapatılan ipucu burada da kalkar
     if (launcherIntroSeen || (panel && !panel.hidden)) dismissLauncherIntro();
     else introTip.hidden = accessMenuOpen;
   }

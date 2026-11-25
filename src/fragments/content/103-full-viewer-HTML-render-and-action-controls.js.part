@@ -392,7 +392,7 @@
         }
         return result;
       };
-      const ext = documentExtension(doc);
+      const ext = onizlemeUzantisi(documentExtension(doc));
       const url = URL.createObjectURL(documentPreviewBlob(doc, ext));
       // İndir her evrakta nötr türde ayrı bir adres kullanır: HTML ya da SVG gibi türler bağlam menüsünden yeni sekmede
       // açılsa bile UYAP'ın kökeninde belge olarak çalışmaz, yalnız iner (1.19.3).
@@ -427,7 +427,7 @@
         pdfIndir.hidden = false;
       } else {
         const tur = okuyucuTuru(doc, ext);
-        s.pdfFormat = tur === 'udf' ? 'udf' : tur === 'tiff' ? 'tiff' : ext === 'jpeg' ? 'jpg' : ['jpg', 'png', 'html', 'xml', 'txt'].includes(ext) ? ext : null;
+        s.pdfFormat = tur === 'udf' ? 'udf' : tur === 'tiff' ? 'tiff' : ['jpg', 'png', 'html', 'xml', 'txt'].includes(ext) ? ext : null;
         s.pdfName = zipTools.documentName(rec, x, 'pdf');
         pdfIndir.hidden = !s.pdfFormat || !globalThis.UHD.belgePdf?.donustur;
         if (!pdfIndir.hidden) { pdfIndir.setAttribute('role', 'button'); pdfIndir.setAttribute('tabindex', '0'); }

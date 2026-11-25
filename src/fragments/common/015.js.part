@@ -319,7 +319,9 @@
         const tag = node.tagName, block = node !== input && /^(?:DIV|P|LI)$/.test(tag);
         if (block && text && !text.endsWith('\n')) append('\n', bold, red);
         bold = bold || tag === 'STRONG' || tag === 'B' || /^(?:bold|bolder|[6-9]00)$/.test(String(node.style?.fontWeight || '').toLowerCase());
-        red = red || node.classList.contains('note-red') || tag === 'FONT' && redColor(node.getAttribute('color')) || redColor(node.style?.color);
+        // Açık renk beyanı üst öğenin kırmızısını da kapatır: Chrome "Normal renk"te yazılanı kırmızı span'in içine <font color> ile sarar.
+        const renk = tag === 'FONT' && node.getAttribute('color') || node.style?.color;
+        red = node.classList.contains('note-red') || (renk ? redColor(renk) : red);
         const boundaries = [], s = text.length;
         if (tag === 'BR') append('\n', bold, red);
         else {
@@ -348,7 +350,13 @@
     function restore(range) {
       const model = read(), sel = selection();
       if (!sel || !doc.createRange) return;
-      const at = offset => { const t = model.texts.find(item => offset >= item.s && offset <= item.e); return t ? [t.node, Math.min(t.e - t.s, offset - t.s)] : [input, input.childNodes.length]; };
+      // Boş satırda (<div><br></div>) metin düğümü yoktur; konum, çocuk sınırı o konuma düşen en içteki öğede aranır.
+      const at = offset => {
+        const t = model.texts.find(item => offset >= item.s && offset <= item.e);
+        if (t) return [t.node, Math.min(t.e - t.s, offset - t.s)];
+        for (const [node, p] of model.positions) { const i = p.boundaries ? p.boundaries.indexOf(offset) : -1; if (i >= 0) return [node, i]; }
+        return [input, input.childNodes.length];
+      };
       const target = doc.createRange();
       target.setStart(...at(Math.min(model.text.length, range.s))); target.setEnd(...at(Math.min(model.text.length, range.e)));
       sel.removeAllRanges(); sel.addRange(target); lastRange = range;

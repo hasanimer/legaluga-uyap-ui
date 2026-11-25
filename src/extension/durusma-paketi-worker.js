@@ -47,11 +47,27 @@ function kind(item) {
   return globalThis.DurusmaPaketiMetin ? globalThis.DurusmaPaketiMetin.tur(b) : 'unknown';
 }
 const unsupported = (item, message) => Object.assign(new Error(`${item.title || item.id}: ${message}`), { code: 'format-unsupported', id: item.id });
+// JPEG APP1 kesimindeki EXIF yön etiketi (0x0112); yoksa ya da okunamıyorsa 1 (düz). bas: kesim verisinin başı.
+function exifOrientation(dv, bas, end) {
+  const t = bas + 6;
+  if (end - t < 14 || dv.getUint32(bas) !== 0x45786966 || dv.getUint16(bas + 4) !== 0) return 1;
+  const order = dv.getUint16(t), le = order === 0x4949;
+  if ((!le && order !== 0x4d4d) || dv.getUint16(t + 2, le) !== 42) return 1;
+  let p = t + dv.getUint32(t + 4, le);
+  if (p + 2 > end) return 1;
+  const count = dv.getUint16(p, le); p += 2;
+  for (let i = 0; i < count && p + 12 <= end; i++, p += 12) {
+    if (dv.getUint16(p, le) !== 0x0112) continue;
+    const value = dv.getUint16(p + 8, le);
+    return dv.getUint16(p + 2, le) === 3 && value >= 1 && value <= 8 ? value : 1;
+  }
+  return 1;
+}
 // PNG/JPEG başlığı çözülmeden okunur: sıkıştırılmış küçük dosya dev bir RGBA tamponuna dönüşmesin.
 function imageSize(item, detected, limits = session?.limits || {}) {
   const b = new Uint8Array(item.bytes), dv = new DataView(item.bytes);
   const bad = () => { throw Object.assign(new Error(`${item.title || item.id}: resim başlığı geçersiz`), { code: 'image-load', id: item.id }); };
-  let width = 0, height = 0;
+  let width = 0, height = 0, orientation = 1;
   if (detected === 'png') {
     if (b.length < 33 || dv.getUint32(8) !== 13 || dv.getUint32(12) !== 0x49484452) bad();
     width = dv.getUint32(16); height = dv.getUint32(20);
@@ -79,6 +95,7 @@ function imageSize(item, detected, limits = session?.limits || {}) {
         if (n < 8 || width) bad();
         height = dv.getUint16(p + 3); width = dv.getUint16(p + 5);
       }
+      if (marker === 0xe1 && orientation === 1) orientation = exifOrientation(dv, p + 2, p + n);
       p += n;
     }
   }
@@ -88,9 +105,11 @@ function imageSize(item, detected, limits = session?.limits || {}) {
   if (width > 32768 || height > 32768 || pixels > positive(limits.maxImagePixels, 16 * 1024 * 1024) ||
     pixels * 16 > positive(limits.maxWorkingBytes, 256 * 1024 * 1024))
     throw Object.assign(new Error(`${item.title || item.id}: resim çözünürlüğü veya çalışma belleği sınırı aşıldı`), { code: 'image-limit', id: item.id });
-  return { width, height };
+  return { width, height, orientation };
 }
 // JPEG ve PNG resim tek sayfaya, kenar boşluğuyla ve oranı korunarak yerleştirilir (yatay resim yatay sayfa).
+// pdf-lib EXIF yönünü uygulamaz: telefon fotoğrafı tarayıcıdaki gibi dik görünsün diye 3, 6 ve 8 yönleri döndürülür
+// (aynalı yönler ham bırakılır).
 async function imagePdf(item, detected, limits) {
   const size = imageSize(item, detected, limits);
   const PDF = globalThis.PDFLib;
@@ -100,12 +119,20 @@ async function imagePdf(item, detected, limits) {
   catch { throw Object.assign(new Error(`${item.title || item.id}: resim açılamadı veya bozuk`), { code: 'image-load', id: item.id }); }
   if (image.width !== size.width || image.height !== size.height)
     throw Object.assign(new Error(`${item.title || item.id}: resim ölçüleri başlığıyla uyuşmuyor`), { code: 'image-load', id: item.id });
-  const wide = image.width > image.height;
+  const angle = { 3: 180, 6: -90, 8: 90 }[size.orientation] || 0, turned = angle === 90 || angle === -90;
+  // vw/vh: resmin sayfada görünen (döndürülmüş) ölçüleri.
+  const vw = turned ? image.height : image.width, vh = turned ? image.width : image.height;
+  const wide = vw > vh;
   const [w, h] = wide ? [841.89, 595.28] : [595.28, 841.89];
   const margin = 28.35;
-  const scale = Math.min((w - 2 * margin) / image.width, (h - 2 * margin) / image.height, 1.5);
+  const scale = Math.min((w - 2 * margin) / vw, (h - 2 * margin) / vh, 1.5);
   const iw = image.width * scale, ih = image.height * scale;
-  pdf.addPage([w, h]).drawImage(image, { x: (w - iw) / 2, y: (h - ih) / 2, width: iw, height: ih });
+  const x = (w - vw * scale) / 2, y = (h - vh * scale) / 2;
+  const page = pdf.addPage([w, h]);
+  // Döndürme (x, y) çevresinde ve saat yönünün tersinedir; başlangıç noktası görünen kutu yerinde kalacak biçimde kayar.
+  if (!angle) page.drawImage(image, { x, y, width: iw, height: ih });
+  else page.drawImage(image, { x: x + (angle === -90 ? 0 : angle === 90 ? ih : iw), y: y + (angle === 90 ? 0 : angle === -90 ? iw : ih),
+    width: iw, height: ih, rotate: PDF.degrees(angle) });
   return pdf.save();
 }
 async function fontFile(file) {
@@ -274,8 +301,10 @@ async function start(message) {
     try { result = await build(); }
     catch (error) {
       // Ön denetimde reddedilen PDF'ler (şifreli, form, bozuk) bir kez daha atlanarak denenir; hepsi reddedildiyse hata.
-      const bad = (error?.issues || []).filter(issue => issue?.id && kept.some(item => item.id === issue.id));
-      if (signal.aborted || !bad.length || bad.length !== (error.issues || []).length || bad.length >= kept.length) throw error;
+      // Birleştirme aşamasında tek evraka ait hata (issues yok, id var) da aynı yoldan o evrak atlanarak denenir.
+      const found = error?.issues || (error?.id ? [{ id: error.id, code: error.code, message: error.message }] : []);
+      const bad = found.filter(issue => issue?.id && kept.some(item => item.id === issue.id));
+      if (signal.aborted || !bad.length || bad.length !== found.length || bad.length >= kept.length) throw error;
       kept = kept.filter(item => !bad.some(issue => issue.id === item.id));
       excluded = [...excluded, ...skip(bad)];
       result = await build();

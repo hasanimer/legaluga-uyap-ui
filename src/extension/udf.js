@@ -989,6 +989,9 @@
       if (r !== ur) e.style.setProperty('color', r || 'rgb(0, 0, 0)');
       if (st.zemin && !beyazMi(st.zemin)) e.style.setProperty('background-color', rgb(st.zemin));
     }
+    // Blok atanın metin süsü satır içi torunda `none` ile kaldırılamaz; altı/üstü çizgisi bu yüzden paragrafa değil
+    // yalnız çizgili parçanın kendi öğesine yazılır.
+    const cizgisiz = st => (st.alti || st.ustu ? { ...st, alti: false, ustu: false } : st);
     const fontKisa = st => `${st.italik ? 'italic ' : ''}${st.kalin ? '700 ' : ''}${st.punto}pt ${aileListesi(st.aile)}`;
     const genislikPt = (metin, st) => { olcum.font = fontKisa(st); return olcum.measureText(metin).width * 0.75; };
 
@@ -1064,7 +1067,8 @@
       if (p.once) st.setProperty('padding-top', pt(p.once));
       if (p.sonra) st.setProperty('padding-bottom', pt(p.sonra));
       if (p.aralik) st.setProperty('line-height', String(Math.round(1.15 * (1 + p.aralik) * 1000) / 1000));
-      bicimle(d, p.stil, taban);
+      const pStil = cizgisiz(p.stil);
+      bicimle(d, pStil, cizgisiz(taban));
       // Sekmeler: durak, metnin o satırdaki genişliği ölçülerek seçilir; sekme karakterinin genişliğini tarayıcı
       // o durağa göre verir (tab-size). Durak yoksa VARSAYILAN_SEKME_PT aralıklı ızgara kullanılır.
       const sekmeli = p.parcalar.some(c => c.t === 'sekme');
@@ -1072,6 +1076,7 @@
       if (p.liste) {
         const im = E('span', 'udf-isaret');
         im.textContent = p.liste.isaret + ' ';
+        bicimle(im, p.stil, pStil);
         if (sekmeli) x += genislikPt(im.textContent, p.stil);
         d.append(im);
       }
@@ -1080,7 +1085,7 @@
         if (c.t === 'metin') {
           const sp = E('span');
           sp.textContent = c.yazi;
-          bicimle(sp, c.stil, p.stil);
+          bicimle(sp, c.stil, pStil);
           d.append(sp);
           if (c.yazi.trim()) bos = false;
           if (sekmeli) {
@@ -1093,7 +1098,7 @@
           const sp = E('span', 'udf-sekme');
           sp.textContent = '\t';
           sp.style.setProperty('tab-size', pt(durak));
-          bicimle(sp, c.stil, p.stil);
+          bicimle(sp, c.stil, pStil);
           d.append(sp);
           x = durak;
         } else if (c.t === 'resim') {
@@ -1105,6 +1110,7 @@
       if (bos && !sekmeli) {
         const sp = E('span');
         sp.textContent = ' ';
+        bicimle(sp, p.stil, pStil);
         d.append(sp);
       }
       return d;

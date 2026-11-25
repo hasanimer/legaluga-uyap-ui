@@ -542,6 +542,24 @@
     let filtersExpanded = false;
     const busy = new Map();    // açılmakta olan dosyalar: key → düğme yazısı ("Açılıyor · 2/4")
     let hearingRange = 'week';
+    // Fare düğmesi basılıyken odağını yitiren not düzenleyicisi listeyi hemen yeniden çizmez: çizim tıklanan düğmeyi
+    // koparır, tarayıcı click göndermez ve ilk tıklama yutulur. İş, düğme bırakılıp click işlendikten sonra yapılır.
+    let basili = false, birakinca = null;
+    function basiBitince(fn) {
+      if (!basili) return fn();
+      birakinca = fn;
+    }
+    function basiBitti() {
+      basili = false;
+      const fn = birakinca;
+      birakinca = null;
+      if (fn) setTimeout(fn, 0);
+    }
+    root.addEventListener('mousedown', () => { basili = true; }, true);
+    // Bırakma olayı sayfaya ulaşmayabilir (sağ tık menüsü, pencerenin odağını yitirmesi); o durumda da basılı sayılmaz.
+    // Yakalama aşamasında alanların blur'u da pencereden geçer; yalnız pencerenin kendi blur'u sayılır.
+    for (const tur of ['mouseup', 'dragend', 'contextmenu', 'blur'])
+      window.addEventListener(tur, e => { if (tur !== 'blur' || e.target === window) basiBitti(); }, true);
     let shownLimit = LIMIT;
     let loaded = false;
     let loadFailed = false;
@@ -1264,7 +1282,7 @@
         state.saving = pending;
         return pending;
       };
-      const leave = ev => { if (!field.owns(ev.relatedTarget) && !editor.contains(ev.relatedTarget)) return done(); };
+      const leave = ev => { if (!field.owns(ev.relatedTarget) && !editor.contains(ev.relatedTarget)) return basiBitince(done); };
       editor.addEventListener('click', e => e.stopPropagation());
       editor.addEventListener('mousedown', e => e.stopPropagation());
       editor.addEventListener('keydown', e => {
@@ -1384,15 +1402,31 @@
           if (k in prev) cur[k] = prev[k];
           else delete cur[k];
         }
+        const onceki = goruldu;
         goruldu = cur;
         computeYeni();
         renderFilters();
         render();
         if (count) setNotice(''); else autoNotice();
-        if (globalThis.UHDStorage) await UHDStorage.patchMap({ key: 'uhdEvrakGoruldu', set, remove, onlyIf: written });
-        else await chrome.storage.local.set({ uhdEvrakGoruldu: cur });
+        try {
+          if (globalThis.UHDStorage) await UHDStorage.patchMap({ key: 'uhdEvrakGoruldu', set, remove, onlyIf: written });
+          else await chrome.storage.local.set({ uhdEvrakGoruldu: cur });
+        } catch (error) {
+          // Yazılamayan geri alma ekranda da kalmaz: depoda işaret durduğundan bellek görüldü hâline döner.
+          if (!baglamGitti(error) && goruldu === cur) {
+            goruldu = onceki;
+            computeYeni();
+            renderFilters();
+            render();
+          }
+          throw error;   // dosya ekranı kendi iletisini gösterir
+        }
       };
-      if (count) setNotice(`${fmtNum(count)} evrak görüldü sayıldı.`, '', { label: 'Geri al', undo: true, fn: undo });
+      const bildirimdenGeriAl = async () => {
+        try { await undo(); }
+        catch (error) { if (baglamGitti(error)) throw error; setNotice('Geri alma kaydedilemedi. Tekrar deneyin.', 'err'); }
+      };
+      if (count) setNotice(`${fmtNum(count)} evrak görüldü sayıldı.`, '', { label: 'Geri al', undo: true, fn: bildirimdenGeriAl });
       return undo;
     }
 
@@ -1489,7 +1523,8 @@
         if (kilitli()) return;
         const keys = myKeys(myName());
         const taraf = ((r && r.taraflar) || d.taraflar || []).find(p => isClient(p, keys));
-        modul.ac({ kok: root, durusma: d, cakisanlar: cak, sifat: taraf && taraf.sifat ? trTitle(taraf.sifat) : '', vekil: trTitle(myNames()[0] || detected || ''),
+        const sifat = taraf && (taraf.rol || taraf.sifat);   // dizin kaydında rol, duruşma kaydında sifat
+        modul.ac({ kok: root, durusma: d, cakisanlar: cak, sifat: sifat ? trTitle(sifat) : '', vekil: trTitle(myNames()[0] || detected || ''),
           baro: String(pref('baro', '') || ''), sicil: String(pref('baroSicil', '') || ''), bugun: todayIso() });
       });
       return b;
@@ -1543,7 +1578,7 @@
       const ranges = el('div', { class: 'frow', role: 'group', 'aria-label': 'Duruşma tarih aralığı' });
       for (const [value, label] of [['today', 'Bugün'], ['week', 'Önümüzdeki 7 gün'], ['all', 'Tümü'], cakisan.length && ['cakisma', `Çakışanlar (${fmtNum(cakisan.length)})`]].filter(Boolean)) {
         const b = el('button', { class: 'chip' + (hearingRange === value ? ' on' : ''), 'aria-pressed': String(hearingRange === value), 'data-range': value }, label);
-        b.addEventListener('click', () => { hearingRange = value; sel = 0; render(); list.querySelector(`[data-range="${value}"]`).focus(); });
+        b.addEventListener('click', () => { hearingRange = value; sel = 0; render(); list.scrollTop = 0; list.querySelector(`[data-range="${value}"]`).focus(); });
         ranges.append(b);
       }
       const ics = el('button', { class: 'btn sm', title: 'Listelenen duruşmaları takvim dosyası (.ics) olarak indir; Outlook, Google Takvim ve telefon takvimleri açar. Taraf adları yazılmaz.' }, 'Takvime aktar (.ics)');
@@ -1586,7 +1621,7 @@
       }
       if (!rows.length) {
         const showAll = el('button', { class: 'btn sm' }, 'Tüm tarihleri göster');
-        showAll.addEventListener('click', () => { hearingRange = 'all'; render(); });
+        showAll.addEventListener('click', () => { hearingRange = 'all'; render(); list.scrollTop = 0; });
         out.push(el('div', { class: 'empty' }, el('strong', null, durusmaMeta ? 'Bu aralıkta duruşma yok' : 'Duruşmalar henüz alınmadı'),
           el('p', null, toks.length ? 'Başka bir isim deneyin veya tarih aralığını genişletin.' : durusmaMeta ? 'Yeni bilgiler için dosyalarınızı güncelleyebilirsiniz.' : 'Güncelle’ye bastığınızda duruşmalarınız burada görünür.'),
           hearingRange !== 'all' && all.length ? showAll : null));
@@ -1828,8 +1863,9 @@
           : el('div', { class: 'empty', role: 'status' }, 'Dosyalarınız hazırlanıyor…'));
         return;
       }
-      if (person) return renderPerson();
-      if (filter.onlyDurusma) return renderDurusmalar();
+      // Araya giren yeniden çizim (depo olayı, tarama) bu görünümlerde de listeyi başa sarmaz.
+      if (person) { renderPerson(); list.scrollTop = scroll; return; }
+      if (filter.onlyDurusma) { renderDurusmalar(); list.scrollTop = scroll; return; }
       if (!records.length) {
         const run = running();
         const go = el('button', { class: 'btn primary', disabled: run }, run ? 'İlk güncelleme sürüyor…' : 'Şimdi güncelle');
@@ -2697,6 +2733,8 @@
     input.addEventListener('keydown', e => {
       if (e.isComposing) return;
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter') {
+        // Ayarlar açıkken liste görünmez: Enter görünmeyen dosyayı açmaz, yazmak gibi Ayarlar'ı kapatıp sonuçları gösterir.
+        if (!settings.hidden) { if (e.key === 'Enter' && !optionsPage) { e.preventDefault(); closeSettings(); } return; }
         if (typeTimer) { clearTimeout(typeTimer); typeTimer = null; render(); }
         if (e.key === 'ArrowDown') { e.preventDefault(); select(sel + 1, true, true); }
         else if (e.key === 'ArrowUp') { e.preventDefault(); select(sel - 1, true, true); }
@@ -2708,7 +2746,8 @@
       if (setupOpen) return;
       e.preventDefault(); e.stopPropagation();
       clearTimeout(typeTimer);
-      if (!settings.hidden) closeSettings();
+      if (hasDownloads && !downloadArea.hidden) showDownloads(false);   // çekmece aramayı ve listeyi örter: önce o kapanır
+      else if (!settings.hidden) closeSettings();
       else if (person) closePerson();
       else if (input.value) { input.value = ''; sel = 0; shownLimit = LIMIT; render(); input.focus(); }
       else if (filter.onlyDurusma || filter.onlyNew || filter.onlyNote) { switchView('files'); input.focus(); }

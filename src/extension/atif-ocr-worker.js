@@ -12,6 +12,29 @@
     useWorkerFetch: false, disableAutoFetch: true, cMapUrl: null, standardFontDataUrl: null, wasmUrl: null,
     isOffscreenCanvasSupported: true, isImageDecoderSupported: false, verbosity: 0
   });
+  // pdf.js'in varsayılan tuval fabrikası document.createElement çağırır; işçide document yoktur. Görüntü küçültme,
+  // maske ve saydamlık grubu için istenen geçici tuvaller OffscreenCanvas'tan verilir.
+  class TuvalFabrikasi {
+    create(en, boy) {
+      if (!(en > 0) || !(boy > 0)) throw new Error('tuval');
+      const canvas = new OffscreenCanvas(en, boy);
+      return { canvas, context: canvas.getContext('2d', { willReadFrequently: true }) };
+    }
+    reset(tuval, en, boy) {
+      if (!tuval.canvas || !(en > 0) || !(boy > 0)) throw new Error('tuval');
+      tuval.canvas.width = en;
+      tuval.canvas.height = boy;
+    }
+    destroy(tuval) {
+      if (!tuval.canvas) throw new Error('tuval');
+      tuval.canvas.width = tuval.canvas.height = 0;
+      tuval.canvas = null;
+      tuval.context = null;
+    }
+    getNoAlphaContext(canvas) {
+      return canvas.getContext('2d', { alpha: false, willReadFrequently: true });
+    }
+  }
   let iptal = false;
   let calisiyor = false;
 
@@ -49,7 +72,7 @@
     if (!pdfjs?.getDocument) throw new Error('motor');
     const b = new Uint8Array(bytes);
     if (b.byteLength < 5 || b[0] !== 0x25 || b[1] !== 0x50 || b[2] !== 0x44 || b[3] !== 0x46) return { code: 'ocr-invalid' };
-    const task = pdfjs.getDocument({ data: b.slice(), ...PDF_OKUMA });
+    const task = pdfjs.getDocument({ data: b.slice(), ...PDF_OKUMA, CanvasFactory: TuvalFabrikasi });
     let doc;
     try { doc = await task.promise; }
     catch {

@@ -12,8 +12,8 @@ const HTML_PARCA = fs.readFileSync(path.join(KOK, 'fragments/content/037-overvie
 const UZANTI = 'chrome-extension://abcdefghijklmnopabcdefghijklmnop/';
 
 // Ayrılmış (dedicated) Worker benzeri bağlam: `chrome` nesnesi ve `window` yoktur.
-function isciBaglami({ konum = UZANTI + 'atif-ocr-worker.js' } = {}) {
-  const kayit = { importlar: [], secenekler: null, tanimaPencere: [], cizimPencere: [], mesajlar: [], tesseractYuklendi: false };
+function isciBaglami({ konum = UZANTI + 'atif-ocr-worker.js', geciciTuval = false } = {}) {
+  const kayit = { importlar: [], secenekler: null, tanimaPencere: [], cizimPencere: [], geciciTuval: [], mesajlar: [], tesseractYuklendi: false };
   let hazir;
   const bitti = new Promise(resolve => { hazir = resolve; });
   const tanici = {
@@ -25,12 +25,26 @@ function isciBaglami({ konum = UZANTI + 'atif-ocr-worker.js' } = {}) {
     async terminate() { return undefined; }
   };
   const pdfjs = {
-    getDocument() {
+    getDocument(secenek) {
+      // pdf.js gibi: fabrika verilmezse varsayılan DOM fabrikası document.createElement çağırır.
+      const Fabrika = secenek?.CanvasFactory || class { create(w, h) { const canvas = ctx.document.createElement('canvas'); canvas.width = w; canvas.height = h; return { canvas, context: canvas.getContext('2d') }; } };
+      const fabrika = new Fabrika({ ownerDocument: ctx.document, enableHWA: false });
       const sayfa = {
         getViewport: ({ scale }) => ({ width: 100 * scale, height: 100 * scale }),
         // pdf.js gibi: `window` tanımlıysa çizim adımını window.requestAnimationFrame ile planlar.
         render() {
           kayit.cizimPencere.push(typeof ctx.window);
+          if (geciciTuval) {
+            // Büyük görüntü küçültme yolu: geçici tuval fabrikadan istenir, yeniden boyutlanır ve bırakılır.
+            try {
+              const gecici = fabrika.create(50, 70);
+              kayit.geciciTuval.push([gecici.canvas.width, gecici.canvas.height, typeof gecici.context.drawImage]);
+              fabrika.reset(gecici, 25, 35);
+              kayit.geciciTuval.push([gecici.canvas.width, gecici.canvas.height]);
+              fabrika.destroy(gecici);
+              kayit.geciciTuval.push([gecici.canvas, gecici.context]);
+            } catch (e) { return { promise: Promise.reject(e) }; }
+          }
           if (typeof ctx.window !== 'undefined') return { promise: new Promise(r => ctx.window.requestAnimationFrame(r)) };
           return { promise: Promise.resolve() };
         },
@@ -106,6 +120,15 @@ test('Tesseract için geçici window taklidi geri alınır; metinsiz PDF çizimi
   assert.deepEqual(kayit.tanimaPencere, ['undefined']);
   assert.equal(typeof ctx.window, 'undefined');
   assert.deepEqual(kayit.importlar, ['vendor/pdfjs-reader.js', 'vendor/tesseract/tesseract.min.js']);
+});
+
+test('metinsiz PDF çiziminde pdf.js\'in geçici tuvali document olmayan işçide OffscreenCanvas\'tan gelir', async () => {
+  const { ctx, kayit, calistir } = isciBaglami({ geciciTuval: true });
+  assert.equal(typeof ctx.document, 'undefined');
+  const sonuc = await calistir('pdf', PDF());
+  assert.equal(sonuc.code, undefined, JSON.stringify(sonuc));
+  assert.equal(sonuc.sayfalar.length, 1);
+  assert.deepEqual(kayit.geciciTuval, [[50, 70, 'function'], [25, 35], [null, null]]);
 });
 
 // Uzantı sayfaları (popup, Ayarlar, Duruşma Paketi, görünmeyen PTT belgesi), service worker ve işçileri için yönerge

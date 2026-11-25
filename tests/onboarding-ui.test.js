@@ -56,6 +56,8 @@ class Node {
   async choose(value) { this.value = value; await this.fire('change'); }
   async fill(value) { this.value = value; await this.fire('input'); }
   focus() { this.document.activeElement = this; }
+  getRootNode() { return this.document; }
+  contains(node) { return all(this).includes(node); }
   remove() { if (this.parentNode) this.parentNode.kids = this.parentNode.kids.filter(child => child !== this); this.parentNode = null; }
 }
 // Kurulumda sorulmayan tercihler ve yeni kullanıcıda yazılan varsayılanları.
@@ -149,6 +151,22 @@ test('kapalı oturum giriş rehberi verir; kullanıcı eylemi dışında başar�
   await h.button('Bağlantıyı yeniden kontrol et').click();
   assert.deepEqual(requests, [{ manual: false }, { manual: true }]);
   assert.deepEqual(h.writes, []);
+});
+
+// Bağlantı adımı her kontrolde yeniden çizilir: basılan düğme DOM'dan çıkar, odak yeni başlığa taşınmazsa sayfaya düşer.
+test('bağlantı yeniden kontrol edilirken ve sonuç gelince klavye odağı kurulum ekranında kalır; odak dışarıdaysa çekilmez', async () => {
+  let yanit;
+  const h = harness({ onConnection: () => new Promise(resolve => { yanit = resolve; }) });
+  yanit({ ready: false, status: 'login' }); await h.settle();
+  assert.equal(h.document.activeElement, undefined);   // kendiliğinden yapılan ilk kontrol odağı çalmaz
+  const baslik = () => h.nodes().find(node => node.tag === 'h1');
+  const dugme = h.button('Bağlantıyı yeniden kontrol et');
+  dugme.focus();
+  const tik = dugme.click();
+  assert.equal(h.document.activeElement, baslik());
+  yanit({ ready: false, status: 'offline' }); await tik; await h.settle();
+  assert.match(h.root.textContent, /İnternet bağlantınızı kontrol edin/);
+  assert.equal(h.document.activeElement, baslik());
 });
 
 test('giriş tamamlanma bildirimi tekrar kontrol gerektirmeden ilerler ve geç eski yanıt bunu geri alamaz', async () => {

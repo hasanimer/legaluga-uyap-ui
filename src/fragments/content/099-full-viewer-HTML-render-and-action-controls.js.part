@@ -15,7 +15,7 @@
             bankaGrubu.open = acik;
             const b = bankaGrubu.querySelector('.ek-banka-grup-ac');
             b.textContent = acik ? 'Kapat' : 'Aç'; b.setAttribute('aria-expanded', String(acik));
-            b.setAttribute('aria-label', b.getAttribute('aria-label').replace(/(?:aç|kapat)$/, acik ? 'aç' : 'kapat'));
+            b.setAttribute('aria-label', b.getAttribute('aria-label').replace(/(?:aç|kapat)$/, acik ? 'kapat' : 'aç'));
           }
         };
         tumAc.addEventListener('click', () => topluAc(true));
