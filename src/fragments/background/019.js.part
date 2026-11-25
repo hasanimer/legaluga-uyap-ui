@@ -93,7 +93,7 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
       throw error;
     }
     return { ok: true };
-  })().then(reply, () => reply({ ok: false }));
+  })().then(reply, hataYaniti('vergi', { ok: false }, reply));
   return true;
 });
 chrome.runtime.onMessageExternal?.addListener((msg, sender, reply) => {
@@ -106,6 +106,6 @@ chrome.runtime.onMessageExternal?.addListener((msg, sender, reply) => {
     await vergiDevirleri((d, kayit) => { ham = kayit[msg.jeton]; devir = d[msg.jeton] ?? null; delete d[msg.jeton]; return d; });
     if (devir) return { ok: true, metin: devir.metin };
     return { ok: false, neden: ham ? 'suresi-doldu' : 'bulunamadi' };
-  })().then(reply, () => reply({ ok: false }));
+  })().then(reply, hataYaniti('vergi', { ok: false }, reply));
   return true;
 });

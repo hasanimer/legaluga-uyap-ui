@@ -50,7 +50,11 @@
       if (DUYURU.has(key)) cache.set(DUYURU.get(key), { value: keep ? REREAD : NOT_KEPT, revision });
       else cache.set(key, { value: keep ? changes[key].newValue : NOT_KEPT, revision });
     }
-    for (const fn of listeners) { try { fn(lazyChanges(changes), area); } catch { /* belge/metin içeren hatayı günlüğe alma */ } }
+    // Dinleyici hatası programlama hatasıdır: günlüğe alınmaz (belge/metin içerebilir), raporda ileti metni gitmez.
+    for (const fn of listeners) {
+      try { fn(lazyChanges(changes), area); }
+      catch (error) { try { globalThis.UHDReporter?.report(error, 'unhandled'); } catch { /* rapor öteki dinleyicileri kesmez */ } }
+    }
   };
   let broker;
   if (typeof document === 'undefined') {

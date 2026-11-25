@@ -21,6 +21,21 @@ function queueReport(value) {
   return task;
 }
 globalThis.UHDReporter.setSender(queueReport);
+// İleti ret kolları: worker konsoluna yalnız işlem adı ve hata türü yazılır (ileti ve veri yazılmaz). Rapora yalnız eklenti
+// kaynaklı hata (TypeError, ReferenceError, RangeError ya da izinli kod) girer; Chrome API retleri (alıcı yok, sekme kapandı)
+// saatlik bütçeyi tüketmez. Gönderim yine rapor iznine ve bütçeye bağlıdır. İz düşse de yanıt gider.
+const PROGRAM_HATASI = new Set(['TypeError', 'ReferenceError', 'RangeError']);
+function hataIzi(islem, error) {
+  try {
+    const tur = typeof error?.name === 'string' && /^\w{1,40}$/.test(error.name) ? error.name : typeof error;
+    console.warn('Legaluga arka plan işlemi reddedildi:', islem, tur);
+    const kodlu = globalThis.UHDReporter.normalize({ operation: islem, source: 'background', code: error?.code })?.code;
+    if (PROGRAM_HATASI.has(tur) || kodlu) globalThis.UHDReporter.report(error, islem);
+  } catch { /* iz ve rapor yanıtı kesmez */ }
+}
+function hataYaniti(islem, yanit, reply) {
+  return error => { hataIzi(islem, error); reply(yanit); };
+}
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if (msg?.type !== 'uhd-error-report' || sender.id !== chrome.runtime.id) return;
   queueReport(msg.report).then(reply, () => reply({ ok: false, sent: false }));
