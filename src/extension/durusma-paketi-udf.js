@@ -427,7 +427,17 @@
     // ctx: { width, maxH, hucre }. hucre: dar sütunda girinti sıfırlanır ve taşan glif reddedilmez.
     function lineAtom(line, block, first, last, explicit, ctx, rec) {
       const hasSpacing = block.aralikVar === true || (block.aralik || 0) > 0;
-      const m = lineMetrics(line, faces, block.aralik || 0, hasSpacing, measure);
+      let m = lineMetrics(line, faces, block.aralik || 0, hasSpacing, measure);
+      // Resim en çok ctx.maxH yüksekliğine kısılmıştır; aynı satırda metin varsa satır metnin inişi kadar taşar.
+      // Taşan resim inişe yer bırakacak kadar (oranı korunarak) küçülür; ret yalnız metnin kendisi sığmadığında kalır.
+      const bos = ctx.maxH - m.descent - 0.01;
+      if (m.descent > 0 && bos > 0 && line.some(part => part.image && part.height > bos)) {
+        for (const part of line) {
+          if (!part.image || part.height <= bos) continue;
+          part.width *= bos / part.height; part.height = bos;
+        }
+        m = lineMetrics(line, faces, block.aralik || 0, hasSpacing, measure);
+      }
       if (!line.length) {
         const s = styleOf(null, block, model), face = faces[fontKey(s)];
         if (!face) reject('udf-font', `UDF fontu eksik: ${fontKey(s)}`);

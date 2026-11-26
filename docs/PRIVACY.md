@@ -1,6 +1,6 @@
 # Legaluga UYAP Asistanı gizlilik politikası
 
-Son güncelleme: **21 Kasım 2026** · **1.19.65** sürümü için hazırlanmıştır. Özellikler kurulu sürüme göre farklı olabilir.
+Son güncelleme: **25 Kasım 2026** · **1.19.65** sürümü için hazırlanmıştır. Özellikler kurulu sürüme göre farklı olabilir.
 
 Legaluga UYAP Asistanı, Av. Hasan İmer Akın tarafından meslektaşlarının ücretsiz kullanımı için geliştirilmiştir. UYAP'ta erişim yetkiniz bulunan dosyaları bulma, görüntüleme ve evraklarını yönetme amacıyla çalışır. T.C. Adalet Bakanlığı, UYAP veya PTT ile resmi bir bağlantısı yoktur. İletişim: **info@legaluga.com**.
 
@@ -17,6 +17,8 @@ Belge baytları ve okunmuş metin, açık görünüm veya başlatılmış işlem
 UYAP ve e-imza parolanız istenmez. Resmi UYAP istekleri, tarayıcının mevcut oturumunu kullanır; oturum çerezleri ve giriş belirteçleri dosya indeksine veya teknik rapora kopyalanmaz. Şifreli yedek oluştururken girdiğiniz **yedek parolası yalnız cihazınızda anahtar türetmek için kullanılır**; saklanmaz veya gönderilmez.
 
 Genel web geçmişiniz okunmaz. Geçici iş koordinasyonu Chrome oturum alanını ve ilgili UYAP sekmesinin oturum depolamasını kullanabilir; bunlar belge içeriklerini veya giriş bilgilerini taşımaz.
+
+**Baro bilgisi ve dilekçe taslakları:** Ayarlar'a isteğe bağlı olarak yazdığınız baro adı ve baro sicil numarası, bu Chrome profilinde yerel tercih olarak saklanır. Bu bilgiler yalnızca mazeret dilekçesi taslağı ile dosyanın boş UDF dilekçe şablonunun imza satırında kullanılır; taslaklar tarayıcıda üretilip UDF dosyası olarak indirilir. Taslak üretimi hiçbir sunucuya veya yapay zekâ hizmetine istek göndermez, baro ve sicil bilgisi hata raporlarına girmez. Baro ve sicil alanlarını Ayarlar'dan boşaltarak bu bilgileri silebilirsiniz.
 
 ## Ne zaman dış hizmetlere bağlanılır?
 

@@ -19,7 +19,9 @@
   const temiz = s => String(s == null ? '' : s).replace(DENETIM, ' ').replace(/\s+/g, ' ').trim();
   const buyuk = s => s.toLocaleUpperCase('tr-TR');
   const ilkBuyuk = s => (s ? buyuk(s.charAt(0)) + s.slice(1) : s);
-  const ilkKucuk = s => (s ? s.charAt(0).toLocaleLowerCase('tr-TR') + s.slice(1) : s);
+  // Yalnız cümle düzeniyle yazılmış metnin ("Duruşma tutanağı") ilk harfi küçülür; başka büyük harf taşıyan metin
+  // kısaltma ya da özel adla başlıyor olabilir ("UYAP çıktısı", "Örnekköy 2. İş Mahkemesi zaptı"), yazıldığı gibi kalır.
+  const ilkKucuk = s => (s && s.slice(1) === s.slice(1).toLocaleLowerCase('tr-TR') ? s.charAt(0).toLocaleLowerCase('tr-TR') + s.slice(1) : s);
   // "(Kapatılan) X Mahkemesi" ve "X Mahkemesi (kapatılan)" → "X Mahkemesi"
   const birim = ad => temiz(ad).replace(/^\([^)]*\)\s*/, '').replace(/\s*\([^)]*\)$/, '');
   const esas = no => (temiz(no) ? `${temiz(no)} Esas` : '');
@@ -30,6 +32,8 @@
 
   function hitap(birimAdi) {
     const ad = birim(birimAdi);
+    // Adı zaten hâkimlik olan birimde ("… Sulh Ceza Hâkimliği") ek yinelenmez, ad yönelme hâline girer.
+    if (/h[âa]kimliği$/.test(ad.toLocaleLowerCase('tr-TR'))) return `${buyuk(ad)}NE`;
     return ad ? `${buyuk(ad)} ${HEYET.test(ad.toLocaleLowerCase('tr-TR')) ? 'BAŞKANLIĞINA' : 'HÂKİMLİĞİNE'}` : '';
   }
 
@@ -241,5 +245,7 @@
     return pencere;
   }
 
-  globalThis.UHD.mazeretDilekcesi = Object.freeze({ hitap, alanlar, paragraflar, duzMetin, icerikXml, udf, dosyaAdi, ac, NOT });
+  // ortak: boş dilekçe şablonunun (dilekce-sablonu.js) aynı kurallarla yazması için paylaşılan yardımcılar.
+  const ortak = Object.freeze({ temiz, birim, esas, trTarih, baroSatiri, buyuk, indir: tarayiciIndir, YER });
+  globalThis.UHD.mazeretDilekcesi = Object.freeze({ hitap, alanlar, paragraflar, duzMetin, icerikXml, udf, dosyaAdi, ac, NOT, ortak });
 })();

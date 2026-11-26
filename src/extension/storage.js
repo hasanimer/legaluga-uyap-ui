@@ -50,7 +50,11 @@
       if (DUYURU.has(key)) cache.set(DUYURU.get(key), { value: keep ? REREAD : NOT_KEPT, revision });
       else cache.set(key, { value: keep ? changes[key].newValue : NOT_KEPT, revision });
     }
-    for (const fn of listeners) { try { fn(lazyChanges(changes), area); } catch { /* belge/metin içeren hatayı günlüğe alma */ } }
+    // Dinleyici hatası programlama hatasıdır: günlüğe alınmaz (belge/metin içerebilir), raporda ileti metni gitmez.
+    for (const fn of listeners) {
+      try { fn(lazyChanges(changes), area); }
+      catch (error) { try { globalThis.UHDReporter?.report(error, 'unhandled'); } catch { /* rapor öteki dinleyicileri kesmez */ } }
+    }
   };
   let broker;
   if (typeof document === 'undefined') {
@@ -539,6 +543,7 @@
       }
       throw new Error('Depolama işlemi desteklenmiyor.');
     }, !dizinsiz(operation, args));
+    // setupSender'dan farkı bilerek: depo aracısı ön-işlenen (prerender) UYAP belgesine de yanıt verir; içerik betiği sekme etkinleşmeden yüklenir ve önce depodan okur.
     const trusted = sender => sender.id === chrome.runtime.id && (String(sender.url || '').startsWith(chrome.runtime.getURL('')) || (sender.frameId === 0 && String(sender.url || '').startsWith('https://avukat.uyap.gov.tr/')));
     chrome.runtime.onMessage.addListener((message, sender, reply) => {
       if (message?.type !== 'uhd-storage' || !trusted(sender)) return;

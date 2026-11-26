@@ -5,21 +5,27 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const source = fs.readFileSync(path.join(__dirname, '../src/extension/indirme-panel.js'), 'utf8');
-// Kurulum ekranının mevcut DOM harness'i; o dosyanın harness/test kayıtları çalıştırılmaz.
-const domSource = fs.readFileSync(path.join(__dirname, 'onboarding-ui.test.js'), 'utf8').split('function harness(')[0];
+// Kurulum ve panel testlerinin ortak sentetik DOM'u.
+const domTaklidi = require('./dom-taklidi.js');
 const job = (extra = {}) => ({ id: 'plan-a', fileKey: 'file-a', rec: { dosyaNo: '2031/100', birimAdi: 'Sentetik İcra Dairesi' },
   status: 'paused', phase: 'idle', saved: 200, total: 10840, partCount: 2, inPart: 0, partBytes: 0,
   currentTitle: '', elapsedMs: 0, updatedAt: 10, lastPart: null, error: '', ...extra });
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
 function harness(states = [], options = {}) {
-  const context = vm.createContext({ require, __dirname });
-  vm.runInContext(domSource + '\nglobalThis.ExistingDOM = { Node, all };', context);
-  const { Node, all } = context.ExistingDOM;
+  const context = vm.createContext({});
+  const { Node, all } = domTaklidi();
   const document = { activeElement: null };
   document.createElement = tag => new Node(tag, null, document);
   const container = new Node('main', null, document);
   context.document = document;
+  // Gölge kökü: içerideki odak yalnız kökün activeElement'inde görünür, belge gölge ana öğesini gösterir.
+  const shadow = options.shadow ? { activeElement: null } : null;
+  if (shadow) {
+    const host = new Node('div', null, document);
+    Node.prototype.getRootNode = () => shadow;
+    Node.prototype.focus = function () { shadow.activeElement = this; document.activeElement = host; };
+  }
   const calls = [], subscribers = new Set();
   let snapshot = states, retained;
   const manager = {
@@ -41,7 +47,7 @@ function harness(states = [], options = {}) {
     }) });
   const field = (name, key) => all(key ? all(container).find(node => node.attrs['data-file-key'] === key) : container)
     .find(node => node.attrs['data-download'] === name);
-  return { api, manager, calls, container, document, field, all: () => all(container),
+  return { api, manager, calls, container, document, shadow, field, all: () => all(container),
     update(next) { snapshot = next; for (const fn of subscribers) fn(next); },
     late(next) { retained(next); } };
 }
@@ -217,6 +223,16 @@ test('canlı ilerleme düğmeyi yeniden yaratmaz; tamamlanan/kaldırılan işte 
   h.update([]);
   assert.equal(h.document.activeElement.tag, 'h3');
   assert.equal(h.field('count').textContent, '0 indirme');
+  h.api.destroy();
+});
+
+test('gölge kökü içinde de gizlenen ya da kaldırılan düğmenin odağı görünür hedefe geçer', () => {
+  const state = job({ status: 'running', phase: 'fetching' }), h = harness([state], { shadow: true });
+  h.field('control', 'file-a').focus();
+  h.update([job({ status: 'complete', saved: 10840, lastPart: { downloadId: 7, completedAt: 1900000000000 } })]);
+  assert.equal(h.shadow.activeElement, h.field('folder', 'file-a'));
+  h.update([]);
+  assert.equal(h.shadow.activeElement.tag, 'h3');
   h.api.destroy();
 });
 
@@ -432,10 +448,10 @@ test('biten tek ZIP eksikleri rapora yönlendirir; durdurulan tek ZIP sürdürü
 
 // İndirme temposu (Toplu indir sekmesi): sayılar ve son denetim tam eklentinin service worker'ındadır; burada onun yanıtı sentetik verilir.
 function tempoHarness(prefs = {}, { depo = false } = {}) {
-  const context = vm.createContext({ require, __dirname });
-  vm.runInContext(domSource + '\nglobalThis.ExistingDOM = { Node, all };', context);
+  const context = vm.createContext({});
+  const { Node, all } = domTaklidi();
   vm.runInContext(source, context);
-  const { Node, all } = context.ExistingDOM, document = {};
+  const document = {};
   const plain = value => JSON.parse(JSON.stringify(value));
   const el = (tag, attrs, ...kids) => { const node = new Node(tag, attrs, document); node.append(...kids); return node; };
   const ALANLAR = ['indirmeAraMin', 'indirmeAraMax', 'indirmeMolaHer', 'indirmeMolaMin', 'indirmeMolaMax'];
@@ -514,10 +530,9 @@ test('Toplu indir sekmesinde indirme temposu seçilir; sayı alanları yalnız �
 });
 
 test('tempo denetimi chrome erişimi olmadan da çizilir: Temkinli gösterir, tahmin boş kalır', async () => {
-  const context = vm.createContext({ require, __dirname });
-  vm.runInContext(domSource + '\nglobalThis.ExistingDOM = { Node, all };', context);
+  const context = vm.createContext({});
+  const { Node, all } = domTaklidi();
   vm.runInContext(source, context);
-  const { Node, all } = context.ExistingDOM;
   const kok = context.UHDBulkPanel.tempoAyari({ el: (tag, attrs, ...kids) => { const node = new Node(tag, attrs, {}); node.append(...kids); return node; } });
   await flush();
   assert.equal(all(kok).find(node => node.tag === 'select').value, 'temkinli');

@@ -32,7 +32,7 @@
     const tab = await uyapTab();
     if (!tab) return onNoTab();
     try {
-      const res = await chrome.tabs.sendMessage(tab.id, { type: 'uhd-update', full });
+      const res = await chrome.tabs.sendMessage(tab.id, { type: 'uhd-update', full }, { frameId: 0 });
       if (!res || !res.ok) ui.setNotice((res && res.error) || 'Güncelleme başlatılamadı.', 'err');
       else ui.setNotice('Güncelleme UYAP sekmesinde sürüyor; ilerlemesi oradaki panelin altında görünür. UYAP sekmesi kapanırsa kaldığı yerden sürer.');
     } catch {
@@ -43,7 +43,7 @@
   async function stopUpdateAll() {
     await chrome.runtime.sendMessage({ type: 'uhd-setup-cancel' }).catch(() => {});
     const tabs = await chrome.tabs.query({ url: UYAP_MATCH });
-    await Promise.all(tabs.map(t => chrome.tabs.sendMessage(t.id, { type: 'uhd-stop' }).catch(() => {})));
+    await Promise.all(tabs.map(t => chrome.tabs.sendMessage(t.id, { type: 'uhd-stop' }, { frameId: 0 }).catch(() => {})));
   }
 
   async function requestCbs(msg) {

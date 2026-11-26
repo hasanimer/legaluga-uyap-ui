@@ -81,6 +81,7 @@
         "durusma-paketi-bridge.js",
         "belge-pdf.js",
         "mazeret-dilekcesi.js",
+        "dilekce-sablonu.js",
         "ui.js",
         "onboarding.js",
         "ana-sayfa.js",
@@ -151,6 +152,6 @@
     ]
   },
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' data: https://legaluga.com https://o4511620723703808.ingest.de.sentry.io https://www.ptt.gov.tr; frame-src https://www.ptt.gov.tr; base-uri 'none'; form-action 'none'"
+    "extension_pages": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; style-src 'self'; connect-src 'self' data: https://legaluga.com https://o4511620723703808.ingest.de.sentry.io https://www.ptt.gov.tr; frame-src https://www.ptt.gov.tr; base-uri 'none'; form-action 'none'"
   }
 }

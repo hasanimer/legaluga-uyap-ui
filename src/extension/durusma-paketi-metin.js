@@ -6,7 +6,8 @@
   const A4 = { en: 595.28, boy: 841.89, sol: 56.69, sag: 56.69, ust: 56.69, alt: 56.69 };
   const TABAN = { aile: 'Times New Roman', punto: 11, kalin: false, italik: false, alti: false, ustu: false, renk: null, zemin: null };
   const KALIN = { ...TABAN, kalin: true };
-  const SINIR = { paragraf: 20000, karakter: 2 * 1024 * 1024 };
+  // paragrafKarakter: çizicinin (durusma-paketi-udf.js) paragraf başına kabul ettiği en uzun metin.
+  const SINIR = { paragraf: 20000, karakter: 2 * 1024 * 1024, paragrafKarakter: 128 * 1024 };
   const AD = { pdf: 'PDF', tiff: 'TIFF', zip: 'ZIP paketi (EYP, Word vb.)', html: 'HTML', xml: 'XML', text: 'düz metin',
     jpg: 'JPEG resim', png: 'PNG resim', gif: 'GIF resim', bmp: 'BMP resim', ole: 'eski Word/Office', rtf: 'RTF', unknown: 'tanınmayan' };
 
@@ -23,7 +24,9 @@
     if (m(0xff, 0xd8, 0xff)) return 'jpg';
     if (m(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return 'png';
     if (m(0x47, 0x49, 0x46, 0x38)) return 'gif';
-    if (m(0x42, 0x4d) && b.length > 26) return 'bmp';
+    // BMP: "BM" ile başlayan düz metin resim sanılmasın diye ayrılmış alan ve DIB başlık boyutu da doğrulanır.
+    if (m(0x42, 0x4d) && b.length > 26 && !(b[6] | b[7] | b[8] | b[9]) && !(b[15] | b[16] | b[17]) &&
+      [12, 40, 52, 56, 64, 108, 124].includes(b[14])) return 'bmp';
     if (m(0xd0, 0xcf, 0x11, 0xe0)) return 'ole';
     if (/^\{\\rtf/.test(bas(b, 5))) return 'rtf';
     let i = 0;
@@ -66,9 +69,14 @@
     euro: '€', sect: '§', para: '¶', times: '×', divide: '÷', ccedil: 'ç', Ccedil: 'Ç', ouml: 'ö', Ouml: 'Ö', uuml: 'ü', Uuml: 'Ü',
     acirc: 'â', Acirc: 'Â', icirc: 'î', Icirc: 'Î', ucirc: 'û', Ucirc: 'Û', scedil: 'ş', Scedil: 'Ş', gbreve: 'ğ', Gbreve: 'Ğ',
     inodot: 'ı', imath: 'ı', Idot: 'İ', ensp: ' ', emsp: ' ', thinsp: ' ', zwnj: '', zwj: '' };
+  // 128–159 sayısal başvuruları tarayıcıdaki gibi Windows-1252 karşılığına eşlenir (Word üretimi HTML'in tırnağı, tiresi).
+  const CP1252 = { 128: '€', 130: '‚', 131: 'ƒ', 132: '„', 133: '…', 134: '†', 135: '‡', 136: 'ˆ', 137: '‰', 138: 'Š', 139: '‹',
+    140: 'Œ', 142: 'Ž', 145: '‘', 146: '’', 147: '“', 148: '”', 149: '•', 150: '–', 151: '—', 152: '˜', 153: '™', 154: 'š', 155: '›',
+    156: 'œ', 158: 'ž', 159: 'Ÿ' };
   const varlik = s => s.replace(/&(#x[0-9a-f]{1,6}|#\d{1,7}|[a-z][a-z0-9]{1,15});/gi, (all, k) => {
     if (k[0] === '#') {
       const n = k[1] === 'x' || k[1] === 'X' ? parseInt(k.slice(2), 16) : parseInt(k.slice(1), 10);
+      if (Object.hasOwn(CP1252, n)) return CP1252[n];
       return n > 0 && n <= 0x10ffff && !(n >= 0xd800 && n <= 0xdfff) ? String.fromCodePoint(n) : '';
     }
     return Object.hasOwn(VARLIK, k) ? VARLIK[k] : all;
@@ -77,6 +85,25 @@
   const sade = s => s.replace(/\u20ba/g, 'TL').replace(/[\u200b-\u200d\u2060\ufeff\u00ad]/g, '')
     // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/g, ' ').replace(/[^\S\n]/gu, ' ');
+
+  // Çizicinin paragraf sınırını aşan paragraf kayıpsız bölünür: yakında boşluk varsa oradan, yoksa karakter sınırından.
+  function bol(parcalar) {
+    const L = SINIR.paragrafKarakter, out = [[]];
+    let n = 0;
+    for (const p of parcalar) {
+      let y = p.yazi;
+      while (n + y.length > L) {
+        let k = L - n, atla = 0;
+        const bosluk = y.lastIndexOf(' ', k);
+        if (bosluk > 0 && bosluk >= k - 1024) { k = bosluk; atla = 1; }
+        else if (k > 0 && (y.charCodeAt(k - 1) & 0xfc00) === 0xd800) k--;
+        if (k > 0) out.at(-1).push({ yazi: y.slice(0, k), kalin: p.kalin });
+        y = y.slice(k + atla); out.push([]); n = 0;
+      }
+      if (y) { out.at(-1).push({ yazi: y, kalin: p.kalin }); n += y.length; }
+    }
+    return out.filter(x => x.length);
+  }
 
   // Paragraf: [{ yazi, kalin }] parçaları ve girinti (pt).
   function paragraflar() {
@@ -99,10 +126,12 @@
         if (temiz.length) temiz.at(-1).yazi = temiz.at(-1).yazi.replace(/ +$/, '');
         parca = [];
         if (!temiz.length) return;
-        const n = temiz.reduce((k, p) => k + p.yazi.length, 0);
-        if (out.length >= SINIR.paragraf || toplam + n > SINIR.karakter) { kesildi = true; return; }
-        toplam += n;
-        out.push({ parcalar: temiz, sol });
+        for (const dilim of bol(temiz)) {
+          const n = dilim.reduce((k, p) => k + p.yazi.length, 0);
+          if (out.length >= SINIR.paragraf || toplam + n > SINIR.karakter) { kesildi = true; return; }
+          toplam += n;
+          out.push({ parcalar: dilim, sol });
+        }
       },
       sonuc: () => ({ paragraflar: out, kesildi })
     };
@@ -111,7 +140,7 @@
   const BLOK = new Set(['p', 'div', 'br', 'tr', 'li', 'ul', 'ol', 'table', 'tbody', 'thead', 'tfoot', 'section', 'article', 'header',
     'footer', 'blockquote', 'pre', 'hr', 'dl', 'dt', 'dd', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'center', 'form', 'fieldset', 'address',
     'caption', 'figure', 'figcaption', 'main', 'nav', 'aside', 'title']);
-  const KALINLAR = new Set(['b', 'strong', 'th', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'caption', 'dt']);
+  const KALINLAR = new Set(['b', 'strong', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'caption']);
 
   // HTML: görünen metin, blok öğeleri paragraf, tablo satırı tek paragraf (hücreler " | " ile), kalın yazı korunur.
   function html(metin) {
@@ -119,7 +148,10 @@
     const govde = metin.replace(/<!--[\s\S]*?-->/g, ' ')
       .replace(/<(script|style|noscript|template|object|iframe|svg|math)\b[\s\S]*?<\/\1\s*>/gi, ' ')
       .replace(/<head\b[\s\S]*?<\/head\s*>/i, ' ');
-    let kalin = 0, pre = 0, liste = 0, hucre = false;
+    // th ve dt kapanışı HTML'de isteğe bağlıdır: kalınlıkları sayaçla değil, sonraki hücre/satır/tanım sınırında biter.
+    let kalin = 0, pre = 0, liste = 0, hucre = false, th = false, dt = false;
+    const dis = [];
+    const kalinMi = () => kalin > 0 || th || dt;
     const re = /<\/?([a-zA-Z][\w:-]*)\b[^>]*>|<![^>]*>|<\?[^>]*>|([^<]+)|</g;
     let m;
     while ((m = re.exec(govde))) {
@@ -128,8 +160,8 @@
         t = pre ? t : t.replace(/\s+/g, ' ');
         if (pre && t.includes('\n')) {
           const satirlar = t.split(/\r?\n/);
-          satirlar.forEach((s, i) => { if (i) p.bitir(); p.ekle(sade(s), kalin > 0); });
-        } else p.ekle(sade(t), kalin > 0);
+          satirlar.forEach((s, i) => { if (i) p.bitir(); p.ekle(sade(s), kalinMi()); });
+        } else p.ekle(sade(t), kalinMi());
         continue;
       }
       if (!m[1]) continue;
@@ -137,14 +169,22 @@
       const tek = /\/\s*>$/.test(m[0]);
       if (ad === 'td' || ad === 'th') {
         if (!kapanis) { if (hucre) p.ekle(' | ', false); hucre = true; }
-        if (ad === 'th') kalin += kapanis ? -1 : (tek ? 0 : 1);
+        th = ad === 'th' && !kapanis && !tek;
         continue;
       }
       if (KALINLAR.has(ad) && !tek) kalin = Math.max(0, kalin + (kapanis ? -1 : 1));
       if (ad === 'pre' && !tek) pre = Math.max(0, pre + (kapanis ? -1 : 1));
+      // İç tablo ve iç tanım listesi dış başlık hücresinin/terimin kalınlığını saklar, kapanınca geri verir.
+      const acan = (ad === 'table' || ad === 'dl') && !tek;
+      if (acan && !kapanis) dis.push([ad, th, dt]);
+      if (ad === 'tr' || ad === 'table') th = false;
+      if (ad === 'dt' || ad === 'dd' || ad === 'dl') dt = ad === 'dt' && !kapanis && !tek;
+      if (acan && kapanis && dis.length && dis[dis.length - 1][0] === ad) [, th, dt] = dis.pop();
+      // Bekleyen paragraf, yazıldığı liste derinliğiyle kapanır; ul/ol sayacı ondan sonra değişir.
+      const derinlik = liste;
       if ((ad === 'ul' || ad === 'ol') && !tek) liste = Math.max(0, liste + (kapanis ? -1 : 1));
       if (BLOK.has(ad)) {
-        p.bitir(Math.min(liste, 6) * 14);
+        p.bitir(Math.min(derinlik, 6) * 14);
         if (ad === 'tr') hucre = false;
         if (ad === 'li' && !kapanis) p.ekle('• ', false);
       }

@@ -227,6 +227,7 @@
   const DOC_PREVIEW_MIME = {
     pdf: 'application/pdf', txt: 'text/plain', jpg: 'image/jpeg', png: 'image/png', gif: 'image/gif', bmp: 'image/bmp'
   };
+  const onizlemeUzantisi = ext => ext === 'jpeg' ? 'jpg' : ext === 'htm' ? 'html' : ext;   // eş uzantılar önizlemede tek ada iner; toplu indirme özgün uzantıyı korur
   function documentPreviewBlob(doc, ext) {
     const type = Object.hasOwn(DOC_PREVIEW_MIME, ext) ? DOC_PREVIEW_MIME[ext] : 'application/octet-stream';
     return new Blob([doc.blob], { type });

@@ -3,3 +3,6 @@ const uyapUrl = url => typeof url === 'string' && url.startsWith(UYAP_ORIGIN + '
 const setupSender = sender => sender.id === chrome.runtime.id &&
   (String(sender.url || '').startsWith(chrome.runtime.getURL('')) || (sender.frameId === 0 && uyapUrl(sender.url))) &&
   (!sender.documentLifecycle || sender.documentLifecycle === 'active');
+// Eklentinin içerik betiği, UYAP sekmesinin etkin (ön-işlenmeyen) üst çerçevesinde.
+const uyapUstCerceve = sender => sender.id === chrome.runtime.id && !!sender.tab && sender.frameId === 0 && uyapUrl(sender.url) &&
+  (!sender.documentLifecycle || sender.documentLifecycle === 'active');

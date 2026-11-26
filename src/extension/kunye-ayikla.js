@@ -107,7 +107,10 @@
     ['yd', `(?:${YP}|y(?=\\d))?(?:(?:${NO}|${SIRA}) ?(?:hukuk|ceza) dairesi${EK}|\\d{1,2} ?\\.? ?[hc]\\.? ?d\\.?${S}${KEK})`],
     ['aym', `(?:t\\.? ?c\\.? )?(?:anayasa mahkemesi${EK}|aym${S}${KEK})`],
     // Başka bir yargı yeri: aradaki numaralar onundur; önceki Yargıtay/Danıştay anmasıyla eşleştirilmez.
-    ['engel', `[a-z]*(?:mahkemesi|mahkemeleri|mudurlugu|savciligi|hakimligi|noterligi|icra dairesi|hakem heyeti|baskanligi'?n[ae])${EK}`]
+    // Adı anılmadan çekimli yazılan mahkeme ("mahkemece", "yerel mahkemenin", "Mahkemenizin") de yalnız numaranın hemen
+    // önündeyken böyledir; "Dairesi'nin, mahkemece verilen karara ilişkin … E." atfında numara dairenindir.
+    ['engel', `[a-z]*(?:(?:mahkemesi|mahkemeleri|mudurlugu|savciligi|hakimligi|noterligi|icra dairesi|hakem heyeti|baskanligi'?n[ae])${EK}|` +
+      `mahkeme(?:ce|nin|niz|miz)${EK}(?= ?(?:(?:esas(?: (?:no(?:su)?|numarasi|sayisi))?|e\\.?(?: ?no)?)\\.? ?:? ?)?(?:19|20)\\d{2} ?/))`]
   ];
   // Yönelme eki ("Dairesine", "Daire'ye", "Kuruluna", "HGK'ya", "BAŞKANLIĞI'NA") dilekçenin gönderildiği yeri gösterir;
   // ardındaki "ESAS NO … KARAR NO …" alt mahkemenin dosyasıdır, künye değildir. AYM'ye "yapılan başvuru" bundan ayrıktır.
@@ -117,7 +120,7 @@
   const E_ON = '(?:esas(?: (?:no(?:su)?|numarasi|sayisi))?|e\\.?(?: ?no)?)\\.? ?:? ?';
   const K_ON = '(?:karar(?: (?:no(?:su)?|numarasi|sayisi))?|k\\.?(?: ?no)?)\\.? ?:? ?';
   const E_SON = ` ?(?:esas|e)${S}\\.?`, K_SON = ` ?(?:karar|k)${S}\\.?`;
-  const ARA = ' ?(?:[,;-] ?)?(?:(?:ve|ile) )?';
+  const ARA = ' ?(?:[,;/-] ?)?(?:(?:ve|ile) )?';   // "E./K.", "E. - K.", "E. ve K."
   // Tam E./K. çifti önce denenir. 1-2: etiket sonda · 3-4: etiket önde · 5-6: AYM başvurusu · 7-8: yalnız esas.
   const GRUP_RE = new RegExp(`(?<![a-z0-9])(?:${NUM}${E_SON}${ARA}${NUM}${K_SON}|${E_ON}${NUM}${ARA}${K_ON}${NUM}|` +
     `(?:b\\.? ?no|basvuru (?:no|numarasi))\\.? ?:? ?${NUM}|${NUM} (?:basvuru numarali|numarali basvuru|sayili basvuru)|` +
@@ -129,7 +132,13 @@
   const DOSYA_ON = /(?:^| )dosya(?: (?:no|numarasi))? ?[:.]? ?$/;
   const TARIH = '(?<![0-9])(?<![0-9][./])(\\d{1,2})[./](\\d{1,2})[./](\\d{4})(?![0-9])';
   const TARIH_RE = new RegExp(TARIH, 'g');
-  const SONRA_TARIH_RE = new RegExp(`^(?:[ ,;:()-]{0,4}(?:sayili|ve|ile|tarihli|tarihinde|tarihi|tarih|karar tarihi|kararlari|karari|ilami|k\\.? ?t|t)(?![a-z])\\.?){0,3}[ ,;:()-]{0,4}${TARIH}`);
+  // Numara ile tarih arasında en çok üç bağlayıcı. Nokta yalnız kısaltmadan (K.T., T.) sonra geçer; "kararı. 12.05.2011"
+  // yeni cümledir. "kararı ve/ile <tarih>" başka bir belgeyi, "<tarih> tarihinde" başka bir olayı (tebliğ) anlatır;
+  // "tarihinde verilen/verdiği" ise kararın kendi tarihidir; araya oylama zarfı ("oybirliğiyle", "oy çokluğu ile") girebilir.
+  const T_ARA = '[ ,;:()-]{0,4}';
+  const OYLAMA = '(?: oy ?(?:birligi(?:yle| ile)|coklugu(?:yla| ile)))?';
+  const SONRA_TARIH_RE = new RegExp(`^(?:${T_ARA}(?:(?:kararlari|karari|ilami)(?![a-z])(?!${T_ARA}(?:ve|ile)(?![a-z]))|` +
+    `(?:sayili|ve|ile|tarihli|tarihinde|tarihi|tarih|karar tarihi)(?![a-z])|(?:k\\.? ?t|t)(?![a-z])\\.?)){0,3}${T_ARA}${TARIH}(?! tarihinde(?![a-z])(?!${OYLAMA} (?:veril|verdi|karar)))`);
   const SIRA_RE = new RegExp(`(\\d{1,2})|(${SIRA})`);
   const BIRLER = { birinci: 1, ikinci: 2, ucuncu: 3, dorduncu: 4, besinci: 5, altinci: 6, yedinci: 7, sekizinci: 8, dokuzuncu: 9 };
   const KISALTMA = new Set(['yarg', 'prof', 'mahk']);   // nokta ve büyük harfle sürse de cümle sonu sayılmaz

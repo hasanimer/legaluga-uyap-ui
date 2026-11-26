@@ -24,9 +24,9 @@
     }
     function paketIsaretle(x, on) {
       const k = paketAnahtar(x), var_ = paketSecili.includes(k);
-      if (on === undefined) on = !var_;
+      if (paketSession) on = var_; else if (on === undefined) on = !var_;   // hazırlık sürerken seçim donuktur: yalnız yeniden çizilir
       if (on && !var_) {
-        if (!paketAlinir(x) || paketSession) return;
+        if (!paketAlinir(x)) return;
         if (paketSecili.length >= PAKET_MAX) { paketDurum.textContent = `Pakete en çok ${PAKET_MAX} evrak alınır.`; listeyiCiz(); return; }
         paketSecili.push(k);
       } else if (!on && var_) paketSecili = paketSecili.filter(v => v !== k);
@@ -47,7 +47,7 @@
       evrakAdi.textContent = 'Duruşma paketi · sıra';
       indir.hidden = true; yeniSekme.hidden = true;
       const sirali = paketSirasi();
-      const yeniSira = keys => { paketSecili = keys; paketSira = 'elle'; listeyiCiz(); };
+      const yeniSira = keys => { if (paketSession) return; paketSecili = keys; paketSira = 'elle'; listeyiCiz(); };
       const tasi = (k, to, eylem) => {
         const keys = paketSirasi().map(paketAnahtar), from = keys.indexOf(k);
         if (from < 0 || to < 0 || to >= keys.length) return;

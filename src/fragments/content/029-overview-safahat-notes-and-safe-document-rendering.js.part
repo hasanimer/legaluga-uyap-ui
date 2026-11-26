@@ -15,7 +15,7 @@
       ev.stopImmediatePropagation();
       done();
     } else if (ev.key === 'Tab') {
-      const scope = box.getAttribute('aria-modal') === 'true' ? [box] : [panel, box];
+      const scope = box.getAttribute('aria-modal') === 'true' ? [notificationArea, box] : [panel, notificationArea, box];   // bildirim alanı DOM'da kutudan öncedir: düğmesinden Tab kutuya doğal geçer
       const targets = [launch, ...scope.flatMap(s => [...s.querySelectorAll(FOCUSABLE)])].filter(x => x && x.tabIndex >= 0 && visible(x));
       if (!targets.length) return;
       const active = shadowRoot.activeElement;

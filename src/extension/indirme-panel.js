@@ -36,7 +36,7 @@
 `;
   let sequence = 0;
   const labels = { queued: 'Sırada', running: 'İndiriliyor', paused: 'Duraklatıldı', complete: 'Tamamlandı', error: 'İndirme durdu' };
-  const phases = { waiting: 'Sırasını bekliyor', fetching: 'Evraklar alınıyor', packing: 'ZIP hazırlanıyor', saving: 'ZIP diske kaydediliyor', idle: '' };
+  const phases = { waiting: 'Sırada', fetching: 'Evraklar alınıyor', packing: 'ZIP hazırlanıyor', saving: 'ZIP diske kaydediliyor', idle: '' };
   const literal = (value, max = 220) => typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, max) : '';
   const number = value => Number.isSafeInteger(value) && value >= 0 ? value : 0;
   const fmt = value => number(value).toLocaleString('tr-TR');
@@ -80,6 +80,11 @@
       el('p', { class: 'bdp-help' }, 'Yüzde UYAP’tan alınan evrakları gösterir; diske kaydedilen sayı ayrıca yazılır. Parçalı indirmede mevcut parçadaki evraklar ZIP kaydı tamamlanana kadar geçicidir. Tek ZIP indirmesinde evraklar ZIP hazırlanınca birlikte kaydedilir; bu indirmeler yalnız bu sekmede listelenir.'),
       problem, retry, empty, list, live);
     container.append(root);
+    // Panel gölge kökünde çizilebilir: içerideki odağı belge değil kök bildirir (belge yalnız gölge ana öğesini gösterir).
+    const etkin = () => {
+      const kok = typeof root.getRootNode === 'function' ? root.getRootNode() : null;
+      return (kok && 'activeElement' in kok ? kok : doc).activeElement;
+    };
     const announce = text => { if (!destroyed && text) live.textContent = text; };
     // Tek ZIP (kind: 'zip') yalnız bu sekmede izlenir: durdurulabilir, sürdürülemez; parça ve klasör bilgisi yoktur.
     const isZip = state => state?.kind === 'zip';
@@ -222,7 +227,7 @@
       }
       // Tek ZIP dosya ekranına bağlıdır: sürerken dosyayı yeniden açmak ekranı kapatıp indirmeyi durdururdu.
       const openHidden = typeof openFile !== 'function' || (zip && state.status === 'running');
-      if (openHidden && doc.activeElement === row.open) (row.control.hidden || row.control.disabled ? row.title : row.control).focus();
+      if (openHidden && etkin() === row.open) (row.control.hidden || row.control.disabled ? row.title : row.control).focus();
       row.open.hidden = openHidden;
       row.control.setAttribute('aria-label', `${label}: ${zip ? 'ZIP indirmesini durdur' : action === 'pause' ? 'indirmeyi duraklat' : 'indirmeye devam et'}`);
       row.skip.hidden = !takilan;
@@ -232,7 +237,7 @@
       const downloadId = state.lastPart?.downloadId;
       row.folder.hidden = zip || typeof showPart !== 'function' || !Number.isSafeInteger(downloadId) || downloadId < 0 || !state.id;
       row.folder.disabled = row.pending?.name === 'folder';
-      const odak = doc.activeElement;
+      const odak = etkin();
       if (odak === row.control && row.control.hidden) (row.folder.hidden ? row.open.hidden ? row.title : row.open : row.folder).focus();
       else if (odak === row.skip && row.skip.hidden) (!row.control.hidden ? row.control : !row.folder.hidden ? row.folder : !row.open.hidden ? row.open : row.title).focus();
     }
@@ -262,7 +267,7 @@
         row.stamp = stamp;
       }
       for (const [jobKey, row] of rows) if (!present.has(jobKey)) {
-        if ([row.control, row.skip, row.open, row.folder].includes(doc.activeElement)) heading.focus();
+        if ([row.control, row.skip, row.open, row.folder].includes(etkin())) heading.focus();
         row.alive = false; row.card.remove(); rows.delete(jobKey);
       }
       count.textContent = `${fmt(rows.size)} indirme${running ? ` · ${fmt(running)} sürüyor` : ''}${queued ? ` · ${fmt(queued)} sırada` : ''}`;

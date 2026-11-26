@@ -12,8 +12,8 @@ const HTML_PARCA = fs.readFileSync(path.join(KOK, 'fragments/content/037-overvie
 const UZANTI = 'chrome-extension://abcdefghijklmnopabcdefghijklmnop/';
 
 // Ayrılmış (dedicated) Worker benzeri bağlam: `chrome` nesnesi ve `window` yoktur.
-function isciBaglami({ konum = UZANTI + 'atif-ocr-worker.js' } = {}) {
-  const kayit = { importlar: [], secenekler: null, tanimaPencere: [], cizimPencere: [], mesajlar: [], tesseractYuklendi: false };
+function isciBaglami({ konum = UZANTI + 'atif-ocr-worker.js', geciciTuval = false } = {}) {
+  const kayit = { importlar: [], secenekler: null, tanimaPencere: [], cizimPencere: [], geciciTuval: [], mesajlar: [], tesseractYuklendi: false };
   let hazir;
   const bitti = new Promise(resolve => { hazir = resolve; });
   const tanici = {
@@ -25,12 +25,26 @@ function isciBaglami({ konum = UZANTI + 'atif-ocr-worker.js' } = {}) {
     async terminate() { return undefined; }
   };
   const pdfjs = {
-    getDocument() {
+    getDocument(secenek) {
+      // pdf.js gibi: fabrika verilmezse varsayılan DOM fabrikası document.createElement çağırır.
+      const Fabrika = secenek?.CanvasFactory || class { create(w, h) { const canvas = ctx.document.createElement('canvas'); canvas.width = w; canvas.height = h; return { canvas, context: canvas.getContext('2d') }; } };
+      const fabrika = new Fabrika({ ownerDocument: ctx.document, enableHWA: false });
       const sayfa = {
         getViewport: ({ scale }) => ({ width: 100 * scale, height: 100 * scale }),
         // pdf.js gibi: `window` tanımlıysa çizim adımını window.requestAnimationFrame ile planlar.
         render() {
           kayit.cizimPencere.push(typeof ctx.window);
+          if (geciciTuval) {
+            // Büyük görüntü küçültme yolu: geçici tuval fabrikadan istenir, yeniden boyutlanır ve bırakılır.
+            try {
+              const gecici = fabrika.create(50, 70);
+              kayit.geciciTuval.push([gecici.canvas.width, gecici.canvas.height, typeof gecici.context.drawImage]);
+              fabrika.reset(gecici, 25, 35);
+              kayit.geciciTuval.push([gecici.canvas.width, gecici.canvas.height]);
+              fabrika.destroy(gecici);
+              kayit.geciciTuval.push([gecici.canvas, gecici.context]);
+            } catch (e) { return { promise: Promise.reject(e) }; }
+          }
           if (typeof ctx.window !== 'undefined') return { promise: new Promise(r => ctx.window.requestAnimationFrame(r)) };
           return { promise: Promise.resolve() };
         },
@@ -108,26 +122,33 @@ test('Tesseract için geçici window taklidi geri alınır; metinsiz PDF çizimi
   assert.deepEqual(kayit.importlar, ['vendor/pdfjs-reader.js', 'vendor/tesseract/tesseract.min.js']);
 });
 
+test('metinsiz PDF çiziminde pdf.js\'in geçici tuvali document olmayan işçide OffscreenCanvas\'tan gelir', async () => {
+  const { ctx, kayit, calistir } = isciBaglami({ geciciTuval: true });
+  assert.equal(typeof ctx.document, 'undefined');
+  const sonuc = await calistir('pdf', PDF());
+  assert.equal(sonuc.code, undefined, JSON.stringify(sonuc));
+  assert.equal(sonuc.sayfalar.length, 1);
+  assert.deepEqual(kayit.geciciTuval, [[50, 70, 'function'], [25, 35], [null, null]]);
+});
+
 // Uzantı sayfaları (popup, Ayarlar, Duruşma Paketi, görünmeyen PTT belgesi), service worker ve işçileri için yönerge
 // bazlı izin listesi; her yönerge yalnız burada yazılı değerleri taşır. Yazılmayan yükleme türleri (resim, yazı tipi,
 // medya) default-src 'self' ile yalnız paketten. Betik yalnız paketten (WebAssembly derlemesi dahil; işçiler script-src'ye
-// düşer). Stil paketten ve satır içi: arayüz stilini <style> öğesi ve style öznitelikleriyle yazar; satır içi CSS ağa
-// ancak url() ile çıkar, o da img-src/font-src'ye (default-src) takılır. Ağ: paket, Tesseract çekirdeğinin gömülü wasm'ı
-// (data:), künye havuzu, Sentry alım adresi ve görünmeyen PTT sorgusu. Çerçeve yalnız resmî PTT formu (görünmez Duruşma
+// düşer). Stil yalnız paketten: arayüz stilini stil dosyası, CSSOM (adoptedStyleSheets) ve sınıfla yazar; satır içi
+// <style> öğesi ve style özniteliği yoktur (JS'ten el.style ataması CSP'ye takılmaz). Ağ: paket, Tesseract çekirdeğinin
+// gömülü wasm'ı (data:), künye havuzu, Sentry alım adresi ve görünmeyen PTT sorgusu. Çerçeve yalnız resmî PTT formu (görünmez Duruşma
 // Paketi çerçevesi önizleme göstermez). Kaynaklar yalnız kökendir, yol taşımaz.
 // İçerik betikleri bu politikaya tabi değildir.
 const CSP_IZINLERI = {
   'default-src': ["'self'"],
   'script-src': ["'self'", "'wasm-unsafe-eval'"],
   'object-src': ["'self'"],
-  'style-src': ["'self'", "'unsafe-inline'"],
+  'style-src': ["'self'"],
   'connect-src': ["'self'", 'data:', 'https://legaluga.com', 'https://o4511620723703808.ingest.de.sentry.io', 'https://www.ptt.gov.tr'],
   'frame-src': ['https://www.ptt.gov.tr'],
   'base-uri': ["'none'"],
   'form-action': ["'none'"]
 };
-// 'unsafe-*' yalnız satır içi stil için; betik, işçi ve ağ yönergelerinde yoktur.
-const GEVSEK_IZINLER = new Set(["style-src 'unsafe-inline'"]);
 
 test('uzantı sayfası CSP yönerge bazlı izin listesine uyar: varsayılan paket, betik paketten, ağ ve çerçeve yalnız bilinen kökenlere', () => {
   const csp = MANIFEST.content_security_policy;
@@ -139,7 +160,8 @@ test('uzantı sayfası CSP yönerge bazlı izin listesine uyar: varsayılan pake
   assert.deepEqual(Object.fromEntries(yonergeler.map(([ad, ...degerler]) => [ad, degerler])), CSP_IZINLERI);
   for (const [ad, ...degerler] of yonergeler) {
     for (const deger of degerler) {
-      if (!GEVSEK_IZINLER.has(`${ad} ${deger}`)) assert.doesNotMatch(deger, /^'unsafe-|\*|^https?:$/, `${ad} ${deger}`);
+      // Hiçbir yönergede 'unsafe-*' kaynak değeri yoktur ('wasm-unsafe-eval' yalnız WebAssembly derlemesidir).
+      assert.doesNotMatch(deger, /^'unsafe-|\*|^https?:$/, `${ad} ${deger}`);
       if (/^https?:/.test(deger)) assert.equal(deger, new URL(deger).origin, `${ad}: kaynak yol taşımaz (${deger})`);
     }
   }
