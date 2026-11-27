@@ -216,3 +216,5 @@ Açık testler `common.js`'i açık parçalardan kurar ([tests/common-taklidi.js
 Genel hata ve öneriler için [Issues](https://github.com/hasanimer/legaluga-uyap-ui/issues) açın; sürüm, yeniden üretme adımları ve beklediğiniz davranışı yazın. Güvenlik bildirimlerini [SECURITY.md](SECURITY.md) içindeki özel kanaldan iletin. HAR, giriş bilgisi veya gerçek dava belgesi paylaşmayın; örnekleri sentetik verilerle hazırlayın.
 
 Bu depodaki Hasan İmer Akın'a ait kaynaklar [MIT lisansı](LICENSE) kapsamındadır. [vendor bileşenleri](src/extension/vendor/) ve fontlar kendi lisansları, bildirimleri ve atıflarıyla korunur; proje MIT lisansı onları değiştirmez. Özel motorun lisansı ayrıdır. Önceki açık sürümler, yayımlandıkları lisanslarla kullanılmaya devam eder.
+
+Bu deponun MIT lisanslı kodunu kullandığınız çalışmalarda [Legaluga UYAP Asistanı](https://github.com/hasanimer/legaluga-uyap-ui) bağlantısını paylaşarak atıf yapmanızı rica ederiz.
